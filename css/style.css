@@ -1,25 +1,119 @@
 /*	MAIN CSS	*/
-body {
+
+/* Reset some default styles */
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+  }
+  
+  body {
 	font-family: Arial, sans-serif;
-	background-color: #f4f4f4;
+	background-color: #070b55;
+	color: white;
+	height: 100vh;
+	overflow: hidden;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+  }
+  
+  .content {
+	z-index: 1;
 	text-align: center;
-	padding: 20px;
-}
-
-h1 {
-	color: #333;
-}
-
-button {
-	background-color: #007BFF;
+  }
+  
+  h1 {
+	font-size: 2rem;
+	margin-bottom: 1rem;
+  }
+  
+  button {
+	padding: 10px 20px;
+	background-color: #ff5733;
 	color: white;
 	border: none;
-	padding: 10px 20px;
 	cursor: pointer;
-	font-size: 16px;
-	margin-top: 20px;
-}
+	font-size: 1rem;
+	transition: background-color 0.3s ease;
+  }
+  
+  button:hover {
+	background-color: #c0392b;
+  }
+  
+  /* Make sure particles cover the full screen */
+  #particles-js {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	z-index: -1; /* Makes sure the particles stay behind the content */
+  }
+  
 
-button:hover {
-	background-color: #0056b3;
+  /* Pixelated Button */
+.btn-home {
+	border: 2px solid var(--base-green);
+	background-color: var(--base-dark);
+	position: relative;
+	display: flex;
+	align-items: center; /* Vertical centering */
+	justify-content: center; /* Horizontal centering */
+	width: 25vh;
+	height: 15vh;
+	text-decoration: none;
+	text-align: center;
+	text-transform: uppercase;
+	color: var(--base-white);
+	transition: all 0.4s ease;
+	border-radius: 5px;
+	font-size: 1.5rem;
+	z-index: 10;
+	cursor: pointer; /* Add a cursor pointer for better UX */
+  }
+  
+  /* Hover Effect */
+  .btn-home:hover {
+	border: 2px solid var(--base-blue);
+	color: var(--base-dark);
+	background: var(--base-green) url('../assets/pixel_button_green.png') no-repeat center center;
+	background-size: 220px;
+	animation: animate 0.4s steps(8) forwards;
+	transition: background-color 1s;
+  }
+  
+  /* Animation */
+  @keyframes animate {
+	0% {
+	  background-position-y: 0;
+	}
+	100% {
+	  background-position-y:-480px;
+	}
+  }
+
+  /* Responsive Design */
+@media (max-width: 768px) {
+	.btn-home {
+	  width: 120px;
+	  height: 40px;
+	}
+  }
+
+  /*		COLORS		*/
+:root
+{
+	--base-green: #00ff00;
+	--base-dark: #000;
+	--base-white: #fff;
+	--base-gray: #262626;
+	--base-blue: #091370;
+	--base-red: #ff0000;
+	--base-purple: #8c00ff;
+	--base-light-green: rgba(163, 219, 163, 0.7);
+	--base-light-blue: rgb(163, 201, 219, 0.7);
+	--base-light-yellow: rgba(255, 236, 68, 0.7);
+	--base-light-red: rgba(255, 37, 37, 0.7);
+	--base-light-dark: rgba(0, 0, 0, 0.7);
 }
