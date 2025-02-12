@@ -6,36 +6,39 @@
 	padding: 0;
 	box-sizing: border-box;
   }
-  
+	
   body {
-    background-color: #000000 !important;
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    height: 100vh; /* Full height to ensure centering */
-    text-align: center;
-}
-.content {
-    z-index: 1;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center; /* Ensure everything is centered */
-    gap: 10px; /* Add spacing between elements */
-}
-
-p
-{
+	background-color: #000000 !important;
+	color: white;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+	height: 100vh;  /* Ensure the body takes up the full height */
+	text-align: center;
+  }
+  
+  .content {
+	z-index: 1;
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: 20px;
+	font-size: x-large;
+  }
+  
+  p {
 	color: #ffffff;
-	margin: 0 2rem;
-}
+	margin: 0 5rem 0 5rem;
+	justify-content: center;
+	text-align: center;
+  }
   
   h1 {
-	font-size: 1rem;
-	margin: 0 2rem 1rem;
+	font-size: x-large;
+	margin: 0 2rem 1rem 2rem;
 	color: #ffffff;
   }
   
@@ -109,164 +112,53 @@ p
 	}
   }
   
-  /* COLORS */
-  :root {
-	--base-green: #00ff00;
-	--base-dark: #000;
-	--base-white: #fff;
-	--base-gray: #262626;
-	--base-blue: #63b5ff;
-	--base-red: #ff0000;
-	--base-purple: #8c00ff;
-	--base-light-green: rgba(163, 219, 163, 0.7);
-	--base-light-blue: rgb(163, 201, 219, 0.7);
-	--base-light-yellow: rgba(255, 236, 68, 0.7);
-	--base-light-red: rgba(255, 37, 37, 0.7);
-	--base-light-dark: rgba(0, 0, 0, 0.7);
-  }
-  
-  /* Header */
-  header {
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	z-index: 9;
-	border-bottom: 4px solid #D3D3D3;
-	background-color: white;
-	width: 100%;
-  }
-  
-  header > .container {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	max-width: 980px;
-	margin: 0 auto;
-	padding: 1rem;
-	transition: all 0.2s ease;
-	flex-wrap: wrap;
-  }
-  
-  .nav-brand {
-	text-align: center;
-	font-size: 1rem;
-  }
-  
-  .nav-brand h1 {
-	margin: 0;
-	font-size: 1rem;
-	font-weight: bold;
-  }
-  
-  .nav-brand p {
-	margin-top: 5px;
-	font-size: 1rem;
-  }
-  
-  header > .container > .social-buttons {
-	display: flex;
-	gap: 10px;
-  }
-  
-  .social-buttons i {
-	font-size: 2rem;
-  }
-  
-  header.sticky > .container {
-	font-size: 0.8rem;
-	padding: 0.5rem;
-	align-items: center;
-  }
-  
-  header.sticky .nav-brand h1 {
-	margin: 0;
-	font-size: 1.2rem;
-  }
-  
-  header.sticky .nav-brand p {
-	display: none;
-  }
-  
-  /* Responsive Adjustments */
-  @media screen and (max-width: 768px) {
-	body {
-	  margin: 0.5rem;
-	  padding: 0;
-	}
-  
-	header > .container {
-	  flex-direction: column;
-	  align-items: center;
-	  text-align: center;
-	}
-  
-	.nav-brand {
-	  margin-bottom: 0.5rem;
-	}
-  
-	.social-buttons {
-		margin-top: 20px;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-	}
-  
-	.social-buttons i {
-	  font-size: 1.8rem;
-	}
-  }
-  
-  @media screen and (max-width: 480px) {
-	.nav-brand h1 {
-	  font-size: 1.2rem;
-	}
-	.nav-brand p {
-	  font-size: 0.9rem;
-	}
-	.social-buttons i {
-	  font-size: 1.5rem;
-	}
-  }
-  
   .share {
-    display: flex;
-    justify-content: center;
-    gap: 50px; /* Add spacing between social icons */
+	display: flex;
+	justify-content: center;
+	gap: 50px; /* Add spacing between social icons */
 	margin-top: 20px;
-}
-
-.share {
-    display: flex;
-    justify-content: center;
-    gap: 50px; /* Add spacing between social icons */
-    margin-top: 20px;
-}
-
-.share a {
-    transition: transform 0.3s ease, filter 0.3s ease;
-}
-
-.share a:hover {
-    transform: scale(1.3);
-    animation: pulseGlow 1s infinite alternate;
-}
-
-/* Adjusting the glow color for different social icons */
-.share a i.nes-icon.gmail:hover {
-    filter: drop-shadow(0 0 10px #ff0000) 
-            drop-shadow(0 0 20px #ff0000) 
-            drop-shadow(0 0 40px #ff0000);
-}
-
-.share a i.nes-icon.github:hover {
-    filter: drop-shadow(0 0 10px #808080) 
-            drop-shadow(0 0 20px #808080) 
-            drop-shadow(0 0 40px #808080);
-}
-
-.share a i.nes-icon.linkedin:hover {
-    filter: drop-shadow(0 0 10px #014f79) 
-            drop-shadow(0 0 20px #014f79) 
-            drop-shadow(0 0 40px #014f79);
-}
+  }
+  
+  .share a {
+	transition: transform 0.3s ease, filter 0.3s ease;
+  }
+  
+  .share a:hover {
+	transform: scale(1.3);
+	animation: pulseGlow 1s infinite alternate;
+  }
+  
+  .share a i.nes-icon.gmail:hover {
+	filter: drop-shadow(0 0 10px #ff0000)
+	  drop-shadow(0 0 20px #ff0000)
+	  drop-shadow(0 0 40px #ff0000);
+  }
+  
+  .share a i.nes-icon.github:hover {
+	filter: drop-shadow(0 0 10px #808080)
+	  drop-shadow(0 0 20px #808080)
+	  drop-shadow(0 0 40px #808080);
+  }
+  
+  .share a i.nes-icon.linkedin:hover {
+	filter: drop-shadow(0 0 10px #014f79)
+	  drop-shadow(0 0 20px #014f79)
+	  drop-shadow(0 0 40px #014f79);
+  }
+  
+  /* Clicker */
+  #clicker {
+	margin-top: 10vh;  /* Adjust the top margin to position it nicely */
+	justify-content: center;
+	width: 13rem;
+	height: 4vh;
+	font-size: 1.2rem;
+	font-weight: bold;
+	letter-spacing: 1px; /* Slight spacing for readability */
+	transition: all 0.3s ease;
+  }
+  
+  #clicker:hover {
+	transform: scale(1.1); /* Slightly enlarge on hover */
+  }
+  
