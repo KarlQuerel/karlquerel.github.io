@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Karl Querel | Student at 42 Paris |</title>
+
+		<!-- *** IMPORTS *** -->
+		<!-- Css -->
+		<link rel="stylesheet" href="/css/style.css"> 
+
+		<!-- Icon -->
+		<link rel="icon" href="/assets/favicon.png" type="image/png">
+
+		<!-- Fonts -->
+		<link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
+
+		<!-- *** SCRIPTS *** -->
+		<!-- Firebase & Click Tracking Script -->
+		<script type="module" defer src="/js/firebase-setup.js"></script>
+
+		<!-- Particles.js -->
+		<script src="https://unpkg.com/tsparticles@1.38.0/tsparticles.min.js" defer></script>
+
+		<!-- Scrolling Title Script -->
+		<script type="module" defer src="/js/scrolling-title.js"></script>
+	</head>
+
+	<body>
+		<!-- Background Animation -->
+		<div id="particles-js"></div>
+
+		<!-- Under Construction Message -->
+		<div>
+			<h1>Under Construction</h1>
+			<p>This site is currently being built. Stay tuned for more!</p>
+		</div>
+
+		<!-- Social Buttons Section -->
+		<div class="social-buttons">
+			<div class="share">
+				<a href="mailto:karlquerel@gmail.com" target="_blank">
+					<i class="nes-icon gmail is-large"></i>
+				</a>
+				<a href="https://github.com/KarlQuerel" target="_blank">
+					<i class="nes-icon github is-large"></i>
+				</a>
+				<a href="https://www.linkedin.com/in/karlquerel" target="_blank">
+					<i class="nes-icon linkedin is-large"></i>
+				</a>
+			</div>
+		</div>
+
+		<!-- Button to Trigger Click Count -->
+		<button id="clicker" class="nes-btn is-error">
+			CLICK ME
+		</button>
+		<p>How many brave souls have summoned their mighty index finger?</p>
+		<p><span id="counter">0</span></p>
+
+		<!-- JavaScript script -->
+		<script type="module" src="/js/script.js"></script>
+	</body>
+</html>
