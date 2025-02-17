@@ -1,0 +1,41 @@
+/***	IMPORTS		***/
+@use 'variables';
+
+body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	background: variables.$background-color;
+	color: variables.$text-color;
+}
+
+
+.content {
+	z-index: variables.$z-index-content;
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: variables.$gap-large;
+	font-size: variables.$font-size-large;
+	position: relative;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+p, h1 {
+color: variables.$text-color;
+margin: 0 5rem 5rem 5rem;
+text-align: center;
+}
+
+#app {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+	height: 100vh;
+	text-align: center;
+	color: variables.$text-color;
+}
