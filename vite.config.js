@@ -2,17 +2,16 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
-  base: '/', 
+  base: '/', // Ensure the base path is set to '/'
   plugins: [vue()],
-  root: '.',
+  root: '.', // This is fine for the root of your repo
   build: {
-    outDir: 'dist',
+    outDir: 'dist', // Output folder for build
   },
-  publicDir: 'public',
+  publicDir: 'public', // Static assets folder
   resolve: {
     alias: {
-      // Ensure Vue is correctly resolved
-      vue: 'vue/dist/vue.esm-bundler.js',
+      vue: 'vue/dist/vue.esm-bundler.js', // Ensuring Vue is resolved correctly
     },
   },
 });
