@@ -17,8 +17,11 @@ body {
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	gap: variables.$gap-large;
-	font-size: variables.$font-size-large;
+	font-size: clamp(
+		variables.$font-size-large-min,
+		variables.$font-size-large-preferred,
+		variables.$font-size-large-max
+	);
 	position: relative;
 	max-width: 100%;
 	box-sizing: border-box;
@@ -26,8 +29,17 @@ body {
 
 p, h1 {
 color: variables.$text-color;
-margin: 0 5rem 5rem 5rem;
 text-align: center;
+font-size: clamp(
+	variables.$font-size-medium-min,
+	variables.$font-size-medium-preferred,
+	variables.$font-size-medium-max
+	);
+}
+
+p
+{
+	margin: 1rem 10vh;
 }
 
 #app {

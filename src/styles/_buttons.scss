@@ -7,7 +7,7 @@ button {
 	color: variables.$text-color;
 	border: none;
 	cursor: pointer;
-	font-size: variables.$font-size-medium;
+	font-size: clamp(0.875rem, 1.5vw, variables.$font-size-medium);
 	transition: background-color 0.3s ease;
 }
 	
@@ -30,7 +30,11 @@ button:hover {
 	color: variables.$text-color;
 	transition: all 0.4s ease;
 	border-radius: 5px;
-	font-size: 1.5rem;
+	font-size: clamp(
+		variables.$font-size-medium-min, 
+		variables.$font-size-medium-preferred, 
+		variables.$font-size-medium-max
+	);
 	z-index: variables.$z-index-button;
 }
 	
