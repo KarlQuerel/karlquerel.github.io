@@ -7,6 +7,7 @@ pnpm-lock.yaml
 
 # Vite build output
 .vite/
+dist/
 
 # Editor-specific files
 .vscode/
