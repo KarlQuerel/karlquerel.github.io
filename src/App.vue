@@ -5,7 +5,7 @@
 
 	<!-- Main Content -->
 	<div class="content">
-		<h1>Under Construction</h1>
+		<h1>🔨 Under Construction 🔨</h1>
 		<p>This site is currently being built. Stay tuned for more!</p>
 
 		<!-- Social Buttons -->
@@ -22,27 +22,19 @@
 		</div>
 
 		<!-- Clicker Button -->
-		<button id="clicker" class="nes-btn is-error" @click="incrementCounter">
-		CLICK ME
-		</button>
-		<p>How many brave souls have summoned their mighty index finger?</p>
-		<p><span>{{ counter }}</span></p>
+		<ClickCounter />
 	</div>
 	</div>
 </template>
 
 <script>
+
+import ClickCounter from './components/clickCounter.vue';
+
 export default {
-	name: "App",
-	data() {
-	return {
-		counter: 0
-	};
-	},
-	methods: {
-	incrementCounter() {
-		this.counter += 1;
-	}
+	name: 'App',
+	components: {
+		ClickCounter
 	}
 };
 </script>
