@@ -4,10 +4,9 @@
   "description": "You can access the website [here](karlquerel.github.io)",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
     "serve": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "gh-pages -d dist"
+    "deploy": "vite build && gh-pages -d dist"
   },
   "keywords": [],
   "author": "",
