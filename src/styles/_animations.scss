@@ -13,11 +13,9 @@
 }
 
 #clicker {
-	margin-top: 5vh;
-	margin-bottom: 2vh;
 	justify-content: center;
-	width: 18vw;
-	height: 8vh;
+	width: 60%;
+	height: 10%;
 	font-size: clamp(
 		variables.$font-size-medium-min,
 		variables.$font-size-medium-preferred,
@@ -34,7 +32,7 @@
 
 @media (max-width: 768px) {
 	#clicker {
-		width: 30vw;
+		width: 100%;
 		height: 10wh;
 		font-size: 14px;
 	}

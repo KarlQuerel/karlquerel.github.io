@@ -5,8 +5,11 @@
 
 	<!-- Main Content -->
 	<div class="content">
-		<h1>🔨 Under Construction 🔨</h1>
-		<p>This site is currently being built. Stay tuned for more!</p>
+		<div class="nes-container is-dark is-rounded">
+			<p>Under Construction</p>
+			<p> </p>
+
+		</div>
 
 		<!-- Social Buttons -->
 		<div class="share">

@@ -48,29 +48,14 @@ button:hover {
 	text-decoration: none;
 }
 	
-@keyframes animate {
-0% {
-	background-position-y: 0;
-}
-100% {
-	background-position-y: -480px;
-}
-}
-
-@media (max-width: 768px) {
-.btn-home {
-	width: 120px;
-	height: 40px;
-}
-}
-
 
 .share {
 	display: flex;
 	justify-content: center;
 	gap: 5vh;
 	margin-top: 5vh;
-	transform: scale(1.5);
+	margin-bottom:5vh;
+	transform: scale(1.2);
 }
 	
 .share a {
@@ -99,3 +84,24 @@ button:hover {
 		drop-shadow(0 0 20px #014f79)
 		drop-shadow(0 0 40px #014f79);
 }
+
+@keyframes animate {
+	0% {
+		background-position-y: 0;
+	}
+	100% {
+		background-position-y: -480px;
+	}
+	}
+	
+	@media (max-width: 768px) {
+	.share
+	{
+		transform: scale(1);
+	
+	}
+	.btn-home {
+		width: 120px;
+		height: 40px;
+	}
+	}

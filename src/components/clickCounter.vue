@@ -3,13 +3,18 @@
 		<p v-if="loading">Loading...</p>
 
 		<div v-else>
-			<button id="clicker" class="nes-btn is-error" @click="incrementCounter">
-			CLICK ME
-			</button>
+			<!-- NES Button inside the container -->
+			<div class="nes-container is-dark with-title is-centered is-rounded">
+				<p class="title">Waste your time!</p>
 
-			<p>Wasting time...</p>
-			<p>One click at a time</p>
-			<p><span>{{ counter }}</span></p>
+				<!-- Button for clicking -->
+				<button id="clicker" class="nes-btn is-primary small-font" @click="incrementCounter">
+					One click at a time
+				</button>
+
+				<!-- Display the counter -->
+				<p><span>{{ counter }}</span></p>
+			</div>
 		</div>
 	</div>
 </template>
@@ -36,3 +41,9 @@ async mounted() {
 	},
 };
 </script>
+
+<style scoped>
+.small-font {
+  font-size: 1rem !important;
+}
+</style>
