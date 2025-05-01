@@ -1,1 +1,0 @@
-# karlquerel.github.io

@@ -1,0 +1,100 @@
+/***	IMPORTS		***/
+@use 'variables';
+
+button {
+	padding: 10px 20px;
+	background-color: variables.$primary-color;
+	color: variables.$text-color;
+	border: none;
+	cursor: pointer;
+	font-size: clamp(0.875rem, 1.5vw, variables.$font-size-medium);
+	transition: background-color 0.3s ease;
+}
+	
+button:hover {
+	background-color: variables.$secondary-color;
+}
+	
+.btn-home {
+	border: 5px solid variables.$text-color;
+	background-color: variables.$background-color;
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 25vh;
+	height: 15vh;
+	text-decoration: none;
+	text-align: center;
+	text-transform: uppercase;
+	color: variables.$text-color;
+	transition: all 0.4s ease;
+	border-radius: 5px;
+	font-size: clamp(
+		variables.$font-size-medium-min, 
+		variables.$font-size-medium-preferred, 
+		variables.$font-size-medium-max
+	);
+	z-index: variables.$z-index-button;
+}
+	
+.btn-home:hover {
+	border: 5px solid variables.$primary-color;
+	color: variables.$background-color;
+	background: variables.$primary-color url('/assets/pixel_button_blue.png') no-repeat center center;
+	background-size: 220px;
+	animation: animate 0.5s steps(8) forwards;
+	transition: background-color 1s;
+	text-decoration: none;
+}
+	
+@keyframes animate {
+0% {
+	background-position-y: 0;
+}
+100% {
+	background-position-y: -480px;
+}
+}
+
+@media (max-width: 768px) {
+.btn-home {
+	width: 120px;
+	height: 40px;
+}
+}
+
+
+.share {
+	display: flex;
+	justify-content: center;
+	gap: 5vh;
+	margin-top: 5vh;
+}
+	
+.share a {
+	transition: transform 0.3s ease, filter 0.3s ease;
+}
+	
+.share a:hover {
+	transform: scale(1.3);
+	animation: pulseGlow 1s infinite alternate;
+}
+	
+.share a i.nes-icon.gmail:hover {
+	filter: drop-shadow(0 0 10px #ff0000)
+		drop-shadow(0 0 20px #ff0000)
+		drop-shadow(0 0 40px #ff0000);
+}
+	
+.share a i.nes-icon.github:hover {
+	filter: drop-shadow(0 0 10px #808080)
+		drop-shadow(0 0 20px #808080)
+		drop-shadow(0 0 40px #808080);
+}
+	
+.share a i.nes-icon.linkedin:hover {
+	filter: drop-shadow(0 0 10px #014f79)
+		drop-shadow(0 0 20px #014f79)
+		drop-shadow(0 0 40px #014f79);
+}

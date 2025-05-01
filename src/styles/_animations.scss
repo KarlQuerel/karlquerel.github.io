@@ -1,0 +1,33 @@
+/***	IMPORTS		***/
+@use 'variables';
+
+@keyframes pulseGlow {
+	0% {
+		transform: scale(1);
+		filter: brightness(1);
+	}
+	100% {
+		transform: scale(1.2);
+		filter: brightness(1.5);
+	}
+}
+
+#clicker {
+	margin-top: 5vh;
+	margin-bottom: 2vh;
+	justify-content: center;
+	width: 20rem;
+	height: 8vh;
+	font-size: clamp(
+		variables.$font-size-medium-min,
+		variables.$font-size-medium-preferred,
+		variables.$font-size-medium-max
+	);
+	font-weight: bold;
+	letter-spacing: 1px;
+	transition: all 0.3s ease;
+}
+
+#clicker:hover {
+	transform: scale(1.1);
+}

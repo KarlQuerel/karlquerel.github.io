@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Karl Querel | Student at 42 Paris</title>
+
+		<!-- Css -->
+		<link rel="stylesheet" href="css/style.css">
+
+		<!-- Icon -->
+		<link rel="icon" href="assets/favicon.png" type="image/png">
+
+		<!-- Particles -->
+		<script src="https://cdn.jsdelivr.net/npm/tsparticles@1.38.0"></script>
+
+		<!-- Fonts -->
+		<link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
+
+		<!-- Nes -->
+		<link href="https://unpkg.com/nes.css@latest/css/nes.min.css" rel="stylesheet" />
+
+		<script>
+			let titleText = document.title;
+			let index = 0;
+
+			function scrollTitle() {
+				document.title = titleText.substring(index) + " " + titleText.substring(0, index);
+				index = (index + 1) % titleText.length;
+				setTimeout(scrollTitle, 100);
+			}
+
+			scrollTitle();
+		</script>
+	</head>
+
+	<body>
+		<!-- Particles Background -->
+		<div id="particles-js"></div>
+
+		<!-- Main Container -->
+		<div class="container">
+			<!-- Navbar -->
+			<header>
+				<div class="container">
+					<div class="nav-brand">
+						<p>Karl Querel</p>
+					</div>
+
+					<!-- Social Buttons Section -->
+					<div class="social-buttons">
+						<p>Connect with me</p>
+						<div class="share">
+							<a href="mailto:karlquerel@gmail.com?" target="_blank">
+								<i class="nes-icon gmail is-large"></i>
+							</a>
+							<a href="https://github.com/KarlQuerel" target="_blank">
+								<i class="nes-icon github is-large"></i>
+							</a>
+							<a href="https://www.linkedin.com/in/karlquerel" target="_blank">
+								<i class="nes-icon linkedin is-large"></i>
+							</a>
+						</div>
+					</div>
+				</div>
+			</header>
+
+			<!-- Parallax Section -->
+			<section id="parallax" class="parallax-section">
+				<h2>About me</h2>
+				<p>To fix
+		</p>
+			</section>
+
+			<!-- Main Content -->
+			<a href="#" class="btn-home">Explore More</a>
+
+			<!-- NES buttons and icons -->
+			<a class="nes-btn" href="#">Normal</a>
+			<button type="button" class="nes-btn is-primary">Primary</button>
+			<button type="button" class="nes-btn is-success">Success</button>
+			<button type="button" class="nes-btn is-warning">Warning</button>
+			<button type="button" class="nes-btn is-error">Error</button>
+			<button type="button" class="nes-btn is-disabled">Disabled</button>
+
+			<label class="nes-btn">
+				<span>Select your file</span>
+				<input type="file">
+			</label>
+		</div>
+
+		<!-- JavaScript script -->
+		<script src="js/particles.js"></script>
+
+		<!-- Vue -->
+		<script src="https://cdn.jsdelivr.net/npm/vue@3.2.0/dist/vue.global.js"></script>
+
+		<script>
+			const app = Vue.createApp({
+				data() {
+					return {
+						welcomeMessage: 'Welcome to My Portfolio'
+					};
+				}
+			});
+
+			app.mount('#app');
+		</script>
+	</body>
+</html>
