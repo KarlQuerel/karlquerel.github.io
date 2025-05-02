@@ -18,7 +18,6 @@ const clickRef = doc(db, "clicks", "counter");
 
 export async function updateClicks() {
 	await updateDoc(clickRef, { count: increment(1) });
-	return loadClicks();
 }
 
 export async function loadClicks() {

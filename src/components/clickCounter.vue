@@ -35,10 +35,17 @@ async mounted() {
 	this.loading = false;
 	},
 	methods: {
-	async incrementCounter() {
-		this.counter = await updateClicks();
+		async incrementCounter() {
+			this.counter++;
+
+			try {
+			await updateClicks();
+			} catch (e) {
+			this.counter--;
+			console.error("Failed to update Firestore:", e);
+			}
+			},
 		},
-	},
 };
 </script>
 
