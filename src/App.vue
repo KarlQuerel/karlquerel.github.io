@@ -1,5 +1,7 @@
 <template>
 	<div id="app">	<!-- Centralized container -->
+
+	<SideNav />
 	<!-- Background Animation -->
 	<div id="particles-js"></div>
 
@@ -33,11 +35,13 @@
 <script>
 
 import ClickCounter from './components/clickCounter.vue';
+import SideNav from './components/sideNav.vue';
 
 export default {
 	name: 'App',
 	components: {
-		ClickCounter
+		ClickCounter,
+		SideNav,
 	}
 };
 </script>
