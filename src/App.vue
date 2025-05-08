@@ -1,7 +1,8 @@
 <template>
 	<div id="app">	<!-- Centralized container -->
 
-	<SideNav />
+	<!-- HERE -->
+		<!-- <SideNav /> -->
 	<!-- Background Animation -->
 	<div id="particles-js"></div>
 
