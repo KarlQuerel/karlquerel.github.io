@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "cp dist/index.html dist/404.html",
     "serve": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "vite build && gh-pages -d dist"

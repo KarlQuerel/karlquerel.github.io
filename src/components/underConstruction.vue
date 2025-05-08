@@ -1,0 +1,38 @@
+<template>
+	<div class="content">
+		<div class="nes-container is-dark is-rounded">
+			<p>Under Construction</p>
+			<p> </p>
+		</div>
+
+		<!-- Social Buttons -->
+		<div class="share">
+		<a href="mailto:karlquerel@gmail.com" target="_blank">
+			<i class="nes-icon gmail is-large"></i>
+		</a>
+		<a href="https://github.com/KarlQuerel" target="_blank">
+			<i class="nes-icon github is-large"></i>
+		</a>
+		<a href="https://www.linkedin.com/in/karlquerel" target="_blank">
+			<i class="nes-icon linkedin is-large"></i>
+		</a>
+		</div>
+
+		<!-- Clicker Button -->
+		<ClickCounter />
+	</div>
+  </template>
+
+<script>
+
+import ClickCounter from './clickCounter.vue';
+import SideNav from './sideNav.vue';
+
+export default {
+	name: 'UnderConstruction',
+	components: {
+		ClickCounter,
+		SideNav,
+	}
+};
+</script>
