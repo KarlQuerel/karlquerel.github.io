@@ -12,10 +12,10 @@ import './js/firebase-setup.js';
 const routes = [
 	{ path: '/', component: UnderConstruction },
 	{ path: '/:pathMatch(.*)*', component: NotFound }
-  ];
+];
 
 const router = createRouter({
-	history: createWebHistory('/karlquerel.github.io/'),
+	history: createWebHistory('/'),
 	routes,
 });
 
