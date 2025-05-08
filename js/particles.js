@@ -12,7 +12,7 @@ tsParticles.load("particles-js", {
 	shape: {
 		type: "image",
 		image: [
-		{ src: "/favicon.png", width: 50, height: 50 }
+		{ src: "assets/favicon.png", width: 50, height: 50 }
 		]
 	},
 	opacity: {
