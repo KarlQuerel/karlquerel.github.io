@@ -4,6 +4,7 @@
   "description": "You can access the website [here](karlquerel.github.io)",
   "scripts": {
     "dev": "vite",
+    "build": "vite build",
     "serve": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "vite build && gh-pages -d dist"
@@ -21,6 +22,7 @@
     "esbuild": "^0.25.0",
     "firebase": "^11.3.1",
     "nes.css": "^2.2.1",
-    "vue": "^3.5.13"
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.1"
   }
 }
