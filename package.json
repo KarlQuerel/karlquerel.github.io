@@ -2,13 +2,13 @@
   "name": "karlquerel.github.io",
   "version": "1.0.0",
   "description": "You can access the website [here](karlquerel.github.io)",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "postbuild": "cp dist/index.html dist/404.html",
-    "serve": "vite preview",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy": "vite build && gh-pages -d dist"
+"scripts": {
+  "dev": "vite",
+  "build": "vite build",
+  "postbuild": "cp dist/index.html dist/404.html",
+  "serve": "vite preview",
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "deploy": "vite build && cp dist/index.html dist/404.html && gh-pages -d dist"
   },
   "keywords": [],
   "author": "",
