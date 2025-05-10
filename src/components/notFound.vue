@@ -19,14 +19,14 @@ export default {
   name: 'NotFound',
   data() {
     return {
-		messages: [
-  { text: 'What in the...\n...\n...', delay: 1000 },
-  { text: 'Hey you!\nKindly refrain\nfrom breaking my website', delay: 1000 },
-],
-
+        messages: [
+      { text: 'What in the—', delay: 1200 },
+      { text: 'Hey you!', delay: 1000 },
+      { text: 'You’re not supposed\nto be here.', delay: 1800 },
+      { text: 'Let’s get you\nout of here.', delay: 1200 },
+    ],
       currentBubbleText: '',
-      typingSpeed: 150,
-      bubbleDelay: 1500,
+      typingSpeed: 75,
       isTyping: false,
     };
   },
@@ -64,15 +64,14 @@ export default {
 
 
 <style scoped>
-p {
-	color: black;
-	white-space:pre-wrap;
-}
+
 .not-found-wrapper {
 display: flex;
+left:0%;
 align-items: flex-start;
 gap: 1rem;
 padding: 1rem;
+top:50%;
 }
 
 .character-container {
@@ -93,6 +92,20 @@ flex-grow: 1;
 width:20%;
 }
 
+.nes-balloon.from-left::before {
+    background-color: #ffffff94;
+}
+
+.nes-balloon.from-left::after {
+    bottom: -18px;
+    width: 18px;
+    height: 4px;
+    margin-right: 8px;
+    color: #212529;
+    background-color: #ffffff94;
+    box-shadow: -4px 0, 4px 0, -4px 4px #ffffff94, 0 4px, -8px 4px, -4px 8px, -8px 8px;
+}
+
 .nes-balloon {
   width: 100%;
   background: #ffffff94;
@@ -102,5 +115,12 @@ width:20%;
   align-items: center;
   text-align: center;
 }
+
+.nes-balloon p {
+  margin: 0;
+  white-space: pre-wrap;
+  color: black;
+}
+
 
 </style>
