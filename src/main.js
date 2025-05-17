@@ -3,6 +3,7 @@ import './styles/main.scss';
 import { createApp } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import App from './App.vue';
+import SecretRedirect from './components/secretRedirect.vue';
 import NotFound from './components/notFound.vue';
 import UnderConstruction from './components/underConstruction.vue';
 import './js/firebase-setup.js';
@@ -11,8 +12,9 @@ import './js/firebase-setup.js';
 /***	ROUTES		***/
 const routes = [
 	{ path: '/', component: UnderConstruction },
-	{ path: '/:pathMatch(.*)*', component: NotFound }
-];
+	{ path: '/secret_link', component: SecretRedirect },
+	{ path: '/:pathMatch(.*)*', component: NotFound },
+  ];
 
 const router = createRouter({
 	history: createWebHistory('/'),

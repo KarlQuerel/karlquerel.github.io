@@ -10,10 +10,15 @@
 				</div>
 			</div>
 			<transition name="fade">
-				<div v-if="showButtons" class="not-found-buttons">
+				<div v-if="show404MenuButtons" class="not-found-buttons">
 					<button class="nes-btn is-success" @click="goHome">Get me to the homepage</button>
 					<button class="nes-btn is-warning" @click="stayHere">No thanks, I'll stay here</button>
 					<button class="nes-btn is-disabled" >Requires Level 99 Admin Rights</button>
+				</div>
+			</transition>
+			<transition name="fade">
+				<div v-if="breakWebsiteButton" class="single-button-center">
+					<button class="nes-btn is-error" @click="breakWebsite">Break it</button>
 				</div>
 			</transition>
 		</div>
@@ -22,7 +27,6 @@
 
 
 
-<!-- HERE to finish and change variables-->
 <script>
 export default {
 	name: 'NotFound',
@@ -31,13 +35,15 @@ export default {
 				messages: [
 			{ text: 'What in the—', delay: 1200 },
 			{ text: 'Hey you!', delay: 1000 },
-			{ text: 'You’re not supposed\nto be here.', delay: 1800 },
+			{ text: 'You’re not supposed\nto be here.', delay: 1500 },
 			{ text: 'Let’s get you\nout of here.', delay: 1200 },
 		],
 			currentBubbleText: '',
-			typingSpeed: 100,
+			typingSpeed: 60,
 			isTyping: false,
-			showButtons: false,
+			show404MenuButtons: false,
+			breakWebsiteButton: false,
+			initialSequenceDone: false
 		};
 	},
 	mounted() {
@@ -45,11 +51,13 @@ export default {
 	},
 	methods: {
 		typeNextMessage(index) {
-	if (index >= this.messages.length) 
-	{
-		this.showButtons = true;
-		return;
+			if (index >= this.messages.length) {
+	if (!this.initialSequenceDone) {
+	this.show404MenuButtons = true;
+	this.initialSequenceDone = true;
 	}
+	return;
+}
 
 	const { text: fullText, delay } = this.messages[index];
 	let i = 0;
@@ -61,33 +69,46 @@ export default {
 		i++;
 
 		if (i >= fullText.length) {
-			clearInterval(interval);
-			this.isTyping = false;
+	clearInterval(interval);
+	this.isTyping = false;
 
-			setTimeout(() => this.typeNextMessage(index + 1), delay);
-		}
+	if (fullText.includes("Suit yourself")) {
+	this.breakWebsiteButton = true;
+	}
+
+	setTimeout(() => {
+	this.typeNextMessage(index + 1);
+	}, delay);
+}
+
 	}, this.typingSpeed);
-	},
+},
 
 	goHome() {
 		this.$router.push('/');
 	},
 
-	//HERE - to finish
 	stayHere() {
-	this.showButtons = false; // hide buttons
-	this.currentBubbleText = ''; // reset bubble
+	this.show404MenuButtons = false;
+	this.breakWebsiteButton = false;
+	this.currentBubbleText = '';
 
-	// Optional: Add delay before new message appears
-	setTimeout(() => {
-		this.currentBubbleText = 'Suit yourself. Just don’t touch anything.';
-	}, 500);
-	}
+	this.messages.push(
+	{ text: 'Suit yourself. Just don’t break my website.', delay: 8000 },
+	{ text: 'I see you...', delay: 8000 },
+	{ text: 'Don’t do it.', delay: 1500 }
+	);
+
+	this.typeNextMessage(this.messages.length - 3);
+},
+breakWebsite() {
+	this.$router.push('/secret_link');
+}
+
 }
 };
 
 </script>
-
 
 
 <style scoped>
@@ -158,16 +179,15 @@ export default {
 }
 
 .not-found-buttons {
-	/* top:500vh; */
 	bottom:30vh;
-	/* transform: translate(-50%, -50%); */
 	display: flex;
 	flex-wrap: nowrap;
 	align-content: center;
 	justify-content: center;
 	align-items: stretch;
 	flex-direction: column;
-	position:sticky;
+	position:absolute;
+	gap: 1vh;
 }
 
 .fade-enter-active, .fade-leave-active {
@@ -176,6 +196,26 @@ export default {
 .fade-enter-from, .fade-leave-to {
 	opacity: 0;
 }
+
+.is-success {
+	color: #000000;
+}
+.is-warning:hover {
+	color: #ffffff;
+}
+
+.is-error {
+	color: #ffffff;
+	width: 20vh;
+}
+
+.single-button-center {
+	position: absolute;
+	bottom: 30vh;
+	left: 50%;
+	transform: translateX(-50%);
+}
+
 
 /* HERE - to finish */
 @media (max-width: 768px) {
