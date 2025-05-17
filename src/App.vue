@@ -6,6 +6,7 @@
 		<div id="particles-js"></div>
 
 		<!-- This is where route components (Home, NotFound, etc.) get injected -->
+		<RetroNavbar />
 		<router-view/>
 
 	</div>
@@ -13,7 +14,12 @@
 
 <script>
 
+import RetroNavbar from './components/retroNavbar.vue';
+
 export default {
 	name: 'App',
+	components: {
+		RetroNavbar
+	}
 };
 </script>

@@ -1,6 +1,5 @@
 console.log("Particles script is running");
 
-// Define all possible characters
 const matrixChars = [
 	// Numbers
 	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
@@ -32,7 +31,7 @@ tsParticles.load("particles-js", {
 			type: "character",
 			character: {
 				value: matrixChars,
-				font: "Press Start 2P",  // Using the retro font
+				font: "Press Start 2P",
 				style: "normal",
 				weight: "400"
 			}

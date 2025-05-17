@@ -34,3 +34,14 @@ export default {
 	}
 };
 </script>
+
+<style scoped>
+.small-font {
+  font-size: 1rem !important;
+}
+
+.nes-container.is-dark
+{
+	background-color: #000000;
+}
+</style>

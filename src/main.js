@@ -6,6 +6,7 @@ import App from './App.vue';
 import SecretRedirect from './components/secretRedirect.vue';
 import NotFound from './components/notFound.vue';
 import UnderConstruction from './components/underConstruction.vue';
+import GameTest from './components/gameTest.vue';
 import './js/firebase-setup.js';
 
 
@@ -13,6 +14,7 @@ import './js/firebase-setup.js';
 const routes = [
 	{ path: '/', component: UnderConstruction },
 	{ path: '/secret_link', component: SecretRedirect },
+	{ path: '/gametest', component: GameTest },
 	{ path: '/:pathMatch(.*)*', component: NotFound },
   ];
 

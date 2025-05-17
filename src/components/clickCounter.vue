@@ -8,7 +8,7 @@
 				<p class="title">Waste your time!</p>
 
 				<!-- Button for clicking -->
-				<button id="clicker" class="nes-btn is-primary small-font" @click="incrementCounter">
+				<button id="clicker" class="nes-btn is-normal small-font" @click="incrementCounter">
 					One click at a time
 				</button>
 
@@ -52,5 +52,10 @@ async mounted() {
 <style scoped>
 .small-font {
   font-size: 1rem !important;
+}
+
+.nes-container.is-dark
+{
+	background-color: #000000;
 }
 </style>
