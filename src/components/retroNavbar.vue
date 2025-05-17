@@ -7,20 +7,18 @@
 		</div>
 		<ul class="nav-links">
 		  <li>
-			<router-link to="/" class="scanline-button">
-			  <span> Home</span>
-			  <div class="scanline"></div>
+			<router-link to="/" class="glitch-button" data-text="HOME">
+			  <span>HOME</span>
 			</router-link>
 		  </li>
 		  <li>
-			<router-link to="/gametest" class="matrix-button">
-			  <span class="matrix-text">🎮 Game Test</span>
-			  <div class="matrix-rain"></div>
+			<router-link to="/invalidroute" class="glitch-button" data-text="ERROR">
+			  <span>.</span>
 			</router-link>
 		  </li>
 		  <li>
-			<router-link to="/secret_link" class="glitch-button" data-text="🗝️ Secret">
-			  <span>🗝️ Secret</span>
+			<router-link to="/secret_link" class="glitch-button" data-text="LOG IN">
+			  <span>LOG IN</span>
 			</router-link>
 		  </li>
 		</ul>
@@ -36,9 +34,9 @@
   .navbar
 {
 	background: rgba(0, 0, 0, 0.9);
-	border-bottom: 0.1vh solid #00ff00;
-	border-left: 0.1vh solid #00ff00;
-	border-right: 0.1vh solid #00ff00;
+	border: 0.3vh dashed #00ff00;
+	border-top:0;
+	border-radius: 0 0 20px 20px;
 
 	height: 10vh;
 	position: fixed;
@@ -101,113 +99,80 @@
 	padding: 0;
 	margin: 0;
 	display: flex;
-	gap: 2rem;
+	gap: 5rem;
 	align-items: center;
-	opacity: 1;
+
 
 	li {
 	  a {
-		font-family: 'Press Start 2P', monospace;
-		color: var(--base-green);
+		color: white;
 		text-decoration: none;
-		font-size: 0.8rem;
 		transition: all 0.2s ease;
-		padding: 0.5rem;
-		border: 1px solid transparent;
+		// padding: 1rem 2rem;
+		padding: 1.5rem 2rem;
 		position: relative;
-		display: block;
-		text-align: center;
-		opacity: 1;
-
-		&:hover {
-		  color: #fff;
-		  border-color: var(--base-green);
-		  background: rgba(0, 255, 0, 0.1);
-		}
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 150px;
+		min-height: 50px;
 
 		&.router-link-exact-active {
 		  color: #fff;
 		  border-color: var(--base-green);
 		  background: rgba(0, 255, 0, 0.15);
 		}
-	  }
 
-	  // Scanline Effect for Home
-	  .scanline-button {
-		overflow: hidden;
-		transition: all 0.3s ease;
-		
-		.scanline {
-		  position: absolute;
-		  top: 0;
-		  left: 0;
-		  width: 100%;
-		  height: 100%;
-		  background: linear-gradient(
-			to bottom,
-			transparent 50%,
-			rgba(0, 255, 0, 0.1) 50%
-		  );
-		  background-size: 100% 4px;
-		  pointer-events: none;
-		  animation: scanline 4s linear infinite;
-		  z-index: 1;
-		}
-
-		span {
+		&[data-text="HOME"] {
 		  position: relative;
-		  z-index: 2;
-		}
+		  overflow: hidden;
+		  border: 2px solid transparent;
+		  transition: all 0.3s ease;
 
-		&:hover {
-		  transform: scale(1.05);
-		  .scanline {
-			animation: scanline 2s linear infinite;
-			background: linear-gradient(
-			  to bottom,
-			  transparent 50%,
-			  rgba(0, 255, 0, 0.2) 50%
-			);
-		  }
-		}
-	  }
-
-	  // Matrix Effect for Game Test
-	  .matrix-button {
-		overflow: hidden;
-		transition: all 0.3s ease;
-		
-		.matrix-text {
-		  position: relative;
-		  z-index: 2;
-		}
-
-		.matrix-rain {
-		  position: absolute;
-		  top: 0;
-		  left: 0;
-		  width: 100%;
-		  height: 100%;
-		  background: linear-gradient(
-			to bottom,
-			transparent,
-			rgba(0, 255, 0, 0.15) 50%,
-			transparent
-		  );
-		  animation: matrix-rain 3s linear infinite;
-		  z-index: 1;
-		}
-
-		&:hover {
-		  transform: scale(1.05);
-		  .matrix-rain {
-			animation: matrix-rain 1.5s linear infinite;
-			background: linear-gradient(
-			  to bottom,
+		  &::before,
+		  &::after {
+			content: '';
+			position: absolute;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			background: repeating-linear-gradient(
+			  90deg,
 			  transparent,
-			  rgba(0, 255, 0, 0.3) 50%,
-			  transparent
+			  transparent 2px,
+			  #00ff00 2px,
+			  #00ff00 4px
 			);
+			opacity: 0;
+			transition: all 0.3s ease;
+			pointer-events: none;
+		  }
+
+		  &::before {
+			left: -100%;
+		  }
+
+		  &::after {
+			right: -100%;
+		  }
+
+		  &:hover {
+			transform: scale(1.05);
+			border-color: #00ff00;
+			box-shadow: 0 0 5px #00ff00, inset 0 0 5px #00ff00;
+			text-shadow: 0 0 5px #00ff00;
+
+			&::before {
+			  left: 0;
+			  opacity: 0.2;
+			  animation: pixelScan 1s linear infinite;
+			}
+
+			&::after {
+			  right: 0;
+			  opacity: 0.2;
+			  animation: pixelScan 1s linear infinite reverse;
+			}
 		  }
 		}
 	  }
@@ -215,7 +180,7 @@
 	  // Glitch Effect for Secret
 	  .glitch-button {
 		position: relative;
-		transition: all 0.3s ease;
+		transition: all 0.1s ease;
 		
 		&::before,
 		&::after {
@@ -225,7 +190,7 @@
 		  left: 0;
 		  width: 100%;
 		  height: 100%;
-		  background: var(--base-dark);
+		  background: dark;
 		  display: flex;
 		  align-items: center;
 		  justify-content: center;
@@ -235,13 +200,13 @@
 
 		&::before {
 		  left: 2px;
-		  text-shadow: -2px 0 #f0f;
+		  text-shadow: -10px 0 #00ff00;
 		  animation: glitch-1 2s infinite linear alternate-reverse;
 		}
 
 		&::after {
 		  left: -2px;
-		  text-shadow: 2px 0 #0ff;
+		  text-shadow: 10px 0 #0ff;
 		  animation: glitch-2 3s infinite linear alternate-reverse;
 		}
 
@@ -261,42 +226,24 @@
 	}
 }
 
-@keyframes scanline {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(100%);
-  }
-}
-
-@keyframes matrix-rain {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 0 100%;
-  }
-}
-
 @keyframes glitch-1 {
   0% {
-    clip-path: inset(20% 0 30% 0);
+    transform: translate(0);
   }
   20% {
-    clip-path: inset(60% 0 10% 0);
+    transform: translate(-2px, 2px);
   }
   40% {
-    clip-path: inset(40% 0 50% 0);
+    transform: translate(-2px, -2px);
   }
   60% {
-    clip-path: inset(80% 0 5% 0);
+    transform: translate(2px, 2px);
   }
   80% {
-    clip-path: inset(10% 0 70% 0);
+    transform: translate(2px, -2px);
   }
   100% {
-    clip-path: inset(30% 0 20% 0);
+    transform: translate(0);
   }
 }
 
@@ -339,6 +286,21 @@
   }
   100% {
     transform: translate(0);
+  }
+}
+
+@keyframes pixelScan {
+  0% {
+    opacity: 0.2;
+    filter: brightness(1.2);
+  }
+  50% {
+    opacity: 0.4;
+    filter: brightness(2);
+  }
+  100% {
+    opacity: 0.2;
+    filter: brightness(1.2);
   }
 }
 

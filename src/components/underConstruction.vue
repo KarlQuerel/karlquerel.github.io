@@ -43,5 +43,7 @@ export default {
 .nes-container.is-dark
 {
 	background-color: #000000;
+	border: 0.3vh dashed #00ff00;
+	border-radius: 20px;
 }
 </style>
