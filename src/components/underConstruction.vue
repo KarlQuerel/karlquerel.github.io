@@ -26,13 +26,11 @@
 <script>
 
 import ClickCounter from './clickCounter.vue';
-import SideNav from './sideNav.vue';
 
 export default {
 	name: 'UnderConstruction',
 	components: {
-		ClickCounter,
-		SideNav,
+		ClickCounter
 	}
 };
 </script>
