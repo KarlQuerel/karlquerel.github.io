@@ -6,7 +6,7 @@
 		</div>
 
 		<!-- Social Buttons -->
-		<div class="share">
+		<!-- <div class="share">
 		<a href="mailto:karlquerel@gmail.com" target="_blank">
 			<i class="nes-icon gmail is-large"></i>
 		</a>
@@ -16,7 +16,7 @@
 		<a href="https://www.linkedin.com/in/karlquerel" target="_blank">
 			<i class="nes-icon linkedin is-large"></i>
 		</a>
-		</div>
+		</div> -->
 
 		<!-- Clicker Button -->
 		<ClickCounter />
@@ -45,5 +45,6 @@ export default {
 	background-color: #000000;
 	border: 0.3vh dashed #00ff00;
 	border-radius: 20px;
+	margin-bottom: 10rem;
 }
 </style>

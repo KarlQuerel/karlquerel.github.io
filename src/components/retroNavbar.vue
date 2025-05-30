@@ -12,23 +12,26 @@
 			</router-link>
 		  </li>
 		  <li>
-			<router-link to="/invalidroute" class="glitch-button" data-text="ERROR">
-			  <span>.</span>
-			</router-link>
-		  </li>
-		  <li>
 			<router-link to="/secret_link" class="glitch-button" data-text="LOG IN">
 			  <span>LOG IN</span>
 			</router-link>
 		  </li>
+		  <div class="share">
+		<a href="mailto:karlquerel@gmail.com" target="_blank">
+			<i class="nes-icon gmail is-medium"></i>
+		</a>
+		<a href="https://github.com/KarlQuerel" target="_blank">
+			<i class="nes-icon github is-medium"></i>
+		</a>
+		<a href="https://www.linkedin.com/in/karlquerel" target="_blank">
+			<i class="nes-icon linkedin is-medium"></i>
+		</a>
+		</div>
 		</ul>
 	  </div>
 	</nav>
   </template>
   
-  <script setup>
-  // No script logic needed for now
-  </script>
   
   <style lang="scss" scoped>
   .navbar
@@ -52,11 +55,12 @@
 .navbar-container {
 	max-width: 100%;
 	margin: 0 auto;
-	padding: 0 1rem;
 	height: 100%;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+	gap: 15rem;
 }
 
 .logo {
@@ -76,22 +80,28 @@
 	}
 
 	.default-img {
-	  position: relative;
+		position: relative;
+		border-radius: 15%;
+
 
 	}
 
 	.glitch-img {
-	  opacity: 0;
-	  filter: hue-rotate(70deg);
-	  animation: glitch 1s infinite;
+		opacity: 0;
+		border-radius: 15%;
+		animation: glitch 2s infinite;
 
 	}
 
 	&:hover {
-	  .glitch-img {
-		opacity: 0.8;
-	  }
-	}
+    .default-img {
+      opacity: 0;
+    }
+
+    .glitch-img {
+      opacity: 1;
+    }
+  }
 }
 
 .nav-links {
@@ -99,7 +109,7 @@
 	padding: 0;
 	margin: 0;
 	display: flex;
-	gap: 5rem;
+	gap: 10rem;
 	align-items: center;
 
 
@@ -108,73 +118,12 @@
 		color: white;
 		text-decoration: none;
 		transition: all 0.2s ease;
-		// padding: 1rem 2rem;
-		padding: 1.5rem 2rem;
 		position: relative;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		min-width: 150px;
+		min-width: 50px;
 		min-height: 50px;
-
-		&.router-link-exact-active {
-		  color: #fff;
-		  border-color: var(--base-green);
-		  background: rgba(0, 255, 0, 0.15);
-		}
-
-		&[data-text="HOME"] {
-		  position: relative;
-		  overflow: hidden;
-		  border: 2px solid transparent;
-		  transition: all 0.3s ease;
-
-		  &::before,
-		  &::after {
-			content: '';
-			position: absolute;
-			top: 0;
-			width: 100%;
-			height: 100%;
-			background: repeating-linear-gradient(
-			  90deg,
-			  transparent,
-			  transparent 2px,
-			  #00ff00 2px,
-			  #00ff00 4px
-			);
-			opacity: 0;
-			transition: all 0.3s ease;
-			pointer-events: none;
-		  }
-
-		  &::before {
-			left: -100%;
-		  }
-
-		  &::after {
-			right: -100%;
-		  }
-
-		  &:hover {
-			transform: scale(1.05);
-			border-color: #00ff00;
-			box-shadow: 0 0 5px #00ff00, inset 0 0 5px #00ff00;
-			text-shadow: 0 0 5px #00ff00;
-
-			&::before {
-			  left: 0;
-			  opacity: 0.2;
-			  animation: pixelScan 1s linear infinite;
-			}
-
-			&::after {
-			  right: 0;
-			  opacity: 0.2;
-			  animation: pixelScan 1s linear infinite reverse;
-			}
-		  }
-		}
 	  }
 
 	  // Glitch Effect for Secret
@@ -200,13 +149,13 @@
 
 		&::before {
 		  left: 2px;
-		  text-shadow: -10px 0 #00ff00;
+		  text-shadow: -5px 0 #fffb00;
 		  animation: glitch-1 2s infinite linear alternate-reverse;
 		}
 
 		&::after {
 		  left: -2px;
-		  text-shadow: 10px 0 #0ff;
+		  text-shadow: 5px 0 rgb(255, 0, 0);
 		  animation: glitch-2 3s infinite linear alternate-reverse;
 		}
 
@@ -270,24 +219,28 @@
 
 @keyframes glitch {
   0% {
-    transform: translate(0);
+    transform: translate(0) scale(1) rotate(0deg);
   }
-  20% {
-    transform: translate(-2px, 2px);
+  15% {
+    transform: translate(-3px, 3px) scale(1.02) rotate(-1deg);
   }
-  40% {
-    transform: translate(-2px, -2px);
+  30% {
+    transform: translate(3px, -3px) scale(0.98) rotate(1deg);
+  }
+  45% {
+    transform: translate(-2px, -2px) scale(1.01) rotate(-2deg);
   }
   60% {
-    transform: translate(2px, 2px);
+    transform: translate(2px, 2px) scale(1.03) rotate(2deg);
   }
-  80% {
-    transform: translate(2px, -2px);
+  75% {
+    transform: translate(-1px, 1px) scale(0.99) rotate(-1deg);
   }
   100% {
-    transform: translate(0);
+    transform: translate(0) scale(1) rotate(0deg);
   }
 }
+
 
 @keyframes pixelScan {
   0% {
