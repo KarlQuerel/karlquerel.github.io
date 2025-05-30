@@ -18,7 +18,7 @@ const matrixChars = [
 tsParticles.load("particles-js", {
 	particles: {
 		number: {
-			value: 750,
+			value: 350,
 			density: {
 				enable: true,
 				value_area: 800
