@@ -5,19 +5,6 @@
 			<p> </p>
 		</div>
 
-		<!-- Social Buttons -->
-		<!-- <div class="share">
-		<a href="mailto:karlquerel@gmail.com" target="_blank">
-			<i class="nes-icon gmail is-large"></i>
-		</a>
-		<a href="https://github.com/KarlQuerel" target="_blank">
-			<i class="nes-icon github is-large"></i>
-		</a>
-		<a href="https://www.linkedin.com/in/karlquerel" target="_blank">
-			<i class="nes-icon linkedin is-large"></i>
-		</a>
-		</div> -->
-
 		<!-- Clicker Button -->
 		<ClickCounter />
 	</div>
@@ -35,7 +22,9 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+
+
 .small-font {
   font-size: 1rem !important;
 }
@@ -43,7 +32,7 @@ export default {
 .nes-container.is-dark
 {
 	background-color: #000000;
-	border: 0.3vh dashed #00ff00;
+	border: 0.3vh dashed $retro-green;
 	border-radius: 20px;
 	margin-bottom: 10rem;
 }

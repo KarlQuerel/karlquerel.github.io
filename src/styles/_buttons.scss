@@ -4,7 +4,7 @@
 button {
 	padding: 10px 20px;
 	background-color: variables.$primary-color;
-	color: variables.$text-color;
+	color: variables.$white;
 	border: none;
 	cursor: pointer;
 	font-size: clamp(0.875rem, 1.5vw, variables.$font-size-medium);
@@ -16,8 +16,8 @@ button:hover {
 }
 	
 .btn-home {
-	border: 5px solid variables.$text-color;
-	background-color: variables.$background-color;
+	border: 5px solid variables.$white;
+	background-color: variables.$black;
 	position: relative;
 	display: flex;
 	align-items: center;
@@ -27,7 +27,7 @@ button:hover {
 	text-decoration: none;
 	text-align: center;
 	text-transform: uppercase;
-	color: variables.$text-color;
+	color: variables.$white;
 	transition: all 0.4s ease;
 	border-radius: 5px;
 	font-size: clamp(
@@ -40,7 +40,7 @@ button:hover {
 	
 .btn-home:hover {
 	border: 5px solid variables.$primary-color;
-	color: variables.$background-color;
+	color: variables.$black;
 	background: variables.$primary-color url('/assets/pixel_button_blue.png') no-repeat center center;
 	background-size: 220px;
 	animation: animate 0.5s steps(8) forwards;

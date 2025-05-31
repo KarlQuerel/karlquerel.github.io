@@ -5,8 +5,8 @@ body {
 	height: 100%;
 	margin: 0;
 	padding: 0;
-	background: variables.$background-color;
-	color: variables.$text-color;
+	background: variables.$black;
+	color: variables.$white;
 }
 
 
@@ -28,7 +28,7 @@ body {
 }
 
 p, h1 {
-color: variables.$text-color;
+color: variables.$white;
 text-align: center;
 font-size: clamp(
 	variables.$font-size-medium-min,
@@ -49,5 +49,5 @@ p
 	flex-direction: column;
 	height: 100vh;
 	text-align: center;
-	color: variables.$text-color;
+	color: variables.$white;
 }

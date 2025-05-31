@@ -111,7 +111,7 @@ breakWebsite() {
 </script>
 
 
-<style scoped>
+<style lang="scss" scoped>
 
 .not-found-wrapper {
 	position: relative;
@@ -175,7 +175,7 @@ breakWebsite() {
 .nes-balloon p {
 	margin: 0;
 	white-space: pre-wrap;
-	color: black;
+	color: $black;
 }
 
 .not-found-buttons {
@@ -198,14 +198,14 @@ breakWebsite() {
 }
 
 .is-success {
-	color: #000000;
+	color: $black;
 }
 .is-warning:hover {
-	color: #ffffff;
+	color: $white;
 }
 
 .is-error {
-	color: #ffffff;
+	color: $white;
 	width: 20vh;
 }
 

@@ -49,15 +49,15 @@ async mounted() {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .small-font {
   font-size: 1rem !important;
 }
 
 .nes-container.is-dark
 {
-	background-color: #000000;
-	border: 0.3vh dashed #00ff00;
+	background-color: $black;
+	border: 0.3vh dashed $retro-green;
 	border-radius: 20px;
 }
 </style>

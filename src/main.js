@@ -13,6 +13,7 @@ import './js/firebase-setup.js';
 /***	ROUTES		***/
 const routes = [
 	{ path: '/', component: UnderConstruction },
+	{ path: '/under_construction', component: UnderConstruction },
 	{ path: '/secret_link', component: SecretRedirect },
 	{ path: '/gametest', component: GameTest },
 	{ path: '/:pathMatch(.*)*', component: NotFound },
