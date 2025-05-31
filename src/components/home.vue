@@ -13,12 +13,12 @@
       <div class="terminal-body" ref="terminalBody" @click="focusInput">
         <div class="terminal-line">
           <span class="prompt">></span>
-          <span class="welcome-text">Welcome to my website !</span>
+          <span class="welcome-text">Welcome to my website!</span>
         </div>
         
         <div class="terminal-line">
           <span class="prompt">></span>
-          <span class="help-text">Type 'help' for available commands or just type anything!</span>
+          <span class="help-text">Type 'help' for available commands or just type anything</span>
         </div>
         
         <div v-for="(line, index) in terminalHistory" :key="index" class="terminal-line">
