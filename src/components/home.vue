@@ -23,7 +23,8 @@
         
         <div v-for="(line, index) in terminalHistory" :key="index" class="terminal-line">
           <span v-if="line.type === 'command'" class="prompt">></span>
-          <span v-if="!line.link && !line.image" :class="line.type">{{ line.content }}</span>
+          <span v-if="!line.link && !line.image && !line.html" :class="line.type">{{ line.content }}</span>
+          <span v-else-if="line.html" :class="line.type" v-html="line.content"></span>
           <span v-else-if="line.link" :class="line.type">
             {{ line.prefix }}
             <a :href="line.link" target="_blank" class="terminal-link">{{ line.linkText }}</a>
@@ -33,15 +34,13 @@
           </div>
         </div>
         
-        <div class="terminal-line current-line">
+        <div v-if="!isExecutingScript" class="terminal-line current-line">
           <span class="prompt">></span>
           <div class="input-container">
             <input 
               ref="terminalInput"
               v-model="currentInput"
-              @keydown.enter="executeCommand"
-              @keydown.up="navigateHistory(-1)"
-              @keydown.down="navigateHistory(1)"
+              @keydown="handleKeyDown"
               class="terminal-input"
               autocomplete="off"
               spellcheck="false"
@@ -56,7 +55,9 @@
 
 <script setup>
 import { ref, onMounted, nextTick, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const terminalBody = ref(null);
 const terminalInput = ref(null);
 const currentInput = ref('');
@@ -64,6 +65,14 @@ const terminalHistory = ref([]);
 const commandHistory = ref([]);
 const historyIndex = ref(-1);
 const isShaking = ref(false);
+const isExecutingScript = ref(false);
+
+// Tab completion state
+const tabMatches = ref([]);
+const tabIndex = ref(-1);
+const lastTabInput = ref('');
+const isTabbing = ref(false);
+const originalTabPattern = ref('');
 
 watch(currentInput, (newValue) => {
   nextTick(() => {
@@ -74,30 +83,29 @@ watch(currentInput, (newValue) => {
   });
 });
 // HERE - commands
+// pro
 const commands = {
   help: () => [
-    { type: 'output', content: '(Some of the) Available commands:' },
     { type: 'output', content: '  help     - Show this help message' },
-    { type: 'output', content: '  about    - Learn about Karl' },
+    { type: 'output', content: '  about    - Learn more about me' },
     { type: 'output', content: '  contact  - Get contact information' },
     { type: 'output', content: '  clear    - Clear the terminal' },
+    { type: 'output', content: '  ls       - List files' },
+    { type: 'output', content: '  cat      - View file contents' },
     { type: 'output', content: '  yako     - Just a happy dog' },
     { type: 'output', content: '' },
+    { type: 'output', html: true, content: '-> Not <span class="text-yellow">ALL</span> commands are listed here...' },
+    { type: 'output', html: true, content: '-> You can use <span class="text-purple">TAB</span> to complete commands and cycle through options' },
   ],
   
-  about: () => [
-    { type: 'output', content: '🧑‍💻 Karl Querel - Student at 42 Paris' },
-    { type: 'output', content: '' },
-    { type: 'output', content: 'Passionate software developer currently studying at 42 Paris.' },
-    { type: 'output', content: 'Building creative projects and learning new technologies every day.' },
-    { type: 'output', content: 'Welcome to my digital playground!' }
-  ],
-  
+about: () => [
+  { type: 'output', html: true, content: '• Former <span class="text-yellow">commodity broker</span> with 5 years of experience' },
+  { type: 'output', html: true, content: '• Transitioned into <span class="text-green">software development</span>' },
+  { type: 'output', html: true, content: '• Currently studying at <span class="text-blue">42 Paris</span>' },
+  { type: 'output', html: true, content: '• Passionate about building creative projects and learning new technologies' },
+],
 
-  
   contact: () => [
-    { type: 'output', content: '📫 Contact Information:' },
-    { type: 'output', content: '' },
     { 
       type: 'output', 
       prefix: '• Email:    ',
@@ -118,13 +126,50 @@ const commands = {
     },
     { type: 'output', content: '-> You can also click on the buttons in the navigation bar' }
   ],
+  // shell
+  pwd: () => [
+    { type: 'output', html: true, content: '<span class="text-blue">/home/karl/portfolio/definitely-not-a-simulation</span>' }
+  ],
+  ls: () => [
+    { type: 'output', html: true, content: '<span class="text-blue">why_i_left_finance.txt</span>' },
+    { type: 'output', html: true, content: '<span class="text-green">free_bitcoin.sh</span>' },
+    { type: 'output', html: true, content: '<span class="text-red">i_am_not_a_virus.exe</span>' }
+  ],
+  'sudo rm -rf': () => [
+    { type: 'output', content: 'Nice try.' },
+  ],
   
+  cat: (args) => {
+    const file = args.trim();
+    
+    switch (file) {
+      case 'why_i_left_finance.txt':
+        return [
+    { type: 'output', html: true, content: 'After 5 years in finance, I realized I wanted to <span class="text-green">create</span>, not just calculate.' },
+    { type: 'output', html: true, content: 'Software felt like the <span class="text-green">right place</span> to start building something meaningful.' },
+  ];
+  case 'free_bitcoin.sh':
+    return [
+      { type: 'output', html: true, content: '<span class="text-yellow">₿</span>' }
+    ];
+    case 'i_am_not_a_virus.exe':
+      return [
+        { type: 'output', html: true, content: 'No worries, I am <span class="text-green">harmless</span>.' },
+      ];
+  default:
+      return [{ type: 'output', content: `cat: ${file}: No such file or directory` }];
+    }
+  },
+  clear: () => {
+    terminalHistory.value = [];
+    return [];
+  },
   
-  // HERE - pour le fun
+  //fun
   alban: () => [
     { type: 'output', content: 'On est là, tu connais' }
   ],
-
+  
   jess: () => [
     { type: 'output', content: 'Joyeux anniversaire Jess' }
   ],
@@ -132,7 +177,9 @@ const commands = {
   roberto: () => [
     { type: 'output', content: 'I told you Roberto, I told you' }
   ],
-
+  clément: () => [
+    { type: 'output', content: 'Parce qu\'après le bidouuuuuu...' }
+  ],
   yako: () => [
     { 
       type: 'output', 
@@ -141,10 +188,123 @@ const commands = {
       animated: true
     }
   ],
+  
 
-  clear: () => {
-    terminalHistory.value = [];
-    return [];
+};
+
+// Available files for tab completion
+const availableFiles = [
+  'why_i_left_finance.txt',
+  'free_bitcoin.sh',
+  'i_am_not_a_virus.exe'
+];
+
+// Executable scripts
+const executableScripts = {
+  'free_bitcoin.sh': () => [
+    { type: 'output', html: true, content: 'You\'ve just mined a <span class="text-green">motivational quote</span> instead of <span class="text-yellow">BTC</span>!' },
+    { type: 'output', html: true, content: '"You miss 100% of the commands you don\'t type."' }
+  ]
+};
+
+// Tab completion handler
+const handleTabCompletion = () => {
+  const input = currentInput.value;
+  const parts = input.split(' ');
+  const command = parts[0];
+  const currentArg = parts.length > 1 ? parts[parts.length - 1] : '';
+  
+  // If we're not currently in a tab session, start a new one
+  if (!isTabbing.value) {
+    isTabbing.value = true;
+    tabMatches.value = [];
+    tabIndex.value = -1;
+    
+    if (parts.length === 1) {
+      if (command.startsWith('./')) {
+        // Complete script names for execution
+        const scriptName = command.substring(2); // Remove './'
+        originalTabPattern.value = scriptName;
+        
+        // Get available scripts (including special ones)
+        const scriptNames = [...Object.keys(executableScripts), 'i_am_not_a_virus.exe'];
+        
+        tabMatches.value = scriptNames
+          .filter(script => script.toLowerCase().startsWith(scriptName.toLowerCase()))
+          .map(script => './' + script) // Keep full filename with extension
+          .sort();
+      } else {
+        // Complete command names
+        originalTabPattern.value = command;
+        const commandNames = Object.keys(commands);
+        tabMatches.value = commandNames.filter(cmd => 
+          cmd.toLowerCase().startsWith(command.toLowerCase())
+        ).sort();
+      }
+    } else if (command.toLowerCase() === 'cat' && parts.length === 2) {
+      // Complete file names for cat command
+      originalTabPattern.value = currentArg;
+      tabMatches.value = availableFiles.filter(file => 
+        file.toLowerCase().startsWith(currentArg.toLowerCase())
+      ).sort();
+    }
+  }
+  
+  // Cycle through matches
+  if (tabMatches.value.length > 0) {
+    tabIndex.value = (tabIndex.value + 1) % tabMatches.value.length;
+    
+    if (parts.length === 1) {
+      // Replace command
+      currentInput.value = tabMatches.value[tabIndex.value];
+    } else if (command.toLowerCase() === 'cat') {
+      // Replace filename
+      parts[parts.length - 1] = tabMatches.value[tabIndex.value];
+      currentInput.value = parts.join(' ');
+    }
+    
+    // Update cursor position
+    nextTick(() => {
+      if (terminalInput.value) {
+        const cursorPosition = currentInput.value.length;
+        document.documentElement.style.setProperty('--cursor-position', cursorPosition.toString());
+      }
+    });
+  }
+};
+
+// Handle key events
+const handleKeyDown = (event) => {
+  if (event.key === 'Tab') {
+    event.preventDefault();
+    handleTabCompletion();
+  } else if (event.key === 'Enter') {
+    executeCommand();
+    // Reset tab state
+    isTabbing.value = false;
+    tabMatches.value = [];
+    tabIndex.value = -1;
+    originalTabPattern.value = '';
+  } else if (event.key === 'ArrowUp') {
+    navigateHistory(-1);
+    // Reset tab state
+    isTabbing.value = false;
+    tabMatches.value = [];
+    tabIndex.value = -1;
+    originalTabPattern.value = '';
+  } else if (event.key === 'ArrowDown') {
+    navigateHistory(1);
+    // Reset tab state
+    isTabbing.value = false;
+    tabMatches.value = [];
+    tabIndex.value = -1;
+    originalTabPattern.value = '';
+  } else {
+    // Reset tab completion on any other key
+    isTabbing.value = false;
+    tabMatches.value = [];
+    tabIndex.value = -1;
+    originalTabPattern.value = '';
   }
 };
 
@@ -157,10 +317,69 @@ const executeCommand = () => {
   commandHistory.value.unshift(input);
   historyIndex.value = -1;
   
-  // Execute command
-  const command = input.toLowerCase();
-  if (commands[command]) {
-    const output = commands[command]();
+  // Parse command and arguments
+  const parts = input.split(' ');
+  const command = parts[0].toLowerCase();
+  const args = parts.slice(1).join(' ');
+  
+  // Check if it's a script execution
+  if (command.startsWith('./')) {
+    const scriptName = command.substring(2); 
+    
+    // Try to find the script with exact name first
+    let targetScript = null;
+    
+    // Check if it's an exact match (with extension)
+    if (executableScripts[scriptName] || scriptName === 'i_am_not_a_virus.exe') {
+      targetScript = scriptName;
+    } else {
+      // Try to find by adding common extensions
+      const possibleNames = [
+        scriptName + '.sh',
+        scriptName + '.exe',
+        scriptName
+      ];
+      
+      for (const name of possibleNames) {
+        if (executableScripts[name] || name === 'i_am_not_a_virus.exe') {
+          targetScript = name;
+          break;
+        }
+      }
+    }
+    
+    if (targetScript) {
+      // Special handling for the virus script - navigate to new route
+      if (targetScript === 'i_am_not_a_virus.exe') {
+        simulateVirusExecution(targetScript);
+      } else if (executableScripts[targetScript]) {
+        simulateScriptExecution(targetScript, executableScripts[targetScript]);
+      } else {
+        terminalHistory.value.push({ 
+          type: 'output', 
+          content: `bash: ${command}: No such file or directory` 
+        });
+      }
+    } else {
+      terminalHistory.value.push({ 
+        type: 'output', 
+        content: `bash: ${command}: No such file or directory` 
+      });
+    }
+  }
+  // Execute regular commands
+  else if (commands[command]) {
+    let output;
+    
+    // Special handling for commands that need arguments
+    if (command === 'cat' && typeof commands[command] === 'function') {
+      output = commands[command](args);
+    } else if (typeof commands[command] === 'function') {
+      output = commands[command]();
+    } else {
+      output = commands[command];
+    }
+    
     if (Array.isArray(output)) {
       terminalHistory.value.push(...output);
     }
@@ -173,16 +392,39 @@ const executeCommand = () => {
     
     // Custom response for unknown commands
     const responses = [
-	  `"I have no idea what you mean by "${input}", ask Karl to code me better!`,
-	  `I do not know "${input}", did you try asking ChatGPT?`,
-	`"${input}" is not a command. But I admire the chaos.`,
-	`Premium command "${input}" requires a blood sacrifice or valid credit card.`,
-	`"${input}" triggered my imposter syndrome.`,
-	`I'm 98% sure "${input}" was made up.`,
-
+      {
+        type: 'output',
+        html: true,
+        content: `"I have no idea what you mean by "<span class="text-red">${input}</span>", ask Karl to code me better!`
+      },
+      {
+        type: 'output', 
+        html: true,
+        content: `I do not know "<span class="text-red">${input}</span>", did you try asking <span class="text-blue">ChatGPT</span>?`
+      },
+      {
+        type: 'output',
+        html: true, 
+        content: `"<span class="text-red">${input}</span>" is not a command. But I admire the <span class="text-purple">chaos</span>.`
+      },
+      {
+        type: 'output',
+        html: true,
+        content: `Premium command "<span class="text-red">${input}</span>" requires a <span class="text-red">blood sacrifice</span> or valid <span class="text-yellow">credit card</span>.`
+      },
+      {
+        type: 'output',
+        html: true,
+        content: `"<span class="text-red">${input}</span>" triggered my <span class="text-blue">imposter syndrome</span>.`
+      },
+      {
+        type: 'output',
+        html: true,
+        content: `I'm <span class="text-green">98%</span> sure "<span class="text-red">${input}</span>" was <span class="text-purple">made up</span>.`
+      }
     ];
     const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    terminalHistory.value.push({ type: 'output', content: randomResponse });
+    terminalHistory.value.push(randomResponse);
   }
   
   currentInput.value = '';
@@ -193,6 +435,123 @@ const executeCommand = () => {
       terminalBody.value.scrollTop = terminalBody.value.scrollHeight;
     }
   });
+};
+
+// Simulate script execution with loading dots
+const simulateScriptExecution = async (scriptName, scriptFunction) => {
+  // Set script execution state
+  isExecutingScript.value = true;
+  
+  // Add initial execution message
+  terminalHistory.value.push({ 
+    type: 'output', 
+    html: true, 
+    content: `Executing <span class="text-green">${scriptName}</span>` 
+  });
+  
+  // Add a line for the dots
+  const loadingLineIndex = terminalHistory.value.length;
+  terminalHistory.value.push({ type: 'output', content: '' });
+  
+  // Progressive dots animation
+  const dots = ['', '.', '..', '...'];
+  for (let i = 0; i < dots.length; i++) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    terminalHistory.value[loadingLineIndex] = { 
+      type: 'output', 
+      content: dots[i] 
+    };
+    
+    // Scroll to bottom during animation
+    nextTick(() => {
+      if (terminalBody.value) {
+        terminalBody.value.scrollTop = terminalBody.value.scrollHeight;
+      }
+    });
+  }
+  
+  // Wait a bit more before showing results
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  // Remove the loading line and add actual results
+  terminalHistory.value.splice(loadingLineIndex, 1);
+  const output = scriptFunction();
+  if (Array.isArray(output)) {
+    terminalHistory.value.push(...output);
+  }
+  
+  // Re-enable input and show prompt
+  isExecutingScript.value = false;
+  
+  // Clear input and reset cursor position
+  currentInput.value = '';
+  nextTick(() => {
+    document.documentElement.style.setProperty('--cursor-position', '0');
+  });
+  
+  // Final scroll to bottom and focus input
+  nextTick(() => {
+    if (terminalBody.value) {
+      terminalBody.value.scrollTop = terminalBody.value.scrollHeight;
+    }
+    // Refocus the input when script finishes
+    focusInput();
+  });
+};
+
+const simulateVirusExecution = async (scriptName) => {
+  // Set script execution state
+  isExecutingScript.value = true;
+  
+  // Add initial execution message
+  terminalHistory.value.push({ 
+    type: 'output', 
+    html: true, 
+    content: `Executing <span class="text-red">${scriptName}</span>` 
+  });
+  
+  // Add a line for the dots
+  const loadingLineIndex = terminalHistory.value.length;
+  terminalHistory.value.push({ type: 'output', content: '' });
+  
+  // Progressive dots animation (faster for suspense)
+  const dots = ['', '.', '..', '...'];
+  for (let i = 0; i < dots.length; i++) {
+    await new Promise(resolve => setTimeout(resolve, 300)); // Faster than normal
+    terminalHistory.value[loadingLineIndex] = { 
+      type: 'output', 
+      content: dots[i] 
+    };
+    
+    // Scroll to bottom during animation
+    nextTick(() => {
+      if (terminalBody.value) {
+        terminalBody.value.scrollTop = terminalBody.value.scrollHeight;
+      }
+    });
+  }
+  
+  // Show "infection" messages quickly
+  await new Promise(resolve => setTimeout(resolve, 200));
+  terminalHistory.value.splice(loadingLineIndex, 1);
+  
+  terminalHistory.value.push({ 
+    type: 'output', 
+    html: true, 
+    content: '<span class="text-red">System compromised...</span>' 
+  });
+  
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  terminalHistory.value.push({ 
+    type: 'output', 
+    html: true, 
+    content: '<span class="text-red">Redirecting to secure location...</span>' 
+  });
+  
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  router.push('/under_construction');
 };
 
 const navigateHistory = (direction) => {
@@ -238,14 +597,17 @@ onMounted(() => {
   width: 100%;
   max-width: 1100px;
   height: 80vh;
-  background: $black;
+  background: rgba(4, 20, 0, 0.8);
   border: 3px dashed $retro-green;
   border-radius: 10px;
   box-shadow:
     0 0 100px $retro-green,
     inset 0 0 20px rgba(0, 255, 0, 0.1);
   overflow: hidden;
+  position: relative;
+  
 }
+
 
 .terminal-header {
   background: linear-gradient(90deg, #1a1a1a, #2a2a2a);
@@ -335,6 +697,36 @@ onMounted(() => {
   white-space: pre-wrap;
 }
 
+:deep(.text-green) {
+  color: $retro-green;
+  text-shadow: 0 0 3px currentColor;
+}
+
+:deep(.text-blue) {
+  color: $light-blue;
+  text-shadow: 0 0 3px currentColor;
+}
+
+:deep(.text-yellow) {
+  color: $yellow;
+  text-shadow: 0 0 3px currentColor;
+}
+
+:deep(.text-red) {
+  color: $light-red;
+  text-shadow: 0 0 3px currentColor;
+}
+
+:deep(.text-cyan) {
+  color: $light-blue;
+  text-shadow: 0 0 3px currentColor;
+}
+
+:deep(.text-purple) {
+  color: $purple;
+  text-shadow: 0 0 3px currentColor;
+}
+
 .terminal-link {
   color: $retro-green;
   text-decoration: none;
@@ -379,13 +771,14 @@ onMounted(() => {
   color: $retro-green;
   font-weight: bold;
   pointer-events: none;
-  animation: blink 1s infinite;
+  animation: blink 1.5s infinite;
   transform: translateX(calc(1ch * var(--cursor-position, 0)));
+  will-change: opacity;
 }
 
 @keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%, 60% { opacity: 1; }
+  61%, 100% { opacity: 0; }
 }
 
 @media (max-width: 768px) {
@@ -408,54 +801,23 @@ onMounted(() => {
 }
 
 .shake {
-  animation: glitch-shake 0.6s ease-in-out;
+  animation: glitch-shake 0.4s ease-in-out;
 }
 
 @keyframes glitch-shake {
   0%, 100% { 
-    transform: translate(0);
-
+    transform: translate3d(0, 0, 0);
+    box-shadow: 0 0 100px $retro-green, inset 0 0 20px rgba(0, 255, 0, 0.1);
   }
-  10% { 
-    transform: translate(-1px, 1px) rotate(0.2deg);
-
+  
+  25% { 
+    transform: translate3d(-2px, 2px, 0) rotate(0.3deg);
+    box-shadow: 0 0 100px $light-red, inset 0 0 20px rgba(255, 95, 86, 0.4);
   }
-  20% { 
-    transform: translate(1px, -1px) rotate(-0.2deg);
-
-  }
-  30% { 
-    transform: translate(-1px, 1px) rotate(0.2deg);
-    box-shadow: 0 0 100px $light-red, inset 0 0 20px rgba(255, 95, 86, 0.3);
-
-
-  }
-  40% { 
-    transform: translate(1px, -1px) rotate(-0.2deg);
-    box-shadow: 0 0 100px $light-red, inset 0 0 20px rgba(255, 95, 86, 0.3);
-
-  }
-  50% { 
-    transform: translate(-1px, 1px) rotate(0.2deg);
-
-    box-shadow: 0 0 100px $light-red, inset 0 0 20px rgba(255, 95, 86, 0.3);
-  }
-  60% { 
-    transform: translate(1px, -1px) rotate(-0.2deg);
-    box-shadow: 0 0 100px $light-red, inset 0 0 20px rgba(255, 95, 86, 0.3);
-  }
-  70% { 
-    transform: translate(-1px, 1px) rotate(0.2deg);
-    box-shadow: 0 0 100px $light-red, inset 0 0 20px rgba(255, 95, 86, 0.3);
-
-
-  }
-  80% { 
-    transform: translate(1px, -1px) rotate(-0.2deg);
-
-  }
-  90% { 
-    transform: translate(-1px, 1px) rotate(0.2deg);
+  
+  75% { 
+    transform: translate3d(2px, -2px, 0) rotate(-0.3deg);
+    box-shadow: 0 0 100px $light-red, inset 0 0 20px rgba(255, 95, 86, 0.4);
   }
 }
 
@@ -469,7 +831,6 @@ onMounted(() => {
     width: 100%;
     overflow: hidden;
     text-align: left;
-    margin: 2rem 0;
   }
 }
 
@@ -486,8 +847,8 @@ onMounted(() => {
     max-width: none;
     border: none;
     box-shadow: none;
-    animation: yakoBackAndForth 10s linear infinite;
-  
+    animation: yakoBackAndForth 20s linear infinite;
+    will-change: transform;
   }
 }
 
@@ -526,8 +887,6 @@ onMounted(() => {
     transform: translateY(-50%) rotateY(0deg);
   }
 }
-
-
 
 @media (max-width: 768px) {
   .terminal-image {
