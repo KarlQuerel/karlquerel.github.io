@@ -135,10 +135,6 @@ const commands = {
     { type: 'output', html: true, content: '<span class="text-green">free_bitcoin.sh</span>' },
     { type: 'output', html: true, content: '<span class="text-red">i_am_not_a_virus.exe</span>' }
   ],
-
-  'sudo rm -rf': () => [
-    { type: 'output', content: 'Nice try.' },
-  ],
   
   cat: (args) => {
     const file = args.trim();
