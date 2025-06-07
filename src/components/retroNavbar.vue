@@ -2,8 +2,8 @@
 	<nav class="navbar" :class="{ 'menu-active': isMenuOpen }">
 	  <div class="navbar-container">
 		<router-link to="/" class="logo" @click="closeMenu">
-  <img src="/assets/Yako_logo_128.png" class="default-img" alt="Logo" />
-  <img src="/assets/Yako_logo_128.png" class="glitch-img" alt="Logo Glitch" />
+  <img src="/assets/img/Yako_logo_128.png" class="default-img" alt="Logo" />
+  <img src="/assets/img/Yako_logo_128.png" class="glitch-img" alt="Logo Glitch" />
 </router-link>
 		<div class="menu-toggle" @click="toggleMenu">
 		  <div class="bar"></div>
@@ -11,16 +11,21 @@
 		  <div class="bar"></div>
 		</div>
 		<ul class="nav-links" :class="{ 'active': isMenuOpen }">
-		  <li>
-			<router-link to="/under_construction" class="glitch-button" data-text="COMING SOON" @click="closeMenu">
-			  <span>COMING<br>SOON</span>
-			</router-link>
-		  </li>
-		  <li>
-			<router-link to="/secret_link" class="glitch-button" data-text="LOG IN" @click="closeMenu">
-			  <span>LOG<br>IN</span>
-			</router-link>
-		  </li>
+			<li>
+				<router-link to="/gameTest" class="glitch-button" data-text="GAME" @click="closeMenu">
+					<span>GAME</span>
+				</router-link>
+			</li>
+			<li>
+				<router-link to="/under_construction" class="glitch-button" data-text="COMING SOON" @click="closeMenu">
+					<span>COMING<br>SOON</span>
+				</router-link>
+			</li>
+			<li>
+				<router-link to="/secret_link" class="glitch-button" data-text="LOG IN" @click="closeMenu">
+					<span>LOG<br>IN</span>
+				</router-link>
+			</li>
 		  <div class="share">
 			<a href="mailto:karlquerel@gmail.com" target="_blank">
 				<i class="nes-icon gmail is-medium"></i>

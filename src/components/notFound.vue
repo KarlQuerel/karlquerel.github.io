@@ -2,7 +2,7 @@
 	<div class="not-found-wrapper">
 		<div class="character-bubble-group">
 			<div class="character-container">
-				<img src="/assets/pagenotfound.gif" alt="custom character" />
+				<img src="/assets/img/pagenotfound.gif" alt="custom character" />
 			</div>
 			<div class="message-bubbles">
 				<div class="nes-balloon from-left is-dark">

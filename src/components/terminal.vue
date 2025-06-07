@@ -181,7 +181,7 @@ const commands = {
   yako: () => [
     { 
       type: 'output', 
-      image: '/assets/yako-running.gif',
+      image: '/assets/img/yako-running.gif',
       animated: true
     }
   ],

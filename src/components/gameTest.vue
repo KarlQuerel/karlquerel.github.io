@@ -1,99 +1,158 @@
 <template>
-	<div class="character-creator p-4 max-w-xl mx-auto">
-	  <h1 class="text-2xl font-bold mb-4">🧙 Character Creation</h1>
-  
-	  <div class="mb-3">
-		<label class="block font-semibold mb-1">Name</label>
-		<input v-model="name" class="border p-2 w-full rounded" />
-	  </div>
-  
-	  <div class="mb-3">
-		<label class="block font-semibold mb-1">Race</label>
-		<select v-model="race" class="border p-2 w-full rounded">
-		  <option disabled value="">Select a race</option>
-		  <option>Human</option>
-		  <option>Elf</option>
-		  <option>Dwarf</option>
-		</select>
-	  </div>
-  
-	  <div class="mb-3">
-		<label class="block font-semibold mb-1">Class</label>
-		<select v-model="charClass" class="border p-2 w-full rounded">
-		  <option disabled value="">Select a class</option>
-		  <option>Fighter</option>
-		  <option>Wizard</option>
-		  <option>Rogue</option>
-		</select>
-	  </div>
-  
-	  <div class="mb-3">
-		<button @click="generateStats" class="bg-blue-600 text-white px-4 py-2 rounded">
-		  🎲 Generate Ability Scores
-		</button>
-	  </div>
-  
-	  <div v-if="Object.keys(stats).length" class="mb-4">
-		<h2 class="font-bold mb-2">Ability Scores</h2>
-		<ul>
-		  <li v-for="(val, key) in stats" :key="key">{{ key }}: {{ val }}</li>
-		</ul>
-	  </div>
-  
-	  <div>
-		<button @click="submit" class="bg-green-600 text-white px-4 py-2 rounded" :disabled="!canSubmit">
-		  ✅ Create Character
-		</button>
-	  </div>
-  
-	  <div v-if="characterCreated" class="mt-6 p-4 border rounded bg-green-100">
-		<h2 class="font-bold mb-2">Character Created!</h2>
-		<p><strong>Name:</strong> {{ name }}</p>
-		<p><strong>Race:</strong> {{ race }}</p>
-		<p><strong>Class:</strong> {{ charClass }}</p>
-		<ul>
-		  <li v-for="(val, key) in stats" :key="key">{{ key }}: {{ val }}</li>
-		</ul>
-	  </div>
+	<div class="game-container">
+		<div class="game-content">
+			<h1 class="pixel-title">The Last Steward</h1>
+			<div class="menu-buttons">
+				<!-- <button class="pixel-button">START GAME</button>
+				<button class="pixel-button">OPTIONS</button>
+				<button class="pixel-button">CREDITS</button> -->
+			</div>
+		</div>
+		<audio ref="bgMusic" loop>
+			<source src="/assets/music/menu.mp3" type="audio/mpeg">
+		</audio>
 	</div>
-  </template>
-  
-  <script setup>
-  import { reactive, ref, computed } from 'vue';
-  
-  const name = ref('');
-  const race = ref('');
-  const charClass = ref('');
-  const stats = reactive({});
-  
-  const abilityNames = ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'];
-  
-  function rollStat() {
-	// D&D-style: roll 4d6 and drop the lowest
-	const rolls = Array.from({ length: 4 }, () => Math.floor(Math.random() * 6) + 1);
-	rolls.sort((a, b) => a - b);
-	return rolls.slice(1).reduce((sum, val) => sum + val, 0);
-  }
-  
-  function generateStats() {
-	for (const ability of abilityNames) {
-	  stats[ability] = rollStat();
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue';
+
+const bgMusic = ref(null);
+
+onMounted(() => {
+	// Start playing when component is mounted
+	if (bgMusic.value) {
+		bgMusic.value.volume = 1; // Set initial volume to 50%
+		bgMusic.value.play().catch(error => {
+			console.log('Audio playback failed:', error);
+		});
 	}
-  }
-  
-  const canSubmit = computed(() => {
-	return name.value && race.value && charClass.value && Object.keys(stats).length;
-  });
-  
-  const characterCreated = ref(false);
-  function submit() {
-	characterCreated.value = true;
-  }
-  </script>
-  
-  <style scoped>
-  label {
-	display: block;
-  }
-  </style>
+});
+
+onUnmounted(() => {
+	if (bgMusic.value) {
+		bgMusic.value.pause();
+		bgMusic.value.currentTime = 0;
+	}
+});
+</script>
+
+<style lang="scss" scoped>
+.game-container {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 95vw;
+	height: 95vh;
+	background: $black;
+	background-image: url('/assets/img/menu.png');
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 1000;
+	border: 3px dashed $retro-green;
+	border-radius: 10px;
+	box-shadow:
+		0 0 100px $retro-green,
+		inset 0 0 20px rgba(0, 255, 0, 0.1);
+	margin: 5vh;
+}
+
+.game-content {
+	text-align: center;
+}
+
+.pixel-title {
+	font-size: 4rem;
+	color: $yellow;
+	margin-bottom: 30rem;
+	opacity: 0;
+	animation: fadeIn 10s ease-in forwards;
+	letter-spacing: 25px;
+	text-transform: uppercase;
+	background-color: rgba(0, 0, 0, 0.8);
+	// padding: 1rem;
+	border-radius: 10px;
+	// box-shadow: 0 0 10px $retro-green;
+}
+
+.menu-buttons {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	opacity: 0;
+	animation: fadeIn 1s ease-in forwards 1s;
+}
+
+.pixel-button {
+	font-size: 1.5rem;
+	color: $retro-green;
+	background: transparent;
+	border: 2px solid $retro-green;
+	padding: 0.5rem 2rem;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	text-transform: uppercase;
+	letter-spacing: 2px;
+	position: relative;
+	overflow: hidden;
+
+	&::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(
+			90deg,
+			transparent,
+			rgba(0, 255, 0, 0.2),
+			transparent
+		);
+		transition: 0.5s;
+	}
+
+	&:hover {
+		background: rgba(0, 255, 0, 0.1);
+		text-shadow: 0 0 10px $retro-green;
+		box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+
+		&::before {
+			left: 100%;
+		}
+	}
+
+	&:active {
+		transform: scale(0.95);
+	}
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(600px);
+		scale: 0.5;
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@media (max-width: 768px) {
+	.pixel-title {
+		font-size: 2.5rem;
+	}
+
+	.pixel-button {
+		font-size: 1.2rem;
+		padding: 0.4rem 1.5rem;
+	}
+}
+</style>
   

@@ -41,7 +41,7 @@ button:hover {
 .btn-home:hover {
 	border: 5px solid variables.$primary-color;
 	color: variables.$black;
-	background: variables.$primary-color url('/assets/pixel_button_blue.png') no-repeat center center;
+	background: variables.$primary-color url('/assets/img/pixel_button_blue.png') no-repeat center center;
 	background-size: 220px;
 	animation: animate 0.5s steps(8) forwards;
 	transition: background-color 1s;
