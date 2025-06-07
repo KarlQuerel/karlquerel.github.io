@@ -13,12 +13,12 @@
 		<ul class="nav-links" :class="{ 'active': isMenuOpen }">
 		  <li>
 			<router-link to="/under_construction" class="glitch-button" data-text="COMING SOON" @click="closeMenu">
-			  <span>COMING SOON</span>
+			  <span>COMING<br>SOON</span>
 			</router-link>
 		  </li>
 		  <li>
 			<router-link to="/secret_link" class="glitch-button" data-text="LOG IN" @click="closeMenu">
-			  <span>LOG IN</span>
+			  <span>LOG<br>IN</span>
 			</router-link>
 		  </li>
 		  <div class="share">
@@ -134,7 +134,7 @@ const closeMenu = () => {
 	padding: 0;
 	margin: 0;
 	display: flex;
-	gap: 5rem;
+	gap: 3rem;
 	align-items: center;
 
 
@@ -332,7 +332,7 @@ const closeMenu = () => {
 	}
 
 	.nav-links {
-		gap: 5rem;
+		gap: 2rem;
 	}
 }
 

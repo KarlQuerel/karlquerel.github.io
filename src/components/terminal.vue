@@ -44,7 +44,7 @@
             autocomplete="off"
             spellcheck="false"
           >
-          <span class="custom-cursor">_</span>
+          <span class="custom-cursor" :style="{ transform: `translateX(calc(1ch * ${cursorPosition}))` }">_</span>
         </div>
       </div>
     </div>
@@ -68,17 +68,15 @@ const isExecutingScript = ref(false);
 // Tab completion state
 const tabMatches = ref([]);
 const tabIndex = ref(-1);
-const lastTabInput = ref('');
 const isTabbing = ref(false);
 const originalTabPattern = ref('');
 
+// Add cursor position ref
+const cursorPosition = ref(0);
+
+// Watch currentInput to update cursor position
 watch(currentInput, (newValue) => {
-  nextTick(() => {
-    if (terminalInput.value) {
-      const cursorPosition = newValue.length;
-      document.documentElement.style.setProperty('--cursor-position', cursorPosition.toString());
-    }
-  });
+  cursorPosition.value = newValue.length;
 });
 
 // Commands
@@ -499,9 +497,30 @@ const simulateVirusExecution = async (scriptName) => {
     html: true, 
     content: '<span class="text-red">Redirecting to secure location...</span>' 
   });
-  
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
+
+  // Add a delay before redirecting
+  await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5 second delay
+
+  // Add a loading animation
+  const loadingDots = ['.', '..', '...'];
+  for (let i = 0; i < 3; i++) {
+    terminalHistory.value.push({ 
+      type: 'output', 
+      html: true, 
+      content: `<span class="text-red">${loadingDots[i]}</span>` 
+    });
+    await new Promise(resolve => setTimeout(resolve, 500)); // 0.5 second between dots
+  }
+
+  // Final redirect message
+  terminalHistory.value.push({ 
+    type: 'output', 
+    html: true, 
+    content: '<span class="text-red">Access granted. Redirecting...</span>' 
+  });
+
+  await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second final delay
+
   router.push('/under_construction');
 };
 
@@ -528,7 +547,9 @@ const focusInput = () => {
   }
 };
 
+// Update cursor position on mount
 onMounted(() => {
+  cursorPosition.value = currentInput.value.length;
   focusInput();
 });
 </script>
@@ -712,7 +733,7 @@ onMounted(() => {
   pointer-events: none;
   animation: blink 1.5s infinite;
   transform: translateX(calc(1ch * var(--cursor-position, 0)));
-  will-change: opacity;
+  will-change: transform;
 }
 
 @keyframes blink {
@@ -721,22 +742,22 @@ onMounted(() => {
 }
 
 .shake {
-  animation: glitch-shake 0.4s ease-in-out;
+  animation: glitch-shake 0.3s ease-in-out;
 }
 
 @keyframes glitch-shake {
   0%, 100% { 
-    transform: translate3d(0, 0, 0);
+    transform: translateX(0);
     box-shadow: 0 0 100px $retro-green, inset 0 0 20px rgba(0, 255, 0, 0.1);
   }
   
   25% { 
-    transform: translate3d(-2px, 2px, 0) rotate(0.3deg);
+    transform: translateX(-4px);
     box-shadow: 0 0 100px $light-red, inset 0 0 20px rgba(255, 95, 86, 0.4);
   }
   
   75% { 
-    transform: translate3d(2px, -2px, 0) rotate(-0.3deg);
+    transform: translateX(4px);
     box-shadow: 0 0 100px $light-red, inset 0 0 20px rgba(255, 95, 86, 0.4);
   }
 }
@@ -821,20 +842,40 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .terminal-window {
-    width: 95%;
+    width: 100%;
     height: 85vh;
+  }
+
+  .welcome-text, .help-text, .terminal-input, .output, .command {
+    font-size: 0.8rem;
   }
   
   .terminal-body {
-    font-size: 0.7rem;
+    font-size: 0.5rem;
+    padding: 0.5rem;
   }
   
   .terminal-title {
-    font-size: 0.6rem;
+    font-size: 0.5rem;
   }
   
+  .terminal-line {
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+  }
+  
+  .prompt {
+    font-size: 0.8rem;
+    margin-right: 0.25rem;
+  }
+  
+    
   .terminal-image {
     max-height: 200px;
+    
+    &.running-yako {
+      animation: yakoBackAndForth 10s linear infinite;
+    }
   }
 }
 </style> 
