@@ -160,6 +160,34 @@ const commands = {
     terminalHistory.value = [];
     return [];
   },
+
+  game: () => {
+    router.push('/game');
+  },
+
+  secret_game: async () => {
+    isExecutingScript.value = true;
+    terminalHistory.value.push({ 
+      type: 'output', 
+      html: true, 
+      content: 'Launching secret game' 
+    });
+    
+    const loadingLineIndex = terminalHistory.value.length;
+    terminalHistory.value.push({ type: 'output', content: '' });
+    
+    const dots = ['', '.', '..', '...', '....'];
+    for (let i = 0; i < dots.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      terminalHistory.value[loadingLineIndex] = { 
+        type: 'output', 
+        content: dots[i] 
+      };
+    }
+    window.open('https://scratch.mit.edu/projects/656157225/', '_blank');
+    terminalHistory.value.splice(loadingLineIndex, 1);
+    isExecutingScript.value = false;
+  },
   
   // Fun commands
   alban: () => [

@@ -12,18 +12,13 @@
 		</div>
 		<ul class="nav-links" :class="{ 'active': isMenuOpen }">
 			<li>
-				<router-link to="/gameTest" class="glitch-button" data-text="GAME" @click="closeMenu">
+				<router-link to="/game" class="glitch-button" data-text="GAME" @click="closeMenu">
 					<span>GAME</span>
 				</router-link>
 			</li>
 			<li>
 				<router-link to="/under_construction" class="glitch-button" data-text="COMING SOON" @click="closeMenu">
 					<span>COMING<br>SOON</span>
-				</router-link>
-			</li>
-			<li>
-				<router-link to="/secret_link" class="glitch-button" data-text="LOG IN" @click="closeMenu">
-					<span>LOG<br>IN</span>
 				</router-link>
 			</li>
 		  <div class="share">

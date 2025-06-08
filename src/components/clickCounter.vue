@@ -5,11 +5,11 @@
 		<div v-else>
 			<!-- NES Button inside the container -->
 			<div class="nes-container is-dark with-title is-centered is-rounded">
-				<p class="title">Waste your time!</p>
+				<p class="title">Waste your time</p>
 
 				<!-- Button for clicking -->
 				<button id="clicker" class="nes-btn is-normal small-font" @click="incrementCounter">
-					One click at a time
+					ONE CLICK AT A TIME
 				</button>
 
 				<!-- Display the counter -->
@@ -59,5 +59,6 @@ async mounted() {
 	background-color: $black;
 	border: 0.3vh dashed $retro-green;
 	border-radius: 20px;
+	text-transform: uppercase;
 }
 </style>

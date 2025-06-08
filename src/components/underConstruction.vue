@@ -35,5 +35,6 @@ export default {
 	border: 0.3vh dashed $retro-green;
 	border-radius: 20px;
 	margin-bottom: 10rem;
+	text-transform: uppercase;
 }
 </style>

@@ -22,8 +22,8 @@ button:hover {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 25vh;
-	height: 15vh;
+	width: 40vh;
+	height: 20vh;
 	text-decoration: none;
 	text-align: center;
 	text-transform: uppercase;
@@ -36,12 +36,13 @@ button:hover {
 		variables.$font-size-medium-max
 	);
 	z-index: variables.$z-index-button;
+	font-size: 1.5rem;
 }
 	
 .btn-home:hover {
-	border: 5px solid variables.$primary-color;
+	border: 5px solid variables.$retro-green;
 	color: variables.$black;
-	background: variables.$primary-color url('/assets/img/pixel_button_blue.png') no-repeat center center;
+	background: variables.$retro-green url('/assets/img/pixel_button_blue.png') no-repeat center center;
 	background-size: 220px;
 	animation: animate 0.5s steps(8) forwards;
 	transition: background-color 1s;
