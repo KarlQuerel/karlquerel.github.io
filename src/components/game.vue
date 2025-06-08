@@ -5,26 +5,23 @@
 			<p>Please use a  <span class="highlight">desktop computer</span> for the best experience</p>
 		</div>
 	</div>
-	<div v-else>
+	<div v-else style="overflow: hidden; height: 100vh;">
 		<div v-if="!showGame" class="pre-game-screen">
 			<div class="pre-game-content">
 				<h2 class="pre-game-title">For the best experience<br>turn on your <span class="highlight">sound</span> before starting</h2>
 				<button class="sound-button pixel-button" @click="startMenu">SOUND IS ON!</button>
-
 			</div>
 		</div>
-		<div v-else class="game-container">
-			<div class="menu-container">
+		<div v-else class="game-container" ref="gameContainer">
+			<div v-if="!showCinematics" class="menu-container">
 				<h1 class="pixel-title">The Last Steward</h1>
-				<p class="coming-soon">Coming soon</p>
-				<!-- HERE -->
-				<!-- <div class="menu-buttons">
+				<div class="menu-buttons">
 					<button class="pixel-button" @click="launchCinematics">Start Game</button>
 					<button class="pixel-button">Options</button>
-				</div> -->
+				</div>
 			</div>
+			<GameCinematics v-if="showCinematics" />
 		</div>
-		<GameCinematics v-if="showCinematics" />
 	</div>
 	<audio ref="bgMusic" loop>
 		<source src="/assets/music/menu.mp3" type="audio/mpeg">
@@ -39,6 +36,7 @@ const bgMusic = ref(null);
 const showGame = ref(false);
 const isMobile = ref(false);
 const showCinematics = ref(false);
+const gameContainer = ref(null);
 
 const checkMobile = () => {
 	const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
@@ -47,6 +45,9 @@ const checkMobile = () => {
 
 const launchCinematics = () => {
 	showCinematics.value = true;
+	if (gameContainer.value) {
+		gameContainer.value.classList.add('cinematics-active');
+	}
 };
 
 const startMenu = async () => {
@@ -128,6 +129,8 @@ onUnmounted(() => {
 	justify-content: center;
 	align-items: center;
 	z-index: 2000;
+	height: 100vh;
+	width: 100vw;
 }
 
 .pre-game-content {
@@ -140,6 +143,10 @@ onUnmounted(() => {
 		0 0 50px $retro-green,
 		inset 0 0 20px rgba(0, 255, 0, 0.1);
 	max-width: 100%;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
 }
 
 .pre-game-title {
@@ -237,10 +244,18 @@ onUnmounted(() => {
 		width: 100%;
 		height: 100%;
 		background-image: url('/assets/img/menu-background.gif');
-		background-size: cover;
-		background-position: center;
+		background-size: 180% auto;
+		background-position: bottom left;
 		opacity: 0;
-		animation: gifFadeIn 15s ease-in forwards;
+		animation: gifFadeIn 12s ease-in forwards;
+		transition: all 12s ease-in-out;
+	}
+
+	&.cinematics-active::before {
+		transition: background-size 4s ease-in-out;
+		background-size: 180% auto;
+		background-position: bottom right;
+		transition: background-position 4s ease-in-out;
 	}
 }
 
@@ -269,7 +284,7 @@ onUnmounted(() => {
 	width: 30%;
 	border-radius: 10px;
 	opacity: 0;
-	animation: simpleFadeIn 2s ease-in 15s forwards;
+	animation: simpleFadeIn 2s ease-in 12s forwards;
 	text-transform: uppercase;
 	margin-top: 10rem;
 }
@@ -278,29 +293,33 @@ onUnmounted(() => {
 	font-size: 4rem;
 	color: $yellow;
 	opacity: 0;
-	animation: fadeIn 15s ease-in  forwards;
+	animation: fadeIn 12s ease-in  forwards;
 	letter-spacing: 15px;
 	text-transform: uppercase;
-	background-color: rgba(0, 0, 0, 0.8);
+	text-shadow: 5px 5px 5px $black;
 	border-radius: 10px;
 	width: 100%;
+	font-weight: bold;
 }
+
 
 .menu-buttons {
 	display: flex;
 	flex-direction: column;
 	gap: 1rem;
 	opacity: 0;
-	animation: simpleFadeIn 2s ease-in 15s forwards;
+	animation: simpleFadeIn 2s ease-in 12s forwards;
+	position: relative;
+	top: 10rem;
+	right: 27.5vw;
 }
 
 
 .pixel-button {
 	font-size: 1.2rem;
-	width: 20%;
-	margin: 0 auto;
+	width: 100%;
 	color: $yellow;
-	background: $black;
+	background: rgba(0, 0, 0, 0.7);
 	border: 3px solid $yellow;
 	transition: all 0.3s ease;
 	text-transform: uppercase;
