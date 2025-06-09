@@ -16,10 +16,22 @@
 			<div v-if="!showCinematics" class="menu-container">
 				<h1 class="pixel-title">The<br>Fading<br>Crown</h1>
 				<div class="menu-buttons">
-					<button v-if="menuButtonsReady" class="pixel-button" @click="launchCinematics">Start Game</button>
+	<button
+		class="pixel-button"
+		@click="launchCinematics"
+		:disabled="!menuButtonsReady"
+	>
+		Start Game
+	</button>
 					<!-- HERE TO DO: Add options button -->
 					<!-- <button class="pixel-button">Options</button> -->
-					<button v-if="menuButtonsReady" class="pixel-button" @click="showCreditsHandler">Credits</button>
+					<button
+		class="pixel-button"
+		@click="showCreditsHandler"
+		:disabled="!menuButtonsReady"
+	>
+		Credits
+	</button>
 				</div>
 			</div>
 			<GameCinematics v-if="showCinematics" @fade-complete="onFadeComplete" />
@@ -35,9 +47,7 @@
 </template>
 
 <script setup>
-
-
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import GameCinematics from './gameCinematics.vue';
 import CreditsModal from './CreditsModal.vue';
 
@@ -54,12 +64,10 @@ const showThirdMessageBlock = ref(false);
 const showFourthMessageBlock = ref(false);
 const menuButtonsReady = ref(false);
 
-
 const checkMobile = () => {
 	const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
 	isMobile.value = mobileRegex.test(navigator.userAgent) || window.innerWidth <= 768;
 };
-
 
 const launchCinematics = async () => {
     await playClickSound();
@@ -116,6 +124,14 @@ const showCreditsHandler = async () => {
     showCredits.value = true;
 };
 
+watch(showGame, (newValue) => {
+	if (newValue) {
+		document.body.style.overflow = 'hidden';
+	} else {
+		document.body.style.overflow = '';
+	}
+});
+
 onMounted(() => {
 	checkMobile();
 	window.addEventListener('resize', checkMobile);
@@ -145,6 +161,7 @@ onUnmounted(() => {
 		clickSound.value.pause();
 		clickSound.value.currentTime = 0;
 	}
+	document.body.style.overflow = '';
 });
 </script>
 
@@ -298,6 +315,8 @@ onUnmounted(() => {
 	margin: 5vh;
 	position: relative;
 	overflow: hidden;
+	overscroll-behavior: none;
+	touch-action: none;
 
 	&::before {
 		content: '';
@@ -306,8 +325,8 @@ onUnmounted(() => {
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background-image: url('/assets/img/menu-background.gif');
-		background-size: 250% auto;
+		background-image: url('/assets/img/menu-background .gif');
+		background-size: 225% auto;
 		background-position: 0% 85%;
 		opacity: 0;
 		transition: background-position 4s ease-in-out, background-size 4s ease-in-out;
@@ -322,26 +341,26 @@ onUnmounted(() => {
 	}
 
 	&.first-message-block::before {
-		background-size: 325% auto;
-		background-position: 55% 55%;
+		background-size: 225% auto;
+		background-position: 77.5% 60%;
 		transition: background-position 4s ease-in-out, background-size 4s ease-in-out;
 	}
 
 	&.second-message-block::before {
-		background-size: 300% auto;
-		background-position: 90% 65%;
+		background-size: 225% auto;
+		background-position: 100% 65%;
 		transition: background-position 4s ease-in-out, background-size 4s ease-in-out;
 	}
 
 	&.third-message-block::before {
-		background-size: 205% auto;
-		background-position: 90% 25%;
+		background-size: 175% auto;
+		background-position: 100% 50%;
 		transition: background-position 4s ease-in-out, background-size 4s ease-in-out;
 	}
 
 	&.fourth-message-block::before {
 		background-size: 100% auto;
-		background-position: 0% -5%;
+		background-position: 0% 0%;
 		transition: background-position 7s ease-in-out, background-size 7s ease-in-out;
 	}
 
@@ -355,7 +374,7 @@ onUnmounted(() => {
 	}
 	to {
 		opacity: 1;
-		background-size: 250% auto;
+		background-size: 225% auto;
 		background-position: 0% 85%;
 	}
 }
@@ -418,6 +437,13 @@ onUnmounted(() => {
 	&:active {
 		transform: scale(0.95);
 	}
+
+	&:disabled {
+	opacity: 0;
+	cursor: not-allowed;
+	pointer-events: none;
+	transform: none;
+}
 }
 
 @keyframes simpleFadeIn {
@@ -477,6 +503,20 @@ onUnmounted(() => {
 		transform: translateX(0);
 		letter-spacing: 15px;
 	}
+}
+
+// HERE
+.dead-gif {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-image: url('/assets/img/dead-gif.gif');
+	background-size: 100% auto;
+	background-position: 0% 0%;
+	opacity: 0;
+	transition: background-position 4s ease-in-out, background-size 4s ease-in-out;
 }
 
 </style>

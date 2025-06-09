@@ -107,7 +107,7 @@ currentMessages.value = calculateDelays(firstMessages)
 onMounted(() => {
 	for (let i = 0; i < POOL_SIZE; i++) {
 		const audio = new Audio('/assets/sound/typing.mp3')
-		audio.volume = 1
+		audio.volume = 0.4
 		audio.preload = 'auto'
 		audio.load()
 		audioPool.value.push(audio)
