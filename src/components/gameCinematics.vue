@@ -1,27 +1,13 @@
 <template>
 	<div class="game-cinematics">
 		<div class="cinematics-container" :class="{ 'fade-out': shouldFadeOut }">
-			<div 
-				v-for="(message, index) in currentMessages" 
-				:key="index" 
-				class="cinematics-message"
-				:style="{ animationDelay: `${message.startDelay}s` }"
-			>
-				<template v-if="message.parts">
-					<template v-for="(part, partIndex) in message.parts" :key="partIndex">
-						<span 
-							class="letter" 
-							v-for="(letter, letterIndex) in part.text" 
-							:key="letterIndex"
-							:class="part.color"
-							:style="{ animationDelay: `${message.startDelay + (partIndex * 0.05)}s` }"
-							@animationend="onLetterAnimationEnd(index, partIndex, letterIndex, message.parts.length)"
-						>
-							{{ letter === ' ' ? '\u00A0' : letter }}
-						</span>
-					</template>
-				</template>
-				<template v-else>
+			<template v-if="!isFourthSequence">
+				<div 
+					v-for="(message, index) in currentMessages" 
+					:key="index" 
+					class="cinematics-message"
+					:style="{ animationDelay: `${message.startDelay}s` }"
+				>
 					<span 
 						class="letter" 
 						v-for="(letter, letterIndex) in message.text" 
@@ -31,14 +17,23 @@
 					>
 						{{ letter === ' ' ? '\u00A0' : letter }}
 					</span>
-				</template>
-			</div>
+				</div>
+			</template>
+			<template v-else>
+				<div class="title">
+					The <span class="fading-text">Fading</span> Crown
+				</div>
+				<!-- HERE TO REMOVE AND REPLACE WITH THE CONTINUE BUTTON -->
+				<div class="coming-soon">
+					Coming Soon
+				</div>
+			</template>
 		</div>
 	</div>
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted, watch } from 'vue'
+import { ref, nextTick, onMounted, watch } from 'vue'
 
 const emit = defineEmits(['fade-complete'])
 
@@ -48,25 +43,11 @@ const MESSAGE_GAP = 0.8
 const FADE_OUT_DELAY = 1
 
 const firstMessages = [
-	{ 
-		text: 'Ryn was once a powerful and thriving land',
-		parts: [
-			{ text: 'Ryn', color: 'purple' },
-			{ text: ' was once a powerful and thriving land' }
-		]
-	},
+	{ text: 'Ryn was once a powerful and thriving land' },
 	{ text: 'Its banners flew proudly from golden spires' },
 	{ text: 'Scholars, kings, and saints walked the same halls' },
 	{ text: 'Its prosperity matched only by the wisdom of its people' },
-	{ 
-		text: 'Alas, those days are long gone...',
-		parts: [
-			{ text: 'Alas, those days are ' },
-			{ text: 'long gone', color: 'red' },
-			{ text: '...' }
-		]
-	},
-	
+	{ text: 'Alas, those days are long gone...' }
 ]
 
 const secondMessages = [
@@ -75,76 +56,55 @@ const secondMessages = [
 	{ text: 'Noble houses squabble over ruins' },
 	{ text: 'Common folk pray to silent gods' },
 	{ text: 'Bandits have overrun the Royal Guard' },
-	{ 
-		text: 'Chaos threatens the realm...',
-		parts: [
-			{ text: 'Chaos ', color: 'red' },
-			{ text: 'threatens the realm...' }
-		]
-	},
+	{ text: 'Chaos threatens the realm...' }
 ]
 
 const thirdMessages = [
-	{
-		text: 'Yet hope remains!',
-		parts: [
-			{ text: 'Yet ' },
-			{ text: 'hope', color: 'blue' },
-			{ text: ' remains!' }
-		]
-	},
+	{ text: 'Yet hope remains!' },
 	{ text: 'Rumors of a rightful heir' },
 	{ text: 'Have emerged from the East' },
 	{ text: 'Steward Varric, keeper of Ryn\'s throne' },
-	{ text: 'Sent me on a secret mission to restore...' }
+	{ text: 'Sent me on a secret mission to restore' }
 ]
 
-const fourthMessages = [
-	{ text: 'The Fading Crown' },
-]
+
 
 const currentMessages = ref([])
 const shouldFadeOut = ref(false)
 const isSecondSequence = ref(false)
 const isThirdSequence = ref(false)
+const isFourthSequence = ref(false)
 const audioPool = ref([])
 const POOL_SIZE = 5
 let currentAudioIndex = 0
 
-// Track which messages have already played their typing sound
 const playedMessages = ref(new Set())
-const activeAudioLoops = ref(new Map()) // Track active audio loops per message
+const activeAudioLoops = ref(new Map())
 
 const calculateDelays = (messages) => {
 	const result = messages.map((message, index) => {
 		const previousMessages = messages.slice(0, index)
 		const totalPreviousDelay = previousMessages.reduce((acc, msg) => {
-			const totalLength = msg.parts 
-				? msg.parts.reduce((sum, part) => sum + part.text.length, 0)
-				: msg.text.length
+			const totalLength = msg.text.length
 			return acc + (totalLength * LETTER_DELAY) + MESSAGE_GAP
 		}, 0)
 		
 		const startDelay = BASE_DELAY + totalPreviousDelay
-		const messageDuration = (message.parts 
-			? message.parts.reduce((sum, part) => sum + part.text.length, 0)
-			: message.text.length) * LETTER_DELAY
+		const messageDuration = message.text.length * LETTER_DELAY
 		
 		return {
 			...message,
 			startDelay,
 			messageDuration,
-			messageId: `${Date.now()}-${index}` // Unique ID for tracking
+			messageId: `${Date.now()}-${index}`
 		}
 	})
 	return result;
 }
 
-// Initialize first sequence
 currentMessages.value = calculateDelays(firstMessages)
 
 onMounted(() => {
-	// Create audio pool
 	for (let i = 0; i < POOL_SIZE; i++) {
 		const audio = new Audio('/assets/sound/typing.mp3')
 		audio.volume = 1
@@ -153,14 +113,12 @@ onMounted(() => {
 		audioPool.value.push(audio)
 	}
 	
-	// Set up timers for each message's typing sound
 	setupMessageTimers()
 })
 
-// Function to start looping audio for a specific message
 const startTypingAudioLoop = (messageId, duration) => {
 	if (playedMessages.value.has(messageId)) {
-		return // Already started for this message
+		return
 	}
 	
 	playedMessages.value.add(messageId)
@@ -168,17 +126,14 @@ const startTypingAudioLoop = (messageId, duration) => {
 	if (audioPool.value.length > 0) {
 		const audio = audioPool.value[currentAudioIndex]
 		audio.currentTime = 0
-		audio.loop = true // Enable looping
+		audio.loop = true
 		
 		const playPromise = audio.play()
 		if (playPromise !== undefined) {
 			playPromise
 				.then(() => {
-					console.log(`Starting looped typing sound for message: ${messageId}`)
-					// Store the audio reference so we can stop it later
 					activeAudioLoops.value.set(messageId, audio)
 					
-					// Stop the loop after the message duration
 					setTimeout(() => {
 						stopTypingAudioLoop(messageId)
 					}, duration * 1000)
@@ -193,7 +148,6 @@ const startTypingAudioLoop = (messageId, duration) => {
 	}
 }
 
-// Function to stop looping audio for a specific message
 const stopTypingAudioLoop = (messageId) => {
 	const audio = activeAudioLoops.value.get(messageId)
 	if (audio) {
@@ -201,32 +155,27 @@ const stopTypingAudioLoop = (messageId) => {
 		audio.pause()
 		audio.currentTime = 0
 		activeAudioLoops.value.delete(messageId)
-		console.log(`Stopped looped typing sound for message: ${messageId}`)
 	}
 }
 
-// Set up timers for each message's typing sound
 const setupMessageTimers = () => {
 	currentMessages.value.forEach((message) => {
-		// Start looping sound when message starts typing (at startDelay time)
 		setTimeout(() => {
 			startTypingAudioLoop(message.messageId, message.messageDuration)
 		}, message.startDelay * 1000)
 	})
 }
 
-// Watch for message changes and set up new timers
 watch(currentMessages, (newMessages) => {
 	if (newMessages.length > 0) {
-		// Stop any currently playing audio loops
 		activeAudioLoops.value.forEach((audio, messageId) => {
 			stopTypingAudioLoop(messageId)
 		})
-		// Clear the played messages set for new sequence
 		playedMessages.value.clear()
-		// Set up timers for new messages
 		nextTick(() => {
-			setupMessageTimers()
+			if (!isFourthSequence.value) {
+				setupMessageTimers()
+			}
 		})
 	}
 }, { deep: true })
@@ -234,11 +183,8 @@ watch(currentMessages, (newMessages) => {
 const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) => {
 	if (messageIndex === currentMessages.value.length - 1 && 
 		partIndex === totalParts - 1 && 
-		letterIndex === (currentMessages.value[messageIndex].parts 
-			? currentMessages.value[messageIndex].parts[partIndex].text.length - 1
-			: currentMessages.value[messageIndex].text.length - 1)) {
+		letterIndex === currentMessages.value[messageIndex].text.length - 1) {
 		if (!isSecondSequence.value) {
-			// First sequence to second sequence
 			setTimeout(() => {
 				shouldFadeOut.value = true
 				emit('fade-complete')
@@ -252,7 +198,6 @@ const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) 
 				}, 500)
 			}, FADE_OUT_DELAY * 1000)
 		} else if (!isThirdSequence.value) {
-			// Second sequence to third sequence
 			setTimeout(() => {
 				shouldFadeOut.value = true
 				emit('fade-complete')
@@ -265,8 +210,16 @@ const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) 
 					})
 				}, 500)
 			}, FADE_OUT_DELAY * 1000)
+		} else if (!isFourthSequence.value) {
+			setTimeout(() => {
+				shouldFadeOut.value = true
+				emit('fade-complete')
+				setTimeout(() => {
+					shouldFadeOut.value = false
+					isFourthSequence.value = true
+				}, 500)
+			}, FADE_OUT_DELAY * 1000)
 		} else {
-			// After third sequence completes
 			setTimeout(() => {
 				shouldFadeOut.value = true
 				setTimeout(() => {
@@ -276,6 +229,15 @@ const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) 
 		}
 	}
 }
+
+const setupDramaticEntrance = () => {
+	nextTick(() => {
+		const dramaticLetters = document.querySelectorAll('.dramatic-letter');
+		dramaticLetters.forEach((letter, index) => {
+			letter.style.setProperty('--letter-index', index);
+		});
+	});
+};
 </script>
 
 <style lang="scss" scoped>
@@ -307,7 +269,7 @@ const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) 
 	position: relative;
 	width: 100%;
 	color: $yellow;
-	font-size: 1.5rem;
+	font-size: clamp(1rem, 1.75rem, 2rem);
 	opacity: 1;
 	text-shadow: 0 0 10px $black;
 	z-index: 1001;
@@ -320,19 +282,6 @@ const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) 
 	display: inline-block;
 	opacity: 0;
 	animation: fadeIn 1s ease-in forwards;
-
-	&.red {
-		color: $light-red;
-	}
-	&.green {
-		color: $dark-green;
-	}
-	&.purple {
-		color: $purple;
-	}
-	&.blue {
-		color: $light-blue;
-	}
 }
 
 @keyframes fadeIn {
@@ -365,6 +314,85 @@ const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) 
 	}
 	to {
 		opacity: 1;
+	}
+}
+
+.title {
+	position: relative;
+	bottom: 25vh;
+	font-size: 4.5rem !important;
+	letter-spacing: 0.5rem;
+	text-shadow: 0 0 10px $black;
+	text-transform: uppercase;
+	opacity: 0;
+	color: $yellow;
+	animation: TitleEntrance 7s ease-out forwards;
+}
+
+.fading-text {
+	animation: FadeAnimation 5s ease-out infinite 5s;
+}
+
+@keyframes TitleEntrance {
+	0% {
+		opacity: 0;
+		transform: translateY(100px) scale(0.5);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes FadeAnimation {
+	0% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.2;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+//HERE FOR THE CONTINUE BUTTON
+@keyframes PulseAnimation {
+	0% {
+		text-shadow: 0 0 10px $black;
+		transform: scale(1);
+	}
+	50% {
+		text-shadow: 0 0 20px $black;
+		transform: scale(1.01);
+	}
+	100% {
+		text-shadow: 0 0 10px $black;
+		transform: scale(1);
+	}
+}
+
+//HERE TO REMOVE AND REPLACE WITH THE CONTINUE BUTTON
+.coming-soon {
+	position: relative;
+	bottom: 20vh;
+	font-size: 2.5rem;
+	color: $light-blue;
+	text-transform: uppercase;
+	letter-spacing: 0.25rem;
+	opacity: 0;
+	text-shadow: 0 0 30px $black;
+	animation: comingSoonEntrance 3s ease-out 10s forwards;
+}
+
+@keyframes comingSoonEntrance {
+	0% {
+		opacity: 0;
+		transform: translateY(30px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
 	}
 }
 </style>

@@ -5,13 +5,13 @@
             <div class="credits-content">
                 <h2 class="credits-title">Credits</h2>
                 <div class="credits-section">
-                    <h3>Artwork</h3>
+                    <h3>Artwork <span class="emoji">🖼️</span></h3>
                     <p>Fatih Emir</p>
                 </div>
                 <div class="credits-section">
-                    <h3>Music</h3>
+                    <h3>Music <span class="emoji">🎶</span></h3>
                     <p>World of Warcraft</p>
-					<h3>Everything Else</h3>
+					<h3>Everything Else <span class="emoji">🔧</span></h3>
 					<p>Karl Querel</p>
                 </div>
             </div>
@@ -133,6 +133,11 @@ const close = () => {
 	p {
 		margin: 1rem 0;
 	}
+}
+
+.emoji {
+  display: inline-block;
+  transform: translateY(-5px) translateX(-15px);
 }
 
 @keyframes fadeIn {

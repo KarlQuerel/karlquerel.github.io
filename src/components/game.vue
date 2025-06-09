@@ -12,14 +12,14 @@
 				<button class="sound-button pixel-button" @click="startMenu">SOUND IS ON!</button>
 			</div>
 		</div>
-		<div v-else class="game-container" ref="gameContainer" :class="{ 'first-message-block': showCinematics && !shouldMoveBackground, 'second-message-block': shouldMoveBackground && !showThirdMessageBlock, 'third-message-block': showThirdMessageBlock, 'initial-load': isInitialLoad, 'show-game': showGame }">
+		<div v-else class="game-container" ref="gameContainer" :class="{ 'first-message-block': showCinematics && !shouldMoveBackground, 'second-message-block': shouldMoveBackground && !showThirdMessageBlock, 'third-message-block': showThirdMessageBlock && !showFourthMessageBlock, 'fourth-message-block': showFourthMessageBlock, 'initial-load': isInitialLoad, 'show-game': showGame }">
 			<div v-if="!showCinematics" class="menu-container">
 				<h1 class="pixel-title">The<br>Fading<br>Crown</h1>
 				<div class="menu-buttons">
 					<button class="pixel-button" @click="launchCinematics">Start Game</button>
 					<!-- HERE TO DO: Add options button -->
 					<!-- <button class="pixel-button">Options</button> -->
-					<button class="pixel-button" @click="showCredits = true">Credits</button>
+					<button class="pixel-button" @click="showCreditsHandler">Credits</button>
 				</div>
 			</div>
 			<GameCinematics v-if="showCinematics" @fade-complete="onFadeComplete" />
@@ -28,6 +28,9 @@
 	</div>
 	<audio ref="bgMusic" loop>
 		<source src="/assets/music/menu-wow.mp3" type="audio/mpeg">
+	</audio>
+	<audio ref="clickSound">
+		<source src="/assets/sound/button-press.wav" type="audio/mpeg">
 	</audio>
 </template>
 
@@ -39,6 +42,7 @@ import GameCinematics from './gameCinematics.vue';
 import CreditsModal from './CreditsModal.vue';
 
 const bgMusic = ref(null);
+const clickSound = ref(null);
 const showGame = ref(false);
 const isMobile = ref(false);
 const showCinematics = ref(false);
@@ -47,6 +51,7 @@ const shouldMoveBackground = ref(false);
 const showCredits = ref(false);
 const isInitialLoad = ref(true);
 const showThirdMessageBlock = ref(false);
+const showFourthMessageBlock = ref(false);
 
 
 const checkMobile = () => {
@@ -55,13 +60,11 @@ const checkMobile = () => {
 };
 
 
-const launchCinematics = () => {
-    console.log('Launching cinematics');
+const launchCinematics = async () => {
+    await playClickSound();
     showCinematics.value = true;
     if (gameContainer.value) {
         gameContainer.value.classList.add('first-message-block');
-        console.log('Added first-message-block class');
-        console.log('Container classes:', gameContainer.value.className);
     }
 };
 
@@ -70,11 +73,14 @@ const onFadeComplete = () => {
         shouldMoveBackground.value = true;
     } else if (showCinematics.value && shouldMoveBackground.value && !showThirdMessageBlock.value) {
         showThirdMessageBlock.value = true;
-    } else if (showCinematics.value && showThirdMessageBlock.value) {
+    } else if (showCinematics.value && showThirdMessageBlock.value && !showFourthMessageBlock.value) {
+        showFourthMessageBlock.value = true;
+    } else if (showCinematics.value && showFourthMessageBlock.value) {
         // All sequences complete, reset states
         showCinematics.value = false;
         shouldMoveBackground.value = false;
         showThirdMessageBlock.value = false;
+        showFourthMessageBlock.value = false;
         showGame.value = true;
     }
 };
@@ -85,7 +91,6 @@ const startMenu = async () => {
 		try {
 			bgMusic.value.volume = 1;
 			await bgMusic.value.play();
-			console.log('Music started playing');
 		} catch (error) {
 			console.error('Error playing music:', error);
 		}
@@ -94,22 +99,39 @@ const startMenu = async () => {
 	}
 };
 
+const playClickSound = async () => {
+	if (clickSound.value) {
+		try {
+			clickSound.value.currentTime = 0;
+			await clickSound.value.play();
+		} catch (error) {
+			console.error('Error playing click sound:', error);
+		}
+	}
+};
 
+const showCreditsHandler = async () => {
+    await playClickSound();
+    showCredits.value = true;
+};
 
 onMounted(() => {
 	checkMobile();
 	window.addEventListener('resize', checkMobile);
 	if (bgMusic.value) {
 		bgMusic.value.volume = 1;
-		console.log('Audio element mounted');
 	} else {
 		console.error('Audio element not found on mount');
+	}
+	if (clickSound.value) {
+		clickSound.value.volume = 1;
+		clickSound.value.load();
 	}
 
 	// Remove initial-load class after animation completes
 	setTimeout(() => {
 		isInitialLoad.value = false;
-	}, 12000); // Match the gifFadeIn duration
+	}, 12000);
 });
 
 onUnmounted(() => {
@@ -117,6 +139,10 @@ onUnmounted(() => {
 	if (bgMusic.value) {
 		bgMusic.value.pause();
 		bgMusic.value.currentTime = 0;
+	}
+	if (clickSound.value) {
+		clickSound.value.pause();
+		clickSound.value.currentTime = 0;
 	}
 });
 </script>
@@ -312,10 +338,10 @@ onUnmounted(() => {
 		transition: background-position 4s ease-in-out, background-size 4s ease-in-out;
 	}
 
-	&.last-message-block::before {
+	&.fourth-message-block::before {
 		background-size: 100% auto;
-		background-position: 0% 0%;
-		transition: background-position 4s ease-in-out, background-size 4s ease-in-out;
+		background-position: 0% -5%;
+		transition: background-position 7s ease-in-out, background-size 7s ease-in-out;
 	}
 
 }
@@ -341,17 +367,6 @@ onUnmounted(() => {
 	justify-content: center;
 	position: relative;
 	bottom: 5rem;
-}
-
-.coming-soon {
-	color: $yellow;
-	background-color: rgba(0, 0, 0, 0.8);
-	width: 30%;
-	border-radius: 10px;
-	opacity: 0;
-	animation: simpleFadeIn 2s ease-in 12s forwards;
-	text-transform: uppercase;
-	margin-top: 10rem;
 }
 
 .pixel-title {
