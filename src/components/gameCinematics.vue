@@ -38,7 +38,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 
 const emit = defineEmits(['fade-complete'])
 
@@ -61,7 +61,7 @@ const secondMessages = [
 	{ text: 'Political schemes have bled the kingdom dry' },
 	{ text: 'Noble houses squabble over ruins' },
 	{ text: 'Common folk pray to silent gods' },
-	{ text: 'Bandits and mercenaries have overrun the Royal Guard' },
+	{ text: 'Bandits have overrun the Royal Guard' },
 	{ text: 'Chaos threatens the realm' }
 ]
 
@@ -69,8 +69,8 @@ const thirdMessages = [
 	{ text: 'Yet hope remains... Rumors of a rightful heir' },
 	{ text: 'Have emerged from the East' },
 	{ text: 'Steward Varric, keeper of Ryn\'s throne' },
-	{ text: 'Sent me on a secret mission to find' },
-	{ text: 'The last of the royal bloodline' },
+	{ text: 'Sent me on a secret mission to restore' },
+	{ text: 'The Fading Crown' },
 ]
 
 const currentMessages = ref([])
@@ -109,23 +109,31 @@ const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) 
 		if (!isSecondSequence.value) {
 			// Wait a bit before starting fade out
 			setTimeout(() => {
-				shouldFadeOut.value = true
-				// Start second sequence after fade out
+				shouldFadeOut.value = true;
+				// Emit fade-complete before starting second sequence to trigger background movement
+				emit('fade-complete');
+				// Start second sequence after fade out and background movement
 				setTimeout(() => {
-					shouldFadeOut.value = false
-					isSecondSequence.value = true
-					currentMessages.value = calculateDelays(secondMessages)
-				}, 500) // Small delay before starting second sequence
-			}, FADE_OUT_DELAY * 1000)
+					// Reset animation state
+					shouldFadeOut.value = false;
+					isSecondSequence.value = true;
+					// Force a re-render by temporarily setting to empty array
+					currentMessages.value = [];
+					// Use nextTick to ensure the DOM updates
+					nextTick(() => {
+						currentMessages.value = calculateDelays(secondMessages);
+					});
+				}, 2000); // Increased delay to allow background movement to complete
+			}, FADE_OUT_DELAY * 1000);
 		} else {
 			// After second sequence completes, wait and then fade out
 			setTimeout(() => {
-				shouldFadeOut.value = true
+				shouldFadeOut.value = true;
 				// Emit event after fade out completes
 				setTimeout(() => {
-					emit('fade-complete')
-				}, 2000) // Match the fade-out transition duration
-			}, FADE_OUT_DELAY * 1000)
+					emit('fade-complete');
+				}, 2000);
+			}, FADE_OUT_DELAY * 1000);
 		}
 	}
 }
@@ -147,10 +155,12 @@ const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) 
 	display: flex;
 	flex-direction: column;
 	gap: 2rem;
-	transition: opacity 2s ease-out;
+	transition: opacity 1s ease-out;
+	will-change: opacity, transform;
 
 	&.fade-out {
 		opacity: 0;
+		pointer-events: none;
 	}
 }
 
@@ -164,6 +174,7 @@ const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) 
 	z-index: 1001;
 	text-align: center;
 	text-transform: uppercase;
+	will-change: opacity, transform;
 }
 
 .letter {

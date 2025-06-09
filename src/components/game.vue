@@ -12,7 +12,7 @@
 				<button class="sound-button pixel-button" @click="startMenu">SOUND IS ON!</button>
 			</div>
 		</div>
-		<div v-else class="game-container" ref="gameContainer" :class="{ 'first-message-block': showCinematics, 'second-message-block': shouldMoveBackground }">
+		<div v-else class="game-container" ref="gameContainer" :class="{ 'first-message-block': showCinematics, 'second-message-block': shouldMoveBackground, 'initial-load': isInitialLoad, 'show-game': showGame }">
 			<div v-if="!showCinematics" class="menu-container">
 				<h1 class="pixel-title">The<br>Fading<br>Crown</h1>
 				<div class="menu-buttons">
@@ -45,6 +45,7 @@ const showCinematics = ref(false);
 const gameContainer = ref(null);
 const shouldMoveBackground = ref(false);
 const showCredits = ref(false);
+const isInitialLoad = ref(true);
 
 
 const checkMobile = () => {
@@ -101,6 +102,11 @@ onMounted(() => {
 	} else {
 		console.error('Audio element not found on mount');
 	}
+
+	// Remove initial-load class after animation completes
+	setTimeout(() => {
+		isInitialLoad.value = false;
+	}, 12000); // Match the gifFadeIn duration
 });
 
 onUnmounted(() => {
@@ -274,36 +280,48 @@ onUnmounted(() => {
 		background-size: 250% auto;
 		background-position: 0% 85%;
 		opacity: 0;
-		animation: gifFadeIn 10s ease-in forwards;
+		transition: opacity 10s ease-in-out, background-position 10s ease-in-out, background-size 10s ease-in-out;
+	}
+
+	&.initial-load::before {
+		animation: initialFadeIn 10s ease-in forwards;
+	}
+
+	&.show-game::before {
+		opacity: 1;
 	}
 
 	&.first-message-block::before {
-		background-size: 250% auto;
-		background-position: 65% 80%;
-		transition: background-position 5s ease-in-out;
+		background-size: 325% auto;
+		background-position: 55% 55%;
 	}
 
-	// HERE
-	&.second-message-block {
-		&::before {
-			background-size: 200% auto;
-			background-position: 65% 80%;
-			transition: background-size 4s ease-in-out, background-position 5s ease-in-out;
-		}
+	// &.second-message-block::before {
+	// 	background-size: 300% auto;
+	// 	background-position: 90% 65%;
+	// }
+
+	&.third-message-block::before {
+		background-size: 300% auto;
+		background-position: 100% 65%;
+	}
+
+	&.second-message-block::before {
+		background-size: 205% auto;
+		background-position: 90% 25%;
 	}
 }
 
-@keyframes gifFadeIn {
+@keyframes initialFadeIn {
 	from {
 		opacity: 0;
 		background-size: 500% auto;
-		// background-position: 0% 0%;
-
+		background-position: 0% 0%;
 	}
 	to {
 		opacity: 1;
 		background-size: 250% auto;
-		// background-position: 0% 85%;
+		background-position: 0% 85%;
 	}
 }
 
