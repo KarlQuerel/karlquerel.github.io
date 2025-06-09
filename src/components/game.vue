@@ -12,15 +12,15 @@
 				<button class="sound-button pixel-button" @click="startMenu">SOUND IS ON!</button>
 			</div>
 		</div>
-		<div v-else class="game-container" ref="gameContainer">
+		<div v-else class="game-container" ref="gameContainer" :class="{ 'first-message-block': showCinematics, 'second-message-block': shouldMoveBackground }">
 			<div v-if="!showCinematics" class="menu-container">
-				<h1 class="pixel-title">The Last Steward</h1>
+				<h1 class="pixel-title">The<br>Fading<br>Crown</h1>
 				<div class="menu-buttons">
 					<button class="pixel-button" @click="launchCinematics">Start Game</button>
 					<button class="pixel-button">Options</button>
 				</div>
 			</div>
-			<GameCinematics v-if="showCinematics" />
+			<GameCinematics v-if="showCinematics" @fade-complete="onFadeComplete" />
 		</div>
 	</div>
 	<audio ref="bgMusic" loop>
@@ -29,6 +29,8 @@
 </template>
 
 <script setup>
+
+
 import { ref, onMounted, onUnmounted } from 'vue';
 import GameCinematics from './gameCinematics.vue';
 
@@ -37,17 +39,34 @@ const showGame = ref(false);
 const isMobile = ref(false);
 const showCinematics = ref(false);
 const gameContainer = ref(null);
+const shouldMoveBackground = ref(false);
 
 const checkMobile = () => {
 	const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
 	isMobile.value = mobileRegex.test(navigator.userAgent) || window.innerWidth <= 768;
 };
 
+
 const launchCinematics = () => {
-	showCinematics.value = true;
-	if (gameContainer.value) {
-		gameContainer.value.classList.add('cinematics-active');
-	}
+    console.log('Launching cinematics');
+    showCinematics.value = true;
+    if (gameContainer.value) {
+        gameContainer.value.classList.add('first-message-block');
+        console.log('Added first-message-block class');
+        console.log('Container classes:', gameContainer.value.className);
+    }
+};
+
+const onFadeComplete = () => {
+    console.log('Fade complete - moving background');
+    shouldMoveBackground.value = true;
+    
+    // Add debugging to verify the class is applied
+    setTimeout(() => {
+        if (gameContainer.value) {
+            console.log('Container classes after shouldMoveBackground:', gameContainer.value.className);
+        }
+    }, 100);
 };
 
 const startMenu = async () => {
@@ -64,6 +83,7 @@ const startMenu = async () => {
 		console.error('Audio element not found');
 	}
 };
+
 
 onMounted(() => {
 	checkMobile();
@@ -244,27 +264,47 @@ onUnmounted(() => {
 		width: 100%;
 		height: 100%;
 		background-image: url('/assets/img/menu-background.gif');
-		background-size: 180% auto;
-		background-position: bottom left;
+		background-size: 250% auto;
+		background-position-x: 0%;
+		background-position-y: 85%;
 		opacity: 0;
-		animation: gifFadeIn 12s ease-in forwards;
-		transition: all 12s ease-in-out;
+		animation: gifFadeIn 10s ease-in forwards;
+		// transition: all 10s ease-in-out;
 	}
 
-	&.cinematics-active::before {
-		transition: background-size 4s ease-in-out;
-		background-size: 180% auto;
-		background-position: bottom right;
+	// HERE to fix
+	&.first-message-block::before {
+		background-size: 250% auto;
+		// background-position-x: 100%;
+		// background-position-y: 85%;
+		// transition: background-position-x 4s ease-in-out;
+		background-position: 50% 85%; /* Move to center-left */
 		transition: background-position 4s ease-in-out;
+	}
+
+	// HERE
+	&.second-message-block {
+		&::before {
+			background-size: 200% auto;
+			background-position: center;
+			transition: background-size 4s ease-in-out, background-position 4s ease-in-out;
+		}
 	}
 }
 
 @keyframes gifFadeIn {
 	from {
 		opacity: 0;
+		background-size: 500% auto;
+		background-position-x: 0%;
+		background-position-y: 0%;
+
 	}
 	to {
 		opacity: 1;
+		background-size: 250% auto;
+		background-position-x: 0%;
+		background-position-y: 85%;
 	}
 }
 
@@ -293,27 +333,28 @@ onUnmounted(() => {
 	font-size: 4rem;
 	color: $yellow;
 	opacity: 0;
-	animation: fadeIn 12s ease-in  forwards;
 	letter-spacing: 15px;
 	text-transform: uppercase;
 	text-shadow: 5px 5px 5px $black;
-	border-radius: 10px;
 	width: 100%;
 	font-weight: bold;
+	position: relative;
+	top: 50%;
+	right: 22.5vw;
+	text-align: left;
+	animation: titleSlide 5s ease-out 10s forwards;
 }
-
 
 .menu-buttons {
 	display: flex;
 	flex-direction: column;
 	gap: 1rem;
 	opacity: 0;
-	animation: simpleFadeIn 2s ease-in 12s forwards;
+	animation: simpleFadeIn 5s ease-in 12s forwards;
 	position: relative;
 	top: 10rem;
 	right: 27.5vw;
 }
-
 
 .pixel-button {
 	font-size: 1.2rem;
@@ -379,4 +420,22 @@ onUnmounted(() => {
 		background: $retro-green;
 	}
 }
+
+.title-slide {
+	animation: titleSlide 5s ease-out forwards;
+}
+
+@keyframes titleSlide {
+	0% {
+		opacity: 0;
+		transform: translateX(-100px);
+		letter-spacing: 30px;
+	}
+	100% {
+		opacity: 1;
+		transform: translateX(0);
+		letter-spacing: 15px;
+	}
+}
+
 </style>
