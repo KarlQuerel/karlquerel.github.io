@@ -17,14 +17,17 @@
 				<h1 class="pixel-title">The<br>Fading<br>Crown</h1>
 				<div class="menu-buttons">
 					<button class="pixel-button" @click="launchCinematics">Start Game</button>
-					<button class="pixel-button">Options</button>
+					<!-- HERE TO DO: Add options button -->
+					<!-- <button class="pixel-button">Options</button> -->
+					<button class="pixel-button" @click="showCredits = true">Credits</button>
 				</div>
 			</div>
 			<GameCinematics v-if="showCinematics" @fade-complete="onFadeComplete" />
+			<CreditsModal :is-visible="showCredits" @close="showCredits = false" />
 		</div>
 	</div>
 	<audio ref="bgMusic" loop>
-		<source src="/assets/music/menu.mp3" type="audio/mpeg">
+		<source src="/assets/music/menu-wow.mp3" type="audio/mpeg">
 	</audio>
 </template>
 
@@ -33,6 +36,7 @@
 
 import { ref, onMounted, onUnmounted } from 'vue';
 import GameCinematics from './gameCinematics.vue';
+import CreditsModal from './CreditsModal.vue';
 
 const bgMusic = ref(null);
 const showGame = ref(false);
@@ -40,6 +44,8 @@ const isMobile = ref(false);
 const showCinematics = ref(false);
 const gameContainer = ref(null);
 const shouldMoveBackground = ref(false);
+const showCredits = ref(false);
+
 
 const checkMobile = () => {
 	const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
@@ -83,6 +89,7 @@ const startMenu = async () => {
 		console.error('Audio element not found');
 	}
 };
+
 
 
 onMounted(() => {
@@ -265,29 +272,23 @@ onUnmounted(() => {
 		height: 100%;
 		background-image: url('/assets/img/menu-background.gif');
 		background-size: 250% auto;
-		background-position-x: 0%;
-		background-position-y: 85%;
+		background-position: 0% 85%;
 		opacity: 0;
 		animation: gifFadeIn 10s ease-in forwards;
-		// transition: all 10s ease-in-out;
 	}
 
-	// HERE to fix
 	&.first-message-block::before {
 		background-size: 250% auto;
-		// background-position-x: 100%;
-		// background-position-y: 85%;
-		// transition: background-position-x 4s ease-in-out;
-		background-position: 50% 85%; /* Move to center-left */
-		transition: background-position 4s ease-in-out;
+		background-position: 65% 80%;
+		transition: background-position 5s ease-in-out;
 	}
 
 	// HERE
 	&.second-message-block {
 		&::before {
 			background-size: 200% auto;
-			background-position: center;
-			transition: background-size 4s ease-in-out, background-position 4s ease-in-out;
+			background-position: 65% 80%;
+			transition: background-size 4s ease-in-out, background-position 5s ease-in-out;
 		}
 	}
 }
@@ -296,15 +297,13 @@ onUnmounted(() => {
 	from {
 		opacity: 0;
 		background-size: 500% auto;
-		background-position-x: 0%;
-		background-position-y: 0%;
+		// background-position: 0% 0%;
 
 	}
 	to {
 		opacity: 1;
 		background-size: 250% auto;
-		background-position-x: 0%;
-		background-position-y: 85%;
+		// background-position: 0% 85%;
 	}
 }
 

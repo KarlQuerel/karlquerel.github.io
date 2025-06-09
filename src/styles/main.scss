@@ -11,3 +11,17 @@
 	padding: 0;
 	box-sizing: border-box;
 }
+
+/* Global custom cursor */
+a, button, .nes-btn, .nes-icon, input[type="button"], input[type="submit"], 
+[role="button"], .clickable, .menu-buttons button, .nav-links a, .logo,
+.credits-modal button, .terminal-link, .share a {
+    cursor: url('/assets/img/custom-cursor.png'), auto !important;
+}
+
+/* Keep default cursor for text inputs and textareas */
+input[type="text"], input[type="email"], input[type="password"], 
+input[type="search"], input[type="tel"], input[type="url"], 
+input[type="number"], textarea {
+    cursor: text !important;
+}

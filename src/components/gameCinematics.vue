@@ -42,7 +42,7 @@ import { ref, computed } from 'vue'
 
 const emit = defineEmits(['fade-complete'])
 
-const BASE_DELAY = 4
+const BASE_DELAY = 5
 const LETTER_DELAY = 0.05
 const MESSAGE_GAP = 1.5
 const FADE_OUT_DELAY = 1
@@ -53,10 +53,10 @@ const firstMessages = [
 	{ text: 'Its banners flew proudly from golden spires' },
 	{ text: 'Scholars, kings, and saints walked the same halls' },
 	{ text: 'Its prosperity matched only by the wisdom of its people' },
-	{ text: 'Alas, those days are long gone' }
+	{ text: 'Alas, those days are long gone...' }
 ]
 
-const tofinish = [
+const secondMessages = [
 	{ text: 'The royal bloodline has faded into legend' },
 	{ text: 'Political schemes have bled the kingdom dry' },
 	{ text: 'Noble houses squabble over ruins' },
@@ -65,7 +65,7 @@ const tofinish = [
 	{ text: 'Chaos threatens the realm' }
 ]
 
-const secondMessages = [
+const thirdMessages = [
 	{ text: 'Yet hope remains... Rumors of a rightful heir' },
 	{ text: 'Have emerged from the East' },
 	{ text: 'Steward Varric, keeper of Ryn\'s throne' },
