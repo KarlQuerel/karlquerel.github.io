@@ -26,9 +26,9 @@
 			<CreditsModal :is-visible="showCredits" @close="showCredits = false" />
 		</div>
 	</div>
-	<!-- <audio ref="bgMusic" loop>
+	<audio ref="bgMusic" loop>
 		<source src="/assets/music/menu-wow.mp3" type="audio/mpeg">
-	</audio> -->
+	</audio>
 </template>
 
 <script setup>
