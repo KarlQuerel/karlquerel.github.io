@@ -16,10 +16,10 @@
 			<div v-if="!showCinematics" class="menu-container">
 				<h1 class="pixel-title">The<br>Fading<br>Crown</h1>
 				<div class="menu-buttons">
-					<button class="pixel-button" @click="launchCinematics">Start Game</button>
+					<button v-if="menuButtonsReady" class="pixel-button" @click="launchCinematics">Start Game</button>
 					<!-- HERE TO DO: Add options button -->
 					<!-- <button class="pixel-button">Options</button> -->
-					<button class="pixel-button" @click="showCreditsHandler">Credits</button>
+					<button v-if="menuButtonsReady" class="pixel-button" @click="showCreditsHandler">Credits</button>
 				</div>
 			</div>
 			<GameCinematics v-if="showCinematics" @fade-complete="onFadeComplete" />
@@ -52,6 +52,7 @@ const showCredits = ref(false);
 const isInitialLoad = ref(true);
 const showThirdMessageBlock = ref(false);
 const showFourthMessageBlock = ref(false);
+const menuButtonsReady = ref(false);
 
 
 const checkMobile = () => {
@@ -128,9 +129,9 @@ onMounted(() => {
 		clickSound.value.load();
 	}
 
-	// Remove initial-load class after animation completes
 	setTimeout(() => {
 		isInitialLoad.value = false;
+		menuButtonsReady.value = true;
 	}, 12000);
 });
 
