@@ -54,6 +54,8 @@
 		justify-content: center;
 		height: 100vh;
 		width: 100vw;
+		position: relative;
+		z-index: 10;
 	}
 
 	.menu-content {
@@ -63,6 +65,7 @@
 		gap: 5vw;
 		position: relative;
 		right: 17.5vw;
+		z-index: 10;
 	}
 
 	.pixel-title {
@@ -76,6 +79,8 @@
 		font-weight: bold;
 		text-align: left;
 		animation: titleSlide 5s ease-out 10s forwards;
+		position: relative;
+		z-index: 10;
 	}
 
 	.fading-text {
@@ -89,6 +94,8 @@
 		opacity: 0;
 		animation: simpleFadeIn 5s ease-in 12s forwards;
 		width: 60%;
+		position: relative;
+		z-index: 10;
 	}
 
 	.pixel-button {

@@ -44,7 +44,6 @@
 					await updateClicks()
 				} catch (e) {
 					this.counter--
-					console.error('Failed to update Firestore:', e)
 				}
 			},
 		},

@@ -8,6 +8,7 @@ export function useGameState() {
 	const showFourthMessageBlock = ref(false)
 	const isInitialLoad = ref(true)
 	const menuButtonsReady = ref(false)
+	const isFirstSequence = ref(true)
 
 	const startGame = () => {
 		showGame.value = true
@@ -16,10 +17,12 @@ export function useGameState() {
 	const launchCinematics = async playClickSound => {
 		await playClickSound()
 		showCinematics.value = true
+		isFirstSequence.value = true
 	}
 
 	const onFadeComplete = () => {
-		if (showCinematics.value && !shouldMoveBackground.value) {
+		if (showCinematics.value && !shouldMoveBackground.value && isFirstSequence.value) {
+			isFirstSequence.value = false
 			shouldMoveBackground.value = true
 		} else if (
 			showCinematics.value &&
@@ -34,11 +37,11 @@ export function useGameState() {
 		) {
 			showFourthMessageBlock.value = true
 		} else if (showCinematics.value && showFourthMessageBlock.value) {
-			// All sequences complete, reset states
 			showCinematics.value = false
 			shouldMoveBackground.value = false
 			showThirdMessageBlock.value = false
 			showFourthMessageBlock.value = false
+			isFirstSequence.value = true
 			showGame.value = true
 		}
 	}
@@ -67,6 +70,7 @@ export function useGameState() {
 		showFourthMessageBlock,
 		isInitialLoad,
 		menuButtonsReady,
+		isFirstSequence,
 		startGame,
 		launchCinematics,
 		onFadeComplete,

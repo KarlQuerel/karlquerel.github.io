@@ -7,8 +7,6 @@ export function useAudioManager() {
 	const initAudio = () => {
 		if (bgMusic.value) {
 			bgMusic.value.volume = 1
-		} else {
-			console.error('Audio element not found on mount')
 		}
 		if (clickSound.value) {
 			clickSound.value.volume = 1
@@ -21,11 +19,7 @@ export function useAudioManager() {
 			try {
 				bgMusic.value.volume = 1
 				await bgMusic.value.play()
-			} catch (error) {
-				console.error('Error playing music:', error)
-			}
-		} else {
-			console.error('Audio element not found')
+			} catch (error) {}
 		}
 	}
 
@@ -34,9 +28,7 @@ export function useAudioManager() {
 			try {
 				clickSound.value.currentTime = 0
 				await clickSound.value.play()
-			} catch (error) {
-				console.error('Error playing click sound:', error)
-			}
+			} catch (error) {}
 		}
 	}
 

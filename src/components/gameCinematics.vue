@@ -36,8 +36,8 @@
 	const emit = defineEmits(['fade-complete'])
 
 	const BASE_DELAY = 3
-	const LETTER_DELAY = 0.03
-	const MESSAGE_GAP = 0.8
+	const LETTER_DELAY = 0.025
+	const MESSAGE_GAP = 1.2
 	const FADE_OUT_DELAY = 1
 
 	const firstMessages = [
@@ -134,8 +134,7 @@
 							stopTypingAudioLoop(messageId)
 						}, duration * 1000)
 					})
-					.catch(e => {
-						console.error(`Failed to play typing sound:`, e)
+					.catch(() => {
 						audio.load()
 					})
 			}
@@ -281,6 +280,7 @@
 		text-align: center;
 		text-transform: uppercase;
 		will-change: opacity, transform;
+		filter: contrast(1.5) saturate(1.5);
 	}
 
 	.letter {

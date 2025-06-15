@@ -8,27 +8,26 @@
 					:show-game="showGame"
 					@start-game="handleStartGame"
 				/>
-				<div
-					v-else
-					class="game-container"
-					ref="gameContainer"
-					:class="{
-						'fade-to-black': showCinematics && !shouldMoveBackground,
-						'second-message-block': shouldMoveBackground && !showThirdMessageBlock,
-						'third-message-block': showThirdMessageBlock && !showFourthMessageBlock,
-						'fourth-message-block': showFourthMessageBlock,
-						'initial-load': isInitialLoad,
-						'show-game': showGame,
-					}"
-				>
-					<GameMenu
+				<div v-else class="game-container" ref="gameContainer">
+					<GameBackground
 						:show-cinematics="showCinematics"
-						:menu-buttons-ready="menuButtonsReady"
-						@start-cinematics="handleStartCinematics"
-						@show-credits="handleShowCredits"
+						:should-move-background="shouldMoveBackground"
+						:show-third-message-block="showThirdMessageBlock"
+						:show-fourth-message-block="showFourthMessageBlock"
+						:is-initial-load="isInitialLoad"
+						:show-game="showGame"
+						:is-first-sequence="isFirstSequence"
 					/>
-					<GameCinematics v-if="showCinematics" @fade-complete="onFadeComplete" />
-					<CreditsModal :is-visible="showCredits" @close="showCredits = false" />
+					<div class="game-content">
+						<GameMenu
+							:show-cinematics="showCinematics"
+							:menu-buttons-ready="menuButtonsReady"
+							@start-cinematics="handleStartCinematics"
+							@show-credits="handleShowCredits"
+						/>
+						<GameCinematics v-if="showCinematics" @fade-complete="onFadeComplete" />
+						<CreditsModal :is-visible="showCredits" @close="showCredits = false" />
+					</div>
 				</div>
 			</div>
 		</template>
@@ -50,6 +49,7 @@
 	import CreditsModal from './CreditsModal.vue'
 	import { useAudioManager } from '../composables/useAudioManager'
 	import { useGameState } from '../composables/useGameState'
+	import GameBackground from './GameBackground.vue'
 
 	const showCredits = ref(false)
 	const gameContainer = ref(null)
@@ -66,6 +66,7 @@
 		showFourthMessageBlock,
 		isInitialLoad,
 		menuButtonsReady,
+		isFirstSequence,
 		startGame,
 		launchCinematics,
 		onFadeComplete,
@@ -79,9 +80,6 @@
 
 	const handleStartCinematics = async () => {
 		await launchCinematics(playClickSound)
-		if (gameContainer.value) {
-			gameContainer.value.classList.add('fade-to-black')
-		}
 	}
 
 	const handleShowCredits = async () => {
@@ -94,7 +92,6 @@
 		initializeMenu()
 	})
 
-	// Computed property to access isMobile from MobileWarning component
 	const isMobile = computed(() => mobileWarningRef.value?.isMobile ?? false)
 </script>
 
@@ -105,7 +102,6 @@
 		left: 0;
 		width: 100vw;
 		height: 100vh;
-		background: $black;
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -117,85 +113,12 @@
 		touch-action: none;
 		margin: 0;
 		padding: 0;
-		transition: all 1s ease-in-out;
-
-		&::before {
-			content: '';
-			position: absolute;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;
-			background-image: url('/assets/game/menu-background.gif');
-			background-size: 210% auto;
-			background-position: 0% 85%;
-			opacity: 0;
-			transition:
-				background-position 4s ease-in-out,
-				background-size 4s ease-in-out,
-				opacity 2s ease-in-out;
-		}
-
-		&.initial-load::before {
-			animation: initialFadeIn 10s ease-in forwards;
-		}
-
-		&.show-game::before {
-			opacity: 1;
-		}
-
-		&.fade-to-black::before {
-			background-position: 0% 0%;
-			opacity: 0;
-			transition:
-				background-position 3s ease-in-out,
-				background-size 3s ease-in-out,
-				opacity 3s ease-in-out;
-		}
-
-		&.first-message-block::before {
-			background-size: 210% auto;
-			background-position: 0% 85%;
-			transition:
-				background-position 4s ease-in-out,
-				background-size 4s ease-in-out;
-		}
-
-		&.second-message-block::before {
-			background-size: 225% auto;
-			background-position: 100% 65%;
-			transition:
-				background-position 4s ease-in-out,
-				background-size 4s ease-in-out;
-		}
-
-		&.third-message-block::before {
-			background-size: 175% auto;
-			background-position: 100% 50%;
-			transition:
-				background-position 4s ease-in-out,
-				background-size 4s ease-in-out;
-		}
-
-		&.fourth-message-block::before {
-			background-size: 100% 100%;
-			background-position: 0% 0%;
-			transition:
-				background-position 7s ease-in-out,
-				background-size 7s ease-in-out;
-		}
 	}
 
-	@keyframes initialFadeIn {
-		from {
-			opacity: 0;
-			background-size: 210% auto;
-			background-position: 0% 0%;
-		}
-		to {
-			opacity: 1;
-			background-size: 210% auto;
-			background-position: 0% 85%;
-		}
+	.game-content {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		z-index: 10;
 	}
 </style>
