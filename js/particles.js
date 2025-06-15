@@ -16,11 +16,12 @@ const matrixChars = [
 tsParticles.load("particles-js", {
 	particles: {
 		number: {
-			value: 150,
+			value: 175,
 			density: {
 				enable: true,
 				value_area: 800
-			}
+			},
+			limit: 175
 		},
 		color: {
 			value: "#00ff00"
@@ -76,19 +77,12 @@ tsParticles.load("particles-js", {
 			onhover: {
 				enable: true,
 				mode: "repulse"
-			},
-			onclick: {
-				enable: true,
-				mode: "push"
 			}
 		},
 		modes: {
 			repulse: {
 				distance: 100,
 				duration: 0.4
-			},
-			push: {
-				particles_nb: 4
 			}
 		}
 	},
