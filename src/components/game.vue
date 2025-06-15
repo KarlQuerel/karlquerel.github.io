@@ -1,8 +1,8 @@
 <template>
 	<div v-if="isMobile" class="mobile-message">
 		<div class="mobile-content">
-			<h2>Sorry, this game is not available on mobile devices</h2>
-			<p>Please use a  <span class="highlight">desktop computer</span> for the best experience</p>
+			<h2>Not available on mobile devices</h2>
+			<p>Please use a <span class="highlight">desktop computer</span> for the best experience</p>
 		</div>
 	</div>
 	<div v-else style="overflow: hidden; height: 100vh;">
@@ -168,15 +168,15 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .mobile-message {
 	position: fixed;
-	top: 0;
+	top: 10vh;
 	left: 0;
 	width: 100vw;
-	height: 100vh;
+	height: 90vh;
 	background: $black;
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	z-index: 3000;
+	z-index: 1001;
 }
 
 .mobile-content {
@@ -192,15 +192,16 @@ onUnmounted(() => {
 
 	h2 {
 		color: $yellow;
-		font-size: 1.5rem;
+		font-size: 1.75rem;
 		margin-bottom: 1rem;
 		text-shadow: 0 0 10px $retro-green;
 	}
 
 	p {
-		color: $retro-green;
-		font-size: 1.2rem;
+		color: $white;
+		font-size: 1.5rem;
 		text-shadow: 0 0 5px $retro-green;
+		margin: 0 0 0 0;
 	}
 }
 
@@ -344,12 +345,24 @@ onUnmounted(() => {
 		background-size: 225% auto;
 		background-position: 77.5% 60%;
 		transition: background-position 4s ease-in-out, background-size 4s ease-in-out;
+		//HERE
+		background-image: url('/assets/img/dead.gif');
+		background-size: 100% auto;
+		background-position: 0% 0%;
+		opacity: 1;
+		transition: background-position 4s ease-in-out, background-size 4s ease-in-out;
 	}
 
 	&.second-message-block::before {
 		background-size: 225% auto;
 		background-position: 100% 65%;
 		transition: background-position 4s ease-in-out, background-size 4s ease-in-out;
+		//HERE
+		// background-image: url('/assets/img/dead.gif');
+		// background-size: 100% auto;
+		// background-position: 0% 0%;
+		// opacity: 1;
+		// transition: background-position 4s ease-in-out, background-size 4s ease-in-out;
 	}
 
 	&.third-message-block::before {

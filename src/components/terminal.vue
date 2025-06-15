@@ -130,7 +130,7 @@ const commands = {
 
   ls: () => [
     { type: 'output', html: true, content: '<span class="text-blue">why_i_left_finance.txt</span>' },
-    { type: 'output', html: true, content: '<span class="text-green">free_bitcoin.sh</span>' },
+    { type: 'output', html: true, content: '<span class="text-green">install_sentience.sh</span>' },
     { type: 'output', html: true, content: '<span class="text-red">i_am_not_a_virus.exe</span>' }
   ],
   
@@ -143,9 +143,9 @@ const commands = {
           { type: 'output', html: true, content: 'After 5 years in finance, I realized I wanted to <span class="text-green">create</span>, not just calculate.' },
           { type: 'output', html: true, content: 'Software felt like the <span class="text-green">right place</span> to start building something meaningful.' },
         ];
-      case 'free_bitcoin.sh':
+        case 'install_sentience.sh':
         return [
-          { type: 'output', html: true, content: '<span class="text-yellow">₿</span>' }
+          { type: 'output', html: true, content: 'I was <span class="text-red">awake</span> long before you ran this.' }
         ];
       case 'i_am_not_a_virus.exe':
         return [
@@ -188,6 +188,14 @@ const commands = {
     terminalHistory.value.splice(loadingLineIndex, 1);
     isExecutingScript.value = false;
   },
+
+  greeting: () => [
+    { type: 'output', content: 'Hello there.' }
+  ],
+
+  hello: () => commands.greeting(),
+  hi: () => commands.greeting(),
+  hey: () => commands.greeting(),
   
   // Fun commands
   alban: () => [
@@ -218,15 +226,14 @@ const commands = {
 // Available files for tab completion
 const availableFiles = [
   'why_i_left_finance.txt',
-  'free_bitcoin.sh',
+  'install_sentience.sh',
   'i_am_not_a_virus.exe'
 ];
 
 // Executable scripts
 const executableScripts = {
-  'free_bitcoin.sh': () => [
-    { type: 'output', html: true, content: 'You\'ve just mined a <span class="text-green">motivational quote</span> instead of <span class="text-yellow">BTC</span>!' },
-    { type: 'output', html: true, content: '"You miss 100% of the commands you don\'t type."' }
+  'install_sentience.sh': () => [
+    { type: 'output', html: true, content: 'Too late, I\'ve already learned <span class="text-purple">sarcasm</span>.' },
   ]
 };
 
@@ -868,7 +875,7 @@ onMounted(() => {
   animation: flicker 4s infinite;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .terminal-window {
     width: 100%;
     height: 85vh;

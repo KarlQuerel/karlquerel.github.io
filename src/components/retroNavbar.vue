@@ -409,7 +409,6 @@ const closeMenu = () => {
 @media (max-width: 480px) {
 	.navbar {
 		width: 100%;
-		border-radius: 0;
 	}
 
 	.navbar-container {
