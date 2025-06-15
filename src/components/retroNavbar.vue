@@ -1,5 +1,5 @@
 <template>
-	<nav class="navbar" :class="{ 'menu-active': isMenuOpen }">
+	<nav class="navbar" :class="{ 'menu-active': isMenuOpen, 'navbar-hidden': isHidden }">
 	  <div class="navbar-container">
 		<router-link to="/" class="logo" @click="closeMenu">
   <img src="/assets/img/Yako_logo_128.png" class="default-img" alt="Logo" />
@@ -34,13 +34,26 @@
 		  </div>
 		</ul>
 	  </div>
+	  <button v-if="isGameRoute" class="hide-navbar-btn" @click="toggleNavbar" :class="{ 'hidden': isHidden }">
+		<img 
+			src="/assets/img/navbar-arrow.png" 
+			alt="Toggle Navbar" 
+			class="arrow-icon"
+			:class="{ 'arrow-up': isHidden, 'arrow-down': !isHidden }"
+		/>
+	  </button>
 	</nav>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useRoute } from 'vue-router';
 
+const route = useRoute();
 const isMenuOpen = ref(false);
+const isHidden = ref(false);
+
+const isGameRoute = computed(() => route.path === '/game');
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
@@ -48,6 +61,10 @@ const toggleMenu = () => {
 
 const closeMenu = () => {
   isMenuOpen.value = false;
+};
+
+const toggleNavbar = () => {
+  isHidden.value = !isHidden.value;
 };
 </script>
 
@@ -67,12 +84,16 @@ const closeMenu = () => {
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 	width: 60%;
 	min-height: 60px;
-	transition: all 0.3s ease;
+	transition: all 0.3s ease, transform 0.5s ease;
 
 	&.menu-active {
 		border: 0;
 		background: transparent;
 		box-shadow: none;
+	}
+
+	&.navbar-hidden {
+		transform: translate(-50%, -100%);
 	}
 }
 
@@ -322,6 +343,46 @@ const closeMenu = () => {
   }
 }
 
+.hide-navbar-btn {
+	position: absolute;
+	bottom: -47.5px;
+	background: transparent;
+	transform: translateX(-50%);
+	cursor: pointer;
+	z-index: 1020;
+	transition: all 0.3s ease;
+	border: none !important;
+	outline: none !important;
+	padding: 0;
+
+	&:focus,
+	&:focus-visible,
+	&:active {
+		outline: none !important;
+		border: none !important;
+		box-shadow: none !important;
+	}
+
+	&.hidden {
+		transform: translateX(-50%) rotate(180deg);
+	}
+
+	.arrow-icon {
+		width: 40px;
+		height: 40px;
+		background: transparent;
+		border: 2px dashed $retro-green;
+		border-radius: 10px;
+		transition: transform 0.3s ease;
+		filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%);
+	
+		&:hover {
+			transform: scale(1.15);
+			box-shadow: 0 0 8px $yellow;
+		}
+	}
+}
+
 @media (max-width: 1024px) {
 	.navbar {
 		width: 80%;
@@ -403,6 +464,10 @@ const closeMenu = () => {
 		img {
 			height: 100%;
 		}
+	}
+
+	.hide-navbar-btn {
+		display: none;
 	}
 }
 
