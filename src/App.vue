@@ -1,21 +1,18 @@
 <template>
 	<!-- Centralized container -->
 	<div id="app">
-
 		<RetroNavbar />
-		<router-view/>
-
+		<router-view />
 	</div>
 </template>
 
 <script>
+	import RetroNavbar from './components/retroNavbar.vue'
 
-import RetroNavbar from './components/retroNavbar.vue';
-
-export default {
-	name: 'App',
-	components: {
-		RetroNavbar
+	export default {
+		name: 'App',
+		components: {
+			RetroNavbar,
+		},
 	}
-};
 </script>

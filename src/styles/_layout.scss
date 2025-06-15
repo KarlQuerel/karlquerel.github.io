@@ -9,7 +9,6 @@ body {
 	color: variables.$white;
 }
 
-
 .content {
 	z-index: variables.$z-index-content;
 	text-align: center;
@@ -27,18 +26,18 @@ body {
 	box-sizing: border-box;
 }
 
-p, h1 {
-color: variables.$white;
-text-align: center;
-font-size: clamp(
-	variables.$font-size-medium-min,
-	variables.$font-size-medium-preferred,
-	variables.$font-size-medium-max
+p,
+h1 {
+	color: variables.$white;
+	text-align: center;
+	font-size: clamp(
+		variables.$font-size-medium-min,
+		variables.$font-size-medium-preferred,
+		variables.$font-size-medium-max
 	);
 }
 
-p
-{
+p {
 	margin: 0 0 0 0;
 }
 

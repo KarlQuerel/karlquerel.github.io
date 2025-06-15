@@ -1,15 +1,14 @@
 /***	IMPORTS		***/
-import './styles/main.scss';
-import { createApp } from 'vue';
-import { createRouter, createWebHistory } from 'vue-router';
-import App from './App.vue';
-import SecretRedirect from './components/secretRedirect.vue';
-import NotFound from './components/notFound.vue';
-import UnderConstruction from './components/underConstruction.vue';
-import Game from './components/game.vue';
-import Home from './components/home.vue';
-import './js/firebase-setup.js';
-
+import './styles/main.scss'
+import { createApp } from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
+import App from './App.vue'
+import SecretRedirect from './components/secretRedirect.vue'
+import NotFound from './components/notFound.vue'
+import UnderConstruction from './components/underConstruction.vue'
+import Game from './components/game.vue'
+import Home from './components/home.vue'
+import './js/firebase-setup.js'
 
 /***	ROUTES		***/
 const routes = [
@@ -18,11 +17,11 @@ const routes = [
 	{ path: '/secret_link', component: SecretRedirect },
 	{ path: '/game', component: Game },
 	{ path: '/:pathMatch(.*)*', component: NotFound },
-  ];
+]
 
 const router = createRouter({
 	history: createWebHistory('/'),
 	routes,
-});
+})
 
-createApp(App).use(router).mount('#app');
+createApp(App).use(router).mount('#app')

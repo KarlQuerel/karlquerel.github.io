@@ -13,52 +13,53 @@
 				</button>
 
 				<!-- Display the counter -->
-				<p><span>{{ counter }}</span></p>
+				<p>
+					<span>{{ counter }}</span>
+				</p>
 			</div>
 		</div>
 	</div>
 </template>
 
 <script>
-import { loadClicks, updateClicks } from '../js/firebase-setup.js';
+	import { loadClicks, updateClicks } from '../js/firebase-setup.js'
 
-export default {
-  name: 'ClickCounter',
-  data() {
-	return {
-		counter: null,
-		loading: true,
-		};
-	},
-async mounted() {
-	this.counter = await loadClicks();
-	this.loading = false;
-	},
-	methods: {
-		async incrementCounter() {
-			this.counter++;
-
-			try {
-			await updateClicks();
-			} catch (e) {
-			this.counter--;
-			console.error("Failed to update Firestore:", e);
+	export default {
+		name: 'ClickCounter',
+		data() {
+			return {
+				counter: null,
+				loading: true,
 			}
+		},
+		async mounted() {
+			this.counter = await loadClicks()
+			this.loading = false
+		},
+		methods: {
+			async incrementCounter() {
+				this.counter++
+
+				try {
+					await updateClicks()
+				} catch (e) {
+					this.counter--
+					console.error('Failed to update Firestore:', e)
+				}
 			},
 		},
-};
+	}
 </script>
 
 <style lang="scss" scoped>
-.small-font {
-  font-size: 1rem !important;
-}
+	.small-font {
+		font-size: 1rem !important;
+	}
 
-.nes-container.is-dark
-{
-	background-color: $black;
-	border: 0.3vh dashed $retro-green;
-	border-radius: 20px;
-	text-transform: uppercase;
-}
+	.nes-container.is-dark {
+		background-color: $black;
+		border: 0.3vh dashed $retro-green;
+		border-radius: 20px;
+		text-transform: uppercase;
+	}
 </style>
