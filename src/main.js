@@ -6,7 +6,7 @@ import App from './App.vue'
 import SecretRedirect from './components/secretRedirect.vue'
 import NotFound from './components/notFound.vue'
 import UnderConstruction from './components/underConstruction.vue'
-import Game from './components/game.vue'
+import Game from './components/game/Game.vue'
 import Home from './components/home.vue'
 import './js/firebase-setup.js'
 

@@ -47,10 +47,10 @@
 	import MobileWarning from './MobileWarning.vue'
 	import PreGameScreen from './PreGameScreen.vue'
 	import GameMenu from './GameMenu.vue'
-	import GameCinematics from './gameCinematics.vue'
+	import GameCinematics from './GameCinematics.vue'
 	import CreditsModal from './CreditsModal.vue'
-	import { useAudioManager } from '../composables/useAudioManager'
-	import { useGameState } from '../composables/useGameState'
+	import { useAudioManager } from '../../composables/game/useAudioManager'
+	import { useGameState } from '../../composables/game/useGameState'
 	import GameBackground from './GameBackground.vue'
 
 	const showCredits = ref(false)

@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-	import { useAudioManager } from '../composables/useAudioManager'
+	import { useAudioManager } from '../../composables/game/useAudioManager'
 
 	defineProps({
 		showCinematics: {
