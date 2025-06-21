@@ -17,11 +17,13 @@
 						:is-initial-load="isInitialLoad"
 						:show-game="showGame"
 						:is-first-sequence="isFirstSequence"
+						:is-transitioning-to-cinematics="isTransitioningToCinematics"
 					/>
 					<div class="game-content">
 						<GameMenu
 							:show-cinematics="showCinematics"
 							:menu-buttons-ready="menuButtonsReady"
+							:is-transitioning-to-cinematics="isTransitioningToCinematics"
 							@start-cinematics="handleStartCinematics"
 							@show-credits="handleShowCredits"
 						/>
@@ -67,6 +69,7 @@
 		isInitialLoad,
 		menuButtonsReady,
 		isFirstSequence,
+		isTransitioningToCinematics,
 		startGame,
 		launchCinematics,
 		onFadeComplete,

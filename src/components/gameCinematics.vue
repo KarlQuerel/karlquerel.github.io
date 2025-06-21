@@ -36,9 +36,10 @@
 	const emit = defineEmits(['fade-complete'])
 
 	const BASE_DELAY = 3
-	const LETTER_DELAY = 0.025
+	const LETTER_DELAY = 0.015
 	const MESSAGE_GAP = 1.2
 	const FADE_OUT_DELAY = 1
+	const TIMEOUT_BETWEEN_BLOCKS = 350
 
 	const firstMessages = [
 		{ text: 'Ryn was once a powerful and thriving land' },
@@ -103,7 +104,7 @@
 	onMounted(() => {
 		for (let i = 0; i < POOL_SIZE; i++) {
 			const audio = new Audio('/assets/sound/typing.mp3')
-			audio.volume = 0.4
+			audio.volume = 0.25
 			audio.preload = 'auto'
 			audio.load()
 			audioPool.value.push(audio)
@@ -196,7 +197,7 @@
 						nextTick(() => {
 							currentMessages.value = calculateDelays(secondMessages)
 						})
-					}, 500)
+					}, TIMEOUT_BETWEEN_BLOCKS)
 				}, FADE_OUT_DELAY * 1000)
 			} else if (!isThirdSequence.value) {
 				setTimeout(() => {
@@ -209,7 +210,7 @@
 						nextTick(() => {
 							currentMessages.value = calculateDelays(thirdMessages)
 						})
-					}, 500)
+					}, TIMEOUT_BETWEEN_BLOCKS)
 				}, FADE_OUT_DELAY * 1000)
 			} else if (!isFourthSequence.value) {
 				setTimeout(() => {
@@ -218,14 +219,14 @@
 					setTimeout(() => {
 						shouldFadeOut.value = false
 						isFourthSequence.value = true
-					}, 500)
+					}, TIMEOUT_BETWEEN_BLOCKS)
 				}, FADE_OUT_DELAY * 1000)
 			} else {
 				setTimeout(() => {
 					shouldFadeOut.value = true
 					setTimeout(() => {
 						emit('fade-complete')
-					}, 500)
+					}, TIMEOUT_BETWEEN_BLOCKS)
 				}, FADE_OUT_DELAY * 1000)
 			}
 		}

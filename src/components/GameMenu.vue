@@ -1,5 +1,9 @@
 <template>
-	<div v-if="!showCinematics" class="menu-container">
+	<div
+		class="menu-container"
+		:class="{ 'fade-to-black': isTransitioningToCinematics }"
+		v-show="!showCinematics"
+	>
 		<div class="menu-content">
 			<h1 class="pixel-title">The<br /><span class="fading-text">Fading</span><br />Crown</h1>
 			<div class="menu-buttons">
@@ -34,6 +38,10 @@
 			type: Boolean,
 			required: true,
 		},
+		isTransitioningToCinematics: {
+			type: Boolean,
+			required: true,
+		},
 	})
 
 	const emit = defineEmits(['start-cinematics', 'show-credits'])
@@ -56,6 +64,11 @@
 		width: 100vw;
 		position: relative;
 		z-index: 10;
+		transition: opacity 2s ease-in-out;
+
+		&.fade-to-black {
+			opacity: 0;
+		}
 	}
 
 	.menu-content {

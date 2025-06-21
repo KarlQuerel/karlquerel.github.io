@@ -2,7 +2,7 @@
 	<div
 		class="game-background"
 		:class="{
-			'fade-to-black': showCinematics && !shouldMoveBackground && !isFirstSequence,
+			'fade-to-black': isTransitioningToCinematics,
 			'first-message-block': showCinematics && !shouldMoveBackground && isFirstSequence,
 			'second-message-block': shouldMoveBackground && !showThirdMessageBlock,
 			'third-message-block': showThirdMessageBlock && !showFourthMessageBlock,
@@ -47,6 +47,10 @@
 			type: Boolean,
 			default: true,
 		},
+		isTransitioningToCinematics: {
+			type: Boolean,
+			default: false,
+		},
 	})
 </script>
 
@@ -85,46 +89,47 @@
 		}
 
 		&.fade-to-black::before {
-			background-position: 0% 0%;
 			opacity: 0;
-			transition: all 3s ease-in-out;
+			transition:
+				opacity 2s ease-in-out,
+				transform 8s ease-in-out;
+			transform: translateY(50%);
 		}
-		// HERE fix fade to black before castle scroll down + gif size image
+
 		&.first-message-block::before {
 			background-image: url('/assets/game/castle.gif');
-			background-size: cover;
-			background-position: center top;
+			background-size: 100% 100%;
+			background-repeat: no-repeat;
 			opacity: 1;
 			z-index: 1;
-			transition: opacity 2s ease-in-out;
-			animation: castleScrollDown 20s linear forwards;
+			transition: opacity 10s ease-in-out;
 		}
 
 		&.second-message-block::before {
 			background-image: url('/assets/game/dead.gif');
-			background-size: 100% 100%;
-			background-position: center;
+			background-size: 100% 100;
+			background-repeat: no-repeat;
 			opacity: 1;
 			z-index: 1;
-			transition: all 4s ease-in-out;
+			transition: all 10s ease-in-out;
 		}
 
 		&.third-message-block::before {
 			background-image: url('/assets/game/mountains.gif');
-			background-size: cover;
-			background-position: center;
+			background-size: 100% 100%;
+			background-repeat: no-repeat;
 			opacity: 1;
 			z-index: 1;
-			transition: all 4s ease-in-out;
+			transition: all 10s ease-in-out;
 		}
 
 		&.fourth-message-block::before {
 			background-image: url('/assets/game/menu-background.gif');
 			background-size: 100% 100%;
-			background-position: 0% 0%;
+			background-repeat: no-repeat;
 			opacity: 1;
 			z-index: 1;
-			transition: all 7s ease-in-out;
+			transition: all 3s ease-in-out;
 		}
 	}
 
@@ -149,15 +154,6 @@
 			opacity: 1;
 			background-size: 210% auto;
 			background-position: 0% 85%;
-		}
-	}
-
-	@keyframes castleScrollDown {
-		from {
-			background-position: center top;
-		}
-		to {
-			background-position: center bottom;
 		}
 	}
 </style>

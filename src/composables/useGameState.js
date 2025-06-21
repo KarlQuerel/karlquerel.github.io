@@ -9,6 +9,7 @@ export function useGameState() {
 	const isInitialLoad = ref(true)
 	const menuButtonsReady = ref(false)
 	const isFirstSequence = ref(true)
+	const isTransitioningToCinematics = ref(false)
 
 	const startGame = () => {
 		showGame.value = true
@@ -16,8 +17,13 @@ export function useGameState() {
 
 	const launchCinematics = async playClickSound => {
 		await playClickSound()
-		showCinematics.value = true
-		isFirstSequence.value = true
+		isTransitioningToCinematics.value = true
+
+		setTimeout(() => {
+			showCinematics.value = true
+			isFirstSequence.value = true
+			isTransitioningToCinematics.value = false
+		}, 2000)
 	}
 
 	const onFadeComplete = () => {
@@ -71,6 +77,7 @@ export function useGameState() {
 		isInitialLoad,
 		menuButtonsReady,
 		isFirstSequence,
+		isTransitioningToCinematics,
 		startGame,
 		launchCinematics,
 		onFadeComplete,
