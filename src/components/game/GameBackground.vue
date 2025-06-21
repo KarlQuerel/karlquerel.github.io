@@ -97,30 +97,30 @@
 		}
 
 		&.first-message-block::before {
-			background-image: url('/assets/game/castle.gif');
+			background-image: url('/assets/game/landscape/city-looped.gif');
 			background-size: 100% 100%;
 			background-repeat: no-repeat;
 			opacity: 1;
 			z-index: 1;
-			transition: opacity 10s ease-in-out;
+			transition: opacity 8s ease-in-out;
 		}
 
 		&.second-message-block::before {
-			background-image: url('/assets/game/dead.gif');
-			background-size: 100% 100;
-			background-repeat: no-repeat;
-			opacity: 1;
-			z-index: 1;
-			transition: all 10s ease-in-out;
-		}
-
-		&.third-message-block::before {
-			background-image: url('/assets/game/mountains.gif');
+			background-image: url('/assets/game/landscape/smoke.gif');
 			background-size: 100% 100%;
 			background-repeat: no-repeat;
 			opacity: 1;
 			z-index: 1;
-			transition: all 10s ease-in-out;
+			transition: all 8s ease-in-out;
+		}
+
+		&.third-message-block::before {
+			background-image: url('/assets/game/landscape/forest1.gif');
+			background-size: 100% 100%;
+			background-repeat: no-repeat;
+			opacity: 1;
+			z-index: 1;
+			transition: all 8s ease-in-out;
 		}
 
 		&.fourth-message-block::before {

@@ -8,6 +8,7 @@
 					<h3>Artwork</h3>
 					<p>Fatih Emir</p>
 					<p>Kryssalian</p>
+					<p>Vertibirdo</p>
 					<p>v78</p>
 				</div>
 				<div class="credits-section">
