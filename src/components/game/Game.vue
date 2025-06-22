@@ -2,7 +2,16 @@
 	<div>
 		<MobileWarning ref="mobileWarningRef" />
 		<template v-if="!isMobile">
-			<div style="overflow: hidden; height: 100vh">
+			<!-- Loading Screen -->
+			<LoadingScreen
+				:is-loading="isLoading"
+				:loading-progress="loadingProgress"
+				:loaded-assets="loadedAssets"
+				:total-assets="totalAssets"
+			/>
+
+			<!-- Game Content (only show after loading) -->
+			<div v-if="!isLoading" style="overflow: hidden; height: 100vh">
 				<PreGameScreen
 					v-if="!showGame"
 					:show-game="showGame"
@@ -45,12 +54,14 @@
 <script setup>
 	import { ref, onMounted, computed } from 'vue'
 	import MobileWarning from './MobileWarning.vue'
+	import LoadingScreen from './LoadingScreen.vue'
 	import PreGameScreen from './PreGameScreen.vue'
 	import GameMenu from './GameMenu.vue'
 	import GameCinematics from './GameCinematics.vue'
 	import CreditsModal from './CreditsModal.vue'
 	import { useAudioManager } from '../../composables/game/useAudioManager'
 	import { useGameState } from '../../composables/game/useGameState'
+	import { useAssetPreloader } from '../../composables/game/useAssetPreloader'
 	import GameBackground from './GameBackground.vue'
 
 	const showCredits = ref(false)
@@ -76,6 +87,15 @@
 		initializeMenu,
 	} = useGameState()
 
+	const {
+		isLoading,
+		loadingProgress,
+		totalAssets,
+		loadedAssets,
+		preloadAssets,
+		isPreloadingComplete,
+	} = useAssetPreloader()
+
 	const handleStartGame = async () => {
 		startGame()
 		await playBackgroundMusic()
@@ -90,9 +110,15 @@
 		showCredits.value = true
 	}
 
-	onMounted(() => {
-		initAudio()
-		initializeMenu()
+	onMounted(async () => {
+		// Start preloading assets first
+		await preloadAssets()
+
+		// Only initialize audio and menu after assets are loaded
+		if (isPreloadingComplete()) {
+			initAudio()
+			initializeMenu()
+		}
 	})
 
 	const isMobile = computed(() => mobileWarningRef.value?.isMobile ?? false)

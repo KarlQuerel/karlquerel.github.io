@@ -2,6 +2,10 @@
 	<div v-if="!showGame" class="pre-game-screen">
 		<div class="pre-game-content">
 			<h2 class="pre-game-title">
+				This game is currently<br />
+				<span class="highlight">in development</span>
+			</h2>
+			<h2 class="pre-game-title">
 				For the best experience<br />turn on your
 				<span class="highlight">sound</span> before starting
 			</h2>
