@@ -42,10 +42,7 @@ button:hover {
 .btn-home:hover {
 	border: 5px solid variables.$retro-green;
 	color: variables.$black;
-	background: variables.$retro-green url('/assets/img/pixel_button_blue.png') no-repeat center
-		center;
-	background-size: 220px;
-	animation: animate 0.5s steps(8) forwards;
+	background: variables.$retro-green;
 	transition: background-color 1s;
 	text-decoration: none;
 }
@@ -85,14 +82,7 @@ button:hover {
 		drop-shadow(0 0 40px #014f79);
 }
 
-@keyframes animate {
-	0% {
-		background-position-y: 0;
-	}
-	100% {
-		background-position-y: -480px;
-	}
-}
+
 
 @media (max-width: 768px) {
 	.share {
