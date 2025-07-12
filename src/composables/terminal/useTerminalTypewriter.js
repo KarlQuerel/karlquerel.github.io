@@ -13,7 +13,7 @@ export function useTerminalTypewriter() {
 							'Welcome to my website!',
 							'<br>Type <span class="text-yellow">help</span> for available commands or just type anything.',
 						],
-						speed: 50,
+						speed: 25,
 						lifelike: true,
 						startDelay: 500,
 						html: true,
