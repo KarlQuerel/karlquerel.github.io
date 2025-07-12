@@ -476,17 +476,7 @@
 				{
 					type: 'output',
 					html: true,
-					content: `"I have no idea what you mean by "<span class="text-red">${input}</span>", ask Karl to code me better!`,
-				},
-				{
-					type: 'output',
-					html: true,
 					content: `I do not know "<span class="text-red">${input}</span>", did you try asking <span class="text-blue">ChatGPT</span>?`,
-				},
-				{
-					type: 'output',
-					html: true,
-					content: `"<span class="text-red">${input}</span>" is not a command. But I admire the <span class="text-purple">chaos</span>.`,
 				},
 				{
 					type: 'output',
@@ -502,6 +492,11 @@
 					type: 'output',
 					html: true,
 					content: `I'm <span class="text-green">98%</span> sure "<span class="text-red">${input}</span>" was <span class="text-purple">made up</span>.`,
+				},
+				{
+					type: 'output',
+					html: true,
+					content: `"<span class="text-red">${input}</span>" is above my <span class="text-yellow">pay grade</span>.`,
 				},
 			]
 			const randomResponse = responses[Math.floor(Math.random() * responses.length)]
@@ -672,7 +667,7 @@
 		width: 100%;
 		max-width: 1100px;
 		height: 80vh;
-		background: rgba(4, 20, 0, 0.8);
+		background: rgba(0, 0, 0, 0.5);
 		border: 3px dashed $retro-green;
 		border-radius: 10px;
 		box-shadow:
@@ -683,7 +678,9 @@
 	}
 
 	.terminal-header {
-		background: linear-gradient(90deg, #1a1a1a, #2a2a2a);
+		// background: linear-gradient(90deg, #1a1a1a, #2a2a2a);
+		background: rgba(100, 100, 100, 0.5);
+
 		border-bottom: 2px solid $retro-green;
 		padding: 0.5rem 1rem;
 		display: flex;
@@ -724,10 +721,6 @@
 		height: calc(100% - 60px);
 		padding: 1rem;
 		overflow-y: auto;
-		background:
-			linear-gradient(rgba(0, 255, 0, 0.03) 50%, transparent 50%),
-			linear-gradient(90deg, rgba(0, 255, 0, 0.03) 50%, transparent 50%);
-		background-size: 2px 2px;
 
 		&::-webkit-scrollbar {
 			width: 8px;
