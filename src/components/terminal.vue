@@ -12,14 +12,7 @@
 		<div class="terminal-body" ref="terminalBody" @click="focusInput">
 			<div class="terminal-line">
 				<span class="prompt">></span>
-				<span class="welcome-text">Welcome to my website!</span>
-			</div>
-
-			<div class="terminal-line">
-				<span class="prompt">></span>
-				<span class="help-text"
-					>Type 'help' for available commands or just type anything</span
-				>
+				<span class="welcome-text" ref="welcomeTextRef"></span>
 			</div>
 
 			<div v-for="(line, index) in terminalHistory" :key="index" class="terminal-line">
@@ -48,7 +41,7 @@
 				</div>
 			</div>
 
-			<div v-if="!isExecutingScript" class="terminal-line current-line">
+			<div v-if="!isExecutingScript && showInputPrompt" class="terminal-line current-line">
 				<span class="prompt">></span>
 				<div class="input-container">
 					<input
@@ -77,12 +70,16 @@
 	const router = useRouter()
 	const terminalBody = ref(null)
 	const terminalInput = ref(null)
+	const welcomeTextRef = ref(null)
 	const currentInput = ref('')
 	const terminalHistory = ref([])
 	const commandHistory = ref([])
 	const historyIndex = ref(-1)
 	const isShaking = ref(false)
 	const isExecutingScript = ref(false)
+	
+	// Show input prompt after welcome message is done
+	const showInputPrompt = ref(false)
 
 	// Tab completion state
 	const tabMatches = ref([])
@@ -281,14 +278,6 @@
 		hey: () => commands.greeting(),
 
 		// Fun commands
-		alban: () => [{ type: 'output', content: 'On est là, tu connais' }],
-
-		jess: () => [{ type: 'output', content: 'Joyeux anniversaire Jess' }],
-
-		roberto: () => [{ type: 'output', content: 'I told you Roberto, I told you' }],
-
-		clément: () => [{ type: 'output', content: "Parce qu'après le bidouuuuuu..." }],
-
 		yako: () => [
 			{
 				type: 'output',
@@ -659,6 +648,34 @@
 	onMounted(() => {
 		cursorPosition.value = currentInput.value.length
 		focusInput()
+		
+		// Initialize TypeIt for welcome text
+		nextTick(() => {
+			const initTypeIt = () => {
+				if (welcomeTextRef.value && window.TypeIt) {
+					new window.TypeIt(welcomeTextRef.value, {
+						strings: ["Welcome to my website!", "<br>Type <span class=\"text-yellow\">help</span> for available commands or just type anything."],
+						speed: 50,
+						lifelike: true,
+						nextStringDelay: 1000,
+						startDelay: 500,
+						html: true,
+						cursorChar: '_',
+						afterComplete: function (instance) {
+							instance.destroy()
+							// Show input prompt after typing is complete
+							showInputPrompt.value = true
+							// Wait for DOM to update before focusing
+							nextTick(() => {
+								focusInput()
+							})
+						}
+					}).go()
+				}
+			}
+
+			initTypeIt()
+		})
 	})
 </script>
 
@@ -756,8 +773,7 @@
 		flex-shrink: 0;
 	}
 
-	.welcome-text,
-	.help-text {
+	.welcome-text {
 		color: $light-blue;
 	}
 
@@ -790,10 +806,7 @@
 		text-shadow: 0 0 3px currentColor;
 	}
 
-	:deep(.text-cyan) {
-		color: $light-blue;
-		text-shadow: 0 0 3px currentColor;
-	}
+
 
 	:deep(.text-purple) {
 		color: $purple;
@@ -987,7 +1000,6 @@
 		}
 
 		.welcome-text,
-		.help-text,
 		.terminal-input,
 		.output,
 		.command {
