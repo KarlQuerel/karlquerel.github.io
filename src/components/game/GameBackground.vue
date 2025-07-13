@@ -11,7 +11,7 @@
 			'show-game': showGame,
 		}"
 	>
-		<div class="background-overlay"></div>
+		<div class="background-overlay" />
 	</div>
 </template>
 

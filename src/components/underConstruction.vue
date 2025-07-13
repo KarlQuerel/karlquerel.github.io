@@ -2,7 +2,7 @@
 	<div class="content">
 		<div class="nes-container is-dark is-rounded">
 			<p>Under Construction</p>
-			<p></p>
+			<p />
 		</div>
 
 		<!-- Clicker Button -->

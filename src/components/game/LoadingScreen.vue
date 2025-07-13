@@ -3,7 +3,7 @@
 		<div class="loading-content">
 			<h2 class="loading-title">Loading Assets</h2>
 			<div class="loading-bar-container">
-				<div class="loading-bar" :style="{ width: `${loadingProgress}%` }"></div>
+				<div class="loading-bar" :style="{ width: `${loadingProgress}%` }" />
 			</div>
 			<div class="loading-text">{{ loadingProgress }}% Complete</div>
 			<div class="loading-details">{{ loadedAssets }} / {{ totalAssets }} assets loaded</div>

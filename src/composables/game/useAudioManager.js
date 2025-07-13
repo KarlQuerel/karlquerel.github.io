@@ -19,7 +19,9 @@ export function useAudioManager() {
 			try {
 				bgMusic.value.volume = 1
 				await bgMusic.value.play()
-			} catch (error) {}
+			} catch (error) {
+				console.error('Error playing background music:', error)
+			}
 		}
 	}
 
@@ -28,7 +30,9 @@ export function useAudioManager() {
 			try {
 				clickSound.value.currentTime = 0
 				await clickSound.value.play()
-			} catch (error) {}
+			} catch (error) {
+				console.error('Error playing click sound:', error)
+			}
 		}
 	}
 

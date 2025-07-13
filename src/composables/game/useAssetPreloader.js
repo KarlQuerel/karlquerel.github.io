@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 
 export function useAssetPreloader() {
 	const isLoading = ref(true)
@@ -6,9 +6,7 @@ export function useAssetPreloader() {
 	const totalAssets = ref(0)
 	const loadedAssets = ref(0)
 
-	// Define all GIF assets that need to be preloaded
 	const gifAssets = [
-		// Main game assets
 		'/assets/game/menu-background.gif',
 		'/assets/game/tavern.gif',
 		'/assets/game/hole.gif',
@@ -16,7 +14,6 @@ export function useAssetPreloader() {
 		'/assets/game/credits.gif',
 		'/assets/game/castle.gif',
 
-		// Landscape assets
 		'/assets/game/landscape/city-looped.gif',
 		'/assets/game/landscape/ruins.gif',
 		'/assets/game/landscape/city.gif',
@@ -39,8 +36,8 @@ export function useAssetPreloader() {
 		totalAssets.value = gifAssets.length
 		loadedAssets.value = 0
 
-		const loadPromises = gifAssets.map((assetPath, index) => {
-			return new Promise((resolve, reject) => {
+		const loadPromises = gifAssets.map(assetPath => {
+			return new Promise(resolve => {
 				const img = new Image()
 
 				img.onload = () => {
@@ -57,7 +54,7 @@ export function useAssetPreloader() {
 					loadingProgress.value = Math.round(
 						(loadedAssets.value / totalAssets.value) * 100
 					)
-					resolve(assetPath) // Resolve anyway to continue loading other assets
+					resolve(assetPath)
 				}
 
 				img.src = assetPath

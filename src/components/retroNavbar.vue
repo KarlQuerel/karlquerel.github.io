@@ -6,9 +6,9 @@
 				<img src="/assets/img/Yako_logo_128.png" class="glitch-img" alt="Logo Glitch" />
 			</router-link>
 			<div class="menu-toggle" @click="toggleMenu">
-				<div class="bar"></div>
-				<div class="bar"></div>
-				<div class="bar"></div>
+				<div class="bar" />
+				<div class="bar" />
+				<div class="bar" />
 			</div>
 			<ul class="nav-links" :class="{ active: isMenuOpen }">
 				<li>
@@ -33,13 +33,13 @@
 				</li>
 				<div class="share">
 					<a href="mailto:karlquerel@gmail.com" target="_blank">
-						<i class="nes-icon gmail is-medium"></i>
+						<i class="nes-icon gmail is-medium" />
 					</a>
 					<a href="https://github.com/KarlQuerel" target="_blank">
-						<i class="nes-icon github is-medium"></i>
+						<i class="nes-icon github is-medium" />
 					</a>
 					<a href="https://www.linkedin.com/in/karlquerel" target="_blank">
-						<i class="nes-icon linkedin is-medium"></i>
+						<i class="nes-icon linkedin is-medium" />
 					</a>
 				</div>
 			</ul>

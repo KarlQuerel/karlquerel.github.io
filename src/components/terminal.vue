@@ -2,9 +2,9 @@
 	<div class="terminal-window">
 		<div class="terminal-header">
 			<div class="terminal-buttons">
-				<div class="btn red"></div>
-				<div class="btn yellow"></div>
-				<div class="btn green"></div>
+				<div class="btn red" />
+				<div class="btn yellow" />
+				<div class="btn green" />
 			</div>
 			<div class="terminal-title">BARELY_WORKING_TERMINAL_V0.3</div>
 		</div>
@@ -12,7 +12,7 @@
 		<div class="terminal-body" ref="terminalBody" @click="focusInput(terminalInput)">
 			<div class="terminal-line">
 				<span class="prompt">></span>
-				<span class="welcome-text" ref="welcomeTextRef"></span>
+				<span class="welcome-text" ref="welcomeTextRef" />
 			</div>
 
 			<div v-for="(line, index) in terminalHistory" :key="index" class="terminal-line">
@@ -22,13 +22,13 @@
 					:class="line.type"
 					:ref="`typewriter-${index}`"
 					:data-index="index"
-				></span>
+				/>
 				<span
 					v-if="line.type === 'typewriter' && line.link"
 					:class="line.type"
 					:ref="`typewriter-${index}`"
 					:data-index="index"
-				></span>
+				/>
 				<span
 					v-if="!line.link && !line.image && !line.html && line.type !== 'typewriter'"
 					:class="line.type"
@@ -38,7 +38,7 @@
 					v-else-if="line.html && line.type !== 'typewriter'"
 					:class="line.type"
 					v-html="line.content"
-				></span>
+				/>
 				<span v-else-if="line.link && line.type !== 'typewriter'" :class="line.type">
 					{{ line.prefix }}
 					<a :href="line.link" target="_blank" class="terminal-link">{{
@@ -103,7 +103,7 @@
 	const { welcomeTextRef, showInputPrompt, initTypewriter, createCommandTypewriter } =
 		useTerminalTypewriter()
 
-	const { trackVisit, trackCommand, getVisitStats, isLoading } = useVisitTracker()
+	const { trackCommand, getVisitStats } = useVisitTracker()
 
 	const handleStatsCommand = () => {
 		const stats = getVisitStats()
@@ -111,7 +111,7 @@
 			{
 				type: 'typewriter',
 				html: true,
-				content: `<span class="text-green">Terminal Statistics</span>`,
+				content: '<span class="text-green">Terminal Statistics</span>',
 			},
 			{
 				type: 'typewriter',
@@ -137,7 +137,7 @@
 			outputs.push({
 				type: 'typewriter',
 				html: true,
-				content: `<span class="text-purple">Most popular commands:</span>`,
+				content: '<span class="text-purple">Most popular commands:</span>',
 			})
 
 			stats.popularCommands.forEach(({ command, count }) => {
@@ -181,18 +181,12 @@
 		originalExecuteCommand(input)
 	}
 
-	const {
-		currentInput,
-		commandHistory,
-		historyIndex,
-		cursorPosition,
-		tabMatches,
-		tabIndex,
-		isTabbing,
-		originalTabPattern,
-		handleKeyDown,
-		focusInput,
-	} = useTerminalInput(enhancedExecuteCommand, commands, availableFiles, executableScripts)
+	const { currentInput, cursorPosition, handleKeyDown, focusInput } = useTerminalInput(
+		enhancedExecuteCommand,
+		commands,
+		availableFiles,
+		executableScripts
+	)
 
 	// Watch for typewriter outputs and animate them
 	const processTypewriterOutputs = async () => {

@@ -16,7 +16,7 @@ module.exports = {
 	  parser: '@babel/eslint-parser',
 	  requireConfigFile: false
 	},
-	plugins: ['vue'],
+	plugins: ['vue', 'unused-imports'],
 	ignorePatterns: ['dist/*', 'node_modules/*', 'public/*'],
 	rules: {
 	  // Vue specific rules
@@ -54,6 +54,22 @@ module.exports = {
 		'anonymous': 'always',
 		'named': 'never',
 		'asyncArrow': 'always'
-	  }]
+	  }],
+
+	  // Unused variables and imports detection
+	  'no-unused-vars': 'off', // Turn off base rule as it can report incorrect errors
+	  'unused-imports/no-unused-imports': 'error',
+	  'unused-imports/no-unused-vars': [
+		'warn',
+		{
+		  'vars': 'all',
+		  'varsIgnorePattern': '^_',
+		  'argsIgnorePattern': '^_'
+		}
+	  ],
+	  'vue/no-unused-vars': 'error',
+	  'no-unused-expressions': 'error',
+	  'vue/no-unused-components': 'error',
+	  'vue/no-unused-properties': 'error'
 	}
   }

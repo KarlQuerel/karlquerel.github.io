@@ -9,14 +9,13 @@ export function useTerminalCommands() {
 	// Commands
 	const commands = {
 		help: () => [
-			{ type: 'typewriter', content: '  help     - Show this help message' },
-			{ type: 'typewriter', content: '  about    - Learn more about me' },
-			{ type: 'typewriter', content: '  contact  - Get contact information' },
-			{ type: 'typewriter', content: '  clear    - Clear the terminal' },
-			{ type: 'typewriter', content: '  pwd      - Print working directory' },
-			{ type: 'typewriter', content: '  ls       - List files' },
-			{ type: 'typewriter', content: '  cat      - View file contents' },
-			{ type: 'typewriter', content: '  yako     - Just a happy dog' },
+			{ type: 'typewriter', content: '• help     - Show this help message' },
+			{ type: 'typewriter', content: '• about    - Learn more about me' },
+			{ type: 'typewriter', content: '• stats    - View terminal statistics' },
+			{ type: 'typewriter', content: '• contact  - Get contact information' },
+			{ type: 'typewriter', content: '• clear    - Clear the terminal' },
+			{ type: 'typewriter', content: '• ls       - List files' },
+			{ type: 'typewriter', content: '• yako     - Just a happy dog' },
 			{ type: 'typewriter', content: '' },
 			{
 				type: 'typewriter',
@@ -145,9 +144,7 @@ export function useTerminalCommands() {
 						},
 					]
 				default:
-					return [
-						{ type: 'typewriter', content: `cat: ${file}: No such file or directory` },
-					]
+					return [{ type: 'output', content: `cat: ${file}: No such file or directory` }]
 			}
 		},
 

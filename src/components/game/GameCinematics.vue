@@ -231,15 +231,6 @@
 			}
 		}
 	}
-
-	const setupDramaticEntrance = () => {
-		nextTick(() => {
-			const dramaticLetters = document.querySelectorAll('.dramatic-letter')
-			dramaticLetters.forEach((letter, index) => {
-				letter.style.setProperty('--letter-index', index)
-			})
-		})
-	}
 </script>
 
 <style lang="scss" scoped>
