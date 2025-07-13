@@ -1,5 +1,5 @@
 <template>
-	<div class="terminal-window" :class="{ shake: isShaking }">
+	<div class="terminal-window">
 		<div class="terminal-header">
 			<div class="terminal-buttons">
 				<div class="btn red"></div>
@@ -91,13 +91,11 @@
 	const terminalBody = ref(null)
 	const terminalInput = ref(null)
 
-	// Composables
 	const {
 		commands,
 		availableFiles,
 		executableScripts,
 		terminalHistory,
-		isShaking,
 		isExecutingScript,
 		executeCommand,
 	} = useTerminalCommands()
@@ -105,10 +103,8 @@
 	const { welcomeTextRef, showInputPrompt, initTypewriter, createCommandTypewriter } =
 		useTerminalTypewriter()
 
-	// Visit tracker
 	const { trackVisit, trackCommand, getVisitStats, isLoading } = useVisitTracker()
 
-	// Custom stats command implementation
 	const handleStatsCommand = () => {
 		const stats = getVisitStats()
 		const outputs = [
@@ -156,7 +152,6 @@
 		return outputs
 	}
 
-	// Override the stats command
 	const originalExecuteCommand = executeCommand
 	const enhancedExecuteCommand = async input => {
 		const trimmedInput = input.trim()
@@ -168,10 +163,8 @@
 			return
 		}
 
-		// Track the command
 		if (trimmedInput) {
 			const command = trimmedInput.split(' ')[0]
-			// Check if it's a valid command
 			const isValidCommand =
 				commands[command] ||
 				command.startsWith('./') ||
@@ -181,12 +174,10 @@
 			if (isValidCommand) {
 				await trackCommand(command)
 			} else {
-				// Track wrong inputs under a single category
-				await trackCommand('wrong_input')
+				await trackCommand('invalid command')
 			}
 		}
 
-		// Call original execute command
 		originalExecuteCommand(input)
 	}
 
@@ -296,7 +287,6 @@
 	}
 
 	.terminal-header {
-		// background: linear-gradient(90deg, #1a1a1a, #2a2a2a);
 		background: rgba(100, 100, 100, 0.5);
 
 		border-bottom: 2px solid $retro-green;
@@ -474,26 +464,6 @@
 		61%,
 		100% {
 			opacity: 0;
-		}
-	}
-
-	.shake {
-		animation: error-glow 0.3s ease-in-out;
-		will-change: box-shadow;
-	}
-
-	@keyframes error-glow {
-		0%,
-		100% {
-			box-shadow:
-				0 0 100px $retro-green,
-				inset 0 0 20px rgba(0, 255, 0, 0.1);
-		}
-
-		50% {
-			box-shadow:
-				0 0 100px $light-red,
-				inset 0 0 20px rgba(255, 95, 86, 0.3);
 		}
 	}
 

@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 export function useTerminalCommands() {
 	const router = useRouter()
 	const terminalHistory = ref([])
-	const isShaking = ref(false)
 	const isExecutingScript = ref(false)
 
 	// Commands
@@ -386,11 +385,6 @@ export function useTerminalCommands() {
 				terminalHistory.value.push(...output)
 			}
 		} else {
-			isShaking.value = true
-			setTimeout(() => {
-				isShaking.value = false
-			}, 600)
-
 			const responses = [
 				{
 					type: 'output',
@@ -410,7 +404,7 @@ export function useTerminalCommands() {
 				{
 					type: 'output',
 					html: true,
-					content: `I'm <span class="text-green">98%</span> sure "<span class="text-red">${trimmedInput}</span>" was <span class="text-purple">made up</span>.`,
+					content: `I'm <span class="text-green">92%</span> sure "<span class="text-red">${trimmedInput}</span>" was <span class="text-purple">made up</span>.`,
 				},
 				{
 					type: 'output',
@@ -428,7 +422,6 @@ export function useTerminalCommands() {
 		availableFiles,
 		executableScripts,
 		terminalHistory,
-		isShaking,
 		isExecutingScript,
 		executeCommand,
 	}

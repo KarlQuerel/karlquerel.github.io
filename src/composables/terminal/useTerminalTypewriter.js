@@ -13,9 +13,9 @@ export function useTerminalTypewriter() {
 							'Welcome to my website!',
 							'<br>Type <span class="text-yellow">help</span> for available commands or just type anything.',
 						],
-						speed: 25,
+						speed: 20,
 						lifelike: true,
-						startDelay: 500,
+						startDelay: 0,
 						html: true,
 						cursorChar: '_',
 						afterComplete: function (instance) {
@@ -38,9 +38,9 @@ export function useTerminalTypewriter() {
 			nextTick(() => {
 				if (element && window.TypeIt) {
 					const defaultOptions = {
-						speed: 30,
+						speed: 25,
 						lifelike: true,
-						startDelay: 100,
+						startDelay: 0,
 						html: true,
 						cursorChar: '_',
 						afterComplete: function (instance) {
