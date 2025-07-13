@@ -10,22 +10,22 @@ export function useTerminalCommands() {
 	// Commands
 	const commands = {
 		help: () => [
-			{ type: 'output', content: '  help     - Show this help message' },
-			{ type: 'output', content: '  about    - Learn more about me' },
-			{ type: 'output', content: '  contact  - Get contact information' },
-			{ type: 'output', content: '  clear    - Clear the terminal' },
-			{ type: 'output', content: '  pwd      - Print working directory' },
-			{ type: 'output', content: '  ls       - List files' },
-			{ type: 'output', content: '  cat      - View file contents' },
-			{ type: 'output', content: '  yako     - Just a happy dog' },
-			{ type: 'output', content: '' },
+			{ type: 'typewriter', content: '  help     - Show this help message' },
+			{ type: 'typewriter', content: '  about    - Learn more about me' },
+			{ type: 'typewriter', content: '  contact  - Get contact information' },
+			{ type: 'typewriter', content: '  clear    - Clear the terminal' },
+			{ type: 'typewriter', content: '  pwd      - Print working directory' },
+			{ type: 'typewriter', content: '  ls       - List files' },
+			{ type: 'typewriter', content: '  cat      - View file contents' },
+			{ type: 'typewriter', content: '  yako     - Just a happy dog' },
+			{ type: 'typewriter', content: '' },
 			{
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content: '-> Not <span class="text-yellow">ALL</span> commands are listed here...',
 			},
 			{
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content:
 					'-> You can use <span class="text-purple">TAB</span> to complete commands and cycle through options',
@@ -34,23 +34,23 @@ export function useTerminalCommands() {
 
 		about: () => [
 			{
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content:
 					'• Former <span class="text-yellow">commodity broker</span> with 5 years of experience',
 			},
 			{
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content: '• Transitioned into <span class="text-green">software development</span>',
 			},
 			{
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content: '• Currently studying at <span class="text-blue">42 Paris</span>',
 			},
 			{
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content:
 					'• Passionate about building creative projects and learning new technologies',
@@ -59,32 +59,32 @@ export function useTerminalCommands() {
 
 		contact: () => [
 			{
-				type: 'output',
+				type: 'typewriter',
 				prefix: '• Email:    ',
 				link: 'mailto:karlquerel@gmail.com',
 				linkText: 'karlquerel@gmail.com',
 			},
 			{
-				type: 'output',
+				type: 'typewriter',
 				prefix: '• GitHub:   ',
 				link: 'https://github.com/KarlQuerel',
 				linkText: 'github.com/KarlQuerel',
 			},
 			{
-				type: 'output',
+				type: 'typewriter',
 				prefix: '• LinkedIn: ',
 				link: 'https://linkedin.com/in/karlquerel',
 				linkText: 'linkedin.com/in/karlquerel',
 			},
 			{
-				type: 'output',
+				type: 'typewriter',
 				content: '-> You can also click on the buttons in the navigation bar',
 			},
 		],
 
 		pwd: () => [
 			{
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content:
 					'<span class="text-blue">/home/karl/portfolio/definitely-not-a-simulation</span>',
@@ -93,17 +93,17 @@ export function useTerminalCommands() {
 
 		ls: () => [
 			{
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content: '<span class="text-blue">why_i_left_finance.txt</span>',
 			},
 			{
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content: '<span class="text-green">install_sentience.sh</span>',
 			},
 			{
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content: '<span class="text-red">i_am_not_a_virus.exe</span>',
 			},
@@ -116,13 +116,13 @@ export function useTerminalCommands() {
 				case 'why_i_left_finance.txt':
 					return [
 						{
-							type: 'output',
+							type: 'typewriter',
 							html: true,
 							content:
 								'After 5 years in finance, I realized I wanted to <span class="text-green">create</span>, not just calculate.',
 						},
 						{
-							type: 'output',
+							type: 'typewriter',
 							html: true,
 							content:
 								'Software felt like the <span class="text-green">right place</span> to start building something meaningful.',
@@ -131,7 +131,7 @@ export function useTerminalCommands() {
 				case 'install_sentience.sh':
 					return [
 						{
-							type: 'output',
+							type: 'typewriter',
 							html: true,
 							content:
 								'I was <span class="text-red">awake</span> long before you ran this.',
@@ -140,13 +140,15 @@ export function useTerminalCommands() {
 				case 'i_am_not_a_virus.exe':
 					return [
 						{
-							type: 'output',
+							type: 'typewriter',
 							html: true,
 							content: 'No worries, I am <span class="text-green">harmless</span>.',
 						},
 					]
 				default:
-					return [{ type: 'output', content: `cat: ${file}: No such file or directory` }]
+					return [
+						{ type: 'typewriter', content: `cat: ${file}: No such file or directory` },
+					]
 			}
 		},
 
@@ -162,19 +164,19 @@ export function useTerminalCommands() {
 		secret_game: async () => {
 			isExecutingScript.value = true
 			terminalHistory.value.push({
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content: 'Launching secret game',
 			})
 
 			const loadingLineIndex = terminalHistory.value.length
-			terminalHistory.value.push({ type: 'output', content: '' })
+			terminalHistory.value.push({ type: 'typewriter', content: '' })
 
 			const dots = ['', '.', '..', '...', '....']
 			for (let i = 0; i < dots.length; i++) {
 				await new Promise(resolve => setTimeout(resolve, 600))
 				terminalHistory.value[loadingLineIndex] = {
-					type: 'output',
+					type: 'typewriter',
 					content: dots[i],
 				}
 			}
@@ -183,7 +185,7 @@ export function useTerminalCommands() {
 			isExecutingScript.value = false
 		},
 
-		greeting: () => [{ type: 'output', content: 'Hello there.' }],
+		greeting: () => [{ type: 'typewriter', content: 'Hello there.' }],
 
 		hello: () => commands.greeting(),
 		hi: () => commands.greeting(),
@@ -192,7 +194,7 @@ export function useTerminalCommands() {
 		// Fun commands
 		yako: () => [
 			{
-				type: 'output',
+				type: 'typewriter',
 				image: '/assets/img/yako-running.gif',
 				animated: true,
 			},
@@ -210,7 +212,7 @@ export function useTerminalCommands() {
 	const executableScripts = {
 		'install_sentience.sh': () => [
 			{
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content:
 					'Too late, I\'ve already learned <span class="text-purple">sarcasm</span>.',
@@ -254,19 +256,19 @@ export function useTerminalCommands() {
 		isExecutingScript.value = true
 
 		terminalHistory.value.push({
-			type: 'output',
+			type: 'typewriter',
 			html: true,
 			content: `Executing <span class="text-red">${scriptName}</span>`,
 		})
 
 		const loadingLineIndex = terminalHistory.value.length
-		terminalHistory.value.push({ type: 'output', content: '' })
+		terminalHistory.value.push({ type: 'typewriter', content: '' })
 
 		const dots = ['', '.', '..', '...']
 		for (let i = 0; i < dots.length; i++) {
 			await new Promise(resolve => setTimeout(resolve, 300))
 			terminalHistory.value[loadingLineIndex] = {
-				type: 'output',
+				type: 'typewriter',
 				content: dots[i],
 			}
 		}
@@ -275,7 +277,7 @@ export function useTerminalCommands() {
 		terminalHistory.value.splice(loadingLineIndex, 1)
 
 		terminalHistory.value.push({
-			type: 'output',
+			type: 'typewriter',
 			html: true,
 			content: '<span class="text-red">System compromised...</span>',
 		})
@@ -283,7 +285,7 @@ export function useTerminalCommands() {
 		await new Promise(resolve => setTimeout(resolve, 500))
 
 		terminalHistory.value.push({
-			type: 'output',
+			type: 'typewriter',
 			html: true,
 			content: '<span class="text-red">Redirecting to secure location...</span>',
 		})
@@ -295,7 +297,7 @@ export function useTerminalCommands() {
 		const loadingDots = ['.', '..', '...']
 		for (let i = 0; i < 3; i++) {
 			terminalHistory.value.push({
-				type: 'output',
+				type: 'typewriter',
 				html: true,
 				content: `<span class="text-red">${loadingDots[i]}</span>`,
 			})
@@ -304,7 +306,7 @@ export function useTerminalCommands() {
 
 		// Final redirect message
 		terminalHistory.value.push({
-			type: 'output',
+			type: 'typewriter',
 			html: true,
 			content: '<span class="text-red">Access granted. Redirecting...</span>',
 		})

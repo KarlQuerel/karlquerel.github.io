@@ -17,11 +17,29 @@
 
 			<div v-for="(line, index) in terminalHistory" :key="index" class="terminal-line">
 				<span v-if="line.type === 'command'" class="prompt">></span>
-				<span v-if="!line.link && !line.image && !line.html" :class="line.type">{{
-					line.content
-				}}</span>
-				<span v-else-if="line.html" :class="line.type" v-html="line.content"></span>
-				<span v-else-if="line.link" :class="line.type">
+				<span
+					v-if="line.type === 'typewriter' && !line.link && !line.image"
+					:class="line.type"
+					:ref="`typewriter-${index}`"
+					:data-index="index"
+				></span>
+				<span
+					v-if="line.type === 'typewriter' && line.link"
+					:class="line.type"
+					:ref="`typewriter-${index}`"
+					:data-index="index"
+				></span>
+				<span
+					v-if="!line.link && !line.image && !line.html && line.type !== 'typewriter'"
+					:class="line.type"
+					>{{ line.content }}</span
+				>
+				<span
+					v-else-if="line.html && line.type !== 'typewriter'"
+					:class="line.type"
+					v-html="line.content"
+				></span>
+				<span v-else-if="line.link && line.type !== 'typewriter'" :class="line.type">
 					{{ line.prefix }}
 					<a :href="line.link" target="_blank" class="terminal-link">{{
 						line.linkText
@@ -64,7 +82,7 @@
 </template>
 
 <script setup>
-	import { ref, onMounted } from 'vue'
+	import { ref, onMounted, watch, nextTick } from 'vue'
 	import { useTerminalCommands } from '@/composables/terminal/useTerminalCommands'
 	import { useTerminalInput } from '@/composables/terminal/useTerminalInput'
 	import { useTerminalTypewriter } from '@/composables/terminal/useTerminalTypewriter'
@@ -96,7 +114,80 @@
 		focusInput,
 	} = useTerminalInput(executeCommand, commands, availableFiles, executableScripts)
 
-	const { welcomeTextRef, showInputPrompt, initTypewriter } = useTerminalTypewriter()
+	const { welcomeTextRef, showInputPrompt, initTypewriter, createCommandTypewriter } =
+		useTerminalTypewriter()
+
+	// Watch for typewriter outputs and animate them
+	const processTypewriterOutputs = async () => {
+		const typewriterElements = document.querySelectorAll('[data-index]')
+
+		for (const element of typewriterElements) {
+			const index = parseInt(element.getAttribute('data-index'))
+			const line = terminalHistory.value[index]
+
+			if (line && line.type === 'typewriter' && !line.animated) {
+				line.animated = true
+
+				if (line.link) {
+					const fullContent = (line.prefix || '') + line.linkText
+					await createCommandTypewriter(element, fullContent, {
+						speed: 25,
+						startDelay: 10,
+					})
+
+					element.innerHTML =
+						(line.prefix || '') +
+						`<a href="${line.link}" target="_blank" class="terminal-link">${line.linkText}</a>`
+
+					nextTick(() => {
+						const linkElement = element.querySelector('.terminal-link')
+						if (linkElement) {
+							linkElement.style.color = '#00ff00'
+							linkElement.style.textDecoration = 'none'
+							linkElement.style.borderBottom = '1px dotted #00ff00'
+							linkElement.style.transition = 'all 0.3s ease'
+
+							linkElement.addEventListener('mouseenter', () => {
+								linkElement.style.color = '#00ccff'
+								linkElement.style.borderBottomColor = '#00ccff'
+								linkElement.style.textShadow = '0 0 5px #00ccff'
+							})
+
+							linkElement.addEventListener('mouseleave', () => {
+								linkElement.style.color = '#00ff00'
+								linkElement.style.borderBottomColor = '#00ff00'
+								linkElement.style.textShadow = 'none'
+							})
+
+							linkElement.addEventListener('mousedown', () => {
+								linkElement.style.color = '#ff5f56'
+							})
+
+							linkElement.addEventListener('mouseup', () => {
+								linkElement.style.color = '#00ccff'
+							})
+						}
+					})
+				} else {
+					await createCommandTypewriter(element, line.content, {
+						speed: 25,
+						startDelay: 10,
+					})
+				}
+			}
+		}
+	}
+
+	// Watch for changes in terminal history to process typewriter outputs
+	watch(
+		terminalHistory,
+		() => {
+			nextTick(() => {
+				processTypewriterOutputs()
+			})
+		},
+		{ deep: true }
+	)
 
 	onMounted(() => {
 		initTypewriter(() => focusInput(terminalInput.value))
@@ -210,6 +301,11 @@
 		white-space: pre-wrap;
 	}
 
+	.typewriter {
+		color: #cccccc;
+		white-space: pre-wrap;
+	}
+
 	:deep(.text-green) {
 		color: $retro-green;
 		text-shadow: 0 0 3px currentColor;
@@ -296,30 +392,22 @@
 	}
 
 	.shake {
-		animation: glitch-shake 0.3s ease-in-out;
+		animation: error-glow 0.3s ease-in-out;
+		will-change: box-shadow;
 	}
 
-	@keyframes glitch-shake {
+	@keyframes error-glow {
 		0%,
 		100% {
-			transform: translateX(0);
 			box-shadow:
 				0 0 100px $retro-green,
 				inset 0 0 20px rgba(0, 255, 0, 0.1);
 		}
 
-		25% {
-			transform: translateX(-4px);
+		50% {
 			box-shadow:
 				0 0 100px $light-red,
-				inset 0 0 20px rgba(255, 95, 86, 0.4);
-		}
-
-		75% {
-			transform: translateX(4px);
-			box-shadow:
-				0 0 100px $light-red,
-				inset 0 0 20px rgba(255, 95, 86, 0.4);
+				inset 0 0 20px rgba(255, 95, 86, 0.3);
 		}
 	}
 
@@ -439,7 +527,8 @@
 
 		.terminal-line {
 			margin-bottom: 0.25rem;
-			line-height: 1.2;
+			line-height: 1.1;
+			font-size: 0.8rem;
 		}
 
 		.prompt {

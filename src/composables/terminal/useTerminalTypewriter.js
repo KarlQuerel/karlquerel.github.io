@@ -33,9 +33,38 @@ export function useTerminalTypewriter() {
 		})
 	}
 
+	const createCommandTypewriter = (element, content, options = {}) => {
+		return new Promise(resolve => {
+			nextTick(() => {
+				if (element && window.TypeIt) {
+					const defaultOptions = {
+						speed: 30,
+						lifelike: true,
+						startDelay: 100,
+						html: true,
+						cursorChar: '_',
+						afterComplete: function (instance) {
+							instance.destroy()
+							resolve()
+						},
+					}
+
+					new window.TypeIt(element, {
+						...defaultOptions,
+						...options,
+						strings: [content],
+					}).go()
+				} else {
+					resolve()
+				}
+			})
+		})
+	}
+
 	return {
 		welcomeTextRef,
 		showInputPrompt,
 		initTypewriter,
+		createCommandTypewriter,
 	}
 }
