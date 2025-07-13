@@ -6,14 +6,20 @@ export function useAssetPreloader() {
 	const totalAssets = ref(0)
 	const loadedAssets = ref(0)
 
-	const gifAssets = [
+	const criticalAssets = [
 		'/assets/game/menu-background.gif',
 		'/assets/game/tavern.gif',
+		'/assets/game/menu.png',
+	]
+
+	const secondaryAssets = [
 		'/assets/game/hole.gif',
 		'/assets/game/dead.gif',
 		'/assets/game/credits.gif',
 		'/assets/game/castle.gif',
+	]
 
+	const landscapeAssets = [
 		'/assets/game/landscape/city-looped.gif',
 		'/assets/game/landscape/ruins.gif',
 		'/assets/game/landscape/city.gif',
@@ -30,45 +36,52 @@ export function useAssetPreloader() {
 		'/assets/game/landscape/fields.gif',
 	]
 
+	const loadAsset = assetPath => {
+		return new Promise(resolve => {
+			const img = new Image()
+
+			img.onload = () => {
+				loadedAssets.value++
+				loadingProgress.value = Math.round((loadedAssets.value / totalAssets.value) * 100)
+				resolve(assetPath)
+			}
+
+			img.onerror = () => {
+				console.warn(`Failed to load asset: ${assetPath}`)
+				loadedAssets.value++
+				loadingProgress.value = Math.round((loadedAssets.value / totalAssets.value) * 100)
+				resolve(assetPath)
+			}
+
+			img.src = assetPath
+		})
+	}
+
 	const preloadAssets = async () => {
 		isLoading.value = true
 		loadingProgress.value = 0
-		totalAssets.value = gifAssets.length
+		totalAssets.value = criticalAssets.length + secondaryAssets.length
 		loadedAssets.value = 0
 
-		const loadPromises = gifAssets.map(assetPath => {
-			return new Promise(resolve => {
-				const img = new Image()
-
-				img.onload = () => {
-					loadedAssets.value++
-					loadingProgress.value = Math.round(
-						(loadedAssets.value / totalAssets.value) * 100
-					)
-					resolve(assetPath)
-				}
-
-				img.onerror = () => {
-					console.warn(`Failed to load asset: ${assetPath}`)
-					loadedAssets.value++
-					loadingProgress.value = Math.round(
-						(loadedAssets.value / totalAssets.value) * 100
-					)
-					resolve(assetPath)
-				}
-
-				img.src = assetPath
-			})
-		})
-
 		try {
-			await Promise.all(loadPromises)
-			console.log('All GIF assets preloaded successfully')
+			console.log('Loading critical assets...')
+			await Promise.all(criticalAssets.map(loadAsset))
+
+			console.log('Loading secondary assets...')
+			await Promise.all(secondaryAssets.map(loadAsset))
+
+			console.log('All critical and secondary assets preloaded successfully')
 		} catch (error) {
 			console.error('Error preloading assets:', error)
 		} finally {
 			isLoading.value = false
 		}
+	}
+
+	const loadLandscapeAssets = async () => {
+		console.log('Loading landscape assets...')
+		await Promise.all(landscapeAssets.map(loadAsset))
+		console.log('Landscape assets loaded')
 	}
 
 	const getLoadingPercentage = () => {
@@ -85,6 +98,7 @@ export function useAssetPreloader() {
 		totalAssets,
 		loadedAssets,
 		preloadAssets,
+		loadLandscapeAssets,
 		getLoadingPercentage,
 		isPreloadingComplete,
 	}

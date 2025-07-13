@@ -29,6 +29,7 @@
     "eslint-plugin-vue": "^9.21.1",
     "gh-pages": "^6.3.0",
     "sass": "^1.85.0",
+    "terser": "^5.43.1",
     "vite": "^6.3.4"
   },
   "dependencies": {
