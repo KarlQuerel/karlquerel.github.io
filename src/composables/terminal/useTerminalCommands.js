@@ -199,6 +199,17 @@ export function useTerminalCommands() {
 				animated: true,
 			},
 		],
+
+		stats: () => {
+			// This will be implemented in the terminal component
+			return [
+				{
+					type: 'typewriter',
+					html: true,
+					content: 'Loading visit statistics...',
+				},
+			]
+		},
 	}
 
 	// Available files for tab completion

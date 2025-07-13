@@ -86,6 +86,7 @@
 	import { useTerminalCommands } from '@/composables/terminal/useTerminalCommands'
 	import { useTerminalInput } from '@/composables/terminal/useTerminalInput'
 	import { useTerminalTypewriter } from '@/composables/terminal/useTerminalTypewriter'
+	import { useVisitTracker } from '@/composables/terminal/useVisitTracker'
 
 	const terminalBody = ref(null)
 	const terminalInput = ref(null)
@@ -101,6 +102,94 @@
 		executeCommand,
 	} = useTerminalCommands()
 
+	const { welcomeTextRef, showInputPrompt, initTypewriter, createCommandTypewriter } =
+		useTerminalTypewriter()
+
+	// Visit tracker
+	const { trackVisit, trackCommand, getVisitStats, isLoading } = useVisitTracker()
+
+	// Custom stats command implementation
+	const handleStatsCommand = () => {
+		const stats = getVisitStats()
+		const outputs = [
+			{
+				type: 'typewriter',
+				html: true,
+				content: `<span class="text-green">Terminal Statistics</span>`,
+			},
+			{
+				type: 'typewriter',
+				html: true,
+				content: `Total visits: <span class="text-blue">${stats.totalVisits}</span>`,
+			},
+			{
+				type: 'typewriter',
+				html: true,
+				content: `Total commands executed: <span class="text-blue">${stats.totalCommands}</span>`,
+			},
+		]
+
+		if (stats.lastVisit) {
+			outputs.push({
+				type: 'typewriter',
+				html: true,
+				content: `Last visit: <span class="text-yellow">${stats.lastVisit.toLocaleDateString()}</span>`,
+			})
+		}
+
+		if (stats.popularCommands.length > 0) {
+			outputs.push({
+				type: 'typewriter',
+				html: true,
+				content: `<span class="text-purple">Most popular commands:</span>`,
+			})
+
+			stats.popularCommands.forEach(({ command, count }) => {
+				outputs.push({
+					type: 'typewriter',
+					html: true,
+					content: `  ${command}: <span class="text-blue">${count}</span> times`,
+				})
+			})
+		}
+
+		return outputs
+	}
+
+	// Override the stats command
+	const originalExecuteCommand = executeCommand
+	const enhancedExecuteCommand = async input => {
+		const trimmedInput = input.trim()
+		if (trimmedInput === 'stats') {
+			terminalHistory.value.push({ type: 'command', content: trimmedInput })
+			const outputs = handleStatsCommand()
+			terminalHistory.value.push(...outputs)
+			await trackCommand('stats')
+			return
+		}
+
+		// Track the command
+		if (trimmedInput) {
+			const command = trimmedInput.split(' ')[0]
+			// Check if it's a valid command
+			const isValidCommand =
+				commands[command] ||
+				command.startsWith('./') ||
+				availableFiles.includes(command) ||
+				executableScripts[command]
+
+			if (isValidCommand) {
+				await trackCommand(command)
+			} else {
+				// Track wrong inputs under a single category
+				await trackCommand('wrong_input')
+			}
+		}
+
+		// Call original execute command
+		originalExecuteCommand(input)
+	}
+
 	const {
 		currentInput,
 		commandHistory,
@@ -112,10 +201,7 @@
 		originalTabPattern,
 		handleKeyDown,
 		focusInput,
-	} = useTerminalInput(executeCommand, commands, availableFiles, executableScripts)
-
-	const { welcomeTextRef, showInputPrompt, initTypewriter, createCommandTypewriter } =
-		useTerminalTypewriter()
+	} = useTerminalInput(enhancedExecuteCommand, commands, availableFiles, executableScripts)
 
 	// Watch for typewriter outputs and animate them
 	const processTypewriterOutputs = async () => {
