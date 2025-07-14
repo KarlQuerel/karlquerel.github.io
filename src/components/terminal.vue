@@ -103,65 +103,11 @@
 	const { welcomeTextRef, showInputPrompt, initTypewriter, createCommandTypewriter } =
 		useTerminalTypewriter()
 
-	const { trackCommand, getVisitStats } = useVisitTracker()
-
-	const handleStatsCommand = () => {
-		const stats = getVisitStats()
-		const outputs = [
-			{
-				type: 'typewriter',
-				html: true,
-				content: '<span class="text-green">Terminal Statistics</span>',
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content: `Total visits: <span class="text-blue">${stats.totalVisits}</span>`,
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content: `Total commands executed: <span class="text-blue">${stats.totalCommands}</span>`,
-			},
-		]
-
-		if (stats.lastVisit) {
-			outputs.push({
-				type: 'typewriter',
-				html: true,
-				content: `Last visit: <span class="text-yellow">${stats.lastVisit.toLocaleDateString()}</span>`,
-			})
-		}
-
-		if (stats.popularCommands.length > 0) {
-			outputs.push({
-				type: 'typewriter',
-				html: true,
-				content: '<span class="text-purple">Most popular commands:</span>',
-			})
-
-			stats.popularCommands.forEach(({ command, count }) => {
-				outputs.push({
-					type: 'typewriter',
-					html: true,
-					content: `  ${command}: <span class="text-blue">${count}</span> times`,
-				})
-			})
-		}
-
-		return outputs
-	}
+	const { trackCommand } = useVisitTracker()
 
 	const originalExecuteCommand = executeCommand
 	const enhancedExecuteCommand = async input => {
 		const trimmedInput = input.trim()
-		if (trimmedInput === 'stats') {
-			terminalHistory.value.push({ type: 'command', content: trimmedInput })
-			const outputs = handleStatsCommand()
-			terminalHistory.value.push(...outputs)
-			await trackCommand('stats')
-			return
-		}
 
 		if (trimmedInput) {
 			const command = trimmedInput.split(' ')[0]
@@ -174,7 +120,7 @@
 			if (isValidCommand) {
 				await trackCommand(command)
 			} else {
-				await trackCommand('invalid command')
+				await trackCommand('invalid')
 			}
 		}
 

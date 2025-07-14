@@ -1,10 +1,60 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useVisitTracker } from './useVisitTracker'
 
 export function useTerminalCommands() {
 	const router = useRouter()
 	const terminalHistory = ref([])
 	const isExecutingScript = ref(false)
+	const { getVisitStats } = useVisitTracker()
+
+	const handleStatsCommand = () => {
+		const stats = getVisitStats()
+		const outputs = [
+			{
+				type: 'typewriter',
+				html: true,
+				content: '<span class="text-green">📈 Terminal Statistics </span>',
+			},
+			{
+				type: 'typewriter',
+				html: true,
+				content: `• Visitors    - <span class="text-blue">${stats.totalVisits}</span>`,
+			},
+			{
+				type: 'typewriter',
+				html: true,
+				content: `• Commands    - <span class="text-blue">${stats.totalCommands}</span>`,
+			},
+		]
+
+		if (stats.lastVisit) {
+			outputs.push({
+				type: 'typewriter',
+				html: true,
+				content: `• Last visit  - <span class="text-yellow">${stats.lastVisit.toLocaleDateString()}</span>`,
+			})
+		}
+
+		if (stats.popularCommands.length > 0) {
+			outputs.push({
+				type: 'typewriter',
+				html: true,
+				content: '<span class="text-purple">🏆 Most popular commands </span>',
+			})
+
+			stats.popularCommands.forEach(({ command, count }) => {
+				const paddedCommand = command.padEnd(11)
+				outputs.push({
+					type: 'typewriter',
+					html: true,
+					content: `• ${paddedCommand} - <span class="text-blue">${count}</span> times`,
+				})
+			})
+		}
+
+		return outputs
+	}
 
 	// Commands
 	const commands = {
@@ -197,14 +247,7 @@ export function useTerminalCommands() {
 		],
 
 		stats: () => {
-			// This will be implemented in the terminal component
-			return [
-				{
-					type: 'typewriter',
-					html: true,
-					content: 'Loading visit statistics...',
-				},
-			]
+			return handleStatsCommand()
 		},
 	}
 
