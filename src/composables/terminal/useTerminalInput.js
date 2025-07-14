@@ -74,12 +74,12 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 	}
 
 	// Handle key events
-	const handleKeyDown = event => {
+	const handleKeyDown = async event => {
 		if (event.key === 'Tab') {
 			event.preventDefault()
 			handleTabCompletion()
 		} else if (event.key === 'Enter') {
-			executeCommand(currentInput.value)
+			await executeCommand(currentInput.value)
 			commandHistory.value.unshift(currentInput.value)
 			historyIndex.value = -1
 			currentInput.value = ''

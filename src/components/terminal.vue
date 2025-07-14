@@ -17,6 +17,7 @@
 
 			<div v-for="(line, index) in terminalHistory" :key="index" class="terminal-line">
 				<span v-if="line.type === 'command'" class="prompt">></span>
+				<span v-if="line.type === 'command'" class="command">{{ line.content }}</span>
 				<span
 					v-if="line.type === 'typewriter' && !line.link && !line.image"
 					:class="line.type"
@@ -30,7 +31,13 @@
 					:data-index="index"
 				/>
 				<span
-					v-if="!line.link && !line.image && !line.html && line.type !== 'typewriter'"
+					v-if="
+						!line.link &&
+						!line.image &&
+						!line.html &&
+						line.type !== 'typewriter' &&
+						line.type !== 'command'
+					"
 					:class="line.type"
 					>{{ line.content }}</span
 				>
@@ -59,7 +66,7 @@
 				</div>
 			</div>
 
-			<div v-if="!isExecutingScript && showInputPrompt" class="terminal-line current-line">
+			<div v-if="showInputPrompt" class="terminal-line current-line">
 				<span class="prompt">></span>
 				<div class="input-container">
 					<input
@@ -118,9 +125,9 @@
 				executableScripts[command]
 
 			if (isValidCommand) {
-				await trackCommand(command)
+				trackCommand(command)
 			} else {
-				await trackCommand('invalid')
+				trackCommand('invalid')
 			}
 		}
 
