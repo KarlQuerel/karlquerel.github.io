@@ -110,7 +110,7 @@
 	const { welcomeTextRef, showInputPrompt, initTypewriter, createCommandTypewriter } =
 		useTerminalTypewriter()
 
-	const { trackCommand } = useVisitTracker()
+	const { trackCommand, trackVisit } = useVisitTracker()
 
 	const originalExecuteCommand = executeCommand
 	const enhancedExecuteCommand = async input => {
@@ -214,6 +214,7 @@
 	)
 
 	onMounted(() => {
+		trackVisit()
 		initTypewriter(() => focusInput(terminalInput.value))
 	})
 </script>
