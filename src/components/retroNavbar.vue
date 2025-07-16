@@ -107,7 +107,7 @@
 		}
 
 		&.navbar-hidden {
-			transform: translate(-50%, -100%);
+			transform: translate(0, -100%);
 		}
 	}
 
