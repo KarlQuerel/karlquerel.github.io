@@ -6,9 +6,10 @@ export function useTerminalCommands() {
 	const router = useRouter()
 	const terminalHistory = ref([])
 	const isExecutingScript = ref(false)
-	const { getVisitStats } = useVisitTracker()
+	const { getVisitStats, loadVisitData } = useVisitTracker()
 
-	const handleStatsCommand = () => {
+	const handleStatsCommand = async () => {
+		await loadVisitData()
 		const stats = getVisitStats()
 		const outputs = [
 			{
@@ -246,8 +247,8 @@ export function useTerminalCommands() {
 			},
 		],
 
-		stats: () => {
-			return handleStatsCommand()
+		stats: async () => {
+			return await handleStatsCommand()
 		},
 	}
 
@@ -416,7 +417,17 @@ export function useTerminalCommands() {
 			if (command === 'cat' && typeof commands[command] === 'function') {
 				output = commands[command](args)
 			} else if (typeof commands[command] === 'function') {
-				output = commands[command]()
+				const result = commands[command]()
+				if (result instanceof Promise) {
+					result.then(output => {
+						if (Array.isArray(output)) {
+							terminalHistory.value.push(...output)
+						}
+					})
+					return
+				} else {
+					output = result
+				}
 			} else {
 				output = commands[command]
 			}

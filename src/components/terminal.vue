@@ -221,8 +221,7 @@
 
 <style lang="scss" scoped>
 	.terminal-window {
-		width: 100%;
-		max-width: 1100px;
+		width: 90%;
 		height: 80vh;
 		background: rgba(0, 0, 0, 0.5);
 		border: 3px dashed $retro-green;
