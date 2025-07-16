@@ -18,7 +18,7 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 	})
 
 	// Update cursor position based on input field selection
-	const updateCursorPosition = (event) => {
+	const updateCursorPosition = event => {
 		const input = event?.target || document.querySelector('.terminal-input')
 		if (input) {
 			cursorPosition.value = input.selectionStart || input.value.length

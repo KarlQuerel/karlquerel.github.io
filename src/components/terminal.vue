@@ -137,12 +137,8 @@
 		originalExecuteCommand(input)
 	}
 
-	const { currentInput, cursorPosition, handleKeyDown, focusInput, updateCursorPosition } = useTerminalInput(
-		enhancedExecuteCommand,
-		commands,
-		availableFiles,
-		executableScripts
-	)
+	const { currentInput, cursorPosition, handleKeyDown, focusInput, updateCursorPosition } =
+		useTerminalInput(enhancedExecuteCommand, commands, availableFiles, executableScripts)
 
 	// Watch for typewriter outputs and animate them
 	const processTypewriterOutputs = async () => {
@@ -527,7 +523,7 @@
 	@media (max-width: 1024px) {
 		.terminal-window {
 			width: 100%;
-			height: 85vh;
+			height: 80vh;
 		}
 
 		.welcome-text,

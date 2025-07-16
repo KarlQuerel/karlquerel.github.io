@@ -92,9 +92,6 @@
 		height: 10vh;
 		position: fixed;
 		top: 0;
-		left: 50%;
-		right: 0;
-		transform: translate(-50%);
 		z-index: 1020;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 		width: 60%;
