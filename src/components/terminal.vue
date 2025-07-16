@@ -73,6 +73,9 @@
 						ref="terminalInput"
 						v-model="currentInput"
 						@keydown="handleKeyDown"
+						@keyup="updateCursorPosition"
+						@click="updateCursorPosition"
+						@input="updateCursorPosition"
 						class="terminal-input"
 						autocomplete="off"
 						spellcheck="false"
@@ -134,7 +137,7 @@
 		originalExecuteCommand(input)
 	}
 
-	const { currentInput, cursorPosition, handleKeyDown, focusInput } = useTerminalInput(
+	const { currentInput, cursorPosition, handleKeyDown, focusInput, updateCursorPosition } = useTerminalInput(
 		enhancedExecuteCommand,
 		commands,
 		availableFiles,

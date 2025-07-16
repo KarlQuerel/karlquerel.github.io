@@ -17,6 +17,14 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 		cursorPosition.value = newValue.length
 	})
 
+	// Update cursor position based on input field selection
+	const updateCursorPosition = (event) => {
+		const input = event?.target || document.querySelector('.terminal-input')
+		if (input) {
+			cursorPosition.value = input.selectionStart || input.value.length
+		}
+	}
+
 	// Tab completion handler
 	const handleTabCompletion = () => {
 		const input = currentInput.value
@@ -99,6 +107,11 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 			tabMatches.value = []
 			tabIndex.value = -1
 			originalTabPattern.value = ''
+		} else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+			// Update cursor position after arrow key movement
+			nextTick(() => {
+				updateCursorPosition(event)
+			})
 		} else {
 			isTabbing.value = false
 			tabMatches.value = []
@@ -122,6 +135,11 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 		if (historyIndex.value >= 0) {
 			currentInput.value = commandHistory.value[historyIndex.value]
 		}
+
+		// Update cursor position after history navigation
+		nextTick(() => {
+			updateCursorPosition()
+		})
 	}
 
 	const focusInput = terminalInput => {
@@ -141,5 +159,6 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 		originalTabPattern,
 		handleKeyDown,
 		focusInput,
+		updateCursorPosition,
 	}
 }
