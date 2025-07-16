@@ -354,6 +354,21 @@
 		text-shadow: 0 0 3px currentColor;
 	}
 
+	:deep(.text-mint) {
+		color: $mint;
+		text-shadow: 0 0 3px currentColor;
+	}
+
+	:deep(.text-orange) {
+		color: $orange;
+		text-shadow: 0 0 3px currentColor;
+	}
+
+	:deep(.text-cream) {
+		color: $cream;
+		text-shadow: 0 0 3px currentColor;
+	}
+
 	.terminal-link {
 		color: $retro-green;
 		text-decoration: none;

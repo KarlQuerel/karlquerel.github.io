@@ -60,13 +60,41 @@ export function useTerminalCommands() {
 	// Commands
 	const commands = {
 		help: () => [
-			{ type: 'typewriter', content: '• help     - Show this help message' },
-			{ type: 'typewriter', content: '• about    - Learn more about me' },
-			{ type: 'typewriter', content: '• stats    - View terminal statistics' },
-			{ type: 'typewriter', content: '• contact  - Get contact information' },
-			{ type: 'typewriter', content: '• clear    - Clear the terminal' },
-			{ type: 'typewriter', content: '• ls       - List files' },
-			{ type: 'typewriter', content: '• yako     - Just a happy dog' },
+			{
+				type: 'typewriter',
+				html: true,
+				content: '• <span class="text-yellow">help</span>        - Show this help message',
+			},
+			{
+				type: 'typewriter',
+				html: true,
+				content: '• <span class="text-mint">about</span>       - Learn more about me',
+			},
+			{
+				type: 'typewriter',
+				html: true,
+				content: '• <span class="text-cream">stats</span>       - View terminal statistics',
+			},
+			{
+				type: 'typewriter',
+				html: true,
+				content: '• <span class="text-purple">contact</span>     - Get contact information',
+			},
+			{
+				type: 'typewriter',
+				html: true,
+				content: '• <span class="text-red">clear</span>       - Clear the terminal',
+			},
+			{
+				type: 'typewriter',
+				html: true,
+				content: '• <span class="text-blue">ls</span>          - List files',
+			},
+			{
+				type: 'typewriter',
+				html: true,
+				content: '• <span class="text-green">yako</span>        - Just a happy dog',
+			},
 			{ type: 'typewriter', content: '' },
 			{
 				type: 'typewriter',
@@ -109,19 +137,19 @@ export function useTerminalCommands() {
 		contact: () => [
 			{
 				type: 'typewriter',
-				prefix: '• Email:    ',
+				prefix: '• Email       - ',
 				link: 'mailto:karlquerel@gmail.com',
 				linkText: 'karlquerel@gmail.com',
 			},
 			{
 				type: 'typewriter',
-				prefix: '• GitHub:   ',
+				prefix: '• GitHub      - ',
 				link: 'https://github.com/KarlQuerel',
 				linkText: 'github.com/KarlQuerel',
 			},
 			{
 				type: 'typewriter',
-				prefix: '• LinkedIn: ',
+				prefix: '• LinkedIn    - ',
 				link: 'https://linkedin.com/in/karlquerel',
 				linkText: 'linkedin.com/in/karlquerel',
 			},
