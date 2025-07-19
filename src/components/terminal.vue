@@ -65,7 +65,10 @@
 				</div>
 			</div>
 
-			<div v-if="showInputPrompt" class="terminal-line current-line">
+			<div
+				v-if="showInputPrompt && !isProcessingTypewriter"
+				class="terminal-line current-line"
+			>
 				<span class="prompt">></span>
 				<div class="input-container">
 					<input
@@ -132,64 +135,94 @@ const enhancedExecuteCommand = async input => {
 const { currentInput, cursorPosition, handleKeyDown, focusInput, updateCursorPosition } =
 	useTerminalInput(enhancedExecuteCommand, commands, availableFiles, executableScripts)
 
-// Watch for typewriter outputs and animate them
-const processTypewriterOutputs = async () => {
-	const typewriterElements = document.querySelectorAll('[data-index]')
+// Watch for typewriter outputs and animate them one at a time
+const isProcessingTypewriter = ref(false)
 
+const processTypewriterOutputs = async () => {
+	if (isProcessingTypewriter.value) return
+
+	const typewriterElements = document.querySelectorAll('[data-index]')
+	let nextElement = null
+
+	// Find the first unanimated typewriter element
 	for (const element of typewriterElements) {
 		const index = parseInt(element.getAttribute('data-index'))
 		const line = terminalHistory.value[index]
 
 		if (line && line.type === 'typewriter' && !line.animated) {
-			line.animated = true
-
-			if (line.link) {
-				const fullContent = (line.prefix || '') + line.linkText
-				await createCommandTypewriter(element, fullContent, {
-					speed: 25,
-					startDelay: 10,
-				})
-
-				element.innerHTML =
-					(line.prefix || '') +
-					`<a href="${line.link}" target="_blank" class="terminal-link">${line.linkText}</a>`
-
-				nextTick(() => {
-					const linkElement = element.querySelector('.terminal-link')
-					if (linkElement) {
-						linkElement.style.color = '#00ff00'
-						linkElement.style.textDecoration = 'none'
-						linkElement.style.borderBottom = '1px dotted #00ff00'
-						linkElement.style.transition = 'all 0.3s ease'
-
-						linkElement.addEventListener('mouseenter', () => {
-							linkElement.style.color = '#00ccff'
-							linkElement.style.borderBottomColor = '#00ccff'
-							linkElement.style.textShadow = '0 0 5px #00ccff'
-						})
-
-						linkElement.addEventListener('mouseleave', () => {
-							linkElement.style.color = '#00ff00'
-							linkElement.style.borderBottomColor = '#00ff00'
-							linkElement.style.textShadow = 'none'
-						})
-
-						linkElement.addEventListener('mousedown', () => {
-							linkElement.style.color = '#ff5f56'
-						})
-
-						linkElement.addEventListener('mouseup', () => {
-							linkElement.style.color = '#00ccff'
-						})
-					}
-				})
-			} else {
-				await createCommandTypewriter(element, line.content, {
-					speed: 25,
-					startDelay: 10,
-				})
-			}
+			nextElement = { element, index, line }
+			break
 		}
+	}
+
+	// Process only one element at a time
+	if (nextElement) {
+		isProcessingTypewriter.value = true
+		const { element, line } = nextElement
+		line.animated = true
+
+		if (line.link) {
+			const fullContent = (line.prefix || '') + line.linkText
+			await createCommandTypewriter(element, fullContent, {
+				speed: 7.5,
+				startDelay: 0,
+				lifelike: true,
+			})
+
+			element.innerHTML =
+				(line.prefix || '') +
+				`<a href="${line.link}" target="_blank" class="terminal-link">${line.linkText}</a>`
+
+			nextTick(() => {
+				const linkElement = element.querySelector('.terminal-link')
+				if (linkElement) {
+					linkElement.style.color = '#00ff00'
+					linkElement.style.textDecoration = 'none'
+					linkElement.style.borderBottom = '1px dotted #00ff00'
+					linkElement.style.transition = 'all 0.3s ease'
+
+					linkElement.addEventListener('mouseenter', () => {
+						linkElement.style.color = '#00ccff'
+						linkElement.style.borderBottomColor = '#00ccff'
+						linkElement.style.textShadow = '0 0 5px #00ccff'
+					})
+
+					linkElement.addEventListener('mouseleave', () => {
+						linkElement.style.color = '#00ff00'
+						linkElement.style.borderBottomColor = '#00ff00'
+						linkElement.style.textShadow = 'none'
+					})
+
+					linkElement.addEventListener('mousedown', () => {
+						linkElement.style.color = '#ff5f56'
+					})
+
+					linkElement.addEventListener('mouseup', () => {
+						linkElement.style.color = '#00ccff'
+					})
+				}
+			})
+		} else {
+			await createCommandTypewriter(element, line.content, {
+				speed: 10,
+				startDelay: 0,
+				lifelike: true,
+			})
+		}
+
+		isProcessingTypewriter.value = false
+
+		// Check if there are more elements to process
+		nextTick(() => {
+			processTypewriterOutputs()
+		})
+	} else {
+		// No more elements to process, ensure input is enabled
+		isProcessingTypewriter.value = false
+		// Force a reactive update to show the input
+		nextTick(() => {
+			focusInput(terminalInput.value)
+		})
 	}
 }
 
