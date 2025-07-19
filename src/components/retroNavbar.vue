@@ -61,26 +61,26 @@
 </template>
 
 <script setup>
-	import { ref, computed } from 'vue'
-	import { useRoute } from 'vue-router'
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 
-	const route = useRoute()
-	const isMenuOpen = ref(false)
-	const isHidden = ref(false)
+const route = useRoute()
+const isMenuOpen = ref(false)
+const isHidden = ref(false)
 
-	const isGameRoute = computed(() => route.path === '/game')
+const isGameRoute = computed(() => route.path === '/game')
 
-	const toggleMenu = () => {
-		isMenuOpen.value = !isMenuOpen.value
-	}
+const toggleMenu = () => {
+	isMenuOpen.value = !isMenuOpen.value
+}
 
-	const closeMenu = () => {
-		isMenuOpen.value = false
-	}
+const closeMenu = () => {
+	isMenuOpen.value = false
+}
 
-	const toggleNavbar = () => {
-		isHidden.value = !isHidden.value
-	}
+const toggleNavbar = () => {
+	isHidden.value = !isHidden.value
+}
 </script>
 
 <style lang="scss" scoped>

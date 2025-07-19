@@ -16,42 +16,42 @@
 </template>
 
 <script setup>
-	import { defineProps } from 'vue'
+import { defineProps } from 'vue'
 
-	defineProps({
-		showCinematics: {
-			type: Boolean,
-			default: false,
-		},
-		shouldMoveBackground: {
-			type: Boolean,
-			default: false,
-		},
-		showThirdMessageBlock: {
-			type: Boolean,
-			default: false,
-		},
-		showFourthMessageBlock: {
-			type: Boolean,
-			default: false,
-		},
-		isInitialLoad: {
-			type: Boolean,
-			default: true,
-		},
-		showGame: {
-			type: Boolean,
-			default: false,
-		},
-		isFirstSequence: {
-			type: Boolean,
-			default: true,
-		},
-		isTransitioningToCinematics: {
-			type: Boolean,
-			default: false,
-		},
-	})
+defineProps({
+	showCinematics: {
+		type: Boolean,
+		default: false,
+	},
+	shouldMoveBackground: {
+		type: Boolean,
+		default: false,
+	},
+	showThirdMessageBlock: {
+		type: Boolean,
+		default: false,
+	},
+	showFourthMessageBlock: {
+		type: Boolean,
+		default: false,
+	},
+	isInitialLoad: {
+		type: Boolean,
+		default: true,
+	},
+	showGame: {
+		type: Boolean,
+		default: false,
+	},
+	isFirstSequence: {
+		type: Boolean,
+		default: true,
+	},
+	isTransitioningToCinematics: {
+		type: Boolean,
+		default: false,
+	},
+})
 </script>
 
 <style lang="scss" scoped>

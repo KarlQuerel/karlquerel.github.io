@@ -11,14 +11,14 @@
 </template>
 
 <script>
-	import ClickCounter from './clickCounter.vue'
+import ClickCounter from './clickCounter.vue'
 
-	export default {
-		name: 'UnderConstruction',
-		components: {
-			ClickCounter,
-		},
-	}
+export default {
+	name: 'UnderConstruction',
+	components: {
+		ClickCounter,
+	},
+}
 </script>
 
 <style lang="scss" scoped>

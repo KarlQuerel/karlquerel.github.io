@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-	import Terminal from './terminal.vue'
+import Terminal from './terminal.vue'
 </script>
 
 <style lang="scss" scoped>

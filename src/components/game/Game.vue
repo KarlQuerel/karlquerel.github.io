@@ -52,76 +52,76 @@
 </template>
 
 <script setup>
-	import { ref, onMounted, computed } from 'vue'
-	import MobileWarning from './MobileWarning.vue'
-	import LoadingScreen from './LoadingScreen.vue'
-	import PreGameScreen from './PreGameScreen.vue'
-	import GameMenu from './GameMenu.vue'
-	import GameCinematics from './GameCinematics.vue'
-	import CreditsModal from './CreditsModal.vue'
-	import { useAudioManager } from '../../composables/game/useAudioManager'
-	import { useGameState } from '../../composables/game/useGameState'
-	import { useAssetPreloader } from '../../composables/game/useAssetPreloader'
-	import GameBackground from './GameBackground.vue'
+import { ref, onMounted, computed } from 'vue'
+import MobileWarning from './MobileWarning.vue'
+import LoadingScreen from './LoadingScreen.vue'
+import PreGameScreen from './PreGameScreen.vue'
+import GameMenu from './GameMenu.vue'
+import GameCinematics from './GameCinematics.vue'
+import CreditsModal from './CreditsModal.vue'
+import { useAudioManager } from '../../composables/game/useAudioManager'
+import { useGameState } from '../../composables/game/useGameState'
+import { useAssetPreloader } from '../../composables/game/useAssetPreloader'
+import GameBackground from './GameBackground.vue'
 
-	const showCredits = ref(false)
-	const gameContainer = ref(null)
-	const mobileWarningRef = ref(null)
+const showCredits = ref(false)
+const gameContainer = ref(null)
+const mobileWarningRef = ref(null)
 
-	const { bgMusic, clickSound, initAudio, playBackgroundMusic, playClickSound } =
-		useAudioManager()
+const { bgMusic, clickSound, initAudio, playBackgroundMusic, playClickSound } =
+	useAudioManager()
 
-	const {
-		showGame,
-		showCinematics,
-		shouldMoveBackground,
-		showThirdMessageBlock,
-		showFourthMessageBlock,
-		isInitialLoad,
-		menuButtonsReady,
-		isFirstSequence,
-		isTransitioningToCinematics,
-		startGame,
-		launchCinematics,
-		onFadeComplete,
-		initializeMenu,
-	} = useGameState()
+const {
+	showGame,
+	showCinematics,
+	shouldMoveBackground,
+	showThirdMessageBlock,
+	showFourthMessageBlock,
+	isInitialLoad,
+	menuButtonsReady,
+	isFirstSequence,
+	isTransitioningToCinematics,
+	startGame,
+	launchCinematics,
+	onFadeComplete,
+	initializeMenu,
+} = useGameState()
 
-	const {
-		isLoading,
-		loadingProgress,
-		totalAssets,
-		loadedAssets,
-		preloadAssets,
-		isPreloadingComplete,
-	} = useAssetPreloader()
+const {
+	isLoading,
+	loadingProgress,
+	totalAssets,
+	loadedAssets,
+	preloadAssets,
+	isPreloadingComplete,
+} = useAssetPreloader()
 
-	const handleStartGame = async () => {
-		startGame()
-		await playBackgroundMusic()
+const handleStartGame = async () => {
+	startGame()
+	await playBackgroundMusic()
+}
+
+const handleStartCinematics = async () => {
+	await launchCinematics(playClickSound)
+}
+
+const handleShowCredits = async () => {
+	await playClickSound()
+	showCredits.value = true
+}
+
+onMounted(async () => {
+	// Start preloading assets first
+	await preloadAssets()
+
+	// Only initialize audio and menu after assets are loaded
+	if (isPreloadingComplete()) {
+		initAudio()
+		initializeMenu()
 	}
+})
 
-	const handleStartCinematics = async () => {
-		await launchCinematics(playClickSound)
-	}
-
-	const handleShowCredits = async () => {
-		await playClickSound()
-		showCredits.value = true
-	}
-
-	onMounted(async () => {
-		// Start preloading assets first
-		await preloadAssets()
-
-		// Only initialize audio and menu after assets are loaded
-		if (isPreloadingComplete()) {
-			initAudio()
-			initializeMenu()
-		}
-	})
-
-	const isMobile = computed(() => mobileWarningRef.value?.isMobile ?? false)
+const isMobile = computed(() => mobileWarningRef.value?.isMobile ?? false)
 </script>
 
 <style lang="scss" scoped>

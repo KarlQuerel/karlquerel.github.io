@@ -23,31 +23,31 @@
 </template>
 
 <script setup>
-	import { defineProps, defineEmits } from 'vue'
+import { defineProps, defineEmits } from 'vue'
 
-	defineProps({
-		isVisible: {
-			type: Boolean,
-			required: true,
-		},
-	})
+defineProps({
+	isVisible: {
+		type: Boolean,
+		required: true,
+	},
+})
 
-	const emit = defineEmits(['close'])
+const emit = defineEmits(['close'])
 
-	const playClickSound = async () => {
-		const clickSound = new Audio('/assets/sound/button-press.wav')
-		clickSound.volume = 1
-		try {
-			await clickSound.play()
-		} catch (error) {
-			console.error('Error playing click sound:', error)
-		}
+const playClickSound = async () => {
+	const clickSound = new Audio('/assets/sound/button-press.wav')
+	clickSound.volume = 1
+	try {
+		await clickSound.play()
+	} catch (error) {
+		console.error('Error playing click sound:', error)
 	}
+}
 
-	const close = async () => {
-		await playClickSound()
-		emit('close')
-	}
+const close = async () => {
+	await playClickSound()
+	emit('close')
+}
 </script>
 
 <style lang="scss" scoped>

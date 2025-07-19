@@ -15,14 +15,14 @@
 </template>
 
 <script setup>
-	defineProps({
-		showGame: {
-			type: Boolean,
-			required: true,
-		},
-	})
+defineProps({
+	showGame: {
+		type: Boolean,
+		required: true,
+	},
+})
 
-	defineEmits(['start-game'])
+defineEmits(['start-game'])
 </script>
 
 <style lang="scss" scoped>

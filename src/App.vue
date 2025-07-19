@@ -8,14 +8,14 @@
 </template>
 
 <script>
-	import RetroNavbar from './components/retroNavbar.vue'
-	import RetroFooter from './components/retroFooter.vue'
+import RetroNavbar from './components/retroNavbar.vue'
+import RetroFooter from './components/retroFooter.vue'
 
-	export default {
-		name: 'App',
-		components: {
-			RetroNavbar,
-			RetroFooter,
-		},
-	}
+export default {
+	name: 'App',
+	components: {
+		RetroNavbar,
+		RetroFooter,
+	},
+}
 </script>

@@ -33,14 +33,13 @@
 				<span
 					v-if="
 						!line.link &&
-						!line.image &&
-						!line.html &&
-						line.type !== 'typewriter' &&
-						line.type !== 'command'
+							!line.image &&
+							!line.html &&
+							line.type !== 'typewriter' &&
+							line.type !== 'command'
 					"
 					:class="line.type"
-					>{{ line.content }}</span
-				>
+				>{{ line.content }}</span>
 				<span
 					v-else-if="line.html && line.type !== 'typewriter'"
 					:class="line.type"
@@ -83,8 +82,7 @@
 					<span
 						class="custom-cursor"
 						:style="{ transform: `translateX(calc(1ch * ${cursorPosition}))` }"
-						>_</span
-					>
+					>_</span>
 				</div>
 			</div>
 		</div>
@@ -92,130 +90,124 @@
 </template>
 
 <script setup>
-	import { ref, onMounted, watch, nextTick } from 'vue'
-	import { useTerminalCommands } from '@/composables/terminal/useTerminalCommands'
-	import { useTerminalInput } from '@/composables/terminal/useTerminalInput'
-	import { useTerminalTypewriter } from '@/composables/terminal/useTerminalTypewriter'
-	import { useVisitTracker } from '@/composables/terminal/useVisitTracker'
+import { ref, onMounted, watch, nextTick } from 'vue'
+import { useTerminalCommands } from '@/composables/terminal/useTerminalCommands'
+import { useTerminalInput } from '@/composables/terminal/useTerminalInput'
+import { useTerminalTypewriter } from '@/composables/terminal/useTerminalTypewriter'
+import { useVisitTracker } from '@/composables/terminal/useVisitTracker'
 
-	const terminalBody = ref(null)
-	const terminalInput = ref(null)
+const terminalBody = ref(null)
+const terminalInput = ref(null)
 
-	const {
-		commands,
-		availableFiles,
-		executableScripts,
-		terminalHistory,
-		isExecutingScript,
-		executeCommand,
-	} = useTerminalCommands()
+const { commands, availableFiles, executableScripts, terminalHistory, executeCommand } =
+	useTerminalCommands()
 
-	const { welcomeTextRef, showInputPrompt, initTypewriter, createCommandTypewriter } =
-		useTerminalTypewriter()
+const { welcomeTextRef, showInputPrompt, initTypewriter, createCommandTypewriter } =
+	useTerminalTypewriter()
 
-	const { trackCommand, trackVisit } = useVisitTracker()
+const { trackCommand, trackVisit } = useVisitTracker()
 
-	const originalExecuteCommand = executeCommand
-	const enhancedExecuteCommand = async input => {
-		const trimmedInput = input.trim()
+const originalExecuteCommand = executeCommand
+const enhancedExecuteCommand = async input => {
+	const trimmedInput = input.trim()
 
-		if (trimmedInput) {
-			const command = trimmedInput.split(' ')[0]
-			const isValidCommand =
-				commands[command] ||
-				command.startsWith('./') ||
-				availableFiles.includes(command) ||
-				executableScripts[command]
+	if (trimmedInput) {
+		const command = trimmedInput.split(' ')[0]
+		const isValidCommand =
+			commands[command] ||
+			command.startsWith('./') ||
+			availableFiles.includes(command) ||
+			executableScripts[command]
 
-			if (isValidCommand) {
-				trackCommand(command)
-			} else {
-				trackCommand('invalid')
-			}
+		if (isValidCommand) {
+			trackCommand(command)
+		} else {
+			trackCommand('invalid')
 		}
-
-		originalExecuteCommand(input)
 	}
 
-	const { currentInput, cursorPosition, handleKeyDown, focusInput, updateCursorPosition } =
-		useTerminalInput(enhancedExecuteCommand, commands, availableFiles, executableScripts)
+	originalExecuteCommand(input)
+}
 
-	// Watch for typewriter outputs and animate them
-	const processTypewriterOutputs = async () => {
-		const typewriterElements = document.querySelectorAll('[data-index]')
+const { currentInput, cursorPosition, handleKeyDown, focusInput, updateCursorPosition } =
+	useTerminalInput(enhancedExecuteCommand, commands, availableFiles, executableScripts)
 
-		for (const element of typewriterElements) {
-			const index = parseInt(element.getAttribute('data-index'))
-			const line = terminalHistory.value[index]
+// Watch for typewriter outputs and animate them
+const processTypewriterOutputs = async () => {
+	const typewriterElements = document.querySelectorAll('[data-index]')
 
-			if (line && line.type === 'typewriter' && !line.animated) {
-				line.animated = true
+	for (const element of typewriterElements) {
+		const index = parseInt(element.getAttribute('data-index'))
+		const line = terminalHistory.value[index]
 
-				if (line.link) {
-					const fullContent = (line.prefix || '') + line.linkText
-					await createCommandTypewriter(element, fullContent, {
-						speed: 25,
-						startDelay: 10,
-					})
+		if (line && line.type === 'typewriter' && !line.animated) {
+			line.animated = true
 
-					element.innerHTML =
-						(line.prefix || '') +
-						`<a href="${line.link}" target="_blank" class="terminal-link">${line.linkText}</a>`
+			if (line.link) {
+				const fullContent = (line.prefix || '') + line.linkText
+				await createCommandTypewriter(element, fullContent, {
+					speed: 25,
+					startDelay: 10,
+				})
 
-					nextTick(() => {
-						const linkElement = element.querySelector('.terminal-link')
-						if (linkElement) {
+				element.innerHTML =
+					(line.prefix || '') +
+					`<a href="${line.link}" target="_blank" class="terminal-link">${line.linkText}</a>`
+
+				nextTick(() => {
+					const linkElement = element.querySelector('.terminal-link')
+					if (linkElement) {
+						linkElement.style.color = '#00ff00'
+						linkElement.style.textDecoration = 'none'
+						linkElement.style.borderBottom = '1px dotted #00ff00'
+						linkElement.style.transition = 'all 0.3s ease'
+
+						linkElement.addEventListener('mouseenter', () => {
+							linkElement.style.color = '#00ccff'
+							linkElement.style.borderBottomColor = '#00ccff'
+							linkElement.style.textShadow = '0 0 5px #00ccff'
+						})
+
+						linkElement.addEventListener('mouseleave', () => {
 							linkElement.style.color = '#00ff00'
-							linkElement.style.textDecoration = 'none'
-							linkElement.style.borderBottom = '1px dotted #00ff00'
-							linkElement.style.transition = 'all 0.3s ease'
+							linkElement.style.borderBottomColor = '#00ff00'
+							linkElement.style.textShadow = 'none'
+						})
 
-							linkElement.addEventListener('mouseenter', () => {
-								linkElement.style.color = '#00ccff'
-								linkElement.style.borderBottomColor = '#00ccff'
-								linkElement.style.textShadow = '0 0 5px #00ccff'
-							})
+						linkElement.addEventListener('mousedown', () => {
+							linkElement.style.color = '#ff5f56'
+						})
 
-							linkElement.addEventListener('mouseleave', () => {
-								linkElement.style.color = '#00ff00'
-								linkElement.style.borderBottomColor = '#00ff00'
-								linkElement.style.textShadow = 'none'
-							})
-
-							linkElement.addEventListener('mousedown', () => {
-								linkElement.style.color = '#ff5f56'
-							})
-
-							linkElement.addEventListener('mouseup', () => {
-								linkElement.style.color = '#00ccff'
-							})
-						}
-					})
-				} else {
-					await createCommandTypewriter(element, line.content, {
-						speed: 25,
-						startDelay: 10,
-					})
-				}
+						linkElement.addEventListener('mouseup', () => {
+							linkElement.style.color = '#00ccff'
+						})
+					}
+				})
+			} else {
+				await createCommandTypewriter(element, line.content, {
+					speed: 25,
+					startDelay: 10,
+				})
 			}
 		}
 	}
+}
 
-	// Watch for changes in terminal history to process typewriter outputs
-	watch(
-		terminalHistory,
-		() => {
-			nextTick(() => {
-				processTypewriterOutputs()
-			})
-		},
-		{ deep: true }
-	)
+// Watch for changes in terminal history to process typewriter outputs
+watch(
+	terminalHistory,
+	() => {
+		nextTick(() => {
+			processTypewriterOutputs()
+		})
+	},
+	{ deep: true },
+)
 
-	onMounted(() => {
-		trackVisit()
-		initTypewriter(() => focusInput(terminalInput.value))
-	})
+onMounted(() => {
+	trackVisit()
+	initTypewriter(() => focusInput(terminalInput.value))
+})
 </script>
 
 <style lang="scss" scoped>
