@@ -56,7 +56,7 @@ export default {
 	}
 
 	.nes-container.is-dark {
-		background-color: $black;
+		background-color: rgba(0, 0, 0, 0.5);
 		border: 0.3vh dashed $retro-green;
 		border-radius: 20px;
 		text-transform: uppercase;

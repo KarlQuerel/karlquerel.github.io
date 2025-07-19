@@ -2,6 +2,11 @@
 	<div class="content">
 		<div class="nes-container is-dark is-rounded">
 			<p>Under Construction</p>
+			<img
+				src="/assets/img/construction.gif"
+				alt="construction GIF"
+				class="construction-gif"
+			/>
 			<p />
 		</div>
 
@@ -27,10 +32,17 @@ export default {
 	}
 
 	.nes-container.is-dark {
-		background-color: #000000;
+		background-color: rgba(0, 0, 0, 0.5);
 		border: 0.3vh dashed $retro-green;
 		border-radius: 20px;
-		margin-bottom: 10rem;
+		margin-bottom: 1rem;
 		text-transform: uppercase;
+	}
+
+	.construction-gif {
+		max-width: 100%;
+		height: auto;
+		margin: 0.5rem 0;
+		border-radius: 10px;
 	}
 </style>
