@@ -36,14 +36,21 @@
 							!line.image &&
 							!line.html &&
 							line.type !== 'typewriter' &&
-							line.type !== 'command'
+							line.type !== 'command' &&
+							line.type !== 'output'
 					"
 					:class="line.type"
 				>{{ line.content }}</span>
 				<span
-					v-else-if="line.html && line.type !== 'typewriter'"
+					v-else-if="line.html && line.type !== 'typewriter' && line.type !== 'output'"
 					:class="line.type"
 					v-html="line.content"
+				/>
+				<span
+					v-else-if="line.type === 'output'"
+					:class="line.type"
+					:ref="`typewriter-${index}`"
+					:data-index="index"
 				/>
 				<span v-else-if="line.link && line.type !== 'typewriter'" :class="line.type">
 					{{ line.prefix }}
@@ -105,8 +112,13 @@ const terminalInput = ref(null)
 const { commands, availableFiles, executableScripts, terminalHistory, executeCommand } =
 	useTerminalCommands()
 
-const { welcomeTextRef, showInputPrompt, initTypewriter, createCommandTypewriter } =
-	useTerminalTypewriter()
+const {
+	welcomeTextRef,
+	showInputPrompt,
+	initTypewriter,
+	createCommandTypewriter,
+	typewriterSpeed,
+} = useTerminalTypewriter()
 
 const { trackCommand, trackVisit } = useVisitTracker()
 
@@ -135,7 +147,7 @@ const enhancedExecuteCommand = async input => {
 const { currentInput, cursorPosition, handleKeyDown, focusInput, updateCursorPosition } =
 	useTerminalInput(enhancedExecuteCommand, commands, availableFiles, executableScripts)
 
-// Watch for typewriter outputs and animate them one at a time
+// Watch for typewriter and output elements and animate them one at a time
 const isProcessingTypewriter = ref(false)
 
 const processTypewriterOutputs = async () => {
@@ -144,12 +156,12 @@ const processTypewriterOutputs = async () => {
 	const typewriterElements = document.querySelectorAll('[data-index]')
 	let nextElement = null
 
-	// Find the first unanimated typewriter element
+	// Find the first unanimated typewriter or output element
 	for (const element of typewriterElements) {
 		const index = parseInt(element.getAttribute('data-index'))
 		const line = terminalHistory.value[index]
 
-		if (line && line.type === 'typewriter' && !line.animated) {
+		if (line && (line.type === 'typewriter' || line.type === 'output') && !line.animated) {
 			nextElement = { element, index, line }
 			break
 		}
@@ -163,11 +175,7 @@ const processTypewriterOutputs = async () => {
 
 		if (line.link) {
 			const fullContent = (line.prefix || '') + line.linkText
-			await createCommandTypewriter(element, fullContent, {
-				speed: 7.5,
-				startDelay: 0,
-				lifelike: true,
-			})
+			await createCommandTypewriter(element, fullContent, typewriterSpeed)
 
 			element.innerHTML =
 				(line.prefix || '') +
@@ -202,12 +210,12 @@ const processTypewriterOutputs = async () => {
 					})
 				}
 			})
+		} else if (line.type === 'output') {
+			// Handle output type with TypeIt
+			await createCommandTypewriter(element, line.content, typewriterSpeed)
 		} else {
-			await createCommandTypewriter(element, line.content, {
-				speed: 10,
-				startDelay: 0,
-				lifelike: true,
-			})
+			// Handle typewriter type
+			await createCommandTypewriter(element, line.content, typewriterSpeed)
 		}
 
 		isProcessingTypewriter.value = false

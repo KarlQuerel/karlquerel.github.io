@@ -4,6 +4,11 @@ export function useTerminalTypewriter() {
 	const welcomeTextRef = ref(null)
 	const showInputPrompt = ref(false)
 
+	const typewriterSpeed = {
+		speed: 8,
+		startDelay: 0,
+	}
+
 	const initTypewriter = focusInput => {
 		nextTick(() => {
 			const initTypeIt = () => {
@@ -13,9 +18,8 @@ export function useTerminalTypewriter() {
 							'Welcome to my website!',
 							'<br>Type <span class="text-yellow">help</span> for available commands or just type anything.',
 						],
-						speed: 10,
+						...typewriterSpeed,
 						lifelike: true,
-						startDelay: 0,
 						html: true,
 						cursorChar: '_',
 						afterComplete: function (instance) {
@@ -38,9 +42,8 @@ export function useTerminalTypewriter() {
 			nextTick(() => {
 				if (element && window.TypeIt) {
 					const defaultOptions = {
-						speed: 7.5,
+						...typewriterSpeed,
 						lifelike: true,
-						startDelay: 0,
 						html: true,
 						cursorChar: '_',
 						afterComplete: function (instance) {
@@ -66,5 +69,6 @@ export function useTerminalTypewriter() {
 		showInputPrompt,
 		initTypewriter,
 		createCommandTypewriter,
+		typewriterSpeed,
 	}
 }
