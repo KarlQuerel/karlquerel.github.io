@@ -56,7 +56,6 @@
 			min-width: 140px;
 			max-width: 95%;
 			min-height: 25px;
-			border-radius: 0;
 		}
 	}
 </style>
