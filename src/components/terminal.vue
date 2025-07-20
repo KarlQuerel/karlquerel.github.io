@@ -400,11 +400,6 @@
 		text-shadow: 0 0 3px currentColor;
 	}
 
-	:deep(.text-red) {
-		color: $red;
-		text-shadow: 0 0 3px currentColor;
-	}
-
 	:deep(.text-orange) {
 		color: $orange;
 		text-shadow: 0 0 3px currentColor;
