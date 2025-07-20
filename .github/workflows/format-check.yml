@@ -23,7 +23,7 @@ jobs:
       run: npm install
       
     - name: Check code formatting
-fix()      run: |
+      run: |
         echo "🔍 Checking code formatting..."
         npm run format:check
         if [ $? -ne 0 ]; then
