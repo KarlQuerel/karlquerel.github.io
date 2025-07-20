@@ -9,7 +9,7 @@
     "serve": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "vite build && cp dist/index.html dist/404.html && gh-pages -d dist",
-    "format": "prettier --write \"src/**/*.{js,vue,css,scss}\" --config .prettierrc && npm run lint:fix",
+    "format": "prettier --write \"src/**/*.{js,vue,css,scss}\" --config .prettierrc && npm run lint:fix && npm run format:check && npm run lint:check",
     "format:check": "prettier --check \"src/**/*.{js,vue,css,scss}\" --config .prettierrc",
     "lint": "eslint . --ext .js,.vue",
     "lint:fix": "eslint . --ext .js,.vue --fix",
