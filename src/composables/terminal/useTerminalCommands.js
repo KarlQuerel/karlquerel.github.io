@@ -93,6 +93,11 @@ export function useTerminalCommands() {
 			{
 				type: 'typewriter',
 				html: true,
+				content: '• <span class="text-orange">location</span>    - Show your location',
+			},
+			{
+				type: 'typewriter',
+				html: true,
 				content: '• <span class="text-green">yako</span>        - Just a happy dog',
 			},
 			{ type: 'typewriter', content: '' },
@@ -235,6 +240,78 @@ export function useTerminalCommands() {
 		game: () => {
 			router.push('/game')
 		},
+
+		whoami: () => [
+			{
+				type: 'typewriter',
+				html: true,
+				content: '<span class="text-red">You tell me.</span>',
+			},
+		],
+
+		location: async () => {
+			try {
+				const position = await new Promise((resolve, reject) => {
+					navigator.geolocation.getCurrentPosition(resolve, reject, {
+						timeout: 10000,
+						enableHighAccuracy: true,
+					})
+				})
+
+				const { latitude, longitude } = position.coords
+
+				const response = await fetch(
+					`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`,
+				)
+
+				if (!response.ok) {
+					throw new Error('Geocoding failed')
+				}
+
+				const data = await response.json()
+				const city = data.city || data.locality || 'Unknown City'
+				const country = data.countryName || 'Unknown Country'
+
+				return [
+					{
+						type: 'typewriter',
+						html: true,
+						content: '<span class="text-green">📍 Location detected!</span>',
+					},
+					{
+						type: 'typewriter',
+						html: true,
+						content: `• Country     - <span class="text-green">${country}</span>`,
+					},
+					{
+						type: 'typewriter',
+						html: true,
+						content: `• City        - <span class="text-green">${city}</span>`,
+					},
+					{
+						type: 'typewriter',
+						html: true,
+						content: `• Accuracy    - <span class="text-blue">±${Math.round(position.coords.accuracy)}m</span>`,
+					},
+				]
+			} catch (error) {
+				return [
+					{
+						type: 'typewriter',
+						html: true,
+						content: '<span class="text-red">❌ Location access denied</span>',
+					},
+				]
+			}
+		},
+
+		date: () => [
+			{
+				type: 'typewriter',
+				html: true,
+				content: new Date().toDateString() + ' ' + new Date().toLocaleTimeString(),
+			},
+		],
 
 		secret_game: async () => {
 			isExecutingScript.value = true
