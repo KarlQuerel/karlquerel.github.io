@@ -100,6 +100,9 @@
 </template>
 
 <script setup>
+// Test formatting - this should fail CI
+const badFormatting = { test: 'this should fail prettier', another: 'bad formatting' }
+
 import { ref, onMounted, watch, nextTick } from 'vue'
 import { useTerminalCommands } from '@/composables/terminal/useTerminalCommands'
 import { useTerminalInput } from '@/composables/terminal/useTerminalInput'
