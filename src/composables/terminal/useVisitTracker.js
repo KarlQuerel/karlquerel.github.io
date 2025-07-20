@@ -5,12 +5,10 @@ export function useVisitTracker() {
 	const visitCount = ref(0)
 	const commandStats = ref({})
 	const lastVisit = ref(null)
-	const isLoading = ref(true)
 
 	// Load data from Firebase
 	const loadVisitData = async () => {
 		try {
-			isLoading.value = true
 			const stats = await loadTerminalStats()
 
 			visitCount.value = stats.totalVisits
@@ -18,8 +16,6 @@ export function useVisitTracker() {
 			lastVisit.value = stats.lastVisit
 		} catch (error) {
 			console.warn('Failed to load visit data:', error)
-		} finally {
-			isLoading.value = false
 		}
 	}
 
@@ -73,7 +69,6 @@ export function useVisitTracker() {
 		visitCount,
 		commandStats,
 		lastVisit,
-		isLoading,
 		trackVisit,
 		trackCommand,
 		getPopularCommands,

@@ -147,7 +147,14 @@ const enhancedExecuteCommand = async input => {
 const { currentInput, cursorPosition, handleKeyDown, focusInput, updateCursorPosition } =
 	useTerminalInput(enhancedExecuteCommand, commands, availableFiles, executableScripts)
 
-// Watch for typewriter and output elements and animate them one at a time
+const scrollToBottom = () => {
+	if (terminalBody.value) {
+		nextTick(() => {
+			terminalBody.value.scrollTop = terminalBody.value.scrollHeight
+		})
+	}
+}
+
 const isProcessingTypewriter = ref(false)
 
 const processTypewriterOutputs = async () => {
@@ -156,7 +163,6 @@ const processTypewriterOutputs = async () => {
 	const typewriterElements = document.querySelectorAll('[data-index]')
 	let nextElement = null
 
-	// Find the first unanimated typewriter or output element
 	for (const element of typewriterElements) {
 		const index = parseInt(element.getAttribute('data-index'))
 		const line = terminalHistory.value[index]
@@ -167,11 +173,12 @@ const processTypewriterOutputs = async () => {
 		}
 	}
 
-	// Process only one element at a time
 	if (nextElement) {
 		isProcessingTypewriter.value = true
 		const { element, line } = nextElement
 		line.animated = true
+
+		scrollToBottom()
 
 		if (line.link) {
 			const fullContent = (line.prefix || '') + line.linkText
@@ -210,44 +217,44 @@ const processTypewriterOutputs = async () => {
 					})
 				}
 			})
-		} else if (line.type === 'output') {
-			// Handle output type with TypeIt
-			await createCommandTypewriter(element, line.content, typewriterSpeed)
 		} else {
-			// Handle typewriter type
 			await createCommandTypewriter(element, line.content, typewriterSpeed)
 		}
 
 		isProcessingTypewriter.value = false
 
-		// Check if there are more elements to process
 		nextTick(() => {
 			processTypewriterOutputs()
 		})
 	} else {
-		// No more elements to process, ensure input is enabled
 		isProcessingTypewriter.value = false
-		// Force a reactive update to show the input
 		nextTick(() => {
 			focusInput(terminalInput.value)
 		})
 	}
 }
 
-// Watch for changes in terminal history to process typewriter outputs
 watch(
 	terminalHistory,
 	() => {
 		nextTick(() => {
 			processTypewriterOutputs()
+			scrollToBottom()
 		})
 	},
 	{ deep: true },
 )
 
+watch(currentInput, () => {
+	scrollToBottom()
+})
+
 onMounted(() => {
 	trackVisit()
-	initTypewriter(() => focusInput(terminalInput.value))
+	initTypewriter(() => {
+		focusInput(terminalInput.value)
+		scrollToBottom()
+	})
 })
 </script>
 

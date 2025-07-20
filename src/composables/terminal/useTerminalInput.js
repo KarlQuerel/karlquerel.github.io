@@ -10,7 +10,6 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 	const tabMatches = ref([])
 	const tabIndex = ref(-1)
 	const isTabbing = ref(false)
-	const originalTabPattern = ref('')
 
 	// Watch currentInput to update cursor position
 	watch(currentInput, newValue => {
@@ -40,21 +39,18 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 			if (parts.length === 1) {
 				if (command.startsWith('./')) {
 					const scriptName = command.substring(2)
-					originalTabPattern.value = scriptName
 					const scriptNames = [...Object.keys(executableScripts), 'i_am_not_a_virus.exe']
 					tabMatches.value = scriptNames
 						.filter(script => script.toLowerCase().startsWith(scriptName.toLowerCase()))
 						.map(script => './' + script)
 						.sort()
 				} else {
-					originalTabPattern.value = command
 					const commandNames = Object.keys(commands)
 					tabMatches.value = commandNames
 						.filter(cmd => cmd.toLowerCase().startsWith(command.toLowerCase()))
 						.sort()
 				}
 			} else if (command.toLowerCase() === 'cat' && parts.length === 2) {
-				originalTabPattern.value = currentArg
 				tabMatches.value = availableFiles
 					.filter(file => file.toLowerCase().startsWith(currentArg.toLowerCase()))
 					.sort()
@@ -94,19 +90,16 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 			isTabbing.value = false
 			tabMatches.value = []
 			tabIndex.value = -1
-			originalTabPattern.value = ''
 		} else if (event.key === 'ArrowUp') {
 			navigateHistory(-1)
 			isTabbing.value = false
 			tabMatches.value = []
 			tabIndex.value = -1
-			originalTabPattern.value = ''
 		} else if (event.key === 'ArrowDown') {
 			navigateHistory(1)
 			isTabbing.value = false
 			tabMatches.value = []
 			tabIndex.value = -1
-			originalTabPattern.value = ''
 		} else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
 			// Update cursor position after arrow key movement
 			nextTick(() => {
@@ -116,7 +109,6 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 			isTabbing.value = false
 			tabMatches.value = []
 			tabIndex.value = -1
-			originalTabPattern.value = ''
 		}
 	}
 
@@ -150,13 +142,7 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 
 	return {
 		currentInput,
-		commandHistory,
-		historyIndex,
 		cursorPosition,
-		tabMatches,
-		tabIndex,
-		isTabbing,
-		originalTabPattern,
 		handleKeyDown,
 		focusInput,
 		updateCursorPosition,
