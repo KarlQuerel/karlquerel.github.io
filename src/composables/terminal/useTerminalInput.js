@@ -71,7 +71,7 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 				const cursorPosition = currentInput.value.length
 				document.documentElement.style.setProperty(
 					'--cursor-position',
-					cursorPosition.toString(),
+					cursorPosition.toString()
 				)
 			})
 		}

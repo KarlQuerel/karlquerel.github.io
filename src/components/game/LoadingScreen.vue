@@ -12,24 +12,24 @@
 </template>
 
 <script setup>
-defineProps({
-	isLoading: {
-		type: Boolean,
-		required: true,
-	},
-	loadingProgress: {
-		type: Number,
-		required: true,
-	},
-	loadedAssets: {
-		type: Number,
-		required: true,
-	},
-	totalAssets: {
-		type: Number,
-		required: true,
-	},
-})
+	defineProps({
+		isLoading: {
+			type: Boolean,
+			required: true,
+		},
+		loadingProgress: {
+			type: Number,
+			required: true,
+		},
+		loadedAssets: {
+			type: Number,
+			required: true,
+		},
+		totalAssets: {
+			type: Number,
+			required: true,
+		},
+	})
 </script>
 
 <style lang="scss" scoped>

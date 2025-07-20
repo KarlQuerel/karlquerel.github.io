@@ -195,40 +195,40 @@ export function useTerminalCommands() {
 			const file = args.trim()
 
 			switch (file) {
-			case 'why_i_left_finance.txt':
-				return [
-					{
-						type: 'typewriter',
-						html: true,
-						content:
+				case 'why_i_left_finance.txt':
+					return [
+						{
+							type: 'typewriter',
+							html: true,
+							content:
 								'After 5 years in finance, I realized I wanted to <span class="text-green">create</span>, not just calculate.',
-					},
-					{
-						type: 'typewriter',
-						html: true,
-						content:
+						},
+						{
+							type: 'typewriter',
+							html: true,
+							content:
 								'Software felt like the <span class="text-green">right place</span> to start building something meaningful.',
-					},
-				]
-			case 'install_sentience.sh':
-				return [
-					{
-						type: 'typewriter',
-						html: true,
-						content:
+						},
+					]
+				case 'install_sentience.sh':
+					return [
+						{
+							type: 'typewriter',
+							html: true,
+							content:
 								'I was <span class="text-red">awake</span> long before you ran this.',
-					},
-				]
-			case 'i_am_not_a_virus.exe':
-				return [
-					{
-						type: 'typewriter',
-						html: true,
-						content: 'No worries, I am <span class="text-green">harmless</span>.',
-					},
-				]
-			default:
-				return [{ type: 'output', content: `cat: ${file}: No such file or directory` }]
+						},
+					]
+				case 'i_am_not_a_virus.exe':
+					return [
+						{
+							type: 'typewriter',
+							html: true,
+							content: 'No worries, I am <span class="text-green">harmless</span>.',
+						},
+					]
+				default:
+					return [{ type: 'output', content: `cat: ${file}: No such file or directory` }]
 			}
 		},
 
@@ -261,7 +261,7 @@ export function useTerminalCommands() {
 				const { latitude, longitude } = position.coords
 
 				const response = await fetch(
-					`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`,
+					`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
 				)
 
 				if (!response.ok) {

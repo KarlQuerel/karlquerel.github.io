@@ -27,30 +27,30 @@
 </template>
 
 <script setup>
-import { useAudioManager } from '../../composables/game/useAudioManager'
+	import { useAudioManager } from '../../composables/game/useAudioManager'
 
-defineProps({
-	showCinematics: {
-		type: Boolean,
-		required: true,
-	},
-	menuButtonsReady: {
-		type: Boolean,
-		required: true,
-	},
-	isTransitioningToCinematics: {
-		type: Boolean,
-		required: true,
-	},
-})
+	defineProps({
+		showCinematics: {
+			type: Boolean,
+			required: true,
+		},
+		menuButtonsReady: {
+			type: Boolean,
+			required: true,
+		},
+		isTransitioningToCinematics: {
+			type: Boolean,
+			required: true,
+		},
+	})
 
-const emit = defineEmits(['start-cinematics', 'show-credits'])
-const { playClickSound } = useAudioManager()
+	const emit = defineEmits(['start-cinematics', 'show-credits'])
+	const { playClickSound } = useAudioManager()
 
-const handleButtonClick = async event => {
-	await playClickSound()
-	emit(event)
-}
+	const handleButtonClick = async event => {
+		await playClickSound()
+		emit(event)
+	}
 </script>
 
 <style lang="scss" scoped>

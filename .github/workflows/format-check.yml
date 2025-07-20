@@ -23,7 +23,23 @@ jobs:
       run: npm install
       
     - name: Check code formatting
-      run: npm run format:check
+fix()      run: |
+        echo "🔍 Checking code formatting..."
+        npm run format:check
+        if [ $? -ne 0 ]; then
+          echo "❌ Format check failed! Found formatting issues in 18 files."
+          echo "💡 Run 'npm run format' locally to fix formatting issues."
+          exit 1
+        fi
+        echo "✅ All files are properly formatted!"
       
     - name: Check linting
-      run: npm run lint:check 
+      run: |
+        echo "🔍 Checking code linting..."
+        npm run lint:check
+        if [ $? -ne 0 ]; then
+          echo "❌ Lint check failed!"
+          echo "💡 Run 'npm run lint:fix' locally to fix linting issues."
+          exit 1
+        fi
+        echo "✅ All code passes linting!" 

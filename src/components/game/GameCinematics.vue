@@ -31,206 +31,206 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, watch } from 'vue'
+	import { ref, nextTick, onMounted, watch } from 'vue'
 
-const emit = defineEmits(['fade-complete'])
+	const emit = defineEmits(['fade-complete'])
 
-const BASE_DELAY = 3
-const LETTER_DELAY = 0.015
-const MESSAGE_GAP = 1.2
-const FADE_OUT_DELAY = 1
-const TIMEOUT_BETWEEN_BLOCKS = 350
+	const BASE_DELAY = 3
+	const LETTER_DELAY = 0.015
+	const MESSAGE_GAP = 1.2
+	const FADE_OUT_DELAY = 1
+	const TIMEOUT_BETWEEN_BLOCKS = 350
 
-const firstMessages = [
-	{ text: 'Ryn was once a powerful and thriving land' },
-	{ text: 'Its banners flew proudly from golden spires' },
-	{ text: 'Scholars, kings, and saints walked the same halls' },
-	{ text: 'Its prosperity matched only by the wisdom of its people' },
-	{ text: 'Alas, those days are long gone...' },
-]
+	const firstMessages = [
+		{ text: 'Ryn was once a powerful and thriving land' },
+		{ text: 'Its banners flew proudly from golden spires' },
+		{ text: 'Scholars, kings, and saints walked the same halls' },
+		{ text: 'Its prosperity matched only by the wisdom of its people' },
+		{ text: 'Alas, those days are long gone...' },
+	]
 
-const secondMessages = [
-	{ text: 'The royal bloodline has faded into legend' },
-	{ text: 'Political schemes have bled the kingdom dry' },
-	{ text: 'Noble houses squabble over ruins' },
-	{ text: 'While common folk pray to silent gods' },
-	{ text: 'Bandits have overrun the Royal Guard' },
-	{ text: 'Chaos threatens the realm...' },
-]
+	const secondMessages = [
+		{ text: 'The royal bloodline has faded into legend' },
+		{ text: 'Political schemes have bled the kingdom dry' },
+		{ text: 'Noble houses squabble over ruins' },
+		{ text: 'While common folk pray to silent gods' },
+		{ text: 'Bandits have overrun the Royal Guard' },
+		{ text: 'Chaos threatens the realm...' },
+	]
 
-const thirdMessages = [
-	{ text: 'Yet hope remains!' },
-	{ text: 'Rumors of a rightful heir' },
-	{ text: 'Have emerged from the East' },
-	{ text: 'Steward Varric, keeper of Ryn\'s throne' },
-	{ text: 'Sent me on a secret mission to restore' },
-]
+	const thirdMessages = [
+		{ text: 'Yet hope remains!' },
+		{ text: 'Rumors of a rightful heir' },
+		{ text: 'Have emerged from the East' },
+		{ text: "Steward Varric, keeper of Ryn's throne" },
+		{ text: 'Sent me on a secret mission to restore' },
+	]
 
-const currentMessages = ref([])
-const shouldFadeOut = ref(false)
-const isSecondSequence = ref(false)
-const isThirdSequence = ref(false)
-const isFourthSequence = ref(false)
-const audioPool = ref([])
-const POOL_SIZE = 5
-let currentAudioIndex = 0
+	const currentMessages = ref([])
+	const shouldFadeOut = ref(false)
+	const isSecondSequence = ref(false)
+	const isThirdSequence = ref(false)
+	const isFourthSequence = ref(false)
+	const audioPool = ref([])
+	const POOL_SIZE = 5
+	let currentAudioIndex = 0
 
-const playedMessages = ref(new Set())
-const activeAudioLoops = ref(new Map())
+	const playedMessages = ref(new Set())
+	const activeAudioLoops = ref(new Map())
 
-const calculateDelays = messages => {
-	const result = messages.map((message, index) => {
-		const previousMessages = messages.slice(0, index)
-		const totalPreviousDelay = previousMessages.reduce((acc, msg) => {
-			const totalLength = msg.text.length
-			return acc + totalLength * LETTER_DELAY + MESSAGE_GAP
-		}, 0)
+	const calculateDelays = messages => {
+		const result = messages.map((message, index) => {
+			const previousMessages = messages.slice(0, index)
+			const totalPreviousDelay = previousMessages.reduce((acc, msg) => {
+				const totalLength = msg.text.length
+				return acc + totalLength * LETTER_DELAY + MESSAGE_GAP
+			}, 0)
 
-		const startDelay = BASE_DELAY + totalPreviousDelay
-		const messageDuration = message.text.length * LETTER_DELAY
+			const startDelay = BASE_DELAY + totalPreviousDelay
+			const messageDuration = message.text.length * LETTER_DELAY
 
-		return {
-			...message,
-			startDelay,
-			messageDuration,
-			messageId: `${Date.now()}-${index}`,
+			return {
+				...message,
+				startDelay,
+				messageDuration,
+				messageId: `${Date.now()}-${index}`,
+			}
+		})
+		return result
+	}
+
+	currentMessages.value = calculateDelays(firstMessages)
+
+	onMounted(() => {
+		for (let i = 0; i < POOL_SIZE; i++) {
+			const audio = new Audio('/assets/sound/typing.mp3')
+			audio.volume = 0.35
+			audio.preload = 'auto'
+			audio.load()
+			audioPool.value.push(audio)
 		}
+
+		setupMessageTimers()
 	})
-	return result
-}
 
-currentMessages.value = calculateDelays(firstMessages)
-
-onMounted(() => {
-	for (let i = 0; i < POOL_SIZE; i++) {
-		const audio = new Audio('/assets/sound/typing.mp3')
-		audio.volume = 0.35
-		audio.preload = 'auto'
-		audio.load()
-		audioPool.value.push(audio)
-	}
-
-	setupMessageTimers()
-})
-
-const startTypingAudioLoop = (messageId, duration) => {
-	if (playedMessages.value.has(messageId)) {
-		return
-	}
-
-	playedMessages.value.add(messageId)
-
-	if (audioPool.value.length > 0) {
-		const audio = audioPool.value[currentAudioIndex]
-		audio.currentTime = 0
-		audio.loop = true
-
-		const playPromise = audio.play()
-		if (playPromise !== undefined) {
-			playPromise
-				.then(() => {
-					activeAudioLoops.value.set(messageId, audio)
-
-					setTimeout(() => {
-						stopTypingAudioLoop(messageId)
-					}, duration * 1000)
-				})
-				.catch(() => {
-					audio.load()
-				})
+	const startTypingAudioLoop = (messageId, duration) => {
+		if (playedMessages.value.has(messageId)) {
+			return
 		}
 
-		currentAudioIndex = (currentAudioIndex + 1) % POOL_SIZE
-	}
-}
+		playedMessages.value.add(messageId)
 
-const stopTypingAudioLoop = messageId => {
-	const audio = activeAudioLoops.value.get(messageId)
-	if (audio) {
-		audio.loop = false
-		audio.pause()
-		audio.currentTime = 0
-		activeAudioLoops.value.delete(messageId)
-	}
-}
+		if (audioPool.value.length > 0) {
+			const audio = audioPool.value[currentAudioIndex]
+			audio.currentTime = 0
+			audio.loop = true
 
-const setupMessageTimers = () => {
-	currentMessages.value.forEach(message => {
-		setTimeout(() => {
-			startTypingAudioLoop(message.messageId, message.messageDuration)
-		}, message.startDelay * 1000)
-	})
-}
+			const playPromise = audio.play()
+			if (playPromise !== undefined) {
+				playPromise
+					.then(() => {
+						activeAudioLoops.value.set(messageId, audio)
 
-watch(
-	currentMessages,
-	newMessages => {
-		if (newMessages.length > 0) {
-			activeAudioLoops.value.forEach((audio, messageId) => {
-				stopTypingAudioLoop(messageId)
-			})
-			playedMessages.value.clear()
-			nextTick(() => {
-				if (!isFourthSequence.value) {
-					setupMessageTimers()
-				}
-			})
+						setTimeout(() => {
+							stopTypingAudioLoop(messageId)
+						}, duration * 1000)
+					})
+					.catch(() => {
+						audio.load()
+					})
+			}
+
+			currentAudioIndex = (currentAudioIndex + 1) % POOL_SIZE
 		}
-	},
-	{ deep: true },
-)
+	}
 
-const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) => {
-	if (
-		messageIndex === currentMessages.value.length - 1 &&
-		partIndex === totalParts - 1 &&
-		letterIndex === currentMessages.value[messageIndex].text.length - 1
-	) {
-		if (!isSecondSequence.value) {
+	const stopTypingAudioLoop = messageId => {
+		const audio = activeAudioLoops.value.get(messageId)
+		if (audio) {
+			audio.loop = false
+			audio.pause()
+			audio.currentTime = 0
+			activeAudioLoops.value.delete(messageId)
+		}
+	}
+
+	const setupMessageTimers = () => {
+		currentMessages.value.forEach(message => {
 			setTimeout(() => {
-				shouldFadeOut.value = true
-				emit('fade-complete')
+				startTypingAudioLoop(message.messageId, message.messageDuration)
+			}, message.startDelay * 1000)
+		})
+	}
+
+	watch(
+		currentMessages,
+		newMessages => {
+			if (newMessages.length > 0) {
+				activeAudioLoops.value.forEach((audio, messageId) => {
+					stopTypingAudioLoop(messageId)
+				})
+				playedMessages.value.clear()
+				nextTick(() => {
+					if (!isFourthSequence.value) {
+						setupMessageTimers()
+					}
+				})
+			}
+		},
+		{ deep: true }
+	)
+
+	const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) => {
+		if (
+			messageIndex === currentMessages.value.length - 1 &&
+			partIndex === totalParts - 1 &&
+			letterIndex === currentMessages.value[messageIndex].text.length - 1
+		) {
+			if (!isSecondSequence.value) {
 				setTimeout(() => {
-					shouldFadeOut.value = false
-					isSecondSequence.value = true
-					currentMessages.value = []
-					nextTick(() => {
-						currentMessages.value = calculateDelays(secondMessages)
-					})
-				}, TIMEOUT_BETWEEN_BLOCKS)
-			}, FADE_OUT_DELAY * 1000)
-		} else if (!isThirdSequence.value) {
-			setTimeout(() => {
-				shouldFadeOut.value = true
-				emit('fade-complete')
-				setTimeout(() => {
-					shouldFadeOut.value = false
-					isThirdSequence.value = true
-					currentMessages.value = []
-					nextTick(() => {
-						currentMessages.value = calculateDelays(thirdMessages)
-					})
-				}, TIMEOUT_BETWEEN_BLOCKS)
-			}, FADE_OUT_DELAY * 1000)
-		} else if (!isFourthSequence.value) {
-			setTimeout(() => {
-				shouldFadeOut.value = true
-				emit('fade-complete')
-				setTimeout(() => {
-					shouldFadeOut.value = false
-					isFourthSequence.value = true
-				}, TIMEOUT_BETWEEN_BLOCKS)
-			}, FADE_OUT_DELAY * 1000)
-		} else {
-			setTimeout(() => {
-				shouldFadeOut.value = true
-				setTimeout(() => {
+					shouldFadeOut.value = true
 					emit('fade-complete')
-				}, TIMEOUT_BETWEEN_BLOCKS)
-			}, FADE_OUT_DELAY * 1000)
+					setTimeout(() => {
+						shouldFadeOut.value = false
+						isSecondSequence.value = true
+						currentMessages.value = []
+						nextTick(() => {
+							currentMessages.value = calculateDelays(secondMessages)
+						})
+					}, TIMEOUT_BETWEEN_BLOCKS)
+				}, FADE_OUT_DELAY * 1000)
+			} else if (!isThirdSequence.value) {
+				setTimeout(() => {
+					shouldFadeOut.value = true
+					emit('fade-complete')
+					setTimeout(() => {
+						shouldFadeOut.value = false
+						isThirdSequence.value = true
+						currentMessages.value = []
+						nextTick(() => {
+							currentMessages.value = calculateDelays(thirdMessages)
+						})
+					}, TIMEOUT_BETWEEN_BLOCKS)
+				}, FADE_OUT_DELAY * 1000)
+			} else if (!isFourthSequence.value) {
+				setTimeout(() => {
+					shouldFadeOut.value = true
+					emit('fade-complete')
+					setTimeout(() => {
+						shouldFadeOut.value = false
+						isFourthSequence.value = true
+					}, TIMEOUT_BETWEEN_BLOCKS)
+				}, FADE_OUT_DELAY * 1000)
+			} else {
+				setTimeout(() => {
+					shouldFadeOut.value = true
+					setTimeout(() => {
+						emit('fade-complete')
+					}, TIMEOUT_BETWEEN_BLOCKS)
+				}, FADE_OUT_DELAY * 1000)
+			}
 		}
 	}
-}
 </script>
 
 <style lang="scss" scoped>
