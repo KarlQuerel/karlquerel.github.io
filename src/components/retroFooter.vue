@@ -1,10 +1,21 @@
 <template>
-	<footer class="footer">
+	<footer class="footer" :class="{ 'footer-hidden': !footerVisibility.isVisible.value }">
 		<div class="footer-copyright">
 			<span>&copy; 2025 Karl Querel - All rights reserved</span>
 		</div>
 	</footer>
 </template>
+
+<script setup>
+	import { inject, ref } from 'vue'
+
+	const footerVisibility = inject('footerVisibility', {
+		isVisible: ref(true),
+		toggleFooter: () => {},
+		hideFooter: () => {},
+		showFooter: () => {},
+	})
+</script>
 
 <style lang="scss" scoped>
 	.footer {
@@ -24,6 +35,13 @@
 		justify-content: center;
 		padding: 0 1rem;
 		box-sizing: border-box;
+		transition:
+			all 0.3s ease,
+			transform 0.5s ease;
+
+		&.footer-hidden {
+			transform: translate(0, 100%);
+		}
 	}
 
 	.footer-copyright {

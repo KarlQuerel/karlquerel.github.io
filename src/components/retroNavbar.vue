@@ -61,12 +61,19 @@
 </template>
 
 <script setup>
-	import { ref, computed } from 'vue'
+	import { ref, computed, inject } from 'vue'
 	import { useRoute } from 'vue-router'
 
 	const route = useRoute()
 	const isMenuOpen = ref(false)
 	const isHidden = ref(false)
+
+	const footerVisibility = inject('footerVisibility', {
+		isVisible: ref(true),
+		toggleFooter: () => {},
+		hideFooter: () => {},
+		showFooter: () => {},
+	})
 
 	const isGameRoute = computed(() => route.path === '/game')
 
@@ -80,6 +87,7 @@
 
 	const toggleNavbar = () => {
 		isHidden.value = !isHidden.value
+		footerVisibility.toggleFooter()
 	}
 </script>
 
