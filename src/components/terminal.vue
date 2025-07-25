@@ -380,6 +380,11 @@
 		text-shadow: 0 0 3px currentColor;
 	}
 
+	:deep(.text-azure) {
+		color: $azure;
+		text-shadow: 0 0 3px currentColor;
+	}
+
 	:deep(.text-yellow) {
 		color: $yellow;
 		text-shadow: 0 0 3px currentColor;

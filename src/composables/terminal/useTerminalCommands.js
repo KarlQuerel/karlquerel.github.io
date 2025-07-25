@@ -124,18 +124,18 @@ export function useTerminalCommands() {
 			{
 				type: 'typewriter',
 				html: true,
+				content:
+					'• Studied at <span class="text-purple">HEC Geneva</span>, <span class="text-purple">GEM</span> and <span class="text-purple">42 Paris</span>',
+			},
+			{
+				type: 'typewriter',
+				html: true,
 				content: '• Transitioned into <span class="text-green">software development</span>',
 			},
 			{
 				type: 'typewriter',
 				html: true,
-				content: '• Currently studying at <span class="text-blue">42 Paris</span>',
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content:
-					'• Passionate about building creative projects and learning new technologies',
+				content: '• Currently working at <span class="text-azure">Zetra</span>',
 			},
 		],
 
@@ -157,10 +157,6 @@ export function useTerminalCommands() {
 				prefix: '• LinkedIn    - ',
 				link: 'https://linkedin.com/in/karlquerel',
 				linkText: 'linkedin.com/in/karlquerel',
-			},
-			{
-				type: 'typewriter',
-				content: '-> You can also click on the buttons in the navigation bar',
 			},
 		],
 

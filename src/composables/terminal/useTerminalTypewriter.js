@@ -5,7 +5,7 @@ export function useTerminalTypewriter() {
 	const showInputPrompt = ref(false)
 
 	const typewriterSpeed = {
-		speed: 8,
+		speed: 7.5,
 		startDelay: 0,
 	}
 
