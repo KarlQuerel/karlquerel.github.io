@@ -1,5 +1,5 @@
 <template>
-	<div class="terminal-window">
+	<div class="terminal-window" data-nosnippet>
 		<div class="terminal-header">
 			<div class="terminal-buttons">
 				<div class="btn red" />
@@ -12,7 +12,7 @@
 		<div class="terminal-body" ref="terminalBody" @click="focusInput(terminalInput)">
 			<div class="terminal-line">
 				<span class="prompt">></span>
-				<span class="welcome-text" ref="welcomeTextRef" />
+				<span class="welcome-text" ref="welcomeTextRef" data-nosnippet />
 			</div>
 
 			<div v-for="(line, index) in terminalHistory" :key="index" class="terminal-line">

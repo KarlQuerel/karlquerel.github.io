@@ -1,5 +1,9 @@
 <template>
-	<footer class="footer" :class="{ 'footer-hidden': !footerVisibility.isVisible.value }">
+	<footer
+		class="footer"
+		:class="{ 'footer-hidden': !footerVisibility.isVisible.value }"
+		data-nosnippet
+	>
 		<div class="footer-copyright">
 			<span>&copy; 2025 Karl Querel - All rights reserved</span>
 		</div>
