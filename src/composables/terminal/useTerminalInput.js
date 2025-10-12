@@ -91,12 +91,12 @@ export function useTerminalInput(executeCommand, commands, availableFiles, execu
 			tabMatches.value = []
 			tabIndex.value = -1
 		} else if (event.key === 'ArrowUp') {
-			navigateHistory(-1)
+			navigateHistory(1)
 			isTabbing.value = false
 			tabMatches.value = []
 			tabIndex.value = -1
 		} else if (event.key === 'ArrowDown') {
-			navigateHistory(1)
+			navigateHistory(-1)
 			isTabbing.value = false
 			tabMatches.value = []
 			tabIndex.value = -1
