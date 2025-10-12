@@ -5,15 +5,16 @@
 
 	// Tweakable configuration
 	const MATRIX_CONFIG = {
-		fontSize: 10,                 // px height of characters and row step
+		fontSize: 15,                 // px height of characters and row step
 		fontFamily: '"Press Start 2P", monospace', // canvas font family
-		speedMin: 0.1,               // min rows per frame
-		speedMax: 0.2,               // max rows per frame
-		trailFadeAlpha: 0.8,         // background fade per frame (higher = shorter trails)
-		headOpacity: 0.01,            // 0..1 opacity for the white head
-		trailGlow: 8,                 // glow blur for green trail
-		resetChance: 0.035,           // probability to restart a column after it leaves screen
-		charChangeEveryFrames: 3,     // how many frames between character changes (1 = every frame)
+		speedMin: 0.03,               // min rows per frame
+		speedMax: 0.08,               // max rows per frame
+		trailFadeAlpha: 10,         // background fade per frame (higher = shorter trails)
+		headOpacity: 1,            // 0..1 opacity for the white head
+		trailGlow: 0.05,                 // glow blur for green trail
+		resetChance: 0.8,           // probability to restart a column after it leaves screen
+		charChangeEveryFrames: 15,     // how many frames between character changes (1 = every frame)
+		trailLength: 20000,             // number of characters in the trail
 	};
 
 	const canvas = document.createElement("canvas");
@@ -43,6 +44,7 @@
 	let speeds = [];
 	let headChars = [];
 	let trailChars = [];
+	let charHistory = []; // Store character history for each column
 	let frame = 0;
 
 	function resize() {
@@ -70,13 +72,15 @@
 		speeds = new Array(columns);
 		headChars = new Array(columns);
 		trailChars = new Array(columns);
+		charHistory = new Array(columns);
 		for (let i = 0; i < columns; i++) {
-			// keep existing y if present, otherwise randomize start
-			drops[i] = oldDrops && i < oldDrops.length ? oldDrops[i] : Math.floor(Math.random() * rows);
+			// Always start from the top of the screen
+			drops[i] = 0;
 			// per-column speed in rows per frame
 			speeds[i] = MATRIX_CONFIG.speedMin + Math.random() * (MATRIX_CONFIG.speedMax - MATRIX_CONFIG.speedMin);
 			headChars[i] = chars[(Math.random() * chars.length) | 0];
 			trailChars[i] = headChars[i];
+			charHistory[i] = [headChars[i]]; // Initialize with current character
 		}
 	}
 
@@ -92,23 +96,34 @@
 
 			// update characters at configurable rate
 			if (frame % MATRIX_CONFIG.charChangeEveryFrames === 0) {
-				trailChars[col] = headChars[col];
-				headChars[col] = chars[(Math.random() * chars.length) | 0];
+				// Add new character to history
+				charHistory[col].unshift(chars[(Math.random() * chars.length) | 0]);
+				// Keep only the trail length
+				if (charHistory[col].length > MATRIX_CONFIG.trailLength) {
+					charHistory[col].pop();
+				}
 			}
 
-			// trail: draw previous char in green one row behind
-			const trailY = (drops[col] - 1) * fontSize;
-			if (trailY >= 0) {
-				ctx.shadowBlur = MATRIX_CONFIG.trailGlow;
-				ctx.shadowColor = "#00ff00";
-				ctx.fillStyle = "#00ff00";
-				ctx.fillText(trailChars[col], x, trailY);
+			// Draw the trail characters
+			for (let i = 0; i < charHistory[col].length; i++) {
+				const trailY = y - (i * fontSize);
+				if (trailY >= -fontSize && trailY <= canvas.height / dpr) {
+					const alpha = Math.max(0, 1 - (i / MATRIX_CONFIG.trailLength));
+					
+					if (i === 0) {
+						// Head character - bright white
+						ctx.shadowBlur = 0;
+						ctx.fillStyle = `rgba(255,255,255,${MATRIX_CONFIG.headOpacity})`;
+					} else {
+						// Trail characters - green with fading opacity
+						ctx.shadowBlur = MATRIX_CONFIG.trailGlow;
+						ctx.shadowColor = "#00ff00";
+						ctx.fillStyle = `rgba(0,255,0,${alpha * 0.8})`;
+					}
+					
+					ctx.fillText(charHistory[col][i], x, trailY);
+				}
 			}
-
-			// head: bright white highlight
-			ctx.shadowBlur = 0;
-			ctx.fillStyle = `rgba(255,255,255,${MATRIX_CONFIG.headOpacity})`;
-			ctx.fillText(headChars[col], x, y);
 
 			// advance drop; when off-screen, occasionally reset to top
 			drops[col] += speeds[col];
@@ -116,8 +131,7 @@
 				drops[col] = 0;
 				speeds[col] = MATRIX_CONFIG.speedMin + Math.random() * (MATRIX_CONFIG.speedMax - MATRIX_CONFIG.speedMin);
 				// give a fresh start character
-				headChars[col] = chars[(Math.random() * chars.length) | 0];
-				trailChars[col] = headChars[col];
+				charHistory[col] = [chars[(Math.random() * chars.length) | 0]];
 			}
 		}
 
