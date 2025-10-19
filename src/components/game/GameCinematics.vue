@@ -1,234 +1,96 @@
 <template>
 	<div class="game-cinematics">
 		<div class="cinematics-container" :class="{ 'fade-out': shouldFadeOut }">
-			<template v-if="!isFourthSequence">
-				<div
-					v-for="(message, index) in currentMessages"
-					:key="index"
-					class="cinematics-message"
-					:style="{ animationDelay: `${message.startDelay}s` }"
+			<!-- Text Sequences -->
+			<div
+				v-for="(message, index) in currentMessages"
+				:key="message.messageId"
+				class="cinematics-message"
+				:style="{ animationDelay: `${message.startDelay}s` }"
+			>
+				<span
+					class="letter"
+					v-for="(letter, letterIndex) in message.text"
+					:key="letterIndex"
+					:style="{
+						animationDelay: `${message.startDelay + letterIndex * LETTER_DELAY}s`,
+					}"
+					@animationend="onLetterAnimationEnd(index, letterIndex)"
 				>
-					<span
-						class="letter"
-						v-for="(letter, letterIndex) in message.text"
-						:key="letterIndex"
-						:style="{
-							animationDelay: `${message.startDelay + letterIndex * LETTER_DELAY}s`,
-						}"
-						@animationend="onLetterAnimationEnd(index, 0, letterIndex, 1)"
-					>
-						{{ letter === ' ' ? '\u00A0' : letter }}
-					</span>
-				</div>
-			</template>
-			<template v-else>
+					{{ letter === ' ' ? '\u00A0' : letter }}
+				</span>
+			</div>
+
+			<!-- Title Screen -->
+			<div v-if="isFourthSequence" class="title-screen">
 				<div class="title">The <span class="fading-text">Fading</span> Crown</div>
-				<!-- HERE TO REMOVE AND REPLACE WITH THE CONTINUE BUTTON -->
 				<div class="coming-soon">Coming Soon</div>
-			</template>
+			</div>
 		</div>
 	</div>
 </template>
 
 <script setup>
-	import { ref, nextTick, onMounted, watch } from 'vue'
+	import { onMounted, watch } from 'vue'
+	import { useCinematicsSequence } from '@/composables/game/useCinematicsSequence'
+	import { useCinematicsAudio } from '@/composables/game/useCinematicsAudio'
+	import { CINEMATICS_CONFIG } from '@/data/cinematicsData'
 
 	const emit = defineEmits(['fade-complete'])
 
-	const BASE_DELAY = 3
-	const LETTER_DELAY = 0.015
-	const MESSAGE_GAP = 1.2
-	const FADE_OUT_DELAY = 1
-	const TIMEOUT_BETWEEN_BLOCKS = 350
+	const { LETTER_DELAY, FADE_OUT_DELAY } = CINEMATICS_CONFIG
 
-	const firstMessages = [
-		{ text: 'Ryn was once a powerful and thriving land' },
-		{ text: 'Its banners flew proudly from golden spires' },
-		{ text: 'Scholars, kings, and saints walked the same halls' },
-		{ text: 'Its prosperity matched only by the wisdom of its people' },
-		{ text: 'Alas, those days are long gone...' },
-	]
+	const { currentMessages, shouldFadeOut, isFourthSequence, nextSequence } =
+		useCinematicsSequence()
 
-	const secondMessages = [
-		{ text: 'The royal bloodline has faded into legend' },
-		{ text: 'Political schemes have bled the kingdom dry' },
-		{ text: 'Noble houses squabble over ruins' },
-		{ text: 'While common folk pray to silent gods' },
-		{ text: 'Bandits have overrun the Royal Guard' },
-		{ text: 'Chaos threatens the realm...' },
-	]
-
-	const thirdMessages = [
-		{ text: 'Yet hope remains!' },
-		{ text: 'Rumors of a rightful heir' },
-		{ text: 'Have emerged from the East' },
-		{ text: "Steward Varric, keeper of Ryn's throne" },
-		{ text: 'Sent me on a secret mission to restore' },
-	]
-
-	const currentMessages = ref([])
-	const shouldFadeOut = ref(false)
-	const isSecondSequence = ref(false)
-	const isThirdSequence = ref(false)
-	const isFourthSequence = ref(false)
-	const audioPool = ref([])
-	const POOL_SIZE = 5
-	let currentAudioIndex = 0
-
-	const playedMessages = ref(new Set())
-	const activeAudioLoops = ref(new Map())
-
-	const calculateDelays = messages => {
-		const result = messages.map((message, index) => {
-			const previousMessages = messages.slice(0, index)
-			const totalPreviousDelay = previousMessages.reduce((acc, msg) => {
-				const totalLength = msg.text.length
-				return acc + totalLength * LETTER_DELAY + MESSAGE_GAP
-			}, 0)
-
-			const startDelay = BASE_DELAY + totalPreviousDelay
-			const messageDuration = message.text.length * LETTER_DELAY
-
-			return {
-				...message,
-				startDelay,
-				messageDuration,
-				messageId: `${Date.now()}-${index}`,
-			}
-		})
-		return result
-	}
-
-	currentMessages.value = calculateDelays(firstMessages)
+	const { initAudioPool, playTypingSound } = useCinematicsAudio()
 
 	onMounted(() => {
-		for (let i = 0; i < POOL_SIZE; i++) {
-			const audio = new Audio('/assets/sound/typing.mp3')
-			audio.volume = 0.35
-			audio.preload = 'auto'
-			audio.load()
-			audioPool.value.push(audio)
-		}
-
-		setupMessageTimers()
+		initAudioPool()
+		setupAudioForMessages()
 	})
 
-	const startTypingAudioLoop = (messageId, duration) => {
-		if (playedMessages.value.has(messageId)) {
-			return
-		}
-
-		playedMessages.value.add(messageId)
-
-		if (audioPool.value.length > 0) {
-			const audio = audioPool.value[currentAudioIndex]
-			audio.currentTime = 0
-			audio.loop = true
-
-			const playPromise = audio.play()
-			if (playPromise !== undefined) {
-				playPromise
-					.then(() => {
-						activeAudioLoops.value.set(messageId, audio)
-
-						setTimeout(() => {
-							stopTypingAudioLoop(messageId)
-						}, duration * 1000)
-					})
-					.catch(() => {
-						audio.load()
-					})
-			}
-
-			currentAudioIndex = (currentAudioIndex + 1) % POOL_SIZE
-		}
-	}
-
-	const stopTypingAudioLoop = messageId => {
-		const audio = activeAudioLoops.value.get(messageId)
-		if (audio) {
-			audio.loop = false
-			audio.pause()
-			audio.currentTime = 0
-			activeAudioLoops.value.delete(messageId)
-		}
-	}
-
-	const setupMessageTimers = () => {
+	const setupAudioForMessages = () => {
 		currentMessages.value.forEach(message => {
 			setTimeout(() => {
-				startTypingAudioLoop(message.messageId, message.messageDuration)
+				playTypingSound(message.messageDuration)
 			}, message.startDelay * 1000)
 		})
 	}
 
 	watch(
 		currentMessages,
-		newMessages => {
-			if (newMessages.length > 0) {
-				activeAudioLoops.value.forEach((audio, messageId) => {
-					stopTypingAudioLoop(messageId)
-				})
-				playedMessages.value.clear()
-				nextTick(() => {
-					if (!isFourthSequence.value) {
-						setupMessageTimers()
-					}
-				})
+		() => {
+			if (currentMessages.value.length > 0 && !isFourthSequence.value) {
+				setupAudioForMessages()
 			}
 		},
 		{ deep: true }
 	)
 
-	const onLetterAnimationEnd = (messageIndex, partIndex, letterIndex, totalParts) => {
-		if (
-			messageIndex === currentMessages.value.length - 1 &&
-			partIndex === totalParts - 1 &&
-			letterIndex === currentMessages.value[messageIndex].text.length - 1
-		) {
-			if (!isSecondSequence.value) {
+	const onLetterAnimationEnd = (messageIndex, letterIndex) => {
+		const message = currentMessages.value[messageIndex]
+		if (!message) return
+
+		// Check if this is the last letter of the last message
+		const isLastMessage = messageIndex === currentMessages.value.length - 1
+		const isLastLetter = letterIndex === message.text.length - 1
+
+		if (isLastMessage && isLastLetter) {
+			setTimeout(() => {
+				shouldFadeOut.value = true
+				emit('fade-complete')
+
 				setTimeout(() => {
-					shouldFadeOut.value = true
-					emit('fade-complete')
-					setTimeout(() => {
-						shouldFadeOut.value = false
-						isSecondSequence.value = true
-						currentMessages.value = []
-						nextTick(() => {
-							currentMessages.value = calculateDelays(secondMessages)
-						})
-					}, TIMEOUT_BETWEEN_BLOCKS)
-				}, FADE_OUT_DELAY * 1000)
-			} else if (!isThirdSequence.value) {
-				setTimeout(() => {
-					shouldFadeOut.value = true
-					emit('fade-complete')
-					setTimeout(() => {
-						shouldFadeOut.value = false
-						isThirdSequence.value = true
-						currentMessages.value = []
-						nextTick(() => {
-							currentMessages.value = calculateDelays(thirdMessages)
-						})
-					}, TIMEOUT_BETWEEN_BLOCKS)
-				}, FADE_OUT_DELAY * 1000)
-			} else if (!isFourthSequence.value) {
-				setTimeout(() => {
-					shouldFadeOut.value = true
-					emit('fade-complete')
-					setTimeout(() => {
-						shouldFadeOut.value = false
-						isFourthSequence.value = true
-					}, TIMEOUT_BETWEEN_BLOCKS)
-				}, FADE_OUT_DELAY * 1000)
-			} else {
-				setTimeout(() => {
-					shouldFadeOut.value = true
-					setTimeout(() => {
-						emit('fade-complete')
-					}, TIMEOUT_BETWEEN_BLOCKS)
-				}, FADE_OUT_DELAY * 1000)
-			}
+					const hasNext = nextSequence()
+					if (!hasNext) {
+						// Final sequence completed
+						setTimeout(() => {
+							emit('fade-complete')
+						}, FADE_OUT_DELAY * 1000)
+					}
+				}, CINEMATICS_CONFIG.TIMEOUT_BETWEEN_BLOCKS)
+			}, FADE_OUT_DELAY * 1000)
 		}
 	}
 </script>
@@ -292,26 +154,13 @@
 		}
 	}
 
-	.game-cinematics-content {
+	.title-screen {
 		position: absolute;
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
 		text-align: center;
-		color: $yellow;
-		opacity: 0;
-		animation: fadeIn 2s ease-in forwards;
-		text-shadow: 0 0 10px $retro-green;
 		z-index: 1001;
-	}
-
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
 	}
 
 	.title {
