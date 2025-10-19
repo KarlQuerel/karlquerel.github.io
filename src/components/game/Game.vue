@@ -20,12 +20,9 @@
 				<div v-else class="game-container" ref="gameContainer">
 					<GameBackground
 						:show-cinematics="showCinematics"
-						:should-move-background="shouldMoveBackground"
-						:show-third-message-block="showThirdMessageBlock"
-						:show-fourth-message-block="showFourthMessageBlock"
 						:is-initial-load="isInitialLoad"
 						:show-game="showGame"
-						:is-first-sequence="isFirstSequence"
+						:current-sequence="currentSequence"
 						:is-transitioning-to-cinematics="isTransitioningToCinematics"
 					/>
 					<div class="game-content">
@@ -36,7 +33,12 @@
 							@start-cinematics="handleStartCinematics"
 							@show-credits="handleShowCredits"
 						/>
-						<GameCinematics v-if="showCinematics" @fade-complete="onFadeComplete" />
+						<GameCinematics
+							v-if="showCinematics"
+							@fade-complete="onFadeComplete"
+							@cinematics-complete="onCinematicsComplete"
+							@advance-sequence="currentSequence++"
+						/>
 						<CreditsModal :is-visible="showCredits" @close="showCredits = false" />
 					</div>
 				</div>
@@ -74,18 +76,19 @@
 	const {
 		showGame,
 		showCinematics,
-		shouldMoveBackground,
-		showThirdMessageBlock,
-		showFourthMessageBlock,
 		isInitialLoad,
 		menuButtonsReady,
-		isFirstSequence,
+		cinematicsComplete,
 		isTransitioningToCinematics,
 		startGame,
 		launchCinematics,
-		onFadeComplete,
+		onCinematicsComplete,
+		continueToGame,
 		initializeMenu,
 	} = useGameState()
+
+	// Get current sequence from cinematics
+	const currentSequence = ref(0)
 
 	const {
 		isLoading,
@@ -108,6 +111,13 @@
 	const handleShowCredits = async () => {
 		await playClickSound()
 		showCredits.value = true
+	}
+
+	const onFadeComplete = () => {
+		// Simplified: just handle the continue to game
+		if (cinematicsComplete.value) {
+			continueToGame()
+		}
 	}
 
 	onMounted(async () => {

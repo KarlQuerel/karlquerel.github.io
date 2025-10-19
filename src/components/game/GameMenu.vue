@@ -27,6 +27,7 @@
 </template>
 
 <script setup>
+	import { inject } from 'vue'
 	import { useAudioManager } from '../../composables/game/useAudioManager'
 
 	defineProps({
@@ -47,8 +48,19 @@
 	const emit = defineEmits(['start-cinematics', 'show-credits'])
 	const { playClickSound } = useAudioManager()
 
+	// Get footer visibility to toggle it (same as hide navbar button)
+	const _footerVisibility = inject('footerVisibility', {
+		toggleFooter: () => {},
+	})
+
 	const handleButtonClick = async event => {
 		await playClickSound()
+
+		// When starting cinematics, dispatch custom event to hide navbar
+		if (event === 'start-cinematics') {
+			window.dispatchEvent(new CustomEvent('hide-navbar'))
+		}
+
 		emit(event)
 	}
 </script>

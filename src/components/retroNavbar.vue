@@ -61,7 +61,7 @@
 </template>
 
 <script setup>
-	import { ref, computed, inject } from 'vue'
+	import { ref, computed, inject, onMounted, onUnmounted } from 'vue'
 	import { useRoute } from 'vue-router'
 
 	const route = useRoute()
@@ -89,6 +89,19 @@
 		isHidden.value = !isHidden.value
 		footerVisibility.toggleFooter()
 	}
+
+	// Listen for custom hide-navbar event (same as clicking hide button)
+	const handleHideNavbarEvent = () => {
+		toggleNavbar()
+	}
+
+	onMounted(() => {
+		window.addEventListener('hide-navbar', handleHideNavbarEvent)
+	})
+
+	onUnmounted(() => {
+		window.removeEventListener('hide-navbar', handleHideNavbarEvent)
+	})
 </script>
 
 <style lang="scss" scoped>

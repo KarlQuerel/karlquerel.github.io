@@ -29,7 +29,7 @@ export function useCinematicsAudio() {
 						audio.loop = false
 						audio.pause()
 						audio.currentTime = 0
-					}, duration * 1000)
+					}, duration) // Duration is already in milliseconds
 				})
 				.catch(() => {
 					audio.load()
@@ -37,6 +37,14 @@ export function useCinematicsAudio() {
 		}
 
 		currentAudioIndex = (currentAudioIndex + 1) % POOL_SIZE
+	}
+
+	const stopAllAudio = () => {
+		audioPool.value.forEach(audio => {
+			audio.pause()
+			audio.currentTime = 0
+			audio.loop = false
+		})
 	}
 
 	const cleanup = () => {
@@ -49,6 +57,7 @@ export function useCinematicsAudio() {
 	return {
 		initAudioPool,
 		playTypingSound,
+		stopAllAudio,
 		cleanup,
 	}
 }

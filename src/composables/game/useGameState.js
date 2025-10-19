@@ -3,13 +3,10 @@ import { ref, watch } from 'vue'
 export function useGameState() {
 	const showGame = ref(false)
 	const showCinematics = ref(false)
-	const shouldMoveBackground = ref(false)
-	const showThirdMessageBlock = ref(false)
-	const showFourthMessageBlock = ref(false)
 	const isInitialLoad = ref(true)
 	const menuButtonsReady = ref(false)
-	const isFirstSequence = ref(true)
-	const isTransitioningToCinematics = ref(false)
+	const cinematicsComplete = ref(false)
+	const isTransitioningToCinematics = ref(false) // Simple fade to black state
 
 	const startGame = () => {
 		showGame.value = true
@@ -19,44 +16,28 @@ export function useGameState() {
 		await playClickSound()
 		isTransitioningToCinematics.value = true
 
+		// Simple fade to black, then start cinematics
 		setTimeout(() => {
 			showCinematics.value = true
-			isFirstSequence.value = true
 			isTransitioningToCinematics.value = false
-		}, 2000)
+		}, 2000) // 2 second fade to black
 	}
 
-	const onFadeComplete = () => {
-		if (showCinematics.value && !shouldMoveBackground.value && isFirstSequence.value) {
-			isFirstSequence.value = false
-			shouldMoveBackground.value = true
-		} else if (
-			showCinematics.value &&
-			shouldMoveBackground.value &&
-			!showThirdMessageBlock.value
-		) {
-			showThirdMessageBlock.value = true
-		} else if (
-			showCinematics.value &&
-			showThirdMessageBlock.value &&
-			!showFourthMessageBlock.value
-		) {
-			showFourthMessageBlock.value = true
-		} else if (showCinematics.value && showFourthMessageBlock.value) {
-			showCinematics.value = false
-			shouldMoveBackground.value = false
-			showThirdMessageBlock.value = false
-			showFourthMessageBlock.value = false
-			isFirstSequence.value = true
-			showGame.value = true
-		}
+	const onCinematicsComplete = () => {
+		cinematicsComplete.value = true
+	}
+
+	const continueToGame = () => {
+		showCinematics.value = false
+		cinematicsComplete.value = false
+		showGame.value = true
 	}
 
 	const initializeMenu = () => {
 		setTimeout(() => {
 			isInitialLoad.value = false
 			menuButtonsReady.value = true
-		}, 12000)
+		}, 12000) // Restored to original 12s to match the 10s background animation + 2s buffer
 	}
 
 	// Watch for showGame changes to manage body overflow
@@ -71,16 +52,14 @@ export function useGameState() {
 	return {
 		showGame,
 		showCinematics,
-		shouldMoveBackground,
-		showThirdMessageBlock,
-		showFourthMessageBlock,
 		isInitialLoad,
 		menuButtonsReady,
-		isFirstSequence,
+		cinematicsComplete,
 		isTransitioningToCinematics,
 		startGame,
 		launchCinematics,
-		onFadeComplete,
+		onCinematicsComplete,
+		continueToGame,
 		initializeMenu,
 	}
 }

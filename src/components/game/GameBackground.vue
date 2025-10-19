@@ -2,13 +2,13 @@
 	<div
 		class="game-background"
 		:class="{
-			'fade-to-black': isTransitioningToCinematics,
-			'first-message-block': showCinematics && !shouldMoveBackground && isFirstSequence,
-			'second-message-block': shouldMoveBackground && !showThirdMessageBlock,
-			'third-message-block': showThirdMessageBlock && !showFourthMessageBlock,
-			'fourth-message-block': showFourthMessageBlock,
 			'initial-load': isInitialLoad,
 			'show-game': showGame,
+			'fade-to-black': isTransitioningToCinematics,
+			'sequence-0': showCinematics && currentSequence === 0,
+			'sequence-1': showCinematics && currentSequence === 1,
+			'sequence-2': showCinematics && currentSequence === 2,
+			'sequence-3': showCinematics && currentSequence === 3,
 		}"
 	>
 		<div class="background-overlay" />
@@ -16,22 +16,8 @@
 </template>
 
 <script setup>
-	import { defineProps } from 'vue'
-
 	defineProps({
 		showCinematics: {
-			type: Boolean,
-			default: false,
-		},
-		shouldMoveBackground: {
-			type: Boolean,
-			default: false,
-		},
-		showThirdMessageBlock: {
-			type: Boolean,
-			default: false,
-		},
-		showFourthMessageBlock: {
 			type: Boolean,
 			default: false,
 		},
@@ -43,13 +29,13 @@
 			type: Boolean,
 			default: false,
 		},
-		isFirstSequence: {
-			type: Boolean,
-			default: true,
-		},
 		isTransitioningToCinematics: {
 			type: Boolean,
 			default: false,
+		},
+		currentSequence: {
+			type: Number,
+			default: 0,
 		},
 	})
 </script>
@@ -88,15 +74,14 @@
 			opacity: 1;
 		}
 
+		// Simple fade to black when transitioning to cinematics
 		&.fade-to-black::before {
 			opacity: 0;
-			transition:
-				opacity 2s ease-in-out,
-				transform 8s ease-in-out;
-			transform: translateY(50%);
+			transition: opacity 2s ease-in-out;
 		}
 
-		&.first-message-block::before {
+		// Sequence 0: City landscape (first message block)
+		&.sequence-0::before {
 			background-image: url('/assets/game/landscape/city-looped.gif');
 			background-size: 100% 100%;
 			background-repeat: no-repeat;
@@ -105,7 +90,8 @@
 			transition: opacity 8s ease-in-out;
 		}
 
-		&.second-message-block::before {
+		// Sequence 1: Smoke landscape (second message block)
+		&.sequence-1::before {
 			background-image: url('/assets/game/landscape/smoke.gif');
 			background-size: 100% 100%;
 			background-repeat: no-repeat;
@@ -114,7 +100,8 @@
 			transition: all 8s ease-in-out;
 		}
 
-		&.third-message-block::before {
+		// Sequence 2: Forest landscape (third message block)
+		&.sequence-2::before {
 			background-image: url('/assets/game/landscape/forest1.gif');
 			background-size: 100% 100%;
 			background-repeat: no-repeat;
@@ -123,7 +110,8 @@
 			transition: all 8s ease-in-out;
 		}
 
-		&.fourth-message-block::before {
+		// Sequence 3: Menu background (fourth message block - title screen)
+		&.sequence-3::before {
 			background-image: url('/assets/game/menu-background.gif');
 			background-size: 100% 100%;
 			background-repeat: no-repeat;
