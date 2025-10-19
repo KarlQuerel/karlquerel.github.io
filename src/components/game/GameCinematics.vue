@@ -11,13 +11,14 @@
 				<div class="title">The <span class="fading-text">Fading</span> Crown</div>
 				<div class="continue-section">
 					<div class="coming-soon">Coming Soon</div>
-					<button
+					<!-- HERE to finish -->
+					<!-- <button
 						class="continue-button"
 						@click="handleContinue"
 						:disabled="!showContinueButton"
 					>
 						Continue
-					</button>
+					</button> -->
 				</div>
 			</div>
 		</div>
@@ -84,9 +85,10 @@
 		}
 	})
 
-	const handleContinue = () => {
-		emit('fade-complete')
-	}
+	// HERE to finish
+	// const handleContinue = () => {
+	// 	emit('fade-complete')
+	// }
 </script>
 
 <style lang="scss" scoped>
