@@ -6,27 +6,34 @@ module.exports = {
 		node: true,
 	},
 	extends: [
-		'plugin:vue/vue3-essential',
+		'plugin:react/recommended',
+		'plugin:react-hooks/recommended',
 		'eslint:recommended',
 		'prettier'
 	],
 	parserOptions: {
 		ecmaVersion: 'latest',
 		sourceType: 'module',
+		ecmaFeatures: {
+			jsx: true
+		},
 		parser: '@babel/eslint-parser',
 		requireConfigFile: false
 	},
-	plugins: ['vue', 'unused-imports'],
+	plugins: ['react', 'react-hooks', 'unused-imports'],
+	settings: {
+		react: {
+			version: 'detect'
+		}
+	},
 	ignorePatterns: ['dist/*', 'node_modules/*', 'public/*'],
 	rules: {
-		// Vue specific rules
-		'vue/multi-word-component-names': 'off',
+		// React specific rules
+		'react/react-in-jsx-scope': 'off', // Not needed in React 17+
+		'react/prop-types': 'off', // We're using JavaScript, not TypeScript
 		
 		// Disable all formatting rules - let Prettier handle them
 		'indent': 'off',
-		'vue/html-indent': 'off',
-		'vue/script-indent': 'off',
-		'vue/html-closing-bracket-newline': 'off',
 		'quotes': 'off',
 		'comma-dangle': 'off',
 		'semi': 'off',
@@ -34,19 +41,6 @@ module.exports = {
 		'array-bracket-spacing': 'off',
 		'arrow-spacing': 'off',
 		'space-before-function-paren': 'off',
-		
-		// Keep Vue formatting rules that don't conflict
-		'vue/max-attributes-per-line': ['error', {
-			'singleline': 3,
-			'multiline': 1
-		}],
-		'vue/html-self-closing': ['error', {
-			'html': {
-				'void': 'always',
-				'normal': 'always',
-				'component': 'always'
-			}
-		}],
 
 		// General rules (non-formatting)
 		'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
@@ -64,9 +58,8 @@ module.exports = {
 				'argsIgnorePattern': '^_'
 			}
 		],
-		'vue/no-unused-vars': 'error',
 		'no-unused-expressions': 'error',
-		'vue/no-unused-components': 'error',
-		'vue/no-unused-properties': 'error'
+		'react-hooks/rules-of-hooks': 'error',
+		'react-hooks/exhaustive-deps': 'warn'
 	}
 }

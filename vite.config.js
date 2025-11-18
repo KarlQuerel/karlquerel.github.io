@@ -1,10 +1,10 @@
 import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
+import react from '@vitejs/plugin-react'
 import path from 'path'
 
 export default defineConfig({
 	base: '/',
-	plugins: [vue()],
+	plugins: [react()],
 	build: {
 		outDir: 'dist',
 		chunkSizeWarningLimit: 1000,
@@ -18,8 +18,8 @@ export default defineConfig({
 		rollupOptions: {
 			output: {
 				manualChunks: {
-					vendor: ['vue', 'vue-router'],
-					game: ['./src/components/game/Game.vue'],
+					vendor: ['react', 'react-dom', 'react-router-dom'],
+					game: ['./src/components/game/Game.jsx'],
 					styles: ['./src/styles/main.scss'],
 				},
 				chunkFileNames: 'assets/[name]-[hash].js',
@@ -32,7 +32,6 @@ export default defineConfig({
 	publicDir: 'public',
 	resolve: {
 		alias: {
-			vue: 'vue/dist/vue.esm-bundler.js',
 			'@': path.resolve(__dirname, './src'),
 		},
 	},
