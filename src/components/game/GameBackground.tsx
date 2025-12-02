@@ -52,14 +52,18 @@ function GameBackground({
 
 	return (
 		<div
-			className={`fixed top-0 left-0 w-screen h-screen bg-black z-[1] transition-all duration-[1s] ease-in-out ${
+			// prettier-ignore
+			className={`fixed left-0 top-0 z-[1] h-screen w-screen bg-black transition-all duration-[1s] ease-in-out ${
 				isInitialLoad ? 'game-background-initial-load' : ''
 			}`}
 			style={{
 				backgroundImage: `url('${getBackgroundImage()}')`,
 				backgroundSize: getBackgroundSize(),
 				backgroundPosition: getBackgroundPosition(),
-				backgroundRepeat: showCinematics && currentSequence >= 0 && currentSequence <= 3 ? 'no-repeat' : 'no-repeat',
+				backgroundRepeat:
+					showCinematics && currentSequence >= 0 && currentSequence <= 3
+						? 'no-repeat'
+						: 'no-repeat',
 				opacity: getOpacity(),
 				transition: isTransitioningToCinematics
 					? 'opacity 2s ease-in-out'
@@ -68,10 +72,9 @@ function GameBackground({
 						: 'all 2s ease-in-out',
 			}}
 		>
-			<div className="absolute top-0 left-0 w-full h-full bg-black/15 pointer-events-none z-[2]" />
+			<div className="pointer-events-none absolute left-0 top-0 z-[2] h-full w-full bg-black/15" />
 		</div>
 	)
 }
 
 export default GameBackground
-

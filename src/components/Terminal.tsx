@@ -10,7 +10,6 @@ import type { TerminalLine } from '../types/terminal'
 function Terminal(): React.JSX.Element {
 	const terminalBodyRef = useRef<HTMLDivElement>(null)
 	const terminalInputRef = useRef<HTMLInputElement>(null)
-	const typewriterRefs = useRef<Record<string, HTMLSpanElement | null>>({})
 
 	const { commands, availableFiles, executableScripts, terminalHistory, executeCommand } =
 		useTerminalCommands()
@@ -49,7 +48,12 @@ function Terminal(): React.JSX.Element {
 	}
 
 	const { currentInput, setCurrentInput, cursorPosition, handleKeyDown, focusInput } =
-		useTerminalInput(enhancedExecuteCommand, commands as Record<string, () => unknown[]>, availableFiles, executableScripts as Record<string, () => unknown[]>)
+		useTerminalInput(
+			enhancedExecuteCommand,
+			commands as Record<string, () => unknown[]>,
+			availableFiles,
+			executableScripts as Record<string, () => unknown[]>
+		)
 
 	const scrollToBottom = useCallback((): void => {
 		if (terminalBodyRef.current) {
@@ -61,7 +65,11 @@ function Terminal(): React.JSX.Element {
 		if (isProcessingTypewriter) return
 
 		const typewriterElements = document.querySelectorAll<HTMLElement>('[data-index]')
-		let nextElement: { element: HTMLElement; index: number; line: TerminalLine & { animated?: boolean } } | null = null
+		let nextElement: {
+			element: HTMLElement
+			index: number
+			line: TerminalLine & { animated?: boolean }
+		} | null = null
 
 		for (const element of typewriterElements) {
 			const index = parseInt(element.getAttribute('data-index') || '0', 10)
@@ -135,7 +143,14 @@ function Terminal(): React.JSX.Element {
 			}, 0)
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [terminalHistory, isProcessingTypewriter, createCommandTypewriter, typewriterSpeed, focusInput, scrollToBottom])
+	}, [
+		terminalHistory,
+		isProcessingTypewriter,
+		createCommandTypewriter,
+		typewriterSpeed,
+		focusInput,
+		scrollToBottom,
+	])
 
 	// Watch terminalHistory for new typewriter outputs
 	useEffect(() => {
@@ -167,9 +182,12 @@ function Terminal(): React.JSX.Element {
 				return (
 					<div
 						key={index}
-						className="flex items-baseline mb-2 text-base leading-[1.4] text-left lg:mb-1 lg:leading-[1.1] lg:text-[0.8rem]"
+className={`
+									relative z-10 mb-2 flex items-baseline text-left text-base
+									leading-[1.4] lg:mb-1 lg:text-[0.8rem] lg:leading-[1.1]
+								`}
 					>
-						<span className="text-retro-green mr-2 font-bold flex-shrink-0 lg:text-[0.8rem] lg:mr-1">
+						<span className="mr-2 flex-shrink-0 font-bold text-retro-green lg:mr-1 lg:text-[0.8rem]">
 							{'>'}
 						</span>
 						<span className="text-white lg:text-[0.8rem]">{renderer.content}</span>
@@ -182,13 +200,16 @@ function Terminal(): React.JSX.Element {
 				return (
 					<div
 						key={index}
-						className="flex items-baseline mb-2 text-base leading-[1.4] text-left lg:mb-1 lg:leading-[1.1] lg:text-[0.8rem]"
+className={`
+									relative z-10 mb-2 flex items-baseline text-left text-base
+									leading-[1.4] lg:mb-1 lg:text-[0.8rem] lg:leading-[1.1]
+								`}
 					>
 						<span
-							className={line.type === 'typewriter' || line.type === 'output' ? 'text-[#cccccc] whitespace-pre-wrap' : ''}
-							ref={el => {
-								if (el) typewriterRefs.current[`typewriter-${index}`] = el
-							}}
+className={`
+										${line.type === 'typewriter' || line.type === 'output' ?
+										'whitespace-pre-wrap text-[#cccccc]' : ''}
+									`}
 							data-index={index}
 						/>
 					</div>
@@ -198,10 +219,15 @@ function Terminal(): React.JSX.Element {
 				return (
 					<div
 						key={index}
-						className="flex items-baseline mb-2 text-base leading-[1.4] text-left lg:mb-1 lg:leading-[1.1] lg:text-[0.8rem]"
+className={`
+									relative z-10 mb-2 flex items-baseline text-left text-base
+									leading-[1.4] lg:mb-1 lg:text-[0.8rem] lg:leading-[1.1]
+								`}
 					>
 						<span
-							className={line.type === 'output' ? 'text-[#cccccc] whitespace-pre-wrap' : ''}
+							className={
+								line.type === 'output' ? 'whitespace-pre-wrap text-[#cccccc]' : ''
+							}
 							dangerouslySetInnerHTML={{
 								__html: sanitizeHtml(renderer.content || ''),
 							}}
@@ -213,9 +239,16 @@ function Terminal(): React.JSX.Element {
 				return (
 					<div
 						key={index}
-						className="flex items-baseline mb-2 text-base leading-[1.4] text-left lg:mb-1 lg:leading-[1.1] lg:text-[0.8rem]"
+className={`
+									relative z-10 mb-2 flex items-baseline text-left text-base
+									leading-[1.4] lg:mb-1 lg:text-[0.8rem] lg:leading-[1.1]
+								`}
 					>
-						<span className={line.type === 'output' ? 'text-[#cccccc] whitespace-pre-wrap' : ''}>
+						<span
+							className={
+								line.type === 'output' ? 'whitespace-pre-wrap text-[#cccccc]' : ''
+							}
+						>
 							{renderer.prefix}
 							<a
 								href={renderer.link}
@@ -233,12 +266,20 @@ function Terminal(): React.JSX.Element {
 				return (
 					<div
 						key={index}
-						className={`my-4 text-center ${renderer.animated ? 'relative h-[70px] w-full overflow-hidden text-left' : ''}`}
+						className={`my-4 text-center ${
+							renderer.animated
+								? 'relative h-[70px] w-full overflow-hidden text-left'
+								: ''
+						}`}
 					>
 						<img
 							src={renderer.src}
 							alt={renderer.alt}
-							className={`max-w-full max-h-[300px] ${renderer.animated ? 'running-yako absolute top-1/2 -translate-y-1/2 h-20 w-auto max-w-none border-none shadow-none' : ''} lg:max-h-[200px]`}
+className={`
+										max-h-[300px] max-w-full ${renderer.animated ? 'running-yako absolute
+										top-1/2 h-20 w-auto max-w-none -translate-y-1/2 border-none
+										shadow-none' : ''} lg:max-h-[200px]
+									`}
 						/>
 					</div>
 				)
@@ -247,9 +288,16 @@ function Terminal(): React.JSX.Element {
 				return (
 					<div
 						key={index}
-						className="flex items-baseline mb-2 text-base leading-[1.4] text-left lg:mb-1 lg:leading-[1.1] lg:text-[0.8rem]"
+className={`
+									relative z-10 mb-2 flex items-baseline text-left text-base
+									leading-[1.4] lg:mb-1 lg:text-[0.8rem] lg:leading-[1.1]
+								`}
 					>
-						<span className={line.type === 'output' ? 'text-[#cccccc] whitespace-pre-wrap' : ''}>
+						<span
+							className={
+								line.type === 'output' ? 'whitespace-pre-wrap text-[#cccccc]' : ''
+							}
+						>
 							{renderer.content}
 						</span>
 					</div>
@@ -259,9 +307,12 @@ function Terminal(): React.JSX.Element {
 				return (
 					<div
 						key={index}
-						className="flex items-baseline mb-2 text-base leading-[1.4] text-left lg:mb-1 lg:leading-[1.1] lg:text-[0.8rem]"
+className={`
+									relative z-10 mb-2 flex items-baseline text-left text-base
+									leading-[1.4] lg:mb-1 lg:text-[0.8rem] lg:leading-[1.1]
+								`}
 					>
-						<span>{renderer.content}</span>
+						<span className="text-white">{renderer.content}</span>
 					</div>
 				)
 		}
@@ -269,27 +320,46 @@ function Terminal(): React.JSX.Element {
 
 	return (
 		<div
-			className="w-[90%] h-[80vh] bg-black/50 border-3 border-dashed border-retro-green rounded-[10px] shadow-[0_0_100px_#00ff00,inset_0_0_20px_rgba(0,255,0,0.1)] overflow-hidden relative lg:w-full"
+className={`
+						terminal-retro relative h-[80vh] w-[90%] overflow-hidden
+						rounded-[30px] bg-black/50 shadow-[0_0_75px_#00ff00] lg:w-full
+					`}
 			data-nosnippet
 		>
-			<div className="bg-[rgba(100,100,100,0.5)] border-b-2 border-retro-green py-2 px-4 flex items-center gap-4">
+			<div
+className={`
+							relative z-10 flex items-center gap-4 border-b-2 border-retro-green
+							bg-[rgba(0,0,0,0.8)] px-4 py-2
+						`}
+			>
 				<div className="flex gap-2">
-					<div className="w-3 h-3 rounded-full border border-[#444] bg-light-red" />
-					<div className="w-3 h-3 rounded-full border border-[#444] bg-yellow" />
-					<div className="w-3 h-3 rounded-full border border-[#444] bg-[#27ca3f]" />
+					<div className="h-3 w-3 rounded-full border border-[#444] bg-light-red" />
+					<div className="h-3 w-3 rounded-full border border-[#444] bg-yellow" />
+					<div className="h-3 w-3 rounded-full border border-[#444] bg-[#27ca3f]" />
 				</div>
-				<div className="text-retro-green text-[0.7rem] uppercase tracking-[1px] lg:text-[0.5rem]">
+				<div className="font-['Press_Start_2P'] text-[0.7rem] uppercase tracking-[1px] text-retro-green lg:text-[0.5rem]">
 					BARELY_WORKING_TERMINAL_V0.3
 				</div>
 			</div>
 
 			<div
-				className="h-[calc(100%-60px)] p-4 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-[#111] [&::-webkit-scrollbar-thumb]:bg-retro-green [&::-webkit-scrollbar-thumb]:rounded lg:text-[0.5rem] lg:p-2"
+className={`
+							terminal-retro relative z-10 h-[calc(100%-60px)] overflow-y-auto p-4
+							lg:p-2 lg:text-[0.5rem] [&::-webkit-scrollbar-thumb]:rounded
+							[&::-webkit-scrollbar-thumb]:bg-retro-green
+							[&::-webkit-scrollbar-thumb]:shadow-[0_0_5px_#00ff00]
+							[&::-webkit-scrollbar-track]:bg-[#000] [&::-webkit-scrollbar]:w-2
+						`}
 				ref={terminalBodyRef}
 				onClick={() => focusInput(terminalInputRef.current)}
 			>
-				<div className="flex items-baseline mb-2 text-base leading-[1.4] text-left lg:mb-1 lg:leading-[1.1] lg:text-[0.8rem]">
-					<span className="text-retro-green mr-2 font-bold flex-shrink-0 lg:text-[0.8rem] lg:mr-1">
+				<div
+className={`
+								relative z-10 mb-2 flex items-baseline text-left text-base
+								leading-[1.4] lg:mb-1 lg:text-[0.8rem] lg:leading-[1.1]
+							`}
+				>
+					<span className="mr-2 flex-shrink-0 font-bold text-retro-green lg:mr-1 lg:text-[0.8rem]">
 						{'>'}
 					</span>
 					<span className="text-light-blue" ref={welcomeTextRef} data-nosnippet />
@@ -298,8 +368,8 @@ function Terminal(): React.JSX.Element {
 				{terminalHistory.map((line, index) => renderTerminalLine(line, index))}
 
 				{showInputPrompt && !isProcessingTypewriter && (
-					<div className="flex items-baseline mb-0 text-base leading-[1.4] text-left">
-						<span className="text-retro-green mr-2 font-bold flex-shrink-0 lg:text-[0.8rem] lg:mr-1">
+					<div className="relative z-10 mb-0 flex items-baseline text-left text-base leading-[1.4]">
+						<span className="mr-2 flex-shrink-0 font-bold text-retro-green lg:mr-1 lg:text-[0.8rem]">
 							{'>'}
 						</span>
 						<div className="relative flex flex-1">
@@ -308,12 +378,19 @@ function Terminal(): React.JSX.Element {
 								value={currentInput}
 								onChange={e => setCurrentInput(e.target.value)}
 								onKeyDown={handleKeyDown}
-								className="bg-transparent border-none outline-none text-white font-inherit text-inherit flex-1 caret-transparent min-w-0 relative z-[1] lg:text-[0.8rem]"
+className={`
+											font-inherit relative z-[1] min-w-0 flex-1 border-none bg-transparent
+											text-inherit text-white caret-transparent outline-none
+											lg:text-[0.8rem]
+										`}
 								autoComplete="off"
 								spellCheck="false"
 							/>
 							<span
-								className="custom-cursor absolute left-0 top-0 text-retro-green font-bold pointer-events-none will-change-transform"
+className={`
+											custom-cursor pointer-events-none absolute left-0 top-0 font-bold
+											text-retro-green will-change-transform
+										`}
 								style={{
 									transform: `translateX(calc(1ch * ${cursorPosition}))`,
 								}}
@@ -329,4 +406,3 @@ function Terminal(): React.JSX.Element {
 }
 
 export default Terminal
-

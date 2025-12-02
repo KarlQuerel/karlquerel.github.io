@@ -10,7 +10,7 @@ module.exports = {
 		'plugin:react/recommended',
 		'plugin:react-hooks/recommended',
 		'plugin:@typescript-eslint/recommended',
-		'prettier'
+		'plugin:prettier/recommended'
 	],
 	parser: '@typescript-eslint/parser',
 	parserOptions: {
@@ -20,7 +20,7 @@ module.exports = {
 			jsx: true
 		}
 	},
-	plugins: ['react', 'react-hooks', '@typescript-eslint', 'unused-imports'],
+	plugins: ['react', 'react-hooks', '@typescript-eslint', 'unused-imports', 'prettier'],
 	settings: {
 		react: {
 			version: 'detect'
@@ -31,7 +31,7 @@ module.exports = {
 		// React rules
 		'react/react-in-jsx-scope': 'off', // Not needed in React 17+
 		'react/prop-types': 'off', // Using TypeScript for prop validation
-		
+
 		// Disable all formatting rules - let Prettier handle them
 		'indent': 'off',
 		'quotes': 'off',
@@ -46,6 +46,19 @@ module.exports = {
 		'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
 		'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
 		'no-tabs': 'off',
+		'max-len': [
+			'error',
+			{
+				code: 100,
+				tabWidth: 4,
+				ignoreUrls: true,
+				ignoreStrings: false,
+				ignoreTemplateLiterals: false,
+				ignoreRegExpLiterals: true,
+				ignoreComments: false
+			}
+		],
+		'prettier/prettier': 'error',
 
 		// TypeScript rules
 		'@typescript-eslint/no-unused-vars': 'off', // Handled by unused-imports plugin

@@ -7,6 +7,7 @@ declare global {
 }
 
 // TypeIt type definitions
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, unused-imports/no-unused-vars
 declare class TypeIt {
 	constructor(element: HTMLElement | string, options?: TypeItOptions)
 	go(): TypeIt
@@ -38,12 +39,16 @@ interface TypeItOptions {
 	deleteSpeed?: number
 	loop?: boolean
 	loopDelay?: number
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	afterComplete?: (instance: any) => void
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	beforeString?: (instance: any, pos: number) => void
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	afterString?: (instance: any, pos: number) => void
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	beforeStep?: (instance: any, pos: number) => void
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	afterStep?: (instance: any, pos: number) => void
 }
 
 export {}
-

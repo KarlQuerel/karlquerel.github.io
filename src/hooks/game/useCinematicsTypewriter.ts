@@ -1,12 +1,5 @@
-import { useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { CINEMATICS_MESSAGES, CINEMATICS_CONFIG } from '../../data/cinematicsData'
-
-interface TypewriterSpeed {
-	speed: number
-	startDelay: number
-	deleteSpeed: number
-	breakLines: boolean
-}
 
 interface UseCinematicsTypewriterReturn {
 	currentSequence: number
@@ -14,155 +7,126 @@ interface UseCinematicsTypewriterReturn {
 	showContinueButton: boolean
 	isFourthSequence: boolean
 	startSequence: (
-		messageElements: HTMLElement[],
+		elements: HTMLElement[],
 		playTypingSound: (duration: number) => void,
 		stopAllAudio: () => void
-	) => Promise<void>
+	) => void
+}
+
+// TypeItOptions is defined in global.d.ts
+declare global {
+	interface TypeItOptions {
+		strings?: string[]
+		speed?: number
+		startDelay?: number
+		nextStringDelay?: number
+		waitUntilVisible?: boolean
+		cursor?: boolean
+		cursorChar?: string
+		cursorSpeed?: number
+		breakLines?: boolean
+		html?: boolean
+		lifeLike?: boolean
+		lifelike?: boolean
+		deleteSpeed?: number
+		loop?: boolean
+		loopDelay?: number
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		afterComplete?: (instance: any) => void
+	}
 }
 
 export function useCinematicsTypewriter(): UseCinematicsTypewriterReturn {
 	const [currentSequence, setCurrentSequence] = useState<number>(0)
 	const [shouldFadeOut, setShouldFadeOut] = useState<boolean>(false)
 	const [showContinueButton, setShowContinueButton] = useState<boolean>(false)
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const typewriterInstancesRef = useRef<any[]>([])
 
-	const sequences: (readonly string[] | null)[] = [
-		CINEMATICS_MESSAGES.first,
-		CINEMATICS_MESSAGES.second,
-		CINEMATICS_MESSAGES.third,
-		null, // Fourth sequence (title screen)
-	]
-
-	const typewriterSpeed: TypewriterSpeed = {
-		speed: 30, // Slower typing = more pause between messages
-		startDelay: 0,
-		deleteSpeed: 0, // No deletion
-		breakLines: false, // No line breaks
-	}
-
-	const currentMessages = useMemo<readonly string[]>(() => {
-		const messages = sequences[currentSequence]
-		if (!messages) return []
-		return messages
-	}, [currentSequence])
-
-	const isLastSequence = useMemo<boolean>(
-		() => currentSequence === sequences.length - 1,
-		[currentSequence]
+	const sequences = useMemo(
+		() => [CINEMATICS_MESSAGES.first, CINEMATICS_MESSAGES.second, CINEMATICS_MESSAGES.third],
+		[]
 	)
-	const isFourthSequence = useMemo<boolean>(() => currentSequence === 3, [currentSequence])
 
-	const nextSequence = useCallback((): boolean => {
-		if (isLastSequence) return false
+	const isFourthSequence = currentSequence >= sequences.length
 
-		setShouldFadeOut(false)
-		setCurrentSequence(prev => prev + 1)
-		return true
-	}, [isLastSequence])
-
-	const createSequentialTypewriter = (
-		element: HTMLElement,
-		messages: readonly string[],
+	const startSequence = (
+		elements: HTMLElement[],
 		playTypingSound: (duration: number) => void,
 		stopAllAudio: () => void
-	): Promise<void> => {
-		return new Promise(resolve => {
-			// React's useEffect automatically waits for DOM updates
-			setTimeout(() => {
-				if (element && window.TypeIt) {
-					// Clear any existing content first
-					element.innerHTML = ''
+	): void => {
+		if (isFourthSequence) {
+			setShowContinueButton(true)
+			return
+		}
 
-					// Clear instances array - let TypeIt handle its own cleanup
-					typewriterInstancesRef.current = []
+		const sequenceMessages = sequences[currentSequence]
+		if (!sequenceMessages || elements.length === 0) return
 
-					// Shared delay between messages
-					const messageDelay = 1000
-
-					// Create a single TypeIt instance for all messages
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					const instance = new (window as any).TypeIt(element, {
-						strings: [...messages], // Convert readonly array to mutable
-						...typewriterSpeed,
-						lifelike: true,
-						html: true,
-						cursor: false,
-						deleteSpeed: 0,
-						breakLines: true,
-						nextStringDelay: messageDelay, // Use shared delay
-						waitUntilVisible: true,
-						afterComplete: function (_instance: any) {
-							// Let TypeIt handle its own cleanup
-							resolve()
-						},
-					}).go()
-
-					typewriterInstancesRef.current.push(instance)
-
-					// Play typing sound for each message as it starts
-					if (playTypingSound && stopAllAudio) {
-						// Calculate audio timing to match TypeIt's actual behavior
-						let totalTime = 0
-						messages.forEach((message, _index) => {
-							// Calculate duration based on actual message length
-							// TypeIt speed: 30 = ~33ms per character
-							const messageDuration = message.length * 33
-							const messageStartTime = totalTime
-
-							setTimeout(() => {
-								stopAllAudio() // Stop any currently playing audio
-								playTypingSound(messageDuration)
-							}, messageStartTime)
-
-							// Add message duration + delay for next message
-							totalTime += messageDuration + messageDelay
-						})
-					}
-				} else {
-					resolve()
-				}
-			}, 0)
+		// Clean up previous instances
+		typewriterInstancesRef.current.forEach(instance => {
+			if (instance && typeof instance.destroy === 'function') {
+				instance.destroy()
+			}
 		})
-	}
+		typewriterInstancesRef.current = []
+		stopAllAudio()
 
-	const startSequence = useCallback(
-		async (
-			messageElements: HTMLElement[],
-			playTypingSound: (duration: number) => void,
-			stopAllAudio: () => void
-		): Promise<void> => {
-			if (!messageElements || messageElements.length === 0) return
+		const element = elements[0]
+		if (!element || !window.TypeIt) return
 
-			// Use the first element to contain all messages sequentially
-			const firstElement = messageElements[0]
-			if (firstElement) {
-				await createSequentialTypewriter(
-					firstElement,
-					currentMessages,
-					playTypingSound,
-					stopAllAudio
-				)
+		let messageIndex = 0
+
+		const processNextMessage = (): void => {
+			if (messageIndex >= sequenceMessages.length) {
+				// Sequence complete
+				setTimeout(() => {
+					setShouldFadeOut(true)
+					setTimeout(() => {
+						setShouldFadeOut(false)
+						setCurrentSequence(prev => prev + 1)
+						if (currentSequence + 1 >= sequences.length) {
+							setShowContinueButton(true)
+						}
+					}, CINEMATICS_CONFIG.FADE_OUT_DELAY * 1000)
+				}, CINEMATICS_CONFIG.MESSAGE_GAP * 1000)
+				return
 			}
 
-			// Add buffer time before fade out
-			await new Promise<void>(resolve => setTimeout(resolve, 2000))
+			const message = sequenceMessages[messageIndex]
+			const messageLength = message.length
+			const typingDuration = messageLength * CINEMATICS_CONFIG.LETTER_DELAY * 1000
 
-			// Trigger fade out and sequence progression
-			setShouldFadeOut(true)
+			// Play typing sound
+			playTypingSound(typingDuration)
 
-			setTimeout(() => {
-				const hasNext = nextSequence()
-				if (!hasNext) {
-					// Final sequence completed - show continue button
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const instance: any = new (window as any).TypeIt(element, {
+				strings: [message],
+				speed: CINEMATICS_CONFIG.LETTER_DELAY * 1000,
+				startDelay: messageIndex === 0 ? CINEMATICS_CONFIG.BASE_DELAY * 1000 : 0,
+				nextStringDelay: CINEMATICS_CONFIG.MESSAGE_GAP * 1000,
+				html: true,
+				lifeLike: true,
+				cursor: false,
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				afterComplete: function (completedInstance: any) {
+					if (completedInstance && typeof completedInstance.destroy === 'function') {
+						completedInstance.destroy()
+					}
+					messageIndex++
 					setTimeout(() => {
-						setShowContinueButton(true)
-					}, CINEMATICS_CONFIG.FADE_OUT_DELAY * 1000)
-				}
-			}, CINEMATICS_CONFIG.TIMEOUT_BETWEEN_BLOCKS)
-		},
-		[currentMessages, nextSequence]
-	)
+						processNextMessage()
+					}, CINEMATICS_CONFIG.TIMEOUT_BETWEEN_BLOCKS)
+				},
+			})
 
+			typewriterInstancesRef.current.push(instance)
+			instance.go()
+		}
+
+		processNextMessage()
+	}
 
 	return {
 		currentSequence,
@@ -172,4 +136,3 @@ export function useCinematicsTypewriter(): UseCinematicsTypewriterReturn {
 		startSequence,
 	}
 }
-

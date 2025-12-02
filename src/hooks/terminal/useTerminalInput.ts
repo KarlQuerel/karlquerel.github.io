@@ -59,9 +59,14 @@ export function useTerminalInput(
 				if (parts.length === 1) {
 					if (command.startsWith('./')) {
 						const scriptName = command.substring(2)
-						const scriptNames = [...Object.keys(executableScripts), 'i_am_not_a_virus.exe']
+						const scriptNames = [
+							...Object.keys(executableScripts),
+							'i_am_not_a_virus.exe',
+						]
 						matches = scriptNames
-							.filter(script => script.toLowerCase().startsWith(scriptName.toLowerCase()))
+							.filter(script =>
+								script.toLowerCase().startsWith(scriptName.toLowerCase())
+							)
 							.map(script => './' + script)
 							.sort()
 					} else {
@@ -101,7 +106,10 @@ export function useTerminalInput(
 
 					// Update CSS variable for cursor position
 					setTimeout(() => {
-						document.documentElement.style.setProperty('--cursor-position', newInput.length.toString())
+						document.documentElement.style.setProperty(
+							'--cursor-position',
+							newInput.length.toString()
+						)
 					}, 0)
 
 					return newIndex
@@ -182,4 +190,3 @@ export function useTerminalInput(
 		updateCursorPosition,
 	}
 }
-

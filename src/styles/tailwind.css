@@ -275,7 +275,7 @@
 		animation: initialFadeIn 10s ease-in forwards;
 	}
 
-	/* Terminal animations */
+	/* Terminal animations and retro effects */
 	@keyframes blink {
 		0%,
 		60% {
@@ -285,6 +285,19 @@
 		100% {
 			opacity: 0;
 		}
+	}
+
+	/* Retro terminal effects */
+	.terminal-retro {
+		position: relative;
+		font-family: 'Press Start 2P', 'Courier New', monospace;
+		image-rendering: pixelated;
+		image-rendering: -moz-crisp-edges;
+		image-rendering: crisp-edges;
+		text-rendering: optimizeSpeed;
+		-webkit-font-smoothing: none;
+		-moz-osx-font-smoothing: unset;
+		font-smooth: never;
 	}
 
 	@keyframes yakoBackAndForth {
@@ -473,5 +486,21 @@
 		opacity: 0;
 		animation: buttonEntrance 2s ease-out 12s forwards;
 	}
-}
 
+	/* Reusable button styles - extracted from repeated patterns */
+	.btn-pixel-primary {
+		@apply relative w-full overflow-hidden rounded-[10px] border-[3px] border-yellow bg-black/70 text-xl uppercase text-yellow transition-all duration-300 ease-in-out hover:scale-110 hover:bg-yellow hover:text-black active:scale-95 disabled:pointer-events-none disabled:transform-none disabled:cursor-not-allowed disabled:opacity-100;
+	}
+
+	.btn-pixel-primary:disabled:hover {
+		@apply scale-100 bg-black/70 text-yellow;
+	}
+
+	.btn-pixel-secondary {
+		@apply relative w-1/2 overflow-hidden rounded-[10px] border-[3px] border-retro-green bg-black/70 text-xl uppercase text-retro-green transition-all duration-300 ease-in-out hover:scale-110 hover:bg-retro-green hover:text-black active:scale-95;
+	}
+
+	.btn-close {
+		@apply absolute right-4 top-4 cursor-auto border-none bg-transparent p-2 text-3xl leading-none text-retro-green transition-colors duration-300 ease-in-out hover:text-yellow;
+	}
+}

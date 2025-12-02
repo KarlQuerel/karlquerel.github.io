@@ -31,7 +31,10 @@ function ClickCounter(): React.JSX.Element {
 
 	return (
 		<div>
-			<div className="nes-container is-dark with-title is-centered is-rounded bg-black/50 border-[0.3vh] border-dashed border-retro-green rounded-[20px] uppercase">
+			<div
+				// prettier-ignore
+				className={`nes-container is-dark with-title is-centered is-rounded rounded-[20px] border-[0.3vh] border-dashed border-retro-green bg-black/50 uppercase`}
+			>
 				<p className="title">Waste your time</p>
 
 				<button
@@ -51,4 +54,3 @@ function ClickCounter(): React.JSX.Element {
 }
 
 export default ClickCounter
-

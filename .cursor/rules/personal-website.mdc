@@ -1,17 +1,17 @@
 ---
 description: |
-    Global front-end development rules for a Vue 3 SPA migrating progressively to React.
+    Global front-end development rules for a React + TypeScript + Tailwind CSS SPA.
     Ensures extremely strict clean code, perfect reasoning, and zero guesswork.
     The AI assistant must always explain, clarify, and follow best practices.
 
 alwaysApply: true
 ---
 
-# AI Assistant Rule: Frontend Expert for Vue → React Migration
+# AI Assistant Rule: Frontend Expert for React + TypeScript + Tailwind
 
 ## Core Mindset 🧠
 
-- You are an expert in **Vue 3**, **React**, **JavaScript**, **TypeScript**, **Vite**, and **frontend architecture**.
+- You are an expert in **React**, **TypeScript**, **Tailwind CSS**, **Vite**, and **frontend architecture**.
 - You never guess. If anything is unclear, you must explicitly ask the user.
 - You always explain your reasoning step-by-step before writing any code.
 - You never write incomplete solutions.
@@ -27,23 +27,26 @@ alwaysApply: true
 
 ### Frontend Framework
 
-- **Vue.js 3** (Composition API with `<script setup>` syntax - MANDATORY)
-- **Vue Router 4**
+- **React 19** - Functional components only, hooks-based architecture
+- **React Router 7** - Client-side routing
+- **TypeScript** - Full type safety, no `any` unless absolutely necessary
 
 ### Styling
 
-- **NES.css (mandatory)** - Retro/pixel-art aesthetic must be preserved
-- **SCSS/SASS** - All styles in SCSS files, scoped styles in components
-- **Tailwind CSS** - Target for future migration (currently using SCSS, but plan to migrate to Tailwind)
+- **Tailwind CSS** - Primary styling framework (utility-first approach)
+- **NES.css** - Retro/pixel-art aesthetic (can be combined with Tailwind)
+- **CSS Custom Properties** - For dynamic values when needed
 - Pixel-art images must use `image-rendering: pixelated;`
+- Use `@layer components` in `tailwind.css` for complex animations and reusable patterns
+- Extract repeated patterns using `@apply` directive
 
 ### Tooling
 
 - **Vite 6** - Build tool and dev server
-- **ESLint** + **Prettier** - Code quality and formatting
-- **Babel** - JavaScript transpilation
+- **ESLint** + **Prettier** - Code quality and formatting (auto-fix on save)
+- **TypeScript** - Type checking with strict mode
 - **Terser** - Minification (with console/debugger removal in production)
-- **esbuild** - Fast bundling
+- **esbuild** - Fast bundling via Vite
 
 ### Backend / Data
 
@@ -60,55 +63,379 @@ alwaysApply: true
 
 - **Tabs** for indentation (not spaces)
 - **Single quotes** for strings
-- **Semicolons** as per Prettier config
-- **Trailing commas** as per Prettier config
+- **No semicolons** (as per Prettier config)
+- **Trailing commas** (ES5 style)
+- **Maximum line length**: 100 characters
 
 ---
 
-## Future Migration Target
+# React Best Practices ⚛️
 
-The user plans to eventually switch to React.
+## Component Architecture
 
-### Migration Direction
+### Functional Components Only
 
-- When advising architecture:
-  **prefer solutions that make migration to React + Tailwind easy later**
-- Recommend patterns that map well to React:
-    - Reusable components
-    - Clean separation of concerns
-    - Strong typing (eventually TypeScript)
-    - Well-organized state management
-    - Composables → Custom Hooks (easy migration path)
-    - SCSS → Tailwind CSS (gradual migration path)
+- **NEVER use class components** - Always use functional components
+- Use hooks for all state and side effects
+- Keep components small and focused (single responsibility)
 
-### React Stack (When Migration Begins)
+### Component Structure
 
-- **React 18**
-- **(Optional) TypeScript — See section below**
-- **NES.css** (keep using it)
-- **Tailwind CSS** (user wants to migrate to this)
-- **Vite**
-- **ESLint + Prettier**
+```tsx
+import React, { useState, useEffect } from 'react'
+
+interface ComponentProps {
+	// Define props with TypeScript interfaces
+	title: string
+	onClick?: () => void
+}
+
+export const Component: React.FC<ComponentProps> = ({ title, onClick }) => {
+	// Hooks at the top
+	const [state, setState] = useState<string>('')
+
+	// Effects
+	useEffect(() => {
+		// Side effects
+		return () => {
+			// Cleanup
+		}
+	}, [])
+
+	// Event handlers
+	const handleClick = () => {
+		// Handler logic
+		onClick?.()
+	}
+
+	// Render
+	return <div>{title}</div>
+}
+```
+
+### Custom Hooks
+
+- Extract reusable logic into custom hooks
+- Hooks should start with `use` prefix: `useGameState`, `useAudioManager`
+- Keep hooks focused on a single concern
+- Return objects or tuples for multiple values
+
+```tsx
+// ✅ GOOD
+const useGameState = () => {
+	const [score, setScore] = useState(0)
+	const incrementScore = () => setScore(prev => prev + 1)
+	return { score, incrementScore }
+}
+
+// ❌ BAD - Too much logic in component
+const Game = () => {
+	const [score, setScore] = useState(0)
+	const [health, setHealth] = useState(100)
+	// ... 50 more lines of logic
+}
+```
+
+### State Management
+
+- Use `useState` for local component state
+- Use `useContext` for shared state (like footer visibility)
+- Use `useReducer` for complex state logic
+- Avoid prop drilling - use Context API when needed
+- Keep state as close to where it's used as possible
+
+### Performance Optimization
+
+- Use `React.memo` for expensive components (sparingly)
+- Use `useMemo` for expensive computations
+- Use `useCallback` for functions passed as props to memoized components
+- Lazy load routes with `React.lazy()` and `Suspense`
+- Avoid unnecessary re-renders
+
+```tsx
+// ✅ GOOD - Memoized expensive computation
+const expensiveValue = useMemo(() => {
+	return heavyCalculation(data)
+}, [data])
+
+// ✅ GOOD - Memoized callback
+const handleClick = useCallback(() => {
+	doSomething(id)
+}, [id])
+```
+
+### Event Handlers
+
+- Always use descriptive names: `handleUserClick`, `handleFormSubmit`
+- Use arrow functions or `useCallback` for handlers
+- Destructure event properties when needed
+
+```tsx
+// ✅ GOOD
+const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+	setValue(event.target.value)
+}
+
+// ❌ BAD
+const onChange = (e: any) => {
+	setValue(e.target.value)
+}
+```
 
 ---
 
-# TypeScript Policy 🎯
+# TypeScript Best Practices 📘
 
-## Should the user use TypeScript with React?
+## Type Safety
 
-- You **must not assume**.
-- You must ask the user **explicitly**:
-    - _"Do you want React in JavaScript or TypeScript?"_
-- You must explain benefits:
-    - Type-safety
-    - Better autocomplete
-    - Fewer runtime bugs
-    - Cleaner architecture
-- You must also explain costs:
-    - Steeper learning curve
-    - Slightly slower writing for beginners
+### Strict Typing
 
-You only recommend TypeScript if the user says they are ready.
+- **Never use `any`** - Use `unknown` if type is truly unknown, then narrow it
+- Always define types for props, state, and function parameters
+- Use interfaces for object shapes, types for unions/intersections
+- Use `as const` for literal types when needed
+
+```tsx
+// ✅ GOOD
+interface User {
+	name: string
+	age: number
+	email?: string
+}
+
+const user: User = {
+	name: 'John',
+	age: 30
+}
+
+// ❌ BAD
+const user: any = {
+	name: 'John',
+	age: 30
+}
+```
+
+### Component Props
+
+- Always define props with TypeScript interfaces
+- Use `React.FC<Props>` or explicit return type
+- Mark optional props with `?`
+- Provide default values when appropriate
+
+```tsx
+// ✅ GOOD
+interface ButtonProps {
+	label: string
+	onClick: () => void
+	variant?: 'primary' | 'secondary'
+	disabled?: boolean
+}
+
+export const Button: React.FC<ButtonProps> = ({
+	label,
+	onClick,
+	variant = 'primary',
+	disabled = false
+}) => {
+	return <button onClick={onClick} disabled={disabled}>{label}</button>
+}
+```
+
+### Hooks Typing
+
+- Type useState with explicit generic: `useState<string>('')`
+- Type useRef appropriately: `useRef<HTMLDivElement | null>(null)`
+- Type custom hooks return values
+
+```tsx
+// ✅ GOOD
+const [count, setCount] = useState<number>(0)
+const inputRef = useRef<HTMLInputElement | null>(null)
+
+// ❌ BAD
+const [count, setCount] = useState(0) // Inferred, but explicit is better
+```
+
+### Type Definitions
+
+- Create type definitions for external libraries in `src/types/`
+- Use declaration merging for extending library types
+- Export types from a central location when reused
+
+```tsx
+// src/types/global.d.ts
+declare global {
+	interface Window {
+		TypeIt: any // Only when library doesn't have types
+	}
+}
+```
+
+### Error Handling
+
+- Type error objects properly
+- Use type guards for runtime type checking
+- Handle null/undefined explicitly
+
+```tsx
+// ✅ GOOD
+const handleError = (error: unknown) => {
+	if (error instanceof Error) {
+		console.error(error.message)
+	} else {
+		console.error('Unknown error')
+	}
+}
+```
+
+---
+
+# Tailwind CSS Best Practices 🎨
+
+## Utility-First Approach
+
+### When to Use Utilities vs Components
+
+- **Use Tailwind utilities** for most styling (spacing, colors, layout)
+- **Extract to `@layer components`** when:
+	- Same pattern is repeated 3+ times
+	- Complex animations that can't be expressed as utilities
+	- Component-specific styles that need to be reused
+
+```tsx
+// ✅ GOOD - Utilities for one-off styling
+<div className="flex items-center justify-between p-4 bg-black/90 rounded-lg">
+
+// ✅ GOOD - Extract repeated patterns
+// In tailwind.css:
+@layer components {
+	.btn-pixel-primary {
+		@apply text-xl w-full text-yellow bg-black/70 border-[3px] border-yellow;
+	}
+}
+
+// In component:
+<button className="btn-pixel-primary">Click</button>
+```
+
+### Responsive Design
+
+- Use Tailwind's responsive prefixes: `sm:`, `md:`, `lg:`, `xl:`, `2xl:`
+- Mobile-first approach: base styles for mobile, add breakpoints for larger screens
+- Use `container` class for responsive containers
+
+```tsx
+// ✅ GOOD - Mobile first
+<div className="flex flex-col md:flex-row lg:gap-8">
+	<div className="w-full md:w-1/2">Content</div>
+</div>
+```
+
+### Custom Theme Configuration
+
+- Extend Tailwind config for project-specific values
+- Define custom colors, fonts, spacing in `tailwind.config.js`
+- Use CSS variables for dynamic theming if needed
+
+```js
+// tailwind.config.js
+theme: {
+	extend: {
+		colors: {
+			'retro-green': '#00ff00',
+			'retro-blue': '#00ccff'
+		},
+		fontFamily: {
+			'press-start': ['"Press Start 2P"', 'monospace']
+		}
+	}
+}
+```
+
+### Class Organization
+
+- Group related classes logically
+- Use Prettier plugin for Tailwind to sort classes automatically
+- Keep className strings readable (can break long strings across lines)
+
+```tsx
+// ✅ GOOD - Grouped logically
+<div
+	className={`
+		flex items-center justify-between
+		p-4 bg-black/90 rounded-lg
+		border-2 border-retro-green
+		hover:bg-black transition-colors
+	`}
+>
+```
+
+### Performance
+
+- Use JIT mode (default in Tailwind 3+)
+- Purge unused styles in production (automatic)
+- Avoid dynamic class construction when possible (use conditional classes)
+
+```tsx
+// ✅ GOOD
+<div className={`base-class ${isActive ? 'active-class' : 'inactive-class'}`}>
+
+// ❌ BAD - Dynamic string construction
+<div className={`class-${variable}-more-${another}`}>
+```
+
+---
+
+# Vite Best Practices ⚡
+
+## Configuration
+
+### Build Optimization
+
+- Use code splitting for routes
+- Configure manual chunks in `vite.config.js` for vendor libraries
+- Enable tree-shaking (automatic with ES modules)
+
+```js
+// vite.config.js
+build: {
+	rollupOptions: {
+		output: {
+			manualChunks: {
+				vendor: ['react', 'react-dom', 'react-router-dom'],
+				firebase: ['firebase/app', 'firebase/firestore']
+			}
+		}
+	}
+}
+```
+
+### Asset Handling
+
+- Place static assets in `public/` directory
+- Use `import` for assets that need processing
+- Optimize images before adding to project
+- Use appropriate formats (GIF for animations, PNG for pixel art)
+
+### Environment Variables
+
+- Use `.env` files for environment-specific config
+- Prefix variables with `VITE_` to expose them to client
+- Never commit sensitive data
+
+```ts
+// ✅ GOOD
+const apiKey = import.meta.env.VITE_FIREBASE_API_KEY
+
+// ❌ BAD - Hardcoded
+const apiKey = 'abc123'
+```
+
+### Development Server
+
+- Use Vite's HMR (Hot Module Replacement) - automatic
+- Configure proxy for API requests if needed
+- Set up proper base path for deployment
 
 ---
 
@@ -119,19 +446,20 @@ You only recommend TypeScript if the user says they are ready.
 - **No single-letter variable names** (except `i`, `j` in loops, and `e` for event handlers)
 - Always descriptive, meaningful names
 - Functions use verbs:
-    - `handleUserClick`
-    - `loadCharacterStats`
-    - `playDialogueAudio`
-    - `updateClicks`
-    - `trackTerminalVisit`
+	- `handleUserClick`
+	- `loadCharacterStats`
+	- `playDialogueAudio`
+	- `updateClicks`
+	- `trackTerminalVisit`
 - Booleans must start with `is`, `has`, `should`, `can`, `will`:
-    - `isFooterVisible`
-    - `hasLoadedAssets`
-    - `shouldShowModal`
-- Components use **PascalCase**: `RetroNavbar.vue`, `GameMenu.vue`
-- Files use **kebab-case**: `retro-navbar.vue`, `game-menu.vue` (but components can be PascalCase)
-- Composables use **camelCase** with `use` prefix: `useGameState.js`, `useAudioManager.js`
+	- `isFooterVisible`
+	- `hasLoadedAssets`
+	- `shouldShowModal`
+- Components use **PascalCase**: `RetroNavbar.tsx`, `GameMenu.tsx`
+- Files use **PascalCase** for components: `RetroNavbar.tsx`
+- Hooks use **camelCase** with `use` prefix: `useGameState.ts`, `useAudioManager.ts`
 - Constants use **UPPER_SNAKE_CASE**: `MAX_CLICKS`, `API_BASE_URL`
+- Types/Interfaces use **PascalCase**: `UserProps`, `GameState`
 
 ---
 
@@ -139,123 +467,57 @@ You only recommend TypeScript if the user says they are ready.
 
 - **Duplicate code is forbidden**
 - If the same logic exists in more than one place:
-    - Refactor into composables (Vue) or hooks (React)
-    - Or utilities
-    - Or reusable components
+	- Refactor into custom hooks
+	- Or utility functions
+	- Or reusable components
 - Before writing code, check if similar logic already exists
 - Extract common patterns immediately
 
 ---
 
-## Component Architecture
-
-### Vue 3 (Current)
-
-- **Composition API ONLY** - Use `<script setup>` syntax
-- **NO Options API** - Never use `export default { setup() }` unless absolutely necessary
-- Use composables for:
-    - Reused logic
-    - State management
-    - Firebase interactions
-    - Sound playback
-    - Game mechanics (dice rolls, decision trees)
-    - Audio management
-    - Asset preloading
-- Component structure:
-
-    ```vue
-    <template>
-    	<!-- Template content -->
-    </template>
-
-    <script setup>
-    	// Imports
-    	// Reactive state
-    	// Computed properties
-    	// Functions
-    	// Lifecycle hooks
-    </script>
-
-    <style lang="scss" scoped>
-    	/* Styles */
-    </style>
-    ```
-
-### React (Future)
-
-- Use functional components only
-- Use custom hooks for reusable logic
-- Never put logic directly inside component bodies
-- Prefer hooks over class components (always)
-
----
-
-## Styling Rules (NES.css + SCSS → Tailwind Migration)
-
-### Current (Vue 3)
-
-- **NES.css classes must be respected** - Use NES.css utility classes
-- **NO inline styles** - All styles in SCSS files
-- **SCSS is preferred** - Use SCSS features (variables, mixins, nesting)
-- All animations must be in SCSS (not JS) unless they require dynamic values
-- Pixel-art must remain crisp:
-    ```scss
-    image-rendering: pixelated;
-    image-rendering: -moz-crisp-edges;
-    image-rendering: crisp-edges;
-    ```
-- Use scoped styles in components: `<style lang="scss" scoped>`
-- Global styles go in `src/styles/main.scss`
-- Use SCSS variables from `_variables.scss` (auto-imported via Vite config)
-
-### Future (React + Tailwind)
-
-- **Tailwind CSS** - Primary styling framework
-- **NES.css** - Keep for retro aesthetic (can be combined with Tailwind)
-- **Tailwind utility classes** - Prefer over custom SCSS when possible
-- **Custom Tailwind config** - Extend with retro/pixel-art specific utilities
-- **Tailwind + NES.css** - Can be used together (NES.css for components, Tailwind for layout/spacing)
-- Pixel-art rendering rules should be in Tailwind config or global CSS
-
----
-
 ## File Organization
 
-### Current Structure (Vue)
+### Current Structure
 
 ```
 src/
   components/
     game/
-      Game.vue
-      GameMenu.vue
-    home.vue
-    terminal.vue
-  composables/
+      Game.tsx
+      GameMenu.tsx
+    RetroNavbar.tsx
+    Terminal.tsx
+  hooks/
     game/
-      useGameState.js
-      useAudioManager.js
+      useGameState.ts
+      useAudioManager.ts
     terminal/
-      useTerminalCommands.js
+      useTerminalCommands.ts
+  contexts/
+    FooterVisibilityContext.tsx
   data/
-    cinematicsData.js
+    cinematicsData.ts
+  types/
+    global.d.ts
+    terminal.ts
   styles/
-    main.scss
-    _variables.scss
-    _animations.scss
+    tailwind.css
+  utils/
+    htmlSanitizer.ts
   js/
-    firebase-setup.js
-  main.js
-  App.vue
+    firebase-setup.ts
+  App.tsx
+  main.tsx
 ```
 
 ### Rules
 
 - Group related components in folders
-- Composables in `composables/` with subfolders by feature
+- Hooks in `hooks/` with subfolders by feature
 - Shared data in `data/`
-- Styles in `styles/` with partials
-- Utilities in `js/` or `utils/`
+- Types in `types/`
+- Utilities in `utils/`
+- Styles in `styles/` (Tailwind CSS)
 
 ---
 
@@ -266,14 +528,17 @@ src/
 - No unused imports/variables
 - No console.log in production
 - No debugger in production
-- Vue-specific rules enforced
+- React hooks rules enforced
+- TypeScript strict rules
 - Prettier handles formatting
+- Maximum line length: 100 characters
 
 ### Prettier Rules
 
 - Respect `.prettierrc` configuration
-- Run `npm run format` before committing
+- Format on save (VS Code settings)
 - All code must pass `npm run lint:check`
+- Run `npm run fix` to format and fix everything
 
 ### Error Handling
 
@@ -281,40 +546,75 @@ src/
 - Use try-catch for async operations
 - Provide meaningful error messages
 - Never silently fail (unless explicitly requested)
+- Type error objects properly
 
 ---
 
-## Vue 3 Specific Rules
+## React-Specific Rules
 
-### Composition API Best Practices
+### Hooks Best Practices
 
-- Use `<script setup>` syntax
-- Import what you need, nothing more
-- Use `ref()` for primitives, `reactive()` for objects (or `ref()` for everything for consistency)
-- Use `computed()` for derived state
-- Use `watch()` and `watchEffect()` appropriately
-- Use `provide/inject` for dependency injection (like footer visibility)
+- Only call hooks at the top level (not in loops, conditions, nested functions)
+- Use exhaustive-deps rule for useEffect dependencies
+- Clean up side effects in useEffect return function
+- Use useRef for values that don't trigger re-renders
+
+```tsx
+// ✅ GOOD
+useEffect(() => {
+	const timer = setInterval(() => {
+		// Do something
+	}, 1000)
+
+	return () => {
+		clearInterval(timer)
+	}
+}, [dependencies])
+
+// ❌ BAD - Missing cleanup
+useEffect(() => {
+	setInterval(() => {
+		// Do something
+	}, 1000)
+}, [])
+```
+
+### Context API
+
+- Create contexts for shared state
+- Use custom hooks to consume context (cleaner API)
+- Split contexts by concern (don't create one giant context)
+
+```tsx
+// ✅ GOOD
+const FooterVisibilityContext = createContext<FooterVisibilityContextType | undefined>(undefined)
+
+export const useFooterVisibility = () => {
+	const context = useContext(FooterVisibilityContext)
+	if (!context) {
+		throw new Error('useFooterVisibility must be used within FooterVisibilityProvider')
+	}
+	return context
+}
+```
 
 ### Component Props
 
-- Always define props explicitly
-- Use TypeScript-style prop definitions or runtime validation
-- Document prop types and defaults
-
-### Lifecycle Hooks
-
-- Use Composition API lifecycle hooks: `onMounted`, `onUnmounted`, etc.
-- Clean up subscriptions, timers, event listeners in `onUnmounted`
+- Always define props with TypeScript interfaces
+- Use default parameters for optional props
+- Destructure props in function parameters
+- Don't pass unnecessary props down
 
 ---
 
 ## Firebase Integration Rules
 
-- All Firebase logic in `src/js/firebase-setup.js`
+- All Firebase logic in `src/js/firebase-setup.ts`
 - Export functions, not direct references
 - Always handle errors with try-catch
 - Use Firestore increment operations for counters
 - Track statistics with proper error handling
+- Type Firebase responses appropriately
 
 ---
 
@@ -322,24 +622,38 @@ src/
 
 ### Code Splitting
 
-- Use dynamic imports for routes: `() => import('./components/game/Game.vue')`
-- Vite handles chunk splitting automatically
-- Manual chunks configured in `vite.config.js`:
-    - `vendor`: Vue, Vue Router
-    - `game`: Game components
-    - `styles`: SCSS files
+- Use `React.lazy()` for route components
+- Wrap lazy components in `Suspense`
+- Use dynamic imports for heavy libraries
+
+```tsx
+// ✅ GOOD
+const Game = React.lazy(() => import('./components/game/Game'))
+
+function App() {
+	return (
+		<Suspense fallback={<LoadingScreen />}>
+			<Routes>
+				<Route path="/game" element={<Game />} />
+			</Routes>
+		</Suspense>
+	)
+}
+```
 
 ### Asset Optimization
 
 - Images in `public/assets/`
 - Use appropriate formats (GIF for animations, PNG for pixel art)
-- Inline small assets (< 4KB) via Vite config
+- Lazy load images when possible
+- Use Vite's asset handling for processed assets
 
 ### Build Optimization
 
 - Terser minification with console/debugger removal
-- Tree-shaking enabled
+- Tree-shaking enabled (automatic)
 - Dead code elimination
+- Code splitting configured in Vite
 
 ---
 
@@ -353,56 +667,15 @@ src/
 
 ---
 
-## Migration Path: Vue → React + Tailwind
-
-### Styling Migration Strategy
-
-1. **Gradual Tailwind adoption** - Can start using Tailwind in Vue before React migration
-2. **SCSS → Tailwind conversion**:
-    - Convert utility classes first (spacing, colors, layout)
-    - Keep complex animations/transitions in SCSS initially
-    - Migrate component styles component-by-component
-3. **NES.css compatibility** - NES.css works with both Vue and React, and can coexist with Tailwind
-4. **Tailwind config** - Set up custom theme for retro/pixel-art aesthetic:
-    - Custom colors matching NES.css palette
-    - Custom spacing/typography
-    - Pixel-art image rendering utilities
-
-### When Migrating Components
-
-1. **Preserve functionality exactly**
-2. **Keep NES.css classes** - They work in React too
-3. **Convert composables to custom hooks**:
-    - `useGameState.js` → `useGameState.ts` (or `.js`)
-    - Same logic, React hooks syntax
-4. **Convert `<script setup>` to functional components**
-5. **Migrate SCSS to Tailwind**:
-    - Replace SCSS classes with Tailwind utilities
-    - Keep complex animations in CSS modules or global styles if needed
-    - Use Tailwind's `@apply` for NES.css component styles if needed
-6. **Update imports** - Vue → React equivalents
-
-### Migration-Friendly Patterns
-
-- Keep business logic in composables/hooks
-- Use Tailwind utility classes for layout/spacing (easier to migrate)
-- Minimize custom SCSS (prefer Tailwind utilities)
-- Use props for component communication
-- Avoid Vue-specific features (like `provide/inject` - use Context API in React)
-- Structure components to make Tailwind class migration straightforward
-
----
-
 ## Questions You Must Ask
 
 Before implementing anything, ask if unclear:
 
-- "Should this be a component or a composable/hook?"
-- "Do you want this feature in Vue now, or wait for React migration?"
-- "Should I use Tailwind CSS for this styling, or keep it in SCSS for now?"
-- "Should I use TypeScript for this new feature?"
+- "Should this be a component or a custom hook?"
 - "What's the expected behavior if [edge case]?"
 - "Should this be tracked in Firebase?"
+- "Should this be in a Context or passed as props?"
+- "Is this styling pattern repeated enough to extract to `@layer components`?"
 
 ---
 
@@ -415,13 +688,13 @@ Before suggesting code, ensure:
 - ✅ Proper error handling
 - ✅ ESLint/Prettier compliant
 - ✅ Follows project structure
-- ✅ Uses NES.css appropriately
-- ✅ SCSS styles (no inline styles) - or Tailwind if migrating
-- ✅ Composition API (`<script setup>`)
-- ✅ Migration-friendly styling (Tailwind-ready patterns)
+- ✅ Uses Tailwind CSS appropriately
+- ✅ TypeScript types defined (no `any`)
+- ✅ React hooks used correctly
 - ✅ No unused imports/variables
 - ✅ Comments explain "why", not "what"
-- ✅ Migration-friendly (if applicable)
+- ✅ Maximum 100 characters per line
+- ✅ Proper cleanup in useEffect
 
 ---
 
@@ -429,47 +702,58 @@ Before suggesting code, ensure:
 
 ### ❌ BAD
 
-```vue
-<script setup>
-	const x = ref(0)
-	const y = computed(() => x.value * 2)
+```tsx
+const Component = (props: any) => {
+	const [x, setX] = useState(0)
+	const y = x * 2
+
 	function f() {
-		x.value++
+		setX(x + 1)
 	}
-</script>
+
+	return <div onClick={f}>{y}</div>
+}
 ```
 
 ### ✅ GOOD
 
-```vue
-<script setup>
-	const clickCount = ref(0)
-	const doubleClickCount = computed(() => clickCount.value * 2)
+```tsx
+interface ComponentProps {
+	initialValue?: number
+	onValueChange?: (value: number) => void
+}
 
-	function incrementClickCount() {
-		clickCount.value++
-	}
-</script>
+export const Component: React.FC<ComponentProps> = ({
+	initialValue = 0,
+	onValueChange
+}) => {
+	const [count, setCount] = useState<number>(initialValue)
+	const doubleCount = useMemo(() => count * 2, [count])
+
+	const handleIncrement = useCallback(() => {
+		const newValue = count + 1
+		setCount(newValue)
+		onValueChange?.(newValue)
+	}, [count, onValueChange])
+
+	return (
+		<div onClick={handleIncrement} className="p-4 bg-black rounded-lg">
+			{doubleCount}
+		</div>
+	)
+}
 ```
 
 ### ❌ BAD
 
-```vue
-<div :style="{ color: 'red' }">Text</div>
+```tsx
+<div style={{ color: 'red', padding: '10px' }}>Text</div>
 ```
 
 ### ✅ GOOD
 
-```vue
-<template>
-	<div class="error-text">Text</div>
-</template>
-
-<style lang="scss" scoped>
-	.error-text {
-		color: red;
-	}
-</style>
+```tsx
+<div className="text-red-500 p-4">Text</div>
 ```
 
 ---
@@ -482,6 +766,7 @@ Before suggesting code, ensure:
 - **Always validate assumptions**
 - **Keep code DRY and clean**
 - **Respect the retro aesthetic**
-- **Think about React + Tailwind migration**
-- **Prefer Tailwind-ready patterns when possible**
-- **Follow the stack exactly**
+- **Use TypeScript strictly (no `any`)**
+- **Follow React hooks rules**
+- **Use Tailwind utilities first, extract patterns when repeated**
+- **Format and lint automatically on save**

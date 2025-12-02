@@ -140,4 +140,3 @@ export function lineNeedsRef(line: TerminalLine): boolean {
 		(line.type === 'typewriter' && line.link !== undefined)
 	)
 }
-

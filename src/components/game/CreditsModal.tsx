@@ -25,51 +25,67 @@ function CreditsModal({ isVisible, onClose }: CreditsModalProps): React.JSX.Elem
 
 	return (
 		<div
-			className="credits-modal-overlay fixed top-0 left-0 w-screen h-screen bg-black/80 flex justify-center items-center z-[2000]"
+			// prettier-ignore
+			className={`credits-modal-overlay fixed left-0 top-0 z-[2000] flex h-screen w-screen items-center justify-center bg-black/80`}
 			onClick={handleClose}
 		>
 			<div
-				className="credits-modal fixed top-[20%] bg-black bg-[url('/assets/game/credits.gif')] bg-cover bg-[100%_50%] bg-no-repeat border-2 border-dashed border-yellow rounded-[15px] p-8 w-full h-[75%] max-w-[90%] overflow-y-auto shadow-[0_0_20px_#ffbd2e] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-black [&::-webkit-scrollbar-thumb]:bg-yellow [&::-webkit-scrollbar-thumb]:rounded"
+				className="credits-modal fixed top-[20%] h-[75%] w-full max-w-[90%] overflow-y-auto rounded-[15px] border-2 border-dashed border-yellow bg-black bg-[url('/assets/game/credits.gif')] bg-cover bg-[100%_50%] bg-no-repeat p-8 shadow-[0_0_20px_#ffbd2e] [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:bg-yellow [&::-webkit-scrollbar-track]:bg-black [&::-webkit-scrollbar]:w-2"
 				onClick={e => e.stopPropagation()}
 			>
-				<button
-					className="absolute top-4 right-4 bg-transparent border-none text-retro-green text-3xl cursor-auto p-2 leading-none transition-colors duration-300 ease-in-out hover:text-yellow"
-					onClick={handleClose}
-				>
+				<button className="btn-close" onClick={handleClose}>
 					×
 				</button>
-				<div className="text-retro-green text-left">
-					<h2 className="text-3xl text-center text-yellow uppercase drop-shadow-[0_0_10px_#000000]">
+				<div className="text-left text-retro-green">
+					<h2 className="text-center text-3xl uppercase text-yellow drop-shadow-[0_0_10px_#000000]">
 						Credits
 					</h2>
 					<div className="credits-section">
-						<h3 className="text-yellow text-[2.75vh] uppercase drop-shadow-[0_0_10px_#000000] mt-12">
+						<h3 className="mt-12 text-[2.75vh] uppercase text-yellow drop-shadow-[0_0_10px_#000000]">
 							Artwork
 						</h3>
-						<p className="text-retro-green text-left text-[2.5vh] uppercase drop-shadow-[0_0_10px_#000000] my-4">
+						<p
+							// prettier-ignore
+							className={`my-4 text-left text-[2.5vh] uppercase text-retro-green drop-shadow-[0_0_10px_#000000]`}
+						>
 							Fatih Emir
 						</p>
-						<p className="text-retro-green text-left text-[2.5vh] uppercase drop-shadow-[0_0_10px_#000000] my-4">
+						<p
+							// prettier-ignore
+							className={`my-4 text-left text-[2.5vh] uppercase text-retro-green drop-shadow-[0_0_10px_#000000]`}
+						>
 							Kryssalian
 						</p>
-						<p className="text-retro-green text-left text-[2.5vh] uppercase drop-shadow-[0_0_10px_#000000] my-4">
+						<p
+							// prettier-ignore
+							className={`my-4 text-left text-[2.5vh] uppercase text-retro-green drop-shadow-[0_0_10px_#000000]`}
+						>
 							Vertibirdo
 						</p>
-						<p className="text-retro-green text-left text-[2.5vh] uppercase drop-shadow-[0_0_10px_#000000] my-4">
+						<p
+							// prettier-ignore
+							className={`my-4 text-left text-[2.5vh] uppercase text-retro-green drop-shadow-[0_0_10px_#000000]`}
+						>
 							v78
 						</p>
 					</div>
 					<div className="credits-section">
-						<h3 className="text-yellow text-[2.75vh] uppercase drop-shadow-[0_0_10px_#000000] mt-12">
+						<h3 className="mt-12 text-[2.75vh] uppercase text-yellow drop-shadow-[0_0_10px_#000000]">
 							Music
 						</h3>
-						<p className="text-retro-green text-left text-[2.5vh] uppercase drop-shadow-[0_0_10px_#000000] my-4">
+						<p
+							// prettier-ignore
+							className={`my-4 text-left text-[2.5vh] uppercase text-retro-green drop-shadow-[0_0_10px_#000000]`}
+						>
 							World of Warcraft
 						</p>
-						<h3 className="text-yellow text-[2.75vh] uppercase drop-shadow-[0_0_10px_#000000] mt-12">
+						<h3 className="mt-12 text-[2.75vh] uppercase text-yellow drop-shadow-[0_0_10px_#000000]">
 							Everything Else
 						</h3>
-						<p className="text-retro-green text-left text-[2.5vh] uppercase drop-shadow-[0_0_10px_#000000] my-4">
+						<p
+							// prettier-ignore
+							className={`my-4 text-left text-[2.5vh] uppercase text-retro-green drop-shadow-[0_0_10px_#000000]`}
+						>
 							Karl Querel
 						</p>
 					</div>
@@ -80,4 +96,3 @@ function CreditsModal({ isVisible, onClose }: CreditsModalProps): React.JSX.Elem
 }
 
 export default CreditsModal
-

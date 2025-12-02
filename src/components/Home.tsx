@@ -3,11 +3,10 @@ import Terminal from './Terminal'
 
 function Home(): React.JSX.Element {
 	return (
-		<div className="w-screen h-full flex justify-center items-center p-8 mt-20 md:p-4">
+		<div className="mt-20 flex h-full w-screen items-center justify-center p-8 md:p-4">
 			<Terminal />
 		</div>
 	)
 }
 
 export default Home
-

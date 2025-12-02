@@ -11,9 +11,10 @@ export interface TerminalLine {
 	animated?: boolean
 }
 
-export type CommandFunction = (args?: string) => TerminalLine[] | void | Promise<TerminalLine[] | void>
+export type CommandFunction = (
+	args?: string
+) => TerminalLine[] | void | Promise<TerminalLine[] | void>
 
 export interface Commands {
 	[key: string]: CommandFunction
 }
-

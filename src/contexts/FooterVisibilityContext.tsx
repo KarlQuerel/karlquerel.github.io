@@ -45,10 +45,7 @@ export function FooterVisibilityProvider({ children }: FooterVisibilityProviderP
 export function useFooterVisibility(): FooterVisibilityContextType {
 	const context = useContext(FooterVisibilityContext)
 	if (!context) {
-		throw new Error(
-			'useFooterVisibility must be used within FooterVisibilityProvider'
-		)
+		throw new Error('useFooterVisibility must be used within FooterVisibilityProvider')
 	}
 	return context
 }
-

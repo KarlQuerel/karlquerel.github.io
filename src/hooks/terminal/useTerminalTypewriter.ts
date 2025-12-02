@@ -35,10 +35,15 @@ declare global {
 		deleteSpeed?: number
 		loop?: boolean
 		loopDelay?: number
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		afterComplete?: (instance: any) => void
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		beforeString?: (instance: any, pos: number) => void
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		afterString?: (instance: any, pos: number) => void
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		beforeStep?: (instance: any, pos: number) => void
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		afterStep?: (instance: any, pos: number) => void
 	}
 }
@@ -66,6 +71,7 @@ export function useTerminalTypewriter(): UseTerminalTypewriterReturn {
 					lifelike: true,
 					html: true,
 					cursorChar: '_',
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
 					afterComplete: function (instance: any) {
 						if (instance && typeof instance.destroy === 'function') {
 							instance.destroy()
@@ -95,6 +101,7 @@ export function useTerminalTypewriter(): UseTerminalTypewriterReturn {
 						lifelike: true,
 						html: true,
 						cursorChar: '_',
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
 						afterComplete: function (instance: any) {
 							if (instance && typeof instance.destroy === 'function') {
 								instance.destroy()
@@ -124,4 +131,3 @@ export function useTerminalTypewriter(): UseTerminalTypewriterReturn {
 		typewriterSpeed,
 	}
 }
-

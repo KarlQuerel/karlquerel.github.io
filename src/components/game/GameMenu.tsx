@@ -37,28 +37,35 @@ function GameMenu({
 
 	return (
 		<div
-			className={`text-center flex flex-col items-center justify-center h-screen w-screen relative z-10 transition-opacity duration-[2s] ease-in-out ${
+			// prettier-ignore
+			className={`relative z-10 flex h-screen w-screen flex-col items-center justify-center text-center transition-opacity duration-[2s] ease-in-out ${
 				isTransitioningToCinematics ? 'opacity-0' : ''
 			}`}
 		>
-			<div className="flex flex-col items-start gap-[5vw] relative -right-[17.5vw] z-10">
-				<h1 className="game-menu-title text-6xl text-yellow opacity-0 tracking-[15px] uppercase drop-shadow-[5px_5px_5px_#000000] w-full font-bold text-left relative z-10 md:text-[2.5rem] md:tracking-[10px]">
+			<div className="relative -right-[17.5vw] z-10 flex flex-col items-start gap-[5vw]">
+				<h1
+					// prettier-ignore
+					className={`game-menu-title relative z-10 w-full text-left text-6xl font-bold uppercase tracking-[15px] text-yellow opacity-0 drop-shadow-[5px_5px_5px_#000000] md:text-[2.5rem] md:tracking-[10px]`}
+				>
 					The
 					<br />
 					<span className="game-menu-fading-text">Fading</span>
 					<br />
 					Crown
 				</h1>
-				<div className="game-menu-buttons flex flex-col gap-4 opacity-1 w-[60%] relative z-10 md:w-[180px]">
+				<div
+					// prettier-ignore
+					className={`game-menu-buttons opacity-1 relative z-10 flex w-[60%] flex-col gap-4 md:w-[180px]`}
+				>
 					<button
-						className="text-xl w-full text-yellow bg-black/70 border-3 border-yellow transition-all duration-300 ease-in-out uppercase relative overflow-hidden rounded-[10px] hover:bg-yellow hover:text-black hover:scale-110 disabled:opacity-100 disabled:cursor-not-allowed disabled:pointer-events-none disabled:transform-none active:scale-95 disabled:hover:bg-black/70 disabled:hover:text-yellow disabled:hover:scale-100 md:text-xl md:py-[0.4rem] md:px-6"
+						className="btn-pixel-primary md:px-6 md:py-[0.4rem] md:text-xl"
 						onClick={() => handleButtonClick('start-cinematics')}
 						disabled={!menuButtonsReady}
 					>
 						Start Game
 					</button>
 					<button
-						className="text-xl w-full text-yellow bg-black/70 border-3 border-yellow transition-all duration-300 ease-in-out uppercase relative overflow-hidden rounded-[10px] hover:bg-yellow hover:text-black hover:scale-110 disabled:opacity-100 disabled:cursor-not-allowed disabled:pointer-events-none disabled:transform-none active:scale-95 disabled:hover:bg-black/70 disabled:hover:text-yellow disabled:hover:scale-100 md:text-xl md:py-[0.4rem] md:px-6"
+						className="btn-pixel-primary md:px-6 md:py-[0.4rem] md:text-xl"
 						onClick={() => handleButtonClick('show-credits')}
 						disabled={!menuButtonsReady}
 					>
@@ -71,4 +78,3 @@ function GameMenu({
 }
 
 export default GameMenu
-

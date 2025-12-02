@@ -389,8 +389,10 @@ export function useTerminalCommands(): UseTerminalCommandsReturn {
 		],
 	}
 
-	const simulateScriptExecution = async (scriptName: string, scriptFunction: () => TerminalLine[]): Promise<void> => {
-
+	const simulateScriptExecution = async (
+		scriptName: string,
+		scriptFunction: () => TerminalLine[]
+	): Promise<void> => {
 		setTerminalHistory(prev => [
 			...prev,
 			{
@@ -430,7 +432,6 @@ export function useTerminalCommands(): UseTerminalCommandsReturn {
 	}
 
 	const simulateVirusExecution = async (scriptName: string): Promise<void> => {
-
 		setTerminalHistory(prev => [
 			...prev,
 			{
@@ -545,14 +546,14 @@ export function useTerminalCommands(): UseTerminalCommandsReturn {
 			if (targetScript) {
 				if (targetScript === 'i_am_not_a_virus.exe') {
 					simulateVirusExecution(targetScript)
-			} else if (executableScripts[targetScript]) {
-				const scriptFunc = executableScripts[targetScript]
-				if (scriptFunc && typeof scriptFunc === 'function') {
-					simulateScriptExecution(targetScript, () => {
-						const result = scriptFunc()
-						return Array.isArray(result) ? result : []
-					})
-				}
+				} else if (executableScripts[targetScript]) {
+					const scriptFunc = executableScripts[targetScript]
+					if (scriptFunc && typeof scriptFunc === 'function') {
+						simulateScriptExecution(targetScript, () => {
+							const result = scriptFunc()
+							return Array.isArray(result) ? result : []
+						})
+					}
 				} else {
 					setTerminalHistory(prev => [
 						...prev,
@@ -636,4 +637,3 @@ export function useTerminalCommands(): UseTerminalCommandsReturn {
 		executeCommand,
 	}
 }
-

@@ -42,19 +42,24 @@ function RetroNavbar(): React.JSX.Element {
 
 	return (
 		<nav
-			className={`fixed top-0 left-1/2 -translate-x-1/2 z-[1020] w-[60%] min-h-[60px] h-[10vh] bg-black/90 border-[0.3vh] border-dashed border-retro-green border-t-0 rounded-b-[20px] shadow-[0_2px_4px_rgba(0,0,0,0.3)] transition-all duration-300 ease-in-out ${
+			// prettier-ignore
+			className={`fixed left-1/2 top-0 z-[1020] h-[10vh] min-h-[60px] w-[60%] -translate-x-1/2 rounded-b-[20px] border-[0.3vh] border-t-0 border-dashed border-retro-green bg-black/90 shadow-[0_2px_4px_rgba(0,0,0,0.3)] transition-all duration-300 ease-in-out ${
 				isMenuOpen ? 'border-0 bg-transparent shadow-none' : ''
-			} ${isHidden ? '-translate-y-full' : ''} lg:w-[80%] md:w-[95%] sm:w-[95%] xs:w-full`}
+			} ${isHidden ? '-translate-y-full' : ''} xs:w-full sm:w-[95%] md:w-[95%] lg:w-[80%]`}
 		>
-			<div className="max-w-full mx-auto h-full flex flex-row items-center justify-between px-8 lg:px-6 md:px-4 sm:px-4 sm:justify-between sm:gap-0 xs:px-2 xs:justify-between">
+			<div
+				// prettier-ignore
+				className={`xs:px-2 xs:justify-between mx-auto flex h-full max-w-full flex-row items-center justify-between px-8 sm:justify-between sm:gap-0 sm:px-4 md:px-4 lg:px-6`}
+			>
 				<Link
 					to="/"
-					className="navbar-logo h-full flex items-center relative max-w-[20%] min-w-[40px] md:max-w-[25%] md:h-full md:p-[0.3rem] xs:max-w-[20%] xs:h-full xs:p-[0.2rem]"
+					// prettier-ignore
+					className={`navbar-logo xs:max-w-[20%] xs:h-full xs:p-[0.2rem] relative flex h-full min-w-[40px] max-w-[20%] items-center md:h-full md:max-w-[25%] md:p-[0.3rem]`}
 					onClick={closeMenu}
 				>
 					<img
 						src="/assets/img/Yako_logo_128.png"
-						className="navbar-logo-default w-full h-full object-contain relative rounded-[15%]"
+						className="navbar-logo-default relative h-full w-full rounded-[15%] object-contain"
 						alt="Logo"
 					/>
 					<img
@@ -64,22 +69,34 @@ function RetroNavbar(): React.JSX.Element {
 					/>
 				</Link>
 				<div
-					className="hidden lg:hidden md:flex flex-col justify-between w-[35px] h-[21px] z-[1030] relative p-[2px] border-2 border-retro-green rounded-[5px] bg-black/80 shadow-[3px_3px_0_#00ff00] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none xs:w-[25px] xs:h-[18px] xs:p-[1px] xs:border xs:border-retro-green xs:shadow-[2px_2px_0_#00ff00]"
+					// prettier-ignore
+					className={`xs:w-[25px] xs:h-[18px] xs:p-[1px] xs:border xs:border-retro-green xs:shadow-[2px_2px_0_#00ff00] relative z-[1030] hidden h-[21px] w-[35px] flex-col justify-between rounded-[5px] border-2 border-retro-green bg-black/80 p-[2px] shadow-[3px_3px_0_#00ff00] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none md:flex lg:hidden`}
 					onClick={toggleMenu}
 				>
-					<div className="w-full h-[3px] bg-retro-green transition-all duration-300 ease-in-out relative xs:h-[2px]" />
-					<div className="w-full h-[3px] bg-retro-green transition-all duration-300 ease-in-out relative xs:h-[2px]" />
-					<div className="w-full h-[3px] bg-retro-green transition-all duration-300 ease-in-out relative xs:h-[2px]" />
+					<div
+						// prettier-ignore
+						className={`xs:h-[2px] relative h-[3px] w-full bg-retro-green transition-all duration-300 ease-in-out`}
+					/>
+					<div
+						// prettier-ignore
+						className={`xs:h-[2px] relative h-[3px] w-full bg-retro-green transition-all duration-300 ease-in-out`}
+					/>
+					<div
+						// prettier-ignore
+						className={`xs:h-[2px] relative h-[3px] w-full bg-retro-green transition-all duration-300 ease-in-out`}
+					/>
 				</div>
 				<ul
-					className={`list-none p-0 m-0 hidden lg:flex lg:flex-row lg:gap-12 lg:items-center lg:static lg:opacity-100 lg:visible lg:pointer-events-auto lg:bg-transparent lg:border-0 lg:rounded-none lg:p-0 lg:h-auto lg:w-auto lg:left-auto lg:top-auto lg:translate-x-0 md:fixed md:top-0 md:left-[85%] md:w-[20%] md:h-[90vh] md:bg-black/95 md:flex-col md:justify-end md:gap-8 md:transition-all md:duration-300 md:ease-in-out md:border-l-[0.3vh] md:border-l-dashed md:border-l-retro-green md:border-b-[0.3vh] md:border-b-dashed md:border-b-retro-green md:rounded-bl-[20px] md:p-8 md:opacity-0 md:invisible md:pointer-events-none ${
-						isMenuOpen ? 'md:opacity-100 md:visible md:pointer-events-auto' : ''
+					// prettier-ignore
+					className={`md:border-l-dashed md:border-b-dashed m-0 hidden list-none p-0 md:pointer-events-none md:invisible md:fixed md:left-[85%] md:top-0 md:h-[90vh] md:w-[20%] md:flex-col md:justify-end md:gap-8 md:rounded-bl-[20px] md:border-b-[0.3vh] md:border-l-[0.3vh] md:border-b-retro-green md:border-l-retro-green md:bg-black/95 md:p-8 md:opacity-0 md:transition-all md:duration-300 md:ease-in-out lg:pointer-events-auto lg:visible lg:static lg:left-auto lg:top-auto lg:flex lg:h-auto lg:w-auto lg:translate-x-0 lg:flex-row lg:items-center lg:gap-12 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:opacity-100 ${
+						isMenuOpen ? 'md:pointer-events-auto md:visible md:opacity-100' : ''
 					} xs:w-[50%] xs:left-[50%]`}
 				>
 					<li>
 						<Link
 							to="/game"
-							className="glitch-button text-white no-underline transition-all duration-200 ease-in-out relative flex items-center justify-center min-w-[50px] min-h-[50px]"
+							// prettier-ignore
+							className={`glitch-button relative flex min-h-[50px] min-w-[50px] items-center justify-center text-white no-underline transition-all duration-200 ease-in-out`}
 							data-text="GAME"
 							onClick={closeMenu}
 						>
@@ -89,7 +106,8 @@ function RetroNavbar(): React.JSX.Element {
 					<li>
 						<Link
 							to="/under_construction"
-							className="glitch-button text-white no-underline transition-all duration-200 ease-in-out relative flex items-center justify-center min-w-[50px] min-h-[50px]"
+							// prettier-ignore
+							className={`glitch-button relative flex min-h-[50px] min-w-[50px] items-center justify-center text-white no-underline transition-all duration-200 ease-in-out`}
 							data-text="COMING SOON"
 							onClick={closeMenu}
 						>
@@ -100,7 +118,10 @@ function RetroNavbar(): React.JSX.Element {
 							</span>
 						</Link>
 					</li>
-					<div className="mt-0 mr-0 flex flex-row gap-8 items-center lg:flex-row lg:mt-0 lg:mr-0 md:mt-8 md:mr-[2vh] md:flex-col">
+					<div
+						// prettier-ignore
+						className={`mr-0 mt-0 flex flex-row items-center gap-8 md:mr-[2vh] md:mt-8 md:flex-col lg:mr-0 lg:mt-0 lg:flex-row`}
+					>
 						<a
 							href="mailto:karlquerel@gmail.com"
 							target="_blank"
@@ -130,7 +151,8 @@ function RetroNavbar(): React.JSX.Element {
 			</div>
 			{isGameRoute && (
 				<button
-					className={`absolute -bottom-[47.5px] left-1/2 -translate-x-1/2 bg-transparent cursor-pointer z-[1020] transition-all duration-300 ease-in-out border-none outline-none p-0 focus:outline-none focus-visible:outline-none active:outline-none focus:border-none focus-visible:border-none active:border-none focus:shadow-none focus-visible:shadow-none active:shadow-none ${
+					// prettier-ignore
+					className={`absolute -bottom-[47.5px] left-1/2 z-[1020] -translate-x-1/2 cursor-pointer border-none bg-transparent p-0 outline-none transition-all duration-300 ease-in-out focus:border-none focus:shadow-none focus:outline-none focus-visible:border-none focus-visible:shadow-none focus-visible:outline-none active:border-none active:shadow-none active:outline-none ${
 						isHidden ? 'rotate-180' : ''
 					} md:hidden`}
 					onClick={toggleNavbar}
@@ -138,12 +160,12 @@ function RetroNavbar(): React.JSX.Element {
 					<img
 						src="/assets/img/navbar-arrow.png"
 						alt="Toggle Navbar"
-						className={`w-10 h-10 bg-transparent border-2 border-dashed border-retro-green rounded-[10px] transition-transform duration-300 ease-in-out hover:scale-115 hover:shadow-[0_0_8px_#ffbd2e] ${
+						// prettier-ignore
+						className={`hover:scale-115 h-10 w-10 rounded-[10px] border-2 border-dashed border-retro-green bg-transparent transition-transform duration-300 ease-in-out hover:shadow-[0_0_8px_#ffbd2e] ${
 							isHidden ? 'rotate-180' : ''
 						}`}
 						style={{
-							filter:
-								'invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)',
+							filter: 'invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%) contrast(119%)',
 						}}
 					/>
 				</button>
@@ -153,4 +175,3 @@ function RetroNavbar(): React.JSX.Element {
 }
 
 export default RetroNavbar
-

@@ -30,4 +30,3 @@ export const CINEMATICS_CONFIG = {
 	FADE_OUT_DELAY: 1,
 	TIMEOUT_BETWEEN_BLOCKS: 350,
 } as const
-

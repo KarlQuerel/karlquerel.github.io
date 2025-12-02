@@ -7,25 +7,40 @@ interface LoadingScreenProps {
 	totalAssets: number
 }
 
-function LoadingScreen({ isLoading, loadingProgress, loadedAssets, totalAssets }: LoadingScreenProps): React.JSX.Element | null {
+function LoadingScreen({
+	isLoading,
+	loadingProgress,
+	loadedAssets,
+	totalAssets,
+}: LoadingScreenProps): React.JSX.Element | null {
 	if (!isLoading) return null
 
 	return (
-		<div className="fixed top-0 left-0 w-screen h-screen bg-black flex justify-center items-center z-[3000]">
-			<div className="text-center p-12 bg-black/80 rounded-[15px] border-3 border-retro-green shadow-[0_0_50px_#00ff00] max-w-[500px] w-[90%]">
-				<h2 className="text-yellow text-3xl mb-8 uppercase tracking-[3px]">
+		<div
+			// prettier-ignore
+			className={`fixed left-0 top-0 z-[3000] flex h-screen w-screen items-center justify-center bg-black`}
+		>
+			<div
+				// prettier-ignore
+				className={`border-3 w-[90%] max-w-[500px] rounded-[15px] border-retro-green bg-black/80 p-12 text-center shadow-[0_0_50px_#00ff00]`}
+			>
+				<h2 className="mb-8 text-3xl uppercase tracking-[3px] text-yellow">
 					Loading Assets
 				</h2>
-				<div className="w-full h-5 bg-black/50 border-2 border-retro-green rounded-[10px] overflow-hidden mb-4">
+				<div
+					// prettier-ignore
+					className={`mb-4 h-5 w-full overflow-hidden rounded-[10px] border-2 border-retro-green bg-black/50`}
+				>
 					<div
-						className="h-full bg-gradient-to-r from-retro-green to-yellow transition-all duration-300 ease-in-out rounded-lg"
+						// prettier-ignore
+						className={`h-full rounded-lg bg-gradient-to-r from-retro-green to-yellow transition-all duration-300 ease-in-out`}
 						style={{ width: `${loadingProgress}%` }}
 					/>
 				</div>
-				<div className="text-retro-green text-xl mb-2 font-bold">
+				<div className="mb-2 text-xl font-bold text-retro-green">
 					{loadingProgress}% Complete
 				</div>
-				<div className="text-yellow text-base opacity-80">
+				<div className="text-base text-yellow opacity-80">
 					{loadedAssets} / {totalAssets} assets loaded
 				</div>
 			</div>
@@ -34,4 +49,3 @@ function LoadingScreen({ isLoading, loadingProgress, loadedAssets, totalAssets }
 }
 
 export default LoadingScreen
-

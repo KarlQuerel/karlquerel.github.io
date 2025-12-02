@@ -1,5 +1,14 @@
 import { initializeApp, FirebaseApp } from 'firebase/app'
-import { getFirestore, Firestore, doc, getDoc, updateDoc, increment, setDoc, DocumentData } from 'firebase/firestore'
+import {
+	getFirestore,
+	Firestore,
+	doc,
+	getDoc,
+	updateDoc,
+	increment,
+	setDoc,
+	DocumentData,
+} from 'firebase/firestore'
 
 interface FirebaseConfig {
 	apiKey: string
@@ -93,7 +102,12 @@ export async function trackTerminalCommand(command: string): Promise<void> {
 	}
 }
 
-export async function loadTerminalStats(): Promise<{ totalVisits: number; totalCommands: number; commandStats: Record<string, number>; lastVisit: Date | null }> {
+export async function loadTerminalStats(): Promise<{
+	totalVisits: number
+	totalCommands: number
+	commandStats: Record<string, number>
+	lastVisit: Date | null
+}> {
 	try {
 		const docSnap = await getDoc(terminalStatsRef)
 		if (docSnap.exists()) {
@@ -122,4 +136,3 @@ export async function loadTerminalStats(): Promise<{ totalVisits: number; totalC
 		}
 	}
 }
-

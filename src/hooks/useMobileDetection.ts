@@ -23,4 +23,3 @@ export function useMobileDetection(): boolean {
 
 	return isMobile
 }
-

@@ -16,8 +16,13 @@ function Game(): React.JSX.Element {
 	const [currentSequence, setCurrentSequence] = useState<number>(0)
 	const gameContainerRef = useRef<HTMLDivElement>(null)
 
-	const { bgMusic: bgMusicRef, clickSound: clickSoundRef, initAudio, playBackgroundMusic, playClickSound } =
-		useAudioManager()
+	const {
+		bgMusic: bgMusicRef,
+		clickSound: clickSoundRef,
+		initAudio,
+		playBackgroundMusic,
+		playClickSound,
+	} = useAudioManager()
 
 	const {
 		showGame,
@@ -96,12 +101,15 @@ function Game(): React.JSX.Element {
 			/>
 
 			{!isLoading && (
-				<div className="overflow-hidden h-screen">
-					{!showGame && <PreGameScreen showGame={showGame} onStartGame={handleStartGame} />}
+				<div className="h-screen overflow-hidden">
+					{!showGame && (
+						<PreGameScreen showGame={showGame} onStartGame={handleStartGame} />
+					)}
 
 					{showGame && (
 						<div
-							className="fixed top-0 left-0 w-screen h-screen flex justify-center items-center z-[1000] border-none shadow-none overflow-hidden overscroll-none touch-none m-0 p-0"
+							// prettier-ignore
+							className={`fixed left-0 top-0 z-[1000] m-0 flex h-screen w-screen touch-none items-center justify-center overflow-hidden overscroll-none border-none p-0 shadow-none`}
 							ref={gameContainerRef}
 						>
 							<GameBackground
@@ -111,7 +119,7 @@ function Game(): React.JSX.Element {
 								currentSequence={currentSequence}
 								isTransitioningToCinematics={isTransitioningToCinematics}
 							/>
-							<div className="relative w-full h-full z-10">
+							<div className="relative z-10 h-full w-full">
 								<GameMenu
 									showCinematics={showCinematics}
 									menuButtonsReady={menuButtonsReady}
@@ -146,4 +154,3 @@ function Game(): React.JSX.Element {
 }
 
 export default Game
-

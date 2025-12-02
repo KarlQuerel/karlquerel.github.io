@@ -9,23 +9,23 @@ function PreGameScreen({ showGame, onStartGame }: PreGameScreenProps): React.JSX
 	if (showGame) return null
 
 	return (
-		<div className="flex justify-center items-center z-[2000] h-screen w-screen">
-			<div className="text-center p-12 bg-black rounded-[15px] border-3 border-retro-green shadow-[0_0_50px_#00ff00,inset_0_0_20px_rgba(0,255,0,0.1)] max-w-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-				<h2 className="text-yellow text-xl mb-8 uppercase">
+		<div className="z-[2000] flex h-screen w-screen items-center justify-center">
+			<div
+				// prettier-ignore
+				className={`border-3 absolute left-1/2 top-1/2 max-w-full -translate-x-1/2 -translate-y-1/2 rounded-[15px] border-retro-green bg-black p-12 text-center shadow-[0_0_50px_#00ff00,inset_0_0_20px_rgba(0,255,0,0.1)]`}
+			>
+				<h2 className="mb-8 text-xl uppercase text-yellow">
 					This game is currently
 					<br />
-					<span className="text-retro-green font-bold">in development</span>
+					<span className="font-bold text-retro-green">in development</span>
 				</h2>
-				<h2 className="text-yellow text-xl mb-8 uppercase">
+				<h2 className="mb-8 text-xl uppercase text-yellow">
 					For the best experience
 					<br />
 					turn on your
-					<span className="text-retro-green font-bold">sound</span> before starting
+					<span className="font-bold text-retro-green">sound</span> before starting
 				</h2>
-				<button
-					className="text-xl w-1/2 text-retro-green bg-black/70 border-3 border-retro-green transition-all duration-300 ease-in-out uppercase relative overflow-hidden rounded-[10px] hover:bg-retro-green hover:text-black hover:scale-110 active:scale-95"
-					onClick={onStartGame}
-				>
+				<button className="btn-pixel-secondary" onClick={onStartGame}>
 					Sound is on!
 				</button>
 			</div>
@@ -34,4 +34,3 @@ function PreGameScreen({ showGame, onStartGame }: PreGameScreenProps): React.JSX
 }
 
 export default PreGameScreen
-

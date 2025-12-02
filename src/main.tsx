@@ -31,4 +31,3 @@ if (rootElement) {
 	const root = createRoot(rootElement)
 	root.render(<RouterProvider router={router} />)
 }
-

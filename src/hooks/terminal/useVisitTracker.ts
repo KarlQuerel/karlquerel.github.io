@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
-import { trackTerminalVisit, trackTerminalCommand, loadTerminalStats } from '../../js/firebase-setup.js'
+import {
+	trackTerminalVisit,
+	trackTerminalCommand,
+	loadTerminalStats,
+} from '../../js/firebase-setup.js'
 
 interface CommandStats {
 	[command: string]: number
@@ -101,4 +105,3 @@ export function useVisitTracker(): UseVisitTrackerReturn {
 		loadVisitData,
 	}
 }
-

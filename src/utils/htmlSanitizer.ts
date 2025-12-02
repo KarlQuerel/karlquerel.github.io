@@ -1,12 +1,12 @@
 /**
  * HTML Sanitization Utility
- * 
+ *
  * WARNING: v-html in Vue and dangerouslySetInnerHTML in React can be security risks
  * if content comes from user input or untrusted sources.
- * 
+ *
  * This utility provides basic sanitization. For production, consider using DOMPurify:
  * npm install dompurify
- * 
+ *
  * @param html - HTML string to sanitize
  * @returns Sanitized HTML string
  */
@@ -33,7 +33,7 @@ export function sanitizeHtml(html: string | null | undefined): string {
 
 /**
  * Check if HTML content is safe to render
- * 
+ *
  * @param html - HTML string to check
  * @returns True if content appears safe
  */
@@ -57,18 +57,17 @@ export function isHtmlSafe(html: string | null | undefined): boolean {
 
 /**
  * REACT MIGRATION NOTE:
- * 
+ *
  * In React, replace v-html with:
- * 
+ *
  * import DOMPurify from 'dompurify'
- * 
+ *
  * <span
  *   className={line.type}
  *   dangerouslySetInnerHTML={{
  *     __html: DOMPurify.sanitize(line.content)
  *   }}
  * />
- * 
+ *
  * Or use a React component library that handles sanitization automatically.
  */
-

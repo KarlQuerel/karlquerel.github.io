@@ -4,12 +4,15 @@ import ClickCounter from './ClickCounter'
 function UnderConstruction(): React.JSX.Element {
 	return (
 		<div className="content">
-			<div className="nes-container is-dark is-rounded bg-black/50 border-[0.3vh] border-dashed border-retro-green rounded-[20px] mb-4 uppercase">
+			<div
+				// prettier-ignore
+				className={`nes-container is-dark is-rounded mb-4 rounded-[20px] border-[0.3vh] border-dashed border-retro-green bg-black/50 uppercase`}
+			>
 				<p>Under Construction</p>
 				<img
 					src="/assets/img/construction.gif"
 					alt="construction GIF"
-					className="max-w-full h-auto my-2 rounded-[10px]"
+					className="my-2 h-auto max-w-full rounded-[10px]"
 				/>
 				<p />
 			</div>
@@ -20,4 +23,3 @@ function UnderConstruction(): React.JSX.Element {
 }
 
 export default UnderConstruction
-
