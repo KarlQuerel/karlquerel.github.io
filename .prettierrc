@@ -8,6 +8,14 @@
 	"endOfLine": "lf",
 	"bracketSpacing": true,
 	"arrowParens": "avoid",
-	"vueIndentScriptAndStyle": true
+	"vueIndentScriptAndStyle": true,
+	"overrides": [
+		{
+			"files": "*.ts,*.tsx",
+			"options": {
+				"parser": "typescript"
+			}
+		}
+	]
 }
   

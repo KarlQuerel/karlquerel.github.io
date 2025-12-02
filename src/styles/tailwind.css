@@ -1,0 +1,477 @@
+/* Import NES.css - keep for retro aesthetic */
+@import 'nes.css/css/nes.min.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global custom cursor */
+@layer base {
+	a,
+	button,
+	.nes-btn,
+	.nes-icon,
+	input[type='button'],
+	input[type='submit'],
+	[role='button'],
+	.clickable,
+	.menu-buttons button,
+	.nav-links a,
+	.logo,
+	.credits-modal button,
+	.terminal-link,
+	.share a {
+		cursor: url('/assets/img/custom-cursor.png'), auto !important;
+	}
+
+	/* Keep default cursor for text inputs and textareas */
+	input[type='text'],
+	input[type='email'],
+	input[type='password'],
+	input[type='search'],
+	input[type='tel'],
+	input[type='url'],
+	input[type='number'],
+	textarea {
+		cursor: text !important;
+	}
+
+	/* Reset styles */
+	* {
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+	}
+
+	html,
+	body {
+		background-color: #000000;
+		min-height: 100vh;
+	}
+
+	#app {
+		min-height: 100vh;
+		background-color: #000000;
+	}
+}
+
+/* RetroNavbar animations and styles */
+@layer components {
+	@keyframes glitch-1 {
+		0% {
+			transform: translate(0);
+		}
+		20% {
+			transform: translate(-2px, 2px);
+		}
+		40% {
+			transform: translate(-2px, -2px);
+		}
+		60% {
+			transform: translate(2px, 2px);
+		}
+		80% {
+			transform: translate(2px, -2px);
+		}
+		100% {
+			transform: translate(0);
+		}
+	}
+
+	@keyframes glitch-2 {
+		0% {
+			clip-path: inset(15% 0 35% 0);
+		}
+		20% {
+			clip-path: inset(55% 0 15% 0);
+		}
+		40% {
+			clip-path: inset(45% 0 45% 0);
+		}
+		60% {
+			clip-path: inset(75% 0 10% 0);
+		}
+		80% {
+			clip-path: inset(15% 0 65% 0);
+		}
+		100% {
+			clip-path: inset(25% 0 25% 0);
+		}
+	}
+
+	@keyframes glitch {
+		0% {
+			transform: translate(0) scale(1) rotate(0deg);
+		}
+		15% {
+			transform: translate(-3px, 3px) scale(1.02) rotate(-1deg);
+		}
+		30% {
+			transform: translate(3px, -3px) scale(0.98) rotate(1deg);
+		}
+		45% {
+			transform: translate(-2px, -2px) scale(1.01) rotate(-2deg);
+		}
+		60% {
+			transform: translate(2px, 2px) scale(1.03) rotate(2deg);
+		}
+		75% {
+			transform: translate(-1px, 1px) scale(0.99) rotate(-1deg);
+		}
+		100% {
+			transform: translate(0) scale(1) rotate(0deg);
+		}
+	}
+
+	.navbar-logo-glitch {
+		opacity: 0;
+		border-radius: 15%;
+		animation: glitch 2s infinite;
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+	}
+
+	.navbar-logo:hover .navbar-logo-default {
+		opacity: 0;
+	}
+
+	.navbar-logo:hover .navbar-logo-glitch {
+		opacity: 1;
+	}
+
+	.glitch-button::before,
+	.glitch-button::after {
+		content: attr(data-text);
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: dark;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+
+	.glitch-button::before {
+		left: 2px;
+		text-shadow: -5px 0 #fffb00;
+		animation: glitch-1 2s infinite linear alternate-reverse;
+	}
+
+	.glitch-button::after {
+		left: -2px;
+		text-shadow: 5px 0 rgb(255, 0, 0);
+		animation: glitch-2 3s infinite linear alternate-reverse;
+	}
+
+	.glitch-button:hover {
+		transform: scale(1.05);
+	}
+
+	.glitch-button:hover::before,
+	.glitch-button:hover::after {
+		opacity: 1;
+	}
+
+	/* GameMenu animations */
+	@keyframes titleSlide {
+		0% {
+			opacity: 0;
+			transform: translateX(-100px);
+			letter-spacing: 30px;
+		}
+		100% {
+			opacity: 1;
+			transform: translateX(0);
+			letter-spacing: 15px;
+		}
+	}
+
+	@keyframes FadeAnimation {
+		0% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.2;
+		}
+		100% {
+			opacity: 1;
+		}
+	}
+
+	@keyframes simpleFadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	.game-menu-title {
+		opacity: 0;
+		animation: titleSlide 5s ease-out 10s forwards;
+	}
+
+	.game-menu-fading-text {
+		animation: FadeAnimation 5s ease-out infinite 5s;
+	}
+
+	.game-menu-buttons {
+		opacity: 1;
+		animation: simpleFadeIn 5s ease-in 12s forwards;
+	}
+
+	/* CreditsModal animations */
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes slideIn {
+		from {
+			transform: translateY(-20px);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+
+	.credits-modal-overlay {
+		animation: fadeIn 0.3s ease-out;
+	}
+
+	.credits-modal {
+		animation: slideIn 0.3s ease-out;
+	}
+
+	/* GameBackground animations */
+	@keyframes initialFadeIn {
+		from {
+			opacity: 0;
+			background-size: 210% auto;
+			background-position: 0% 0%;
+		}
+		to {
+			opacity: 1;
+			background-size: 210% auto;
+			background-position: 0% 85%;
+		}
+	}
+
+	.game-background-initial-load::before {
+		animation: initialFadeIn 10s ease-in forwards;
+	}
+
+	/* Terminal animations */
+	@keyframes blink {
+		0%,
+		60% {
+			opacity: 1;
+		}
+		61%,
+		100% {
+			opacity: 0;
+		}
+	}
+
+	@keyframes yakoBackAndForth {
+		0% {
+			left: -150px;
+			transform: translateY(-50%) rotateY(0deg);
+		}
+
+		25% {
+			left: calc(100% - 10px);
+			transform: translateY(-50%) rotateY(0deg);
+		}
+
+		25.1% {
+			transform: translateY(-50%) rotateY(180deg);
+		}
+
+		50% {
+			left: calc(100% - 10px);
+			transform: translateY(-50%) rotateY(180deg);
+		}
+
+		75% {
+			left: -150px;
+			transform: translateY(-50%) rotateY(180deg);
+		}
+
+		75.1% {
+			transform: translateY(-50%) rotateY(0deg);
+		}
+
+		100% {
+			left: -150px;
+			transform: translateY(-50%) rotateY(0deg);
+		}
+	}
+
+	@keyframes flicker {
+		0%,
+		90% {
+			opacity: 1;
+		}
+		91%,
+		94% {
+			opacity: 0.6;
+		}
+		95%,
+		97% {
+			opacity: 0.8;
+		}
+		98%,
+		99% {
+			opacity: 0.7;
+		}
+		100% {
+			opacity: 1;
+		}
+	}
+
+	.custom-cursor {
+		animation: blink 1.5s infinite;
+	}
+
+	.running-yako {
+		animation: yakoBackAndForth 20s linear infinite;
+	}
+
+	.terminal-line:nth-child(odd) {
+		animation: flicker 4s infinite;
+	}
+
+	@media (max-width: 1024px) {
+		.running-yako {
+			animation: yakoBackAndForth 10s linear infinite;
+		}
+	}
+
+	/* Terminal text color classes */
+	.text-green {
+		color: #00ff00;
+		text-shadow: 0 0 3px currentColor;
+	}
+
+	.text-blue {
+		color: #00ccff;
+		text-shadow: 0 0 3px currentColor;
+	}
+
+	.text-azure {
+		color: #007fff;
+		text-shadow: 0 0 3px currentColor;
+	}
+
+	.text-yellow {
+		color: #ffbd2e;
+		text-shadow: 0 0 3px currentColor;
+	}
+
+	.text-red {
+		color: #ff5f56;
+		text-shadow: 0 0 3px currentColor;
+	}
+
+	.text-purple {
+		color: #a200ff;
+		text-shadow: 0 0 3px currentColor;
+	}
+
+	.text-mint {
+		color: #3eb489;
+		text-shadow: 0 0 3px currentColor;
+	}
+
+	.text-orange {
+		color: #ff8c00;
+		text-shadow: 0 0 3px currentColor;
+	}
+
+	.text-cream {
+		color: #fffdd0;
+		text-shadow: 0 0 3px currentColor;
+	}
+
+	.terminal-link {
+		color: #00ff00;
+		text-decoration: none;
+		border-bottom: 1px dotted #00ff00;
+		transition: all 0.3s ease;
+	}
+
+	.terminal-link:hover {
+		color: #00ccff;
+		border-bottom-color: #00ccff;
+		text-shadow: 0 0 5px currentColor;
+	}
+
+	.terminal-link:active {
+		color: #ff5f56;
+	}
+
+	/* GameCinematics animations */
+	@keyframes TitleEntrance {
+		0% {
+			opacity: 0;
+			transform: translateY(100px) scale(0.5);
+		}
+		100% {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes comingSoonEntrance {
+		0% {
+			opacity: 0;
+			transform: translateY(30px);
+		}
+		100% {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes buttonEntrance {
+		0% {
+			opacity: 0;
+			transform: translateY(30px) scale(0.8);
+		}
+		100% {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	.game-cinematics-title {
+		opacity: 0;
+		animation: TitleEntrance 7s ease-out forwards;
+	}
+
+	.game-cinematics-coming-soon {
+		opacity: 0;
+		animation: comingSoonEntrance 3s ease-out 10s forwards;
+	}
+
+	.game-cinematics-continue-button {
+		opacity: 0;
+		animation: buttonEntrance 2s ease-out 12s forwards;
+	}
+}
+

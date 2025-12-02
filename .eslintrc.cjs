@@ -6,27 +6,34 @@ module.exports = {
 		node: true,
 	},
 	extends: [
-		'plugin:vue/vue3-essential',
 		'eslint:recommended',
+		'plugin:react/recommended',
+		'plugin:react-hooks/recommended',
+		'plugin:@typescript-eslint/recommended',
 		'prettier'
 	],
+	parser: '@typescript-eslint/parser',
 	parserOptions: {
 		ecmaVersion: 'latest',
 		sourceType: 'module',
-		parser: '@babel/eslint-parser',
-		requireConfigFile: false
+		ecmaFeatures: {
+			jsx: true
+		}
 	},
-	plugins: ['vue', 'unused-imports'],
+	plugins: ['react', 'react-hooks', '@typescript-eslint', 'unused-imports'],
+	settings: {
+		react: {
+			version: 'detect'
+		}
+	},
 	ignorePatterns: ['dist/*', 'node_modules/*', 'public/*'],
 	rules: {
-		// Vue specific rules
-		'vue/multi-word-component-names': 'off',
+		// React rules
+		'react/react-in-jsx-scope': 'off', // Not needed in React 17+
+		'react/prop-types': 'off', // Using TypeScript for prop validation
 		
 		// Disable all formatting rules - let Prettier handle them
 		'indent': 'off',
-		'vue/html-indent': 'off',
-		'vue/script-indent': 'off',
-		'vue/html-closing-bracket-newline': 'off',
 		'quotes': 'off',
 		'comma-dangle': 'off',
 		'semi': 'off',
@@ -34,24 +41,16 @@ module.exports = {
 		'array-bracket-spacing': 'off',
 		'arrow-spacing': 'off',
 		'space-before-function-paren': 'off',
-		
-		// Keep Vue formatting rules that don't conflict
-		'vue/max-attributes-per-line': ['error', {
-			'singleline': 3,
-			'multiline': 1
-		}],
-		'vue/html-self-closing': ['error', {
-			'html': {
-				'void': 'always',
-				'normal': 'always',
-				'component': 'always'
-			}
-		}],
 
 		// General rules (non-formatting)
 		'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
 		'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
 		'no-tabs': 'off',
+
+		// TypeScript rules
+		'@typescript-eslint/no-unused-vars': 'off', // Handled by unused-imports plugin
+		'@typescript-eslint/explicit-module-boundary-types': 'off',
+		'@typescript-eslint/no-explicit-any': 'warn',
 
 		// Unused variables and imports detection
 		'no-unused-vars': 'off',
@@ -64,9 +63,6 @@ module.exports = {
 				'argsIgnorePattern': '^_'
 			}
 		],
-		'vue/no-unused-vars': 'error',
-		'no-unused-expressions': 'error',
-		'vue/no-unused-components': 'error',
-		'vue/no-unused-properties': 'error'
+		'no-unused-expressions': 'error'
 	}
 }
