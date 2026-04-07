@@ -13,4 +13,4 @@ You can visit my website by clicking [**here**](https://karlquerel.com/).
 ### License
 
 All rights reserved.  
-© 2025 Karl Querel – This project and its contents may not be reused, copied, or modified without permission.
+© 2026 Karl Querel – This project and its contents may not be reused, copied, or modified without permission.

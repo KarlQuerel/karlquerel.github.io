@@ -5,7 +5,7 @@
 		data-nosnippet
 	>
 		<div class="footer-copyright">
-			<span>&copy; 2025 Karl Querel - All rights reserved</span>
+			<span>&copy; 2026 Karl Querel - All rights reserved</span>
 		</div>
 	</footer>
 </template>
