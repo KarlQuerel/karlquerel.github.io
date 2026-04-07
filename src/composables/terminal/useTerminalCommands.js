@@ -290,7 +290,7 @@ export function useTerminalCommands() {
 						content: `• Accuracy    - <span class="text-blue">±${Math.round(position.coords.accuracy)}m</span>`,
 					},
 				]
-			} catch (error) {
+			} catch {
 				return [
 					{
 						type: 'typewriter',

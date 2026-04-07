@@ -42,7 +42,7 @@
 
 				try {
 					await updateClicks()
-				} catch (e) {
+				} catch {
 					this.counter--
 				}
 			},
