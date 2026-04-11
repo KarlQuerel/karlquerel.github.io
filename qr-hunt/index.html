@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#F36B47" />
+    <title>QR Hunt</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/qr-hunt/styles.css" />
+  </head>
+  <body class="qr-hunt-player">
+    <main class="container">
+      <header class="brand-header">
+        <img
+          class="brand-logo"
+          src="/qr-hunt/ixcampus-logo.png"
+          alt="IXCAMPUS"
+          width="1024"
+          height="500"
+          decoding="async"
+        />
+      </header>
+      <!--HERE to finish-->
+      <section class="card">
+        <h1>QR Hunt</h1>
+        <p class="small">Trouvez les QR codes avec votre équipe!
+          <br>La première équipe à atteindre 10 QR codes gagne!</p>
+      </section>
+
+      <section class="card">
+        <h2>- Identifiez votre équipe -</h2>
+        <input id="teamName" placeholder="Nom de votre équipe" />
+        <button id="identifyBtn">Valider l'équipe</button>
+        <p id="teamStatus" class="small team-status" role="status"></p>
+      </section>
+
+      <section class="card">
+        <h2>- Scannez un QR code -</h2>
+        <video id="camera" autoplay playsinline muted></video>
+        <div class="row">
+          <button id="startCamBtn">Activer la camera</button>
+          <button id="scanBtn" disabled>Scanner maintenant</button>
+        </div>
+        <input id="manualCode" placeholder="Fallback manuel (QR0..QR14)" />
+        <button id="manualBtn">Envoyer code manuel</button>
+      </section>
+
+      <section class="card">
+        <h2>Progression</h2>
+        <p id="gamePhase" class="small">Chargement...</p>
+        <p id="scoreLine" class="status">0/10</p>
+        <p id="messageLine" class="small message-line" role="status"></p>
+      </section>
+    </main>
+    <script type="module" src="/qr-hunt/mobile.js"></script>
+  </body>
+</html>
