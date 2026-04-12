@@ -32,9 +32,11 @@ let pendingDeleteTeamIndex = null
 let stream = null
 
 async function api(path, method = 'GET', body) {
+  const headers = {}
+  if (body !== undefined) headers['Content-Type'] = 'application/json'
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     credentials: 'include',
     body: body ? JSON.stringify(body) : undefined,
   })
