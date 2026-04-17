@@ -1,3 +1,9 @@
+/** Re-enable with the tsparticles script in index.html (see comment there). */
+const ENABLE_MATRIX_BACKGROUND = false
+
+if (!ENABLE_MATRIX_BACKGROUND) {
+	// Falling-letter background disabled for full site redo.
+} else if (typeof tsParticles !== 'undefined') {
 const matrixChars = [
 	// Numbers
 	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
@@ -87,4 +93,5 @@ tsParticles.load("particles-js", {
 		}
 	},
 	retina_detect: true
-});
+})
+}
