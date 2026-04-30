@@ -1,14 +1,15 @@
 <template>
 	<!-- Centralized container -->
 	<div id="app">
-		<RetroNavbar />
+		<RetroNavbar v-if="shouldShowRetroNavbar" />
 		<router-view />
 		<RetroFooter />
 	</div>
 </template>
 
 <script>
-	import { ref, provide } from 'vue'
+	import { ref, provide, computed } from 'vue'
+	import { useRoute } from 'vue-router'
 	import RetroNavbar from './components/retroNavbar.vue'
 	import RetroFooter from './components/retroFooter.vue'
 
@@ -19,7 +20,9 @@
 			RetroFooter,
 		},
 		setup() {
+			const route = useRoute()
 			const isFooterVisible = ref(true)
+			const shouldShowRetroNavbar = computed(() => route.path !== '/test')
 
 			provide('footerVisibility', {
 				isVisible: isFooterVisible,
@@ -33,6 +36,10 @@
 					isFooterVisible.value = true
 				},
 			})
+
+			return {
+				shouldShowRetroNavbar,
+			}
 		},
 	}
 </script>
