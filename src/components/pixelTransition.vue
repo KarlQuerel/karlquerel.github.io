@@ -1,5 +1,38 @@
 <template>
 	<div class="pixel-transition-page">
+		<header class="test-page-header">
+			<img
+				:key="headerGifCycleKey"
+				class="test-page-header-gif"
+				:style="headerGifStyle"
+				:src="activeHeaderGif"
+				alt="Yako animation walking across the screen"
+				@animationend="onHeaderGifAnimationEnd"
+			/>
+		</header>
+		<nav class="test-page-navbar" aria-label="Test page navigation">
+			<div class="test-page-navbar-links">
+				<router-link to="/" class="test-page-nav-link">Home</router-link>
+				<router-link to="/game" class="test-page-nav-link">Game</router-link>
+				<router-link to="/under_construction" class="test-page-nav-link">Coming Soon</router-link>
+				<a class="test-page-nav-link" href="mailto:karlquerel@gmail.com">Email</a>
+				<a
+					class="test-page-nav-link"
+					href="https://github.com/KarlQuerel"
+					target="_blank"
+					rel="noopener noreferrer"
+					>GitHub</a
+				>
+				<a
+					class="test-page-nav-link"
+					href="https://www.linkedin.com/in/karlquerel"
+					target="_blank"
+					rel="noopener noreferrer"
+					>LinkedIn</a
+				>
+			</div>
+		</nav>
+
 		<section
 			ref="pinWrapperRef"
 			class="pin-wrapper"
@@ -55,7 +88,7 @@
 </template>
 
 <script setup>
-	import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+	import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 
 	const STAGE_CLEAR_COLOR = '#000000'
 
@@ -64,6 +97,14 @@
 	const STAGE_IMAGE_SCALE = 0.72
 	const STAGE_PADDING_RATIO = 0.14
 	const SHRED_VERTICAL_BIAS = 0.42
+	const HEADER_GIF_SEQUENCE = [
+		{ src: '/assets/img/yako-running.gif', direction: 'ltr' },
+		{ src: '/assets/img/yako-walking.gif', direction: 'rtl' },
+	]
+	const RUNNING_TO_WALKING_PAUSE_MS = 1200
+	const WALKING_TO_RUNNING_PAUSE_MS = 1200
+	const RUNNING_SPEED_PX_PER_SEC = 196
+	const WALKING_SPEED_PX_PER_SEC = 156
 
 	const IMAGE_CHAIN = ['/assets/test/1.png', '/assets/test/2.png', '/assets/test/3.png', '', '']
 
@@ -91,6 +132,23 @@
 	const imagesReady = ref(false)
 	const liveCaption = ref('')
 	const captionDecodeProgress = ref(0)
+	const activeHeaderGif = ref(HEADER_GIF_SEQUENCE[0].src)
+	const activeHeaderGifDirection = ref(HEADER_GIF_SEQUENCE[0].direction)
+	const activeHeaderGifDurationMs = ref(11000)
+	const headerGifCycleKey = ref(0)
+	const viewportWidthPx = ref(typeof window !== 'undefined' ? window.innerWidth : 1280)
+	const headerGifStyle = computed(() => {
+		const isRightToLeft = activeHeaderGifDirection.value === 'rtl'
+		const isWalkingGif = activeHeaderGif.value.includes('walking')
+		return {
+			'--header-gif-duration': `${activeHeaderGifDurationMs.value}ms`,
+			'--header-gif-from': isRightToLeft ? 'calc(50vw + 260%)' : 'calc(-50vw - 260%)',
+			'--header-gif-to': isRightToLeft ? 'calc(-50vw - 260%)' : 'calc(50vw + 260%)',
+			'--header-gif-flip': isRightToLeft ? '-1' : '1',
+			'--header-gif-size-scale': isWalkingGif ? '0.84' : '1',
+			'--header-gif-y-offset': isWalkingGif ? '-15px' : '0px',
+		}
+	})
 
 	const imageSlotRefs = []
 	function setImageSlotRef(index, el) {
@@ -230,6 +288,8 @@
 	/** @type {(HTMLCanvasElement | null)[]} */
 	let chainBuffers = []
 	let savedHistoryScrollRestoration = 'auto'
+	let headerGifSequenceIndex = 0
+	let headerGifPauseTimeout = 0
 
 	const PIN_SCROLL_LEAD_PX = 8
 
@@ -511,14 +571,70 @@
 		if (rafResize) return
 		rafResize = requestAnimationFrame(() => {
 			rafResize = 0
+			viewportWidthPx.value = window.innerWidth
 			if (imagesReady.value || EXPECTED_IMAGE_LOADS === 0) redrawFromScratch()
 		})
+	}
+
+	function clamp(min, preferred, max) {
+		return Math.min(max, Math.max(min, preferred))
+	}
+
+	function getHeaderGifBaseWidthPx() {
+		if (viewportWidthPx.value <= 640) {
+			return clamp(96, viewportWidthPx.value * 0.3, 150)
+		}
+		return clamp(120, viewportWidthPx.value * 0.2, 220)
+	}
+
+	function getHeaderGifTravelDistancePx(scale) {
+		const baseWidth = getHeaderGifBaseWidthPx()
+		const scaledWidth = baseWidth * scale
+		return viewportWidthPx.value + scaledWidth * 5.2
+	}
+
+	function getHeaderGifDurationMs(src) {
+		const isWalking = src.includes('walking')
+		const scale = isWalking ? 0.84 : 1
+		const speedPxPerSec = isWalking ? WALKING_SPEED_PX_PER_SEC : RUNNING_SPEED_PX_PER_SEC
+		const distancePx = getHeaderGifTravelDistancePx(scale)
+		return Math.round((distancePx / speedPxPerSec) * 1000)
+	}
+
+	function startHeaderGifCycle() {
+		const sequenceItem = HEADER_GIF_SEQUENCE[headerGifSequenceIndex] ?? HEADER_GIF_SEQUENCE[0]
+		activeHeaderGif.value = sequenceItem.src
+		activeHeaderGifDirection.value = sequenceItem.direction
+		activeHeaderGifDurationMs.value = getHeaderGifDurationMs(sequenceItem.src)
+		headerGifCycleKey.value += 1
+	}
+
+	function scheduleNextHeaderGifCycle() {
+		if (headerGifPauseTimeout) {
+			window.clearTimeout(headerGifPauseTimeout)
+			headerGifPauseTimeout = 0
+		}
+		const pauseMs = activeHeaderGif.value.includes('walking')
+			? WALKING_TO_RUNNING_PAUSE_MS
+			: RUNNING_TO_WALKING_PAUSE_MS
+		headerGifPauseTimeout = window.setTimeout(() => {
+			headerGifPauseTimeout = 0
+			startHeaderGifCycle()
+		}, pauseMs)
+	}
+
+	function onHeaderGifAnimationEnd() {
+		headerGifSequenceIndex = (headerGifSequenceIndex + 1) % HEADER_GIF_SEQUENCE.length
+		scheduleNextHeaderGifCycle()
 	}
 
 	onMounted(() => {
 		savedHistoryScrollRestoration = history.scrollRestoration
 		history.scrollRestoration = 'manual'
 		window.scrollTo(0, 0)
+		viewportWidthPx.value = window.innerWidth
+		headerGifSequenceIndex = 0
+		startHeaderGifCycle()
 
 		bindScrollTargets()
 		window.addEventListener('resize', onResize, { passive: true })
@@ -556,6 +672,7 @@
 		history.scrollRestoration = savedHistoryScrollRestoration
 		unbindScrollTargets()
 		window.removeEventListener('resize', onResize)
+		if (headerGifPauseTimeout) window.clearTimeout(headerGifPauseTimeout)
 		if (resizeObserver) resizeObserver.disconnect()
 		if (rafScroll) cancelAnimationFrame(rafScroll)
 		if (rafResize) cancelAnimationFrame(rafResize)
@@ -574,6 +691,125 @@
 </script>
 
 <style lang="scss" scoped>
+	.test-page-header {
+		position: relative;
+		width: 100%;
+		min-height: clamp(72px, 10vw, 104px);
+		overflow: hidden;
+	}
+
+	.test-page-header-gif {
+		display: inline-block;
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: clamp(120px, 20vw, 220px);
+		height: auto;
+		image-rendering: pixelated;
+		transform: translateY(var(--header-gif-y-offset, 0px)) translateX(var(--header-gif-from))
+			scaleX(var(--header-gif-flip, 1))
+			scale(var(--header-gif-size-scale, 1));
+		animation: testPageGifWalkAcross var(--header-gif-duration, 18000ms) linear 1 both;
+		pointer-events: none;
+		z-index: 2;
+	}
+
+	@keyframes testPageGifWalkAcross {
+		0% {
+			transform: translateY(var(--header-gif-y-offset, 0px)) translateX(var(--header-gif-from))
+				scaleX(var(--header-gif-flip, 1))
+				scale(var(--header-gif-size-scale, 1));
+		}
+		100% {
+			transform: translateY(var(--header-gif-y-offset, 0px)) translateX(var(--header-gif-to))
+				scaleX(var(--header-gif-flip, 1))
+				scale(var(--header-gif-size-scale, 1));
+		}
+	}
+
+	.test-page-navbar {
+		width: 100%;
+		position: sticky;
+		top: 0;
+		z-index: 40;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.4rem 1rem 0.35rem;
+		min-height: 3rem;
+		background: rgba(0, 0, 0, 0.94);
+		border-top: 1px solid rgba(255, 255, 255, 0.2);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+		overflow: hidden;
+	}
+
+	.test-page-navbar-links {
+		display: flex;
+		flex-wrap: nowrap;
+		width: 100%;
+		justify-content: center;
+		align-items: center;
+		column-gap: clamp(0.8rem, 2vw, 1.5rem);
+		row-gap: 0.35rem;
+		overflow-x: auto;
+		overflow-y: hidden;
+		scrollbar-width: none;
+		position: relative;
+		z-index: 3;
+	}
+
+	.test-page-navbar-links::-webkit-scrollbar {
+		display: none;
+	}
+
+	.test-page-nav-link {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: rgba(255, 255, 255, 0.88);
+		font-size: clamp(0.52rem, 1.15vw, 0.64rem);
+		line-height: 1.2;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		text-decoration: none;
+		padding: 0.35rem 0.2rem;
+		transition:
+			color 0.2s ease,
+			opacity 0.2s ease;
+	}
+
+	.test-page-nav-link::after {
+		content: '';
+		position: absolute;
+		left: 0.2rem;
+		right: 0.2rem;
+		bottom: 0.15rem;
+		height: 1px;
+		background: currentColor;
+		transform: scaleX(0);
+		transform-origin: left center;
+		transition: transform 0.2s ease;
+	}
+
+	.test-page-nav-link:hover,
+	.test-page-nav-link:focus-visible,
+	.test-page-nav-link.router-link-active {
+		color: #ffffff;
+		opacity: 1;
+	}
+
+	.test-page-nav-link:hover::after,
+	.test-page-nav-link:focus-visible::after,
+	.test-page-nav-link.router-link-active::after {
+		transform: scaleX(1);
+	}
+
+	.test-page-nav-link:focus-visible {
+		outline: 2px solid rgba(255, 255, 255, 0.8);
+		outline-offset: 2px;
+	}
+
 	/* Scroll “track”: tall section so window scroll maps to dissolve progress (see pinWrapperHeightVh). */
 	.pin-wrapper {
 		position: relative;
@@ -581,21 +817,22 @@
 	}
 
 	/* Sticky viewport: stays on screen while you scroll through .pin-wrapper; stage stays centered. */
-	.pin-inner {
-		position: sticky;
-		top: 0;
-		min-height: 100vh;
-		display: grid;
-		align-items: center;
-		padding: 1.5rem;
-	}
-
 	.pixel-transition-page {
+		--test-page-nav-height: 3rem;
 		width: 100%;
 		align-self: stretch;
 		flex: none;
-		padding-top: clamp(4.5rem, 12vh, 6.75rem);
+		padding-top: 0;
 		color: inherit;
+	}
+
+	.pin-inner {
+		position: sticky;
+		top: var(--test-page-nav-height);
+		min-height: calc(100vh - var(--test-page-nav-height));
+		display: grid;
+		align-items: center;
+		padding: 1.5rem;
 	}
 
 	.about-heading {
@@ -790,6 +1027,23 @@
 	}
 
 	@media (max-width: 640px) {
+		.test-page-header {
+			min-height: clamp(58px, 18vw, 84px);
+		}
+
+		.test-page-header-gif {
+			width: clamp(96px, 30vw, 150px);
+		}
+
+		.test-page-navbar-links {
+			padding: 0.35rem 0.75rem;
+		}
+
+		.test-page-nav-link {
+			font-size: clamp(0.5rem, 2.4vw, 0.58rem);
+			padding: 0.3rem 0.12rem;
+		}
+
 		.pin-inner {
 			padding: 1rem;
 		}

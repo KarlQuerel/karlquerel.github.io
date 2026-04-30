@@ -43,11 +43,7 @@ p {
 
 /* At least one viewport tall for centered “single screen” views (e.g. home terminal); use min-height so long routes (scroll demos, etc.) can grow the document normally. */
 #app {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	flex-direction: column;
-	// min-height: 100vh;
+	min-height: 100vh;
 	text-align: center;
 	color: variables.$white;
 }
