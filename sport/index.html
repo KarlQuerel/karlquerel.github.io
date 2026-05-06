@@ -173,10 +173,12 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        flex-wrap: wrap;
         gap: 14px;
       }
 
       .session-head > :first-child {
+        flex: 1 1 150px;
         min-width: 0;
       }
 
@@ -198,19 +200,32 @@
       }
 
       .chips {
-        display: flex;
+        display: grid;
         flex-shrink: 0;
-        flex-wrap: wrap;
+        grid-template-columns: repeat(4, max-content);
+        flex: 0 1 220px;
+        min-width: 0;
         justify-content: flex-end;
-        gap: 5px;
+        gap: 4px;
         margin-top: 2px;
       }
 
+      @media (max-width: 920px) {
+        .chips {
+          grid-template-columns: repeat(3, max-content);
+          flex-basis: 180px;
+        }
+      }
+
       .chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         padding: 2px 8px;
         border-radius: 20px;
         background: color-mix(in srgb, var(--muscle) 10%, transparent);
         color: var(--chip-foreground);
+        text-align: center;
         font-size: 10px;
         font-weight: 600;
         letter-spacing: 0.3px;
@@ -267,20 +282,72 @@
       }
 
       .badges {
-        display: flex;
+        display: grid;
         flex-shrink: 0;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 4px;
+        grid-template-columns: repeat(2, max-content);
+        grid-auto-flow: row dense;
+        justify-content: flex-end;
+        align-items: start;
+        gap: 4px 6px;
       }
 
       .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         padding: 2px 7px;
         border-radius: 20px;
         white-space: nowrap;
+        text-align: center;
         font-size: 10px;
         font-weight: 600;
         letter-spacing: 0.5px;
+      }
+
+      /* Keep difficulty and time badges visually aligned */
+      .badge.easy,
+      .badge.medium,
+      .badge.hard,
+      .badge.rest,
+      .badge.warmup-time {
+        width: 56px;
+      }
+
+      /* Column mapping: left = difficulty/time, right = muscle/drop set */
+      .badge.easy,
+      .badge.medium,
+      .badge.hard {
+        grid-column: 1;
+        order: 2;
+      }
+
+      .badge.warm-up {
+        grid-column: 1;
+      }
+
+      .badge.rest,
+      .badge.warmup-time,
+      .badge.drop-set {
+        grid-column: 2;
+        order: 2;
+      }
+
+      .badge.abs,
+      .badge.chest,
+      .badge.waist,
+      .badge.forearm,
+      .badge.triceps,
+      .badge.shoulders,
+      .badge.back,
+      .badge.biceps,
+      .badge.legs {
+        grid-column: 1 / -1;
+        order: 1;
+      }
+
+      .badge.drop-set {
+        grid-column: 1 / -1;
+        order: 3;
       }
 
       .badge.easy {
@@ -313,9 +380,33 @@
         color: color-mix(in srgb, var(--biceps) 88%, var(--white) 12%);
       }
 
+      .badge.warm-up {
+        background: color-mix(in srgb, var(--shoulders) 20%, transparent);
+        color: color-mix(in srgb, var(--shoulders) 88%, var(--white) 12%);
+      }
+
+      /* Warm-up blocks: make Warm-up a 2-column header */
+      .badges.badges--warmup {
+        grid-template-columns: repeat(2, max-content);
+      }
+
+      .badges.badges--warmup .badge.warm-up {
+        grid-column: 1 / -1;
+      }
+
+      .badges.badges--warmup .badge.easy,
+      .badges.badges--warmup .badge.warmup-time {
+        grid-column: auto;
+      }
+
       .badge.abs {
         background: color-mix(in srgb, var(--abs) 18%, transparent);
         color: color-mix(in srgb, var(--abs) 88%, var(--white) 12%);
+      }
+
+      .badge.chest {
+        background: color-mix(in srgb, var(--chest) 18%, transparent);
+        color: color-mix(in srgb, var(--chest) 88%, var(--white) 12%);
       }
 
       .badge.waist {
@@ -326,6 +417,31 @@
       .badge.forearm {
         background: color-mix(in srgb, var(--forearms) 18%, transparent);
         color: color-mix(in srgb, var(--forearms) 88%, var(--white) 12%);
+      }
+
+      .badge.triceps {
+        background: color-mix(in srgb, var(--triceps) 18%, transparent);
+        color: color-mix(in srgb, var(--triceps) 88%, var(--white) 12%);
+      }
+
+      .badge.shoulders {
+        background: color-mix(in srgb, var(--shoulders) 18%, transparent);
+        color: color-mix(in srgb, var(--shoulders) 88%, var(--white) 12%);
+      }
+
+      .badge.back {
+        background: color-mix(in srgb, var(--back) 18%, transparent);
+        color: color-mix(in srgb, var(--back) 88%, var(--white) 12%);
+      }
+
+      .badge.biceps {
+        background: color-mix(in srgb, var(--biceps) 18%, transparent);
+        color: color-mix(in srgb, var(--biceps) 88%, var(--white) 12%);
+      }
+
+      .badge.legs {
+        background: color-mix(in srgb, var(--legs) 18%, transparent);
+        color: color-mix(in srgb, var(--legs) 88%, var(--white) 12%);
       }
 
       /* Components - supersets */
@@ -427,11 +543,13 @@
         }
 
         .session-head {
-          flex-direction: column;
+          flex-direction: row;
           align-items: flex-start;
         }
 
         .chips {
+          grid-template-columns: repeat(6, max-content);
+          flex-basis: 100%;
           justify-content: flex-start;
         }
       }
@@ -456,6 +574,7 @@
       <section class="card" data-accent="chest">
         <div class="session-head">
           <div>
+            <!-- MONDAY -->
             <div class="day-name">MONDAY</div>
             <div class="session-kind">Push A</div>
           </div>
@@ -470,8 +589,9 @@
         <div class="exercise-list">
           <div class="exercise" data-muscle="shoulders">
             <div class="exercise-row">
-              <div class="exercise-name">Base Warm-up</div>
-              <div class="badges">
+              <div class="exercise-name">Base</div>
+              <div class="badges badges--warmup">
+                <span class="badge warm-up">Warm-up</span>
                 <span class="badge easy">Easy</span>
                 <span class="badge warmup-time">2 min</span>
               </div>
@@ -483,8 +603,11 @@
           </div>
           <div class="exercise" data-muscle="shoulders">
             <div class="exercise-row">
-              <div class="exercise-name">Specific Warm-up</div>
-              <div class="badges">
+              <div class="exercise-name">Specific</div>
+              <div class="badges badges--warmup">
+                <span class="badge warm-up">Warm-up</span>
+                <span class="badge easy">Easy</span>
+
                 <span class="badge warmup-time">3 min</span>
               </div>
             </div>
@@ -493,50 +616,57 @@
           </div>
           <div class="exercise" data-muscle="chest">
             <div class="exercise-row">
-              <div class="exercise-name">Cable Flyes (Warm-up)</div>
+              <div class="exercise-name">Cable Flyes</div>
               <div class="badges">
                 <span class="badge easy">Easy</span>
+                <span class="badge chest">Chest</span>
                 <span class="badge rest">1 min</span>
               </div>
             </div>
-            <p class="meta">- Focus on the <strong>strong stretch</strong> at the bottom</p>
-            <p class="meta">- Use a <strong>slow, controlled tempo</strong></p>
+            <p class="meta">- <strong>Strong stretch:</strong> Open chest wide; 2s pause at the bottom</p>
+            <p class="meta">- <strong>Mind-Muscle:</strong> Squeeze your chest, not your hands, at the top</p>
           </div>
           <div class="exercise" data-muscle="chest">
             <div class="exercise-row">
               <div class="exercise-name">Incline Bench Press</div>
               <div class="badges">
                 <span class="badge hard">Hard</span>
+                <span class="badge chest">Chest</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 3 min</span>
+                <span class="badge rest">3 min</span>
               </div>
             </div>
             <p class="meta">- Incline bench at <strong>setting 2</strong></p>
             <p class="meta">- Put a weight plate under the bench</p>
-            <p class="meta">- Keep <strong>shoulders plates squeezed together</strong></p>
+            <p class="meta">- <strong>Scapular Retraction:</strong> Keep shoulder blades pinned to the bench</p>
+            <p class="meta">- <strong>Leg Drive:</strong> Push feet into floor to stabilize heavy load</p>
           </div>
           <div class="exercise" data-muscle="chest">
             <div class="exercise-row">
               <div class="exercise-name">Weighted Dips</div>
               <div class="badges">
                 <span class="badge hard">Hard</span>
+                <span class="badge chest">Chest</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 3 min</span>
+                <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Lean torso forward</strong> to engage the chest</p>
-            <p class="meta">- <strong>Bodyweight</strong> on the last rep</p>
+            <p class="meta">- <strong>Chest Focus:</strong> Lean forward and flare elbows slightly</p>
+            <p class="meta">- <strong>Safe ROM:</strong> Go down until shoulders are slightly below elbows</p>
           </div>
           <div class="exercise" data-muscle="triceps">
             <div class="exercise-row">
               <div class="exercise-name">Skullcrushers</div>
               <div class="badges">
+                <span class="badge triceps">Triceps</span>
                 <span class="badge medium">Medium</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 1.5 min</span>
+                <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Keep elbows tucked</strong></p>
+            <p class="meta">- <strong>Safe ROM:</strong> Lower DBs to the sides of your ears (behind the head)</p>
+            <p class="meta">- <strong>Neutral Grip:</strong> Palms facing each other to save wrists and elbows</p>
+            <p class="meta">- <strong>Fixed Elbows:</strong> Keep elbows tucked</p>
           </div>
           <div
             class="superset"
@@ -552,12 +682,13 @@
                   Lateral Raises
                 </div>
                 <div class="badges">
+                  <span class="badge shoulders">Shoulders</span>
                   <span class="badge easy">Easy</span>
-                  <span class="badge rest">Rest 1 min</span>
+                  <span class="badge rest">1 min</span>
                 </div>
               </div>
-              <p class="meta">- <strong>Lead with the elbows</strong>, not the hands</p>
-              <p class="meta">- <strong>Hands always lower</strong> than the elbows</p>
+              <p class="meta">- <strong>Lead with elbows:</strong> Hands stay lower than elbows at all times</p>
+              <p class="meta">- <strong>Control:</strong> Slow negative; don't use momentum to swing the weights</p>
             </div>
             <div class="exercise" data-muscle="shoulders">
               <div class="exercise-row">
@@ -566,8 +697,9 @@
                   Incline Rear Delt Fly
                 </div>
                 <div class="badges">
+                  <span class="badge shoulders">Shoulders</span>
                   <span class="badge easy">Easy</span>
-                  <span class="badge rest">Rest 1 min</span>
+                  <span class="badge rest">1 min</span>
                 </div>
               </div>
               <p class="meta">- Incline bench at <strong>setting 2</strong></p>
@@ -580,17 +712,18 @@
               <div class="badges">
                 <span class="badge abs">Abs</span>
                 <span class="badge medium">Medium</span>
-                <span class="badge rest">Rest 1.5 min</span>
+                <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">- 3 sets of 15</p>
-            <p class="meta">- Curl your <strong>pelvis upward</strong> at the top</p>
+            <p class="meta">- <strong>Pelvic Tilt:</strong> Don't just lift legs; curl your pelvis toward your chest</p>
+            <p class="meta">- <strong>No Swing:</strong> Control the descent to keep tension on the lower abs</p>
           </div>
         </div>
       </section>
       <section class="card" data-accent="back">
         <div class="session-head">
           <div>
+            <!-- TUESDAY -->
             <div class="day-name">TUESDAY</div>
             <div class="session-kind">Pull</div>
           </div>
@@ -605,8 +738,9 @@
         <div class="exercise-list">
           <div class="exercise" data-muscle="shoulders">
             <div class="exercise-row">
-              <div class="exercise-name">Base Warm-up</div>
-              <div class="badges">
+              <div class="exercise-name">Base</div>
+              <div class="badges badges--warmup">
+                <span class="badge warm-up">Warm-up</span>
                 <span class="badge easy">Easy</span>
                 <span class="badge warmup-time">2 min</span>
               </div>
@@ -618,56 +752,58 @@
           </div>
           <div class="exercise" data-muscle="back">
             <div class="exercise-row">
-              <div class="exercise-name">Warm-up Add-on (3 min)</div>
-              <div class="badges">
+              <div class="exercise-name">Specific</div>
+              <div class="badges badges--warmup">
+                <span class="badge warm-up">Warm-up</span>
                 <span class="badge easy">Easy</span>
                 <span class="badge warmup-time">3 min</span>
               </div>
             </div>
-            <p class="meta">- Dead Hangs (2 sets of 45s)</p>
-            <p class="meta">- Replaces cat-cow</p>
+            <p class="meta">- <strong>Dead Hangs</strong> (2 sets of 45s)</p>
+            <p class="meta">- <strong>Shoulder Goalpost</strong> rotations</p>
           </div>
           <div class="exercise" data-muscle="back">
             <div class="exercise-row">
               <div class="exercise-name">Weighted Pull-ups</div>
               <div class="badges">
+                <span class="badge back">Back</span>
                 <span class="badge hard">Hard</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 3 min</span>
+                <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">Back</p>
-            <p class="meta">Bodyweight on last rep</p>
+            <p class="meta">- <strong>Neutral grip</strong> to protect shoulders and maximize load</p>
+            <p class="meta">- <strong>Full range:</strong> Dead hang at bottom, chin high above bar</p>
+            <p class="meta">- <strong>3 sets of 7-10 reps</strong> (Increase weight when 10 reps are clean)</p>
           </div>
           <div class="exercise" data-muscle="back">
             <div class="exercise-row">
-              <div class="exercise-name">Rows</div>
+              <div class="exercise-name">Single-Arm Machine Row</div>
               <div class="badges">
+                <span class="badge back">Back</span>
                 <span class="badge hard">Hard</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 3 min</span>
+                <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">Chest supported or bent over</p>
-            <p class="meta">Chest supported or bent over</p>
+            <p class="meta">- <strong>Symmetry First:</strong> Always start with the left arm and match reps with the right</p>
+            <p class="meta">- <strong>Chest Glued:</strong> No torso rotation; keep sternum against the pad</p>
+            <p class="meta">- <strong>Hook Grip:</strong> Hands are just hooks; drive the elbow toward the hip</p>
+            <p class="meta">- <strong>Stability:</strong> Grip the machine frame with your free hand</p>
           </div>
           <div class="exercise" data-muscle="back">
             <div class="exercise-row">
               <div class="exercise-name">Neutral-Grip Lat Pulldown</div>
               <div class="badges">
+                <span class="badge back">Back</span>
                 <span class="badge medium">Medium</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 1.5 min</span>
+                <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">Neutral grip</p>
+            <p class="meta">- <strong>Lats Focus:</strong> Pull with elbows; avoid leaning back excessively</p>
           </div>
-          <div
-            class="superset"
-            data-muscle="back"
-            role="group"
-            aria-label="Superset: Straight Arm Pulldown, then Bayesian Curl"
-          >
+          <div class="superset" data-muscle="back">
             <div class="superset-head">Superset</div>
             <div class="exercise" data-muscle="back">
               <div class="exercise-row">
@@ -676,12 +812,13 @@
                   Straight Arm Pulldown
                 </div>
                 <div class="badges">
+                  <span class="badge back">Back</span>
                   <span class="badge easy">Easy</span>
-                  <span class="badge rest">Rest 1 min</span>
+                  <span class="badge rest">1 min</span>
                 </div>
               </div>
-              <p class="meta">Keep Abs Tense</p>
-              <p class="meta">Keep Arms Fixed at the Elbow</p>
+              <p class="meta">- <strong>Flat Back:</strong> Keep abs tight; do not arch or "stick your butt out"</p>
+              <p class="meta">- <strong>Fixed Elbows:</strong> Arms slightly bent but locked; pull with the lats</p>
             </div>
             <div class="exercise" data-muscle="biceps">
               <div class="exercise-row">
@@ -690,24 +827,25 @@
                   Bayesian Curl
                 </div>
                 <div class="badges">
+                  <span class="badge biceps">Biceps</span>
                   <span class="badge easy">Easy</span>
-                  <span class="badge rest">Rest 1 min</span>
+                  <span class="badge rest">1 min</span>
                 </div>
               </div>
-              <p class="meta">Biceps</p>
+              <p class="meta">- <strong>Constant Tension:</strong> Step forward from pulley; full stretch behind</p>
             </div>
           </div>
           <div class="exercise" data-muscle="biceps">
             <div class="exercise-row">
               <div class="exercise-name">Hammer Curl</div>
               <div class="badges">
+                <span class="badge forearm">Forearm</span>
                 <span class="badge easy">Easy</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 1 min</span>
+                <span class="badge rest">1 min</span>
               </div>
             </div>
-            <p class="meta">Squeeze the handles hard</p>
-            <p class="meta">Squeeze the handles hard</p>
+            <p class="meta">- <strong>Crush Grip:</strong> Squeeze handles to maximize forearm activation</p>
           </div>
           <div class="exercise" data-muscle="waist">
             <div class="exercise-row">
@@ -715,30 +853,19 @@
               <div class="badges">
                 <span class="badge waist">Waist</span>
                 <span class="badge hard">Hard</span>
-                <span class="badge rest">Rest 3 min</span>
+                <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">- 3 sets of 45s per side</p>
-            <p class="meta">- Heavy DB, stand perfectly straight</p>
+            <p class="meta">- <strong>Static Hold:</strong> Stand perfectly still; do not walk</p>
+            <p class="meta">- <strong>Anti-Tilt:</strong> Shoulders must stay level; keep DB 5cm away from thigh</p>
+            <p class="meta">- <strong>Time Goal:</strong> 45s per side; match weight to grip/core strength</p>
           </div>
-          <div class="exercise" data-muscle="forearms">
-            <div class="exercise-row">
-              <div class="exercise-name">Behind-the-Back Wrist Curls</div>
-              <div class="badges">
-                <span class="badge forearm">Forearm</span>
-                <span class="badge easy">Easy</span>
-                <span class="badge rest">Rest 1 min</span>
-              </div>
-            </div>
-            <p class="meta">- 3 sets of 20</p>
-            <p class="meta">- Let the bar roll to fingertips</p>
-          </div>
-        </div>
       </section>
 
       <section class="card" data-accent="legs">
         <div class="session-head">
           <div>
+            <!-- THURSDAY -->
             <div class="day-name">THURSDAY</div>
             <div class="session-kind">Legs + Shoulders</div>
           </div>
@@ -752,8 +879,9 @@
         <div class="exercise-list">
           <div class="exercise" data-muscle="shoulders">
             <div class="exercise-row">
-              <div class="exercise-name">Base Warm-up</div>
-              <div class="badges">
+              <div class="exercise-name">Base</div>
+              <div class="badges badges--warmup">
+                <span class="badge warm-up">Warm-up</span>
                 <span class="badge easy">Easy</span>
                 <span class="badge warmup-time">2 min</span>
               </div>
@@ -765,8 +893,9 @@
           </div>
           <div class="exercise" data-muscle="legs">
             <div class="exercise-row">
-              <div class="exercise-name">Warm-up Add-on (3 min)</div>
-              <div class="badges">
+              <div class="exercise-name">Specific</div>
+              <div class="badges badges--warmup">
+                <span class="badge warm-up">Warm-up</span>
                 <span class="badge easy">Easy</span>
                 <span class="badge warmup-time">3 min</span>
               </div>
@@ -779,40 +908,57 @@
             <div class="exercise-row">
               <div class="exercise-name">Hack Squat</div>
               <div class="badges">
+                <span class="badge legs">Legs</span>
                 <span class="badge hard">Hard</span>
-                <span class="badge rest">Rest 3 min</span>
+                <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">- One set at <strong>bodyweight</strong></p>
+            <p class="meta">- <strong>Full Depth:</strong> Ass to ground without lower back rounding</p>
+          </div>
+          <div class="exercise" data-muscle="legs">
+            <div class="exercise-row">
+              <div class="exercise-name">Seated Calf Raises</div>
+              <div class="badges">
+                <span class="badge legs">Legs</span>
+                <span class="badge medium">Medium</span>
+                <span class="badge rest">1 min</span>
+              </div>
+            </div>
+            <p class="meta">- <strong>Full Stretch:</strong> Pause for 2s at the bottom to eliminate tendon bounce</p>
+            <p class="meta">- <strong>Peak Contraction:</strong> Squeeze hard at the top; drive through the big toe</p>
+            <p class="meta">- <strong>Tempo:</strong> Explosive on the way up, 3s controlled eccentric</p>
           </div>
           <div class="exercise" data-muscle="legs">
             <div class="exercise-row">
               <div class="exercise-name">Leg Extension</div>
               <div class="badges">
+                <span class="badge legs">Legs</span>
                 <span class="badge medium">Medium</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 1.5 min</span>
+                <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">- Hold the legs at the <strong>top of the movement</strong></p>
+            <p class="meta">- <strong>Peak Contraction:</strong> 1s hold at top; slow controlled eccentric</p>
           </div>
           <div class="exercise" data-muscle="legs">
             <div class="exercise-row">
               <div class="exercise-name">Leg Curl</div>
               <div class="badges">
+                <span class="badge legs">Legs</span>
                 <span class="badge easy">Easy</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 1 min</span>
+                <span class="badge rest">1 min</span>
               </div>
             </div>
-            <p class="meta">Hamstrings</p>
+            <p class="meta">- <strong>Hamstrings:</strong> Focus on the back of the legs; don't lean forward</p>
           </div>
           <div class="exercise" data-muscle="legs">
             <div class="exercise-row">
-              <div class="exercise-name">Hip Abduction / Adduction</div>
+              <div class="exercise-name">Hip Abduction</div>
               <div class="badges">
+                <span class="badge legs">Legs</span>
                 <span class="badge easy">Easy</span>
-                <span class="badge rest">Rest 1 min</span>
+                <span class="badge rest">1 min</span>
               </div>
             </div>
             <p class="meta">Inner thigh &amp; glutes</p>
@@ -821,8 +967,9 @@
             <div class="exercise-row">
               <div class="exercise-name">Overhead Press</div>
               <div class="badges">
+                <span class="badge shoulders">Shoulders</span>
                 <span class="badge medium">Medium</span>
-                <span class="badge rest">Rest 1.5 min</span>
+                <span class="badge rest">2 min</span>
               </div>
             </div>
             <p class="meta">Use dumbbells or barbell</p>
@@ -833,7 +980,7 @@
               <div class="badges">
                 <span class="badge abs">Abs</span>
                 <span class="badge medium">Medium</span>
-                <span class="badge rest">Rest 1.5 min</span>
+                <span class="badge rest">2 min</span>
               </div>
             </div>
             <p class="meta">- 3 sets of 15</p>
@@ -845,6 +992,7 @@
       <section class="card" data-accent="triceps">
         <div class="session-head">
           <div>
+            <!-- FRIDAY -->
             <div class="day-name">FRIDAY</div>
             <div class="session-kind">Push B + Finisher</div>
           </div>
@@ -861,8 +1009,9 @@
         <div class="exercise-list">
           <div class="exercise" data-muscle="shoulders">
             <div class="exercise-row">
-              <div class="exercise-name">Base Warm-up</div>
-              <div class="badges">
+              <div class="exercise-name">Base</div>
+              <div class="badges badges--warmup">
+                <span class="badge warm-up">Warm-up</span>
                 <span class="badge easy">Easy</span>
                 <span class="badge warmup-time">2 min</span>
               </div>
@@ -874,8 +1023,9 @@
           </div>
           <div class="exercise" data-muscle="chest">
             <div class="exercise-row">
-              <div class="exercise-name">Warm-up Add-on (3 min)</div>
-              <div class="badges">
+              <div class="exercise-name">Specific</div>
+              <div class="badges badges--warmup">
+                <span class="badge warm-up">Warm-up</span>
                 <span class="badge easy">Easy</span>
                 <span class="badge warmup-time">3 min</span>
               </div>
@@ -886,70 +1036,70 @@
             <div class="exercise-row">
               <div class="exercise-name">Bench Press</div>
               <div class="badges">
+                <span class="badge chest">Chest</span>
                 <span class="badge hard">Hard</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 3 min</span>
+                <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">Chest</p>
             <p class="meta">Keep shoulder blades squeezed</p>
           </div>
           <div class="exercise" data-muscle="back">
             <div class="exercise-row">
               <div class="exercise-name">Bodyweight Pull-ups</div>
               <div class="badges">
+                <span class="badge back">Back</span>
                 <span class="badge hard">Hard</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 3 min</span>
+                <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">Back</p>
             <p class="meta">To failure</p>
           </div>
           <div class="exercise" data-muscle="chest">
             <div class="exercise-row">
               <div class="exercise-name">Pec Flyes</div>
               <div class="badges">
+                <span class="badge chest">Chest</span>
                 <span class="badge medium">Medium</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 1.5 min</span>
+                <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">Chest</p>
             <p class="meta">Machine or cable</p>
           </div>
           <div class="exercise" data-muscle="triceps">
             <div class="exercise-row">
               <div class="exercise-name">Overhead Cable Triceps Extension</div>
               <div class="badges">
+                <span class="badge triceps">Triceps</span>
                 <span class="badge easy">Easy</span>
-                <span class="badge rest">Rest 1 min</span>
+                <span class="badge rest">1 min</span>
               </div>
             </div>
-            <p class="meta">Triceps</p>
           </div>
           <div class="exercise" data-muscle="triceps">
             <div class="exercise-row">
               <div class="exercise-name">Triceps Extension</div>
               <div class="badges">
+                <span class="badge triceps">Triceps</span>
                 <span class="badge medium">Medium</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 1.5 min</span>
+                <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">Triceps</p>
             <p class="meta">Rope or straight bar</p>
           </div>
           <div class="exercise" data-muscle="biceps">
             <div class="exercise-row">
               <div class="exercise-name">Seated Curl</div>
               <div class="badges">
+                <span class="badge biceps">Biceps</span>
                 <span class="badge easy">Easy</span>
                 <span class="badge drop-set">Drop Set</span>
-                <span class="badge rest">Rest 1 min</span>
+                <span class="badge rest">1 min</span>
               </div>
             </div>
-            <p class="meta">Biceps</p>
           </div>
           <div class="exercise" data-muscle="waist">
             <div class="exercise-row">
@@ -957,7 +1107,7 @@
               <div class="badges">
                 <span class="badge waist">Waist</span>
                 <span class="badge hard">Hard</span>
-                <span class="badge rest">Rest 3 min</span>
+                <span class="badge rest">3 min</span>
               </div>
             </div>
             <p class="meta">- 2 sets to failure</p>
@@ -969,7 +1119,7 @@
               <div class="badges">
                 <span class="badge forearm">Forearm</span>
                 <span class="badge easy">Easy</span>
-                <span class="badge rest">Rest 1 min</span>
+                <span class="badge rest">1 min</span>
               </div>
             </div>
             <p class="meta">- 3 sets of 15</p>
@@ -985,7 +1135,6 @@
       const exercises = Array.from(document.querySelectorAll(".exercise"));
       const showAllButton = document.querySelector("#show-all");
       const isToggleKey = (key) => key === "Enter" || key === " ";
-      const hasMetaContent = (exercise) => Boolean(exercise.querySelector(".meta"));
 
       const setExerciseOpen = (exercise, isOpen) => {
         exercise.classList.toggle("is-open", isOpen);
@@ -1005,25 +1154,18 @@
 
       const openAllExercises = () => {
         exercises.forEach((exercise) => {
-          if (!hasMetaContent(exercise)) return;
           setExerciseOpen(exercise, true);
         });
       };
 
       const areAllExercisesOpen = () =>
-        exercises.every((exercise) => {
-          if (!hasMetaContent(exercise)) return true;
-          return exercise.classList.contains("is-open");
-        });
+        exercises.every((exercise) => exercise.classList.contains("is-open"));
 
       const updateShowAllButtonLabel = () => {
-        if (!showAllButton) return;
         showAllButton.textContent = areAllExercisesOpen() ? "Hide all" : "Show all";
       };
 
       exercises.forEach((exercise) => {
-        if (!hasMetaContent(exercise)) return;
-
         exercise.setAttribute("tabindex", "0");
         exercise.setAttribute("role", "button");
         exercise.setAttribute("aria-expanded", "false");
@@ -1057,7 +1199,7 @@
       });
 
       // Keep global button state in sync with individual exercise toggles.
-      showAllButton?.addEventListener("click", () => {
+      showAllButton.addEventListener("click", () => {
         if (areAllExercisesOpen()) {
           closeAllExercises();
         } else {
