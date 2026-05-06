@@ -304,6 +304,15 @@
         letter-spacing: 0.5px;
       }
 
+      /* Keep difficulty and time badges visually aligned */
+      .badge.easy,
+      .badge.medium,
+      .badge.hard,
+      .badge.rest,
+      .badge.warmup-time {
+        width: 56px;
+      }
+
       /* Column mapping: left = difficulty/time, right = muscle/drop set */
       .badge.easy,
       .badge.medium,
@@ -798,16 +807,30 @@
             <div class="superset-head">Superset</div>
             <div class="exercise" data-muscle="back">
               <div class="exercise-row">
-                <div class="exercise-name"><span class="superset-step">A</span>Straight Arm Pulldown</div>
-                <div class="badges"><span class="badge back">Back</span><span class="badge easy">Easy</span></div>
+                <div class="exercise-name">
+                  <span class="superset-step">A</span>
+                  Straight Arm Pulldown
+                </div>
+                <div class="badges">
+                  <span class="badge back">Back</span>
+                  <span class="badge easy">Easy</span>
+                  <span class="badge rest">1 min</span>
+                </div>
               </div>
               <p class="meta">- <strong>Flat Back:</strong> Keep abs tight; do not arch or "stick your butt out"</p>
               <p class="meta">- <strong>Fixed Elbows:</strong> Arms slightly bent but locked; pull with the lats</p>
             </div>
             <div class="exercise" data-muscle="biceps">
               <div class="exercise-row">
-                <div class="exercise-name"><span class="superset-step">B</span>Bayesian Curl</div>
-                <div class="badges"><span class="badge biceps">Biceps</span><span class="badge easy">Easy</span></div>
+                <div class="exercise-name">
+                  <span class="superset-step">B</span>
+                  Bayesian Curl
+                </div>
+                <div class="badges">
+                  <span class="badge biceps">Biceps</span>
+                  <span class="badge easy">Easy</span>
+                  <span class="badge rest">1 min</span>
+                </div>
               </div>
               <p class="meta">- <strong>Constant Tension:</strong> Step forward from pulley; full stretch behind</p>
             </div>
@@ -837,19 +860,6 @@
             <p class="meta">- <strong>Anti-Tilt:</strong> Shoulders must stay level; keep DB 5cm away from thigh</p>
             <p class="meta">- <strong>Time Goal:</strong> 45s per side; match weight to grip/core strength</p>
           </div>
-          <div class="exercise" data-muscle="forearms">
-            <div class="exercise-row">
-              <div class="exercise-name">Behind-the-Back Wrist Curls</div>
-              <div class="badges">
-                <span class="badge forearm">Forearm</span>
-                <span class="badge easy">Easy</span>
-                <span class="badge rest">1 min</span>
-              </div>
-            </div>
-            <p class="meta">- <strong>Deep Stretch:</strong> Let bar roll to fingertips; curl for max contraction</p>
-            <p class="meta">- <strong>High Reps:</strong> Aim for 15-20 reps with a controlled tempo</p>
-          </div>
-        </div>
       </section>
 
       <section class="card" data-accent="legs">
@@ -904,6 +914,19 @@
               </div>
             </div>
             <p class="meta">- <strong>Full Depth:</strong> Ass to ground without lower back rounding</p>
+          </div>
+          <div class="exercise" data-muscle="legs">
+            <div class="exercise-row">
+              <div class="exercise-name">Seated Calf Raises</div>
+              <div class="badges">
+                <span class="badge legs">Legs</span>
+                <span class="badge medium">Medium</span>
+                <span class="badge rest">1 min</span>
+              </div>
+            </div>
+            <p class="meta">- <strong>Full Stretch:</strong> Pause for 2s at the bottom to eliminate tendon bounce</p>
+            <p class="meta">- <strong>Peak Contraction:</strong> Squeeze hard at the top; drive through the big toe</p>
+            <p class="meta">- <strong>Tempo:</strong> Explosive on the way up, 3s controlled eccentric</p>
           </div>
           <div class="exercise" data-muscle="legs">
             <div class="exercise-row">
