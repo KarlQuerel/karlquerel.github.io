@@ -14,7 +14,10 @@
 			<div class="test-page-navbar-links">
 				<router-link to="/" class="test-page-nav-link">Home</router-link>
 				<router-link to="/game" class="test-page-nav-link">Game</router-link>
-				<router-link to="/under_construction" class="test-page-nav-link">Coming Soon</router-link>
+				<router-link to="/under_construction"
+class="test-page-nav-link"
+					>Coming Soon</router-link
+				>
 				<a class="test-page-nav-link" href="mailto:karlquerel@gmail.com">Email</a>
 				<a
 					class="test-page-nav-link"
@@ -707,8 +710,7 @@
 		height: auto;
 		image-rendering: pixelated;
 		transform: translateY(var(--header-gif-y-offset, 0px)) translateX(var(--header-gif-from))
-			scaleX(var(--header-gif-flip, 1))
-			scale(var(--header-gif-size-scale, 1));
+			scaleX(var(--header-gif-flip, 1)) scale(var(--header-gif-size-scale, 1));
 		animation: testPageGifWalkAcross var(--header-gif-duration, 18000ms) linear 1 both;
 		pointer-events: none;
 		z-index: 2;
@@ -716,14 +718,13 @@
 
 	@keyframes testPageGifWalkAcross {
 		0% {
-			transform: translateY(var(--header-gif-y-offset, 0px)) translateX(var(--header-gif-from))
-				scaleX(var(--header-gif-flip, 1))
+			transform: translateY(var(--header-gif-y-offset, 0px))
+				translateX(var(--header-gif-from)) scaleX(var(--header-gif-flip, 1))
 				scale(var(--header-gif-size-scale, 1));
 		}
 		100% {
 			transform: translateY(var(--header-gif-y-offset, 0px)) translateX(var(--header-gif-to))
-				scaleX(var(--header-gif-flip, 1))
-				scale(var(--header-gif-size-scale, 1));
+				scaleX(var(--header-gif-flip, 1)) scale(var(--header-gif-size-scale, 1));
 		}
 	}
 

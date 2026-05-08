@@ -18,10 +18,4 @@
 		padding: 2rem;
 		margin-top: 5rem;
 	}
-
-	@media (max-width: 768px) {
-		.terminal-container {
-			padding: 1rem;
-		}
-	}
 </style>

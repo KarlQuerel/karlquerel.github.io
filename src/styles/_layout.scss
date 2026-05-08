@@ -10,12 +10,16 @@ body {
 }
 
 .content {
-	z-index: variables.$z-index-content;
-	text-align: center;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
+	min-height: 100vh;
+	width: 100%;
+	box-sizing: border-box;
+	padding: 12vh 2rem 12vh 2rem;
+	z-index: variables.$z-index-content;
+	text-align: center;
 	font-size: clamp(
 		variables.$font-size-large-min,
 		variables.$font-size-large-preferred,
@@ -43,7 +47,6 @@ p {
 
 /* At least one viewport tall for centered “single screen” views (e.g. home terminal); use min-height so long routes (scroll demos, etc.) can grow the document normally. */
 #app {
-	min-height: 100vh;
 	text-align: center;
 	color: variables.$white;
 }

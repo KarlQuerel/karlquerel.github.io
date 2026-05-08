@@ -24,27 +24,31 @@
 <style lang="scss" scoped>
 	.footer {
 		background: rgba(0, 0, 0, 0.9);
-		border: 0.3vh dashed $retro-green;
+		border-top: 0.1vh solid $retro-green;
 		border-bottom: 0;
-		border-radius: 20px 20px 0 0;
+		border-left: 0;
+		border-right: 0;
+
+		border-radius: 0;
 		position: fixed;
 		bottom: 0;
+		left: 0;
 		z-index: 1020;
-		width: fit-content;
-		min-width: 200px;
-		max-width: 90%;
+		width: 100%;
+
 		min-height: 40px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		padding: 0 1rem;
 		box-sizing: border-box;
+
 		transition:
 			all 0.3s ease,
 			transform 0.5s ease;
 
 		&.footer-hidden {
-			transform: translate(0, 100%);
+			transform: translateY(100%);
 		}
 	}
 
@@ -58,16 +62,12 @@
 
 	@media (max-width: 1024px) {
 		.footer {
-			min-width: 180px;
-			max-width: 85%;
 			min-height: 35px;
 		}
 	}
 
 	@media (max-width: 768px) {
 		.footer {
-			min-width: 160px;
-			max-width: 95%;
 			min-height: 30px;
 			padding: 0 0.5rem;
 		}
@@ -75,8 +75,6 @@
 
 	@media (max-width: 480px) {
 		.footer {
-			min-width: 140px;
-			max-width: 95%;
 			min-height: 25px;
 		}
 	}

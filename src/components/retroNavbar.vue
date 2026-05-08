@@ -94,28 +94,32 @@
 <style lang="scss" scoped>
 	.navbar {
 		background: rgba(0, 0, 0, 0.9);
-		border: 0.3vh dashed $retro-green;
+		border-bottom: 0.1vh solid $retro-green;
 		border-top: 0;
-		border-radius: 0 0 20px 20px;
+		border-left: 0;
+		border-right: 0;
+
+		border-radius: 0;
 		height: 10vh;
 		position: fixed;
 		top: 0;
+		left: 0;
+		width: 100%;
 		z-index: 1020;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-		width: 60%;
 		min-height: 60px;
 		transition:
 			all 0.3s ease,
 			transform 0.5s ease;
 
+		&.navbar-hidden {
+			transform: translateY(-100%);
+		}
+
 		&.menu-active {
 			border: 0;
 			background: transparent;
 			box-shadow: none;
-		}
-
-		&.navbar-hidden {
-			transform: translate(0, -100%);
 		}
 	}
 
@@ -364,7 +368,7 @@
 	.hide-navbar-btn {
 		position: absolute;
 		bottom: -47.5px;
-		background: transparent;
+		left: 50%;
 		transform: translateX(-50%);
 		cursor: pointer;
 		z-index: 1020;
@@ -389,7 +393,7 @@
 			width: 40px;
 			height: 40px;
 			background: transparent;
-			border: 2px dashed $retro-green;
+			border: 2px solid $retro-green;
 			border-radius: 10px;
 			transition: transform 0.3s ease;
 			filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(118%)
@@ -403,10 +407,6 @@
 	}
 
 	@media (max-width: 1024px) {
-		.navbar {
-			width: 80%;
-		}
-
 		.navbar-container {
 			padding: 0 1.5rem;
 		}
@@ -417,10 +417,6 @@
 	}
 
 	@media (max-width: 768px) {
-		.navbar {
-			width: 95%;
-		}
-
 		.navbar-container {
 			padding: 0 1rem;
 			justify-content: space-between;
@@ -443,8 +439,8 @@
 			justify-content: flex-end;
 			gap: 2rem;
 			transition: right 0.3s ease;
-			border-left: 0.3vh dashed $retro-green;
-			border-bottom: 0.3vh dashed $retro-green;
+			border-left: 0.3vh solid $retro-green;
+			border-bottom: 0.3vh solid $retro-green;
 			border-bottom-left-radius: 20px;
 			padding: 2rem;
 			opacity: 0;
@@ -491,10 +487,6 @@
 	}
 
 	@media (max-width: 480px) {
-		.navbar {
-			width: 100%;
-		}
-
 		.navbar-container {
 			padding: 0 0.5rem;
 			justify-content: space-between;

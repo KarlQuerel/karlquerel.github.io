@@ -262,10 +262,10 @@
 
 <style lang="scss" scoped>
 	.terminal-window {
-		width: 90%;
+		width: 100%;
 		height: 80vh;
 		background: rgba(0, 0, 0, 0.5);
-		border: 3px dashed $retro-green;
+		border: 0.1vh solid $retro-green;
 		border-radius: 10px;
 		box-shadow:
 			0 0 100px $retro-green,
@@ -277,7 +277,7 @@
 	.terminal-header {
 		background: rgba(100, 100, 100, 0.5);
 
-		border-bottom: 2px solid $retro-green;
+		border-bottom: 0.1vh solid $retro-green;
 		padding: 0.5rem 1rem;
 		display: flex;
 		align-items: center;
