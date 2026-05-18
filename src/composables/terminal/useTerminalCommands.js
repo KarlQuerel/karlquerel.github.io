@@ -343,7 +343,7 @@ export function useTerminalCommands() {
 		yako: () => [
 			{
 				type: 'typewriter',
-				image: '/assets/img/yako-running.gif',
+				image: '/assets/img/Yako_Animations/Run.gif',
 				animated: true,
 			},
 		],

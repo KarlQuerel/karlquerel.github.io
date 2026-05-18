@@ -22,6 +22,10 @@ const routes = [
 		path: '/test',
 		component: () => import('./components/pixelTransition.vue'),
 	},
+	{
+		path: '/contact',
+		component: () => import('./components/Contact.vue'),
+	},
 	{ path: '/:pathMatch(.*)*', component: NotFound },
 ]
 

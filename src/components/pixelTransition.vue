@@ -10,29 +10,20 @@
 				@animationend="onHeaderGifAnimationEnd"
 			/>
 		</header>
+		<template
+			v-for="headerGif in HEADER_GIF_SEQUENCE"
+			:key="`header-gif-preload-${headerGif.kind}`"
+		>
+			<img class="sr-only-preload" alt="" :src="headerGif.src" />
+		</template>
 		<nav class="test-page-navbar" aria-label="Test page navigation">
 			<div class="test-page-navbar-links">
 				<router-link to="/" class="test-page-nav-link">Home</router-link>
 				<router-link to="/game" class="test-page-nav-link">Game</router-link>
-				<router-link to="/under_construction"
-class="test-page-nav-link"
-					>Coming Soon</router-link
-				>
-				<a class="test-page-nav-link" href="mailto:karlquerel@gmail.com">Email</a>
-				<a
-					class="test-page-nav-link"
-					href="https://github.com/KarlQuerel"
-					target="_blank"
-					rel="noopener noreferrer"
-					>GitHub</a
-				>
-				<a
-					class="test-page-nav-link"
-					href="https://www.linkedin.com/in/karlquerel"
-					target="_blank"
-					rel="noopener noreferrer"
-					>LinkedIn</a
-				>
+				<router-link to="/under_construction" class="test-page-nav-link">
+					Coming Soon
+				</router-link>
+				<router-link to="/contact" class="test-page-nav-link">Contact</router-link>
 			</div>
 		</nav>
 
@@ -101,8 +92,8 @@ class="test-page-nav-link"
 	const STAGE_PADDING_RATIO = 0.14
 	const SHRED_VERTICAL_BIAS = 0.42
 	const HEADER_GIF_SEQUENCE = [
-		{ src: '/assets/img/yako-running.gif', direction: 'ltr' },
-		{ src: '/assets/img/yako-walking.gif', direction: 'rtl' },
+		{ src: '/assets/img/Yako_Animations/Run.gif', direction: 'ltr', kind: 'run' },
+		{ src: '/assets/img/Yako_Animations/Walk.gif', direction: 'rtl', kind: 'walk' },
 	]
 	const RUNNING_TO_WALKING_PAUSE_MS = 1200
 	const WALKING_TO_RUNNING_PAUSE_MS = 1200
@@ -137,12 +128,13 @@ class="test-page-nav-link"
 	const captionDecodeProgress = ref(0)
 	const activeHeaderGif = ref(HEADER_GIF_SEQUENCE[0].src)
 	const activeHeaderGifDirection = ref(HEADER_GIF_SEQUENCE[0].direction)
+	const activeHeaderGifKind = ref(HEADER_GIF_SEQUENCE[0].kind)
 	const activeHeaderGifDurationMs = ref(11000)
 	const headerGifCycleKey = ref(0)
 	const viewportWidthPx = ref(typeof window !== 'undefined' ? window.innerWidth : 1280)
 	const headerGifStyle = computed(() => {
 		const isRightToLeft = activeHeaderGifDirection.value === 'rtl'
-		const isWalkingGif = activeHeaderGif.value.includes('walking')
+		const isWalkingGif = activeHeaderGifKind.value === 'walk'
 		return {
 			'--header-gif-duration': `${activeHeaderGifDurationMs.value}ms`,
 			'--header-gif-from': isRightToLeft ? 'calc(50vw + 260%)' : 'calc(-50vw - 260%)',
@@ -596,8 +588,8 @@ class="test-page-nav-link"
 		return viewportWidthPx.value + scaledWidth * 5.2
 	}
 
-	function getHeaderGifDurationMs(src) {
-		const isWalking = src.includes('walking')
+	function getHeaderGifDurationMs(kind) {
+		const isWalking = kind === 'walk'
 		const scale = isWalking ? 0.84 : 1
 		const speedPxPerSec = isWalking ? WALKING_SPEED_PX_PER_SEC : RUNNING_SPEED_PX_PER_SEC
 		const distancePx = getHeaderGifTravelDistancePx(scale)
@@ -608,7 +600,8 @@ class="test-page-nav-link"
 		const sequenceItem = HEADER_GIF_SEQUENCE[headerGifSequenceIndex] ?? HEADER_GIF_SEQUENCE[0]
 		activeHeaderGif.value = sequenceItem.src
 		activeHeaderGifDirection.value = sequenceItem.direction
-		activeHeaderGifDurationMs.value = getHeaderGifDurationMs(sequenceItem.src)
+		activeHeaderGifKind.value = sequenceItem.kind
+		activeHeaderGifDurationMs.value = getHeaderGifDurationMs(sequenceItem.kind)
 		headerGifCycleKey.value += 1
 	}
 
@@ -617,9 +610,10 @@ class="test-page-nav-link"
 			window.clearTimeout(headerGifPauseTimeout)
 			headerGifPauseTimeout = 0
 		}
-		const pauseMs = activeHeaderGif.value.includes('walking')
-			? WALKING_TO_RUNNING_PAUSE_MS
-			: RUNNING_TO_WALKING_PAUSE_MS
+		const pauseMs =
+			activeHeaderGifKind.value === 'walk'
+				? WALKING_TO_RUNNING_PAUSE_MS
+				: RUNNING_TO_WALKING_PAUSE_MS
 		headerGifPauseTimeout = window.setTimeout(() => {
 			headerGifPauseTimeout = 0
 			startHeaderGifCycle()
