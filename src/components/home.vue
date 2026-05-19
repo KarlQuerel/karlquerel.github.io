@@ -16,6 +16,6 @@
 		justify-content: center;
 		align-items: center;
 		padding: 2rem;
-		margin-top: 5rem;
+		margin-top: 10vh;
 	}
 </style>
