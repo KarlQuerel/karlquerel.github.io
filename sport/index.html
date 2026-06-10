@@ -6,11 +6,9 @@
     <title>Weekly Split</title>
     <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet" />
     <style>
-      /* Tokens */
       :root {
         --background: #000000;
         --text: #ffffff;
-        --white: #ffffff;
         --muted: rgba(255, 255, 255, 0.62);
         --faint: rgba(255, 255, 255, 0.72);
         --chip-foreground: rgba(255, 255, 255, 0.86);
@@ -27,39 +25,26 @@
         --hard: #ff5050;
         --drop-tint: #ebff6b;
         --nav-height: 3rem;
+        --font: "Press Start 2P", ui-monospace, monospace;
+        --surface-border: rgba(255, 255, 255, 0.18);
+        --surface-bg: rgba(255, 255, 255, 0.04);
+        --surface-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
+        --focus-ring: 2px solid rgba(255, 255, 255, 0.8);
       }
 
-      /* Map data-muscle -> --muscle (dots, chips, exercise stripe) */
-      [data-muscle="chest"] {
-        --muscle: var(--chest);
-      }
-      [data-muscle="back"] {
-        --muscle: var(--back);
-      }
-      [data-muscle="triceps"] {
-        --muscle: var(--triceps);
-      }
-      [data-muscle="biceps"] {
-        --muscle: var(--biceps);
-      }
-      [data-muscle="shoulders"] {
-        --muscle: var(--shoulders);
-      }
-      [data-muscle="legs"] {
-        --muscle: var(--legs);
-      }
-      [data-muscle="abs"] {
-        --muscle: var(--abs);
-      }
-      [data-muscle="waist"] {
-        --muscle: var(--waist);
-      }
-      [data-muscle="forearms"] {
-        --muscle: var(--forearms);
-      }
+      [data-muscle="chest"] { --muscle: var(--chest); }
+      [data-muscle="back"] { --muscle: var(--back); }
+      [data-muscle="triceps"] { --muscle: var(--triceps); }
+      [data-muscle="biceps"] { --muscle: var(--biceps); }
+      [data-muscle="shoulders"] { --muscle: var(--shoulders); }
+      [data-muscle="legs"] { --muscle: var(--legs); }
+      [data-muscle="abs"] { --muscle: var(--abs); }
+      [data-muscle="waist"] { --muscle: var(--waist); }
+      [data-muscle="forearms"] { --muscle: var(--forearms); }
 
-      /* Base */
-      * {
+      *,
+      *::before,
+      *::after {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
@@ -69,9 +54,16 @@
         min-height: 100vh;
         background: var(--background);
         color: var(--text);
-        font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
-        font-size: 13px;
-        line-height: 1.5;
+        font-family: var(--font);
+        font-size: clamp(0.44rem, 1.1vw, 0.52rem);
+        line-height: 1.65;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      :is(.sport-nav-link, .session-head, .exercise, .show-all-btn):focus-visible {
+        outline: var(--focus-ring);
+        outline-offset: 2px;
       }
 
       .sport-navbar {
@@ -105,11 +97,9 @@
 
       .sport-nav-link {
         color: rgba(255, 255, 255, 0.88);
-        font-family: "Press Start 2P", ui-monospace, monospace;
         font-size: clamp(0.42rem, 1.05vw, 0.52rem);
         line-height: 1.4;
         letter-spacing: 0.06em;
-        text-transform: uppercase;
         text-decoration: none;
         padding: 0.35rem 0.2rem;
         white-space: nowrap;
@@ -120,25 +110,81 @@
         color: #ffffff;
       }
 
-      .sport-nav-link:focus-visible {
-        outline: 2px solid rgba(255, 255, 255, 0.8);
-        outline-offset: 2px;
-      }
-
       .sport-page {
         max-width: 84rem;
         margin: 0 auto;
         padding: 2.5rem 1.5rem 5.5rem;
       }
 
-      h1 {
+      .page-title {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+        column-gap: clamp(0.5rem, 1.5vw, 1rem);
         margin-bottom: 1.75rem;
-        font-family: "Press Start 2P", ui-monospace, monospace;
+      }
+
+      .page-title__icon-slot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: clamp(5.75rem, 16vw, 9.5rem);
+        height: clamp(4rem, 12vw, 6.75rem);
+      }
+
+      .page-title__icon-slot--left {
+        justify-self: center;
+        transform: translateX(clamp(-0.35rem, -1.2vw, -0.15rem));
+      }
+
+      .page-title__icon-slot--left .page-title__icon {
+        transform: rotate(-8deg) rotateY(14deg);
+        transform-origin: center;
+      }
+
+      .page-title__icon-slot--right {
+        justify-self: center;
+        transform: translateX(clamp(0.15rem, 1.2vw, 0.35rem));
+      }
+
+      .page-title__icon-slot--right .page-title__icon {
+        transform: rotate(16deg) rotateY(-28deg);
+        transform-origin: center;
+      }
+
+      .page-title__icon,
+      .page-footer__icon {
+        display: block;
+        width: auto;
+        object-fit: contain;
+        object-position: center;
+        image-rendering: pixelated;
+      }
+
+      .page-title__icon {
+        max-width: 100%;
+        max-height: 100%;
+        height: auto;
+      }
+
+      .page-title h1 {
+        grid-column: 2;
+        justify-self: center;
         font-size: clamp(0.72rem, 2.4vw, 1.1rem);
-        letter-spacing: 0.04em;
         line-height: 1.6;
         text-align: center;
         text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+      }
+
+      .page-footer {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: clamp(2rem, 5vw, 3.25rem);
+      }
+
+      .page-footer__icon {
+        height: clamp(5rem, 14vw, 8.5rem);
       }
 
       hr {
@@ -147,11 +193,10 @@
         background: rgba(255, 255, 255, 0.15);
       }
 
-      /* Layout */
       .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
       }
 
       .legend {
@@ -161,14 +206,11 @@
         gap: 10px 14px;
         margin-bottom: 2rem;
         padding: 1rem 0.75rem;
-        border: 2px solid rgba(255, 255, 255, 0.18);
-        background: rgba(255, 255, 255, 0.04);
-        box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
+        border: 2px solid var(--surface-border);
+        background: var(--surface-bg);
+        box-shadow: var(--surface-shadow);
         color: var(--faint);
-        font-family: "Press Start 2P", ui-monospace, monospace;
-        font-size: clamp(0.34rem, 0.85vw, 0.42rem);
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
+        font-size: clamp(0.44rem, 1.1vw, 0.54rem);
       }
 
       .legend span {
@@ -182,72 +224,71 @@
         height: 8px;
         flex-shrink: 0;
         background: var(--muscle);
-        image-rendering: pixelated;
       }
 
-      /* Components - cards */
       .card {
         --accent: var(--bar-dimmed);
         position: relative;
         display: flex;
         flex-direction: column;
-        gap: 18px;
+        gap: 0;
         overflow: hidden;
-        padding: 20px 18px;
-        border: 2px solid rgba(255, 255, 255, 0.18);
-        background: rgba(255, 255, 255, 0.04);
-        box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
+        padding: 22px 20px;
+        border: 2px solid var(--surface-border);
+        background: var(--surface-bg);
+        box-shadow: var(--surface-shadow);
+      }
+
+      .card.is-open {
+        gap: 20px;
+        border-color: rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .card-body {
+        display: none;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .card.is-open .card-body {
+        display: flex;
       }
 
       .card::before {
         content: "";
         position: absolute;
-        top: 0;
-        right: 0;
-        left: 0;
+        inset: 0 0 auto;
         height: 3px;
         background: var(--accent);
       }
 
-      .card[data-accent="chest"] {
-        --accent: var(--chest);
-      }
-      .card[data-accent="back"] {
-        --accent: var(--back);
-      }
-      .card[data-accent="triceps"] {
-        --accent: var(--triceps);
-      }
-      .card[data-accent="legs"] {
-        --accent: var(--legs);
-      }
+      .card[data-accent="chest"] { --accent: var(--chest); }
+      .card[data-accent="back"] { --accent: var(--back); }
+      .card[data-accent="triceps"] { --accent: var(--triceps); }
+      .card[data-accent="legs"] { --accent: var(--legs); }
 
       .session-head {
         display: flex;
         flex-direction: column;
-        align-items: stretch;
         gap: 10px;
+        cursor: pointer;
       }
 
       .session-head > :first-child {
-        flex: none;
         min-width: 0;
       }
 
       .day-name {
-        font-family: "Press Start 2P", ui-monospace, monospace;
         font-size: clamp(0.52rem, 1.4vw, 0.68rem);
-        letter-spacing: 0.04em;
         line-height: 1.5;
       }
 
       .session-kind {
         margin-top: 4px;
         color: var(--accent);
-        font-family: "Press Start 2P", ui-monospace, monospace;
         font-size: clamp(0.36rem, 0.9vw, 0.44rem);
         letter-spacing: 0.06em;
-        text-transform: uppercase;
       }
 
       .chips {
@@ -262,25 +303,21 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 100%;
         min-height: 2.1em;
         padding: 6px 4px;
         border: 1px solid var(--muscle);
         background: rgba(0, 0, 0, 0.5);
         color: var(--muscle);
         text-align: center;
-        font-family: "Press Start 2P", ui-monospace, monospace;
         font-size: clamp(0.44rem, 1.15vw, 0.56rem);
         letter-spacing: 0.02em;
         line-height: 1.4;
       }
 
-      /* Components - exercises */
       .exercise-list {
         display: flex;
-        flex: 1;
         flex-direction: column;
-        gap: 12px;
+        gap: 14px;
       }
 
       .exercise {
@@ -301,18 +338,18 @@
       }
 
       .exercise-row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px 16px;
       }
 
       .exercise-name {
-        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
         min-width: 0;
-        max-width: 13ch;
-        min-height: 2.8em;
-        font-size: 12px;
+        min-height: calc(2 * 1.7em);
+        font-size: clamp(0.5rem, 1.25vw, 0.6rem);
         line-height: 1.7;
         text-wrap: balance;
       }
@@ -321,8 +358,17 @@
         display: none;
         margin-top: 6px;
         color: var(--muted);
-        font-size: 11px;
-        line-height: 1.55;
+        font-size: clamp(0.48rem, 1.15vw, 0.58rem);
+        line-height: 1.85;
+      }
+
+      .exercise.is-open .meta {
+        display: block;
+      }
+
+      .meta strong {
+        color: var(--chip-foreground);
+        font-weight: 600;
       }
 
       .badges {
@@ -330,8 +376,7 @@
         flex: 0 0 auto;
         grid-template-columns: repeat(2, max-content);
         grid-auto-flow: row dense;
-        justify-content: flex-end;
-        align-items: start;
+        justify-content: end;
         gap: 5px 7px;
         margin-left: auto;
       }
@@ -340,18 +385,17 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        min-height: 1.65em;
         padding: 4px 7px;
         border: 1px solid currentColor;
         white-space: nowrap;
         text-align: center;
-        font-family: "Press Start 2P", ui-monospace, monospace;
         font-size: clamp(0.36rem, 0.9vw, 0.44rem);
         letter-spacing: 0.02em;
         line-height: 1.45;
         text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.65);
       }
 
-      /* Keep difficulty and time badges visually aligned */
       .badge.easy,
       .badge.medium,
       .badge.hard,
@@ -360,7 +404,6 @@
         min-width: 5rem;
       }
 
-      /* Column mapping: left = difficulty/time, right = muscle/drop set */
       .badge.easy,
       .badge.medium,
       .badge.hard {
@@ -368,15 +411,36 @@
         order: 2;
       }
 
-      .badge.warm-up {
-        grid-column: 1;
-      }
-
       .badge.rest,
-      .badge.warmup-time,
-      .badge.drop-set {
+      .badge.warmup-time {
         grid-column: 2;
         order: 2;
+      }
+
+      .badge.abs { --badge-color: var(--abs); }
+      .badge.chest { --badge-color: var(--chest); }
+      .badge.waist { --badge-color: var(--waist); }
+      .badge.forearm { --badge-color: var(--forearms); }
+      .badge.triceps { --badge-color: var(--triceps); }
+      .badge.shoulders { --badge-color: var(--shoulders); }
+      .badge.back { --badge-color: var(--back); }
+      .badge.biceps { --badge-color: var(--biceps); }
+      .badge.legs { --badge-color: var(--legs); }
+
+      .badge.abs,
+      .badge.chest,
+      .badge.waist,
+      .badge.forearm,
+      .badge.triceps,
+      .badge.shoulders,
+      .badge.back,
+      .badge.biceps,
+      .badge.legs,
+      .badge.drop-set,
+      .badges--warmup .badge.warm-up {
+        grid-column: 1 / -1;
+        justify-self: stretch;
+        width: 100%;
       }
 
       .badge.abs,
@@ -388,19 +452,24 @@
       .badge.back,
       .badge.biceps,
       .badge.legs {
-        grid-column: 1 / -1;
         order: 1;
         padding: 5px 8px;
         font-size: clamp(0.44rem, 1.1vw, 0.54rem);
         line-height: 1.5;
+        background: rgba(0, 0, 0, 0.62);
+        color: #ffffff;
+        border-color: var(--badge-color);
       }
 
       .badge.drop-set {
-        grid-column: 1 / -1;
         order: 3;
+        background: rgba(235, 255, 107, 0.3);
+        color: #f8ffd0;
+        border-color: var(--drop-tint);
       }
 
-      .badge.easy {
+      .badge.easy,
+      .badge.warmup-time {
         background: rgba(47, 204, 139, 0.34);
         color: #e8fff5;
         border-color: var(--biceps);
@@ -418,25 +487,14 @@
         border-color: var(--hard);
       }
 
-      .badge.drop-set {
-        background: rgba(235, 255, 107, 0.3);
-        color: #f8ffd0;
-        border-color: var(--drop-tint);
-      }
-
       .badge.rest {
         background: rgba(255, 124, 56, 0.34);
         color: #fff0e6;
         border-color: var(--back);
       }
 
-      .badge.warmup-time {
-        background: rgba(47, 204, 139, 0.34);
-        color: #e8fff5;
-        border-color: var(--biceps);
-      }
-
       .badge.warm-up {
+        order: 1;
         padding: 5px 8px;
         background: rgba(255, 79, 139, 0.4);
         color: #ffffff;
@@ -445,63 +503,6 @@
         line-height: 1.5;
       }
 
-      /* Warm-up blocks: make Warm-up a 2-column header */
-      .badges.badges--warmup {
-        grid-template-columns: repeat(2, max-content);
-      }
-
-      .badges.badges--warmup .badge.warm-up {
-        grid-column: 1 / -1;
-      }
-
-      .badges.badges--warmup .badge.easy,
-      .badges.badges--warmup .badge.warmup-time {
-        grid-column: auto;
-      }
-
-      .badge.abs {
-        --badge-color: var(--abs);
-      }
-      .badge.chest {
-        --badge-color: var(--chest);
-      }
-      .badge.waist {
-        --badge-color: var(--waist);
-      }
-      .badge.forearm {
-        --badge-color: var(--forearms);
-      }
-      .badge.triceps {
-        --badge-color: var(--triceps);
-      }
-      .badge.shoulders {
-        --badge-color: var(--shoulders);
-      }
-      .badge.back {
-        --badge-color: var(--back);
-      }
-      .badge.biceps {
-        --badge-color: var(--biceps);
-      }
-      .badge.legs {
-        --badge-color: var(--legs);
-      }
-
-      .badge.abs,
-      .badge.chest,
-      .badge.waist,
-      .badge.forearm,
-      .badge.triceps,
-      .badge.shoulders,
-      .badge.back,
-      .badge.biceps,
-      .badge.legs {
-        background: rgba(0, 0, 0, 0.62);
-        color: #ffffff;
-        border-color: var(--badge-color);
-      }
-
-      /* Components - supersets */
       .superset {
         overflow: hidden;
         border: 2px solid rgba(255, 255, 255, 0.12);
@@ -510,13 +511,14 @@
       }
 
       .superset-head {
+        display: flex;
+        align-items: center;
+        min-height: 2.25em;
         padding: 8px 10px;
         background: rgba(0, 0, 0, 0.35);
         color: var(--muscle);
-        font-family: "Press Start 2P", ui-monospace, monospace;
         font-size: clamp(0.34rem, 0.85vw, 0.4rem);
         letter-spacing: 0.06em;
-        text-transform: uppercase;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       }
 
@@ -542,34 +544,25 @@
         min-width: 1.25em;
         margin-right: 6px;
         color: var(--muscle);
-        font-family: "Press Start 2P", ui-monospace, monospace;
         font-size: clamp(0.3rem, 0.75vw, 0.36rem);
-        vertical-align: baseline;
       }
 
-      /* States */
-      .exercise.is-open .meta {
-        display: block;
-      }
-
-      .exercise:focus-visible {
-        outline: 2px solid rgba(255, 255, 255, 0.8);
-        outline-offset: 2px;
-      }
-
-      /* Components - floating button */
       .show-all-btn {
         position: fixed;
         right: 18px;
         bottom: 18px;
         z-index: 20;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
-        padding: 10px 12px;
+        min-height: 2.75em;
+        padding: 12px 16px;
         border: 2px solid rgba(255, 255, 255, 0.35);
         background: #000000;
         color: rgba(255, 255, 255, 0.88);
-        font-family: "Press Start 2P", ui-monospace, monospace;
-        font-size: clamp(0.36rem, 0.9vw, 0.44rem);
+        font-family: var(--font);
+        font-size: clamp(0.42rem, 1.05vw, 0.52rem);
         letter-spacing: 0.04em;
         text-transform: uppercase;
         box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
@@ -581,12 +574,12 @@
         color: #ffffff;
       }
 
-      .show-all-btn:focus-visible {
-        outline: 2px solid rgba(255, 255, 255, 0.8);
-        outline-offset: 2px;
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
       }
 
-      /* Responsive */
       @media (max-width: 640px) {
         .sport-page {
           padding: 1.25rem 0.85rem 4.5rem;
@@ -597,10 +590,23 @@
         }
       }
 
-      @media (max-width: 600px) {
-        .grid {
-          grid-template-columns: 1fr;
-          gap: 14px;
+      @media (max-width: 480px) {
+        .page-title {
+          column-gap: 0.4rem;
+        }
+
+        .page-title__icon-slot--left,
+        .page-title__icon-slot--right {
+          width: clamp(4.75rem, 30vw, 7.5rem);
+          height: clamp(3.35rem, 20vw, 5.5rem);
+        }
+
+        .page-title h1 {
+          font-size: clamp(0.58rem, 3.2vw, 0.72rem);
+        }
+
+        .page-footer__icon {
+          height: clamp(4.25rem, 24vw, 6.5rem);
         }
       }
     </style>
@@ -616,7 +622,29 @@
     </nav>
 
     <main class="sport-page">
-    <h1>WEEKLY SPLIT</h1>
+    <div class="page-title">
+      <span class="page-title__icon-slot page-title__icon-slot--left">
+        <img
+          class="page-title__icon"
+          src="/assets/img/dumbbell.png"
+          alt=""
+          width="494"
+          height="246"
+          decoding="async"
+        />
+      </span>
+      <h1>WEEKLY SPLIT</h1>
+      <span class="page-title__icon-slot page-title__icon-slot--right">
+        <img
+          class="page-title__icon"
+          src="/assets/img/dumbbell.png"
+          alt=""
+          width="494"
+          height="246"
+          decoding="async"
+        />
+      </span>
+    </div>
 
     <div class="legend">
       <span><span class="dot" data-muscle="chest" aria-hidden="true"></span>Chest</span>
@@ -640,8 +668,8 @@
             <span class="badge warmup-time">5 min</span>
           </div>
         </div>
-        <p class="meta">- <strong>Joint Circles:</strong> wrists, neck and elbows</p>
-        <p class="meta">- <strong>Shoulders:</strong> goalpost rotations and pulleys</p>
+        <p class="meta">- <strong>Joint Circles:</strong> Wrists, neck, and elbows — smooth circles in both directions</p>
+        <p class="meta">- <strong>Shoulders:</strong> Goalpost rotations and band pulleys — light tension, full range</p>
       </div>
     </template>
 
@@ -660,6 +688,7 @@
             <span class="chip" data-muscle="abs">Abs</span>
           </div>
         </div>
+        <div class="card-body">
         <hr />
         <div class="exercise-list">
           <div data-base-warmup></div>
@@ -672,7 +701,8 @@
                 <span class="badge rest">1.5 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Stance:</strong> Face outward, legs straight (soft knee), deep stretch at the bottom</p>
+            <p class="meta">- <strong>Setup:</strong> Face outward on the hack squat; legs straight with soft knees</p>
+            <p class="meta">- <strong>Form:</strong> Rise onto your toes; pause at the bottom for a deep calf stretch</p>
           </div>
           <div class="exercise" data-muscle="legs">
             <div class="exercise-row">
@@ -683,7 +713,7 @@
                 <span class="badge rest">1 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Volume:</strong> Lighter / Higher Reps for maximum pump</p>
+            <p class="meta">- <strong>Focus:</strong> Lighter weight, higher reps — chase the pump, not max load</p>
           </div>
           <div class="exercise" data-muscle="shoulders">
             <div class="exercise-row">
@@ -694,7 +724,7 @@
                 <span class="badge warmup-time">3 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Drill:</strong> Scapular Push-ups (12 reps)</p>
+            <p class="meta">- <strong>Drill:</strong> Scapular push-ups — 12 slow reps, protract and retract fully</p>
           </div>
           <div class="exercise" data-muscle="chest">
             <div class="exercise-row">
@@ -705,8 +735,9 @@
                 <span class="badge rest">1 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Strong Stretch:</strong> Open chest wide; 2s pause at the bottom</p>
-            <p class="meta">- <strong>Mind-Muscle:</strong> Squeeze your chest, not your hands, at the top</p>
+            <p class="meta">- <strong>Setup:</strong> Arms wide; cables at chest height</p>
+            <p class="meta">- <strong>Tempo:</strong> 2-second pause at the deepest stretch</p>
+            <p class="meta">- <strong>Focus:</strong> Squeeze your chest at the top — not your hands</p>
           </div>
           <div class="exercise" data-muscle="chest">
             <div class="exercise-row">
@@ -718,10 +749,9 @@
                 <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Bench Angle:</strong> Incline bench at setting 2</p>
-            <p class="meta">- <strong>Bench Setup:</strong> Put a weight plate under the bench</p>
-            <p class="meta">- <strong>Scapular Retraction:</strong> Keep shoulder blades pinned to the bench</p>
-            <p class="meta">- <strong>Leg Drive:</strong> Push feet into floor to stabilize heavy load</p>
+            <p class="meta">- <strong>Setup:</strong> Bench at setting 2 with a weight plate under the back</p>
+            <p class="meta">- <strong>Form:</strong> Pin shoulder blades to the bench throughout the set</p>
+            <p class="meta">- <strong>Cue:</strong> Drive feet into the floor for stability on heavy sets</p>
           </div>
           <div class="exercise" data-muscle="chest">
             <div class="exercise-row">
@@ -733,8 +763,8 @@
                 <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Chest Focus:</strong> Lean forward and flare elbows slightly</p>
-            <p class="meta">- <strong>Safe ROM:</strong> Go down until shoulders are slightly below elbows</p>
+            <p class="meta">- <strong>Form:</strong> Lean forward slightly; flare elbows to target the chest</p>
+            <p class="meta">- <strong>Range:</strong> Lower until shoulders sit just below elbows — no bouncing</p>
           </div>
           <div class="exercise" data-muscle="triceps">
             <div class="exercise-row">
@@ -746,9 +776,9 @@
                 <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Safe ROM:</strong> Lower DBs to the sides of your ears (behind the head)</p>
-            <p class="meta">- <strong>Neutral Grip:</strong> Palms facing each other to save wrists and elbows</p>
-            <p class="meta">- <strong>Fixed Elbows:</strong> Keep elbows tucked</p>
+            <p class="meta">- <strong>Form:</strong> Lower dumbbells to ear level behind the head</p>
+            <p class="meta">- <strong>Grip:</strong> Neutral (palms facing) to protect wrists and elbows</p>
+            <p class="meta">- <strong>Cue:</strong> Keep elbows tucked and fixed in place</p>
           </div>
           <div class="superset" data-muscle="shoulders">
             <div class="superset-head">Superset</div>
@@ -764,8 +794,8 @@
                   <span class="badge rest">10s</span>
                 </div>
               </div>
-              <p class="meta">- <strong>Lead With Elbows:</strong> Hands stay lower than elbows at all times</p>
-              <p class="meta">- <strong>Control:</strong> Slow negative; don't use momentum to swing the weights</p>
+              <p class="meta">- <strong>Form:</strong> Lead with elbows — hands stay below elbow height</p>
+              <p class="meta">- <strong>Tempo:</strong> Slow on the way down; no swinging or momentum</p>
             </div>
             <div class="exercise" data-muscle="shoulders">
               <div class="exercise-row">
@@ -779,8 +809,8 @@
                   <span class="badge rest">2 min</span>
                 </div>
               </div>
-              <p class="meta">- <strong>Bench Angle:</strong> Incline bench at setting 2</p>
-              <p class="meta">- <strong>Hand Position:</strong> Keep pinky finger as highest point of the hand</p>
+              <p class="meta">- <strong>Setup:</strong> Incline bench at setting 2; chest on the pad</p>
+              <p class="meta">- <strong>Cue:</strong> Pinky finger is the highest point of each hand</p>
             </div>
           </div>
           <div class="exercise" data-muscle="abs">
@@ -792,9 +822,10 @@
                 <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Stretch:</strong> Focus on the stretch at the bottom</p>
-            <p class="meta">- <strong>Crunch:</strong> Controlled crunch on the way up</p>
+            <p class="meta">- <strong>Form:</strong> Stretch fully at the bottom of each rep</p>
+            <p class="meta">- <strong>Tempo:</strong> Controlled crunch on the way up — no jerking</p>
           </div>
+        </div>
         </div>
       </section>
       <section class="card" data-accent="back">
@@ -811,6 +842,7 @@
             <span class="chip" data-muscle="abs">Abs</span>
           </div>
         </div>
+        <div class="card-body">
         <hr />
         <div class="exercise-list">
           <div data-base-warmup></div>
@@ -823,7 +855,7 @@
                 <span class="badge warmup-time">3 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Drill:</strong> Dead Hangs (2 sets of 45s)</p>
+            <p class="meta">- <strong>Drill:</strong> Dead hangs — 2 sets × 45 seconds; relax the shoulders</p>
           </div>
           <div class="exercise" data-muscle="back">
             <div class="exercise-row">
@@ -834,7 +866,7 @@
                 <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Volume:</strong> Aim for 3 sets of ~12 clean reps</p>
+            <p class="meta">- <strong>Volume:</strong> 3 sets × ~12 clean reps; full range, no kipping</p>
           </div>
           <div class="exercise" data-muscle="back">
             <div class="exercise-row">
@@ -846,10 +878,9 @@
                 <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Symmetry First:</strong> Always start with the left arm and match reps with the right</p>
-            <p class="meta">- <strong>Chest Glued:</strong> No torso rotation; keep sternum against the pad</p>
-            <p class="meta">- <strong>Hook Grip:</strong> Hands are just hooks; drive the elbow toward the hip</p>
-            <p class="meta">- <strong>Stability:</strong> Grip the machine frame with your free hand</p>
+            <p class="meta">- <strong>Form:</strong> Start with the left arm; match reps on the right for symmetry</p>
+            <p class="meta">- <strong>Cue:</strong> Sternum glued to the pad — pull elbow to hip, hands are just hooks</p>
+            <p class="meta">- <strong>Setup:</strong> Grip the machine frame with your free hand for stability</p>
           </div>
           <div class="exercise" data-muscle="back">
             <div class="exercise-row">
@@ -861,7 +892,8 @@
                 <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Lats Focus:</strong> Pull with elbows; avoid leaning back excessively</p>
+            <p class="meta">- <strong>Focus:</strong> Pull with elbows; avoid leaning back excessively</p>
+            <p class="meta">- <strong>Form:</strong> Squeeze shoulder blades down at the bottom of each rep</p>
           </div>
           <div class="superset" data-muscle="back">
             <div class="superset-head">Superset</div>
@@ -877,8 +909,8 @@
                   <span class="badge rest">10s</span>
                 </div>
               </div>
-              <p class="meta">- <strong>Flat Back:</strong> Keep abs tight; do not arch or "stick your butt out"</p>
-              <p class="meta">- <strong>Fixed Elbows:</strong> Arms slightly bent but locked; pull with the lats</p>
+              <p class="meta">- <strong>Form:</strong> Flat back, abs braced — don't arch or stick hips out</p>
+              <p class="meta">- <strong>Cue:</strong> Slight bend in elbows; pull with lats, not arms</p>
             </div>
             <div class="exercise" data-muscle="biceps">
               <div class="exercise-row">
@@ -892,7 +924,8 @@
                   <span class="badge rest">2 min</span>
                 </div>
               </div>
-              <p class="meta">- <strong>Constant Tension:</strong> Step forward from pulley; full stretch behind</p>
+              <p class="meta">- <strong>Setup:</strong> Step forward from the pulley for constant tension</p>
+              <p class="meta">- <strong>Form:</strong> Full stretch behind the body at the bottom of each rep</p>
             </div>
           </div>
           <div class="exercise" data-muscle="biceps">
@@ -905,7 +938,8 @@
                 <span class="badge rest">1 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Crush Grip:</strong> Squeeze handles to maximize forearm activation</p>
+            <p class="meta">- <strong>Cue:</strong> Crush the handles hard for forearm activation</p>
+            <p class="meta">- <strong>Tempo:</strong> Controlled negatives — no swinging at the shoulder</p>
           </div>
           <div class="exercise" data-muscle="shoulders">
             <div class="exercise-row">
@@ -916,8 +950,8 @@
                 <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Volume:</strong> 3 sets of 12-15 reps</p>
-            <p class="meta">- <strong>Peak:</strong> Hold for 2s at the top</p>
+            <p class="meta">- <strong>Volume:</strong> 3 sets × 12–15 reps</p>
+            <p class="meta">- <strong>Tempo:</strong> 2-second hold at the top of each shrug</p>
           </div>
           <div class="exercise" data-muscle="abs">
             <div class="exercise-row">
@@ -928,10 +962,11 @@
                 <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Finisher:</strong> Ends the day while letting your grip fully stretch out on the bar</p>
-            <p class="meta">- <strong>Pelvic Tilt:</strong> Curl your pelvis toward your chest to engage the lower abs</p>
-            <p class="meta">- <strong>No Swing:</strong> Control the descent to keep tension on the lower abs</p>
+            <p class="meta">- <strong>Purpose:</strong> Finisher — lets your grip stretch while you work abs</p>
+            <p class="meta">- <strong>Form:</strong> Posterior pelvic tilt — curl pelvis toward chest</p>
+            <p class="meta">- <strong>Tempo:</strong> No swinging; control the descent on every rep</p>
           </div>
+        </div>
         </div>
       </section>
 
@@ -947,6 +982,7 @@
             <span class="chip" data-muscle="abs">Abs</span>
           </div>
         </div>
+        <div class="card-body">
         <hr />
         <div class="exercise-list">
           <div data-base-warmup></div>
@@ -959,8 +995,8 @@
                 <span class="badge warmup-time">3 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Drill:</strong> Leg Swings (15 reps)</p>
-            <p class="meta">- <strong>Drill:</strong> Deep Goblet Squat Hold (45s)</p>
+            <p class="meta">- <strong>Drill:</strong> Leg swings — 15 reps per leg, front-to-back and side-to-side</p>
+            <p class="meta">- <strong>Drill:</strong> Deep goblet squat hold — 45 seconds, elbows push knees out</p>
           </div>
           <div class="exercise" data-muscle="legs">
             <div class="exercise-row">
@@ -971,9 +1007,8 @@
                 <span class="badge rest">1.5 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Full Stretch:</strong> Pause for 2s at the bottom to eliminate tendon bounce</p>
-            <p class="meta">- <strong>Peak Contraction:</strong> Squeeze hard at the top; drive through the big toe</p>
-            <p class="meta">- <strong>Tempo:</strong> Explosive on the way up, 3s controlled eccentric</p>
+            <p class="meta">- <strong>Tempo:</strong> 2-second pause at the bottom; explosive up, 3-second eccentric</p>
+            <p class="meta">- <strong>Form:</strong> Squeeze hard at the top; drive through the big toe</p>
           </div>
           <div class="exercise" data-muscle="legs">
             <div class="exercise-row">
@@ -984,7 +1019,7 @@
                 <span class="badge rest">1 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Volume:</strong> Lighter / Higher Reps to flush the muscle with blood</p>
+            <p class="meta">- <strong>Focus:</strong> Lighter weight, high reps — flush the muscle with blood</p>
           </div>
           <div class="exercise" data-muscle="legs">
             <div class="exercise-row">
@@ -995,7 +1030,8 @@
                 <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Full Depth:</strong> Ass to ground without lower back rounding</p>
+            <p class="meta">- <strong>Form:</strong> Full depth — ass to ground without rounding the lower back</p>
+            <p class="meta">- <strong>Cue:</strong> Feet mid-platform; push through heels on the way up</p>
           </div>
           <div class="exercise" data-muscle="legs">
             <div class="exercise-row">
@@ -1007,7 +1043,8 @@
                 <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Peak Contraction:</strong> 1s hold at top; slow controlled eccentric</p>
+            <p class="meta">- <strong>Tempo:</strong> 1-second hold at the top; slow controlled eccentric</p>
+            <p class="meta">- <strong>Focus:</strong> Point toes up at the top to fully contract the quads</p>
           </div>
           <div class="exercise" data-muscle="legs">
             <div class="exercise-row">
@@ -1019,7 +1056,8 @@
                 <span class="badge rest">1 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Hamstrings:</strong> Focus on the back of the legs; don't lean forward</p>
+            <p class="meta">- <strong>Focus:</strong> Feel the hamstrings working — don't lean forward into the pad</p>
+            <p class="meta">- <strong>Tempo:</strong> Pause briefly at the top; control the weight on the way down</p>
           </div>
           <div class="exercise" data-muscle="legs">
             <div class="exercise-row">
@@ -1030,7 +1068,7 @@
                 <span class="badge rest">1 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Target:</strong> Inner thigh &amp; glutes</p>
+            <p class="meta">- <strong>Focus:</strong> Outer hip and glute medius — press knees out against the pads</p>
           </div>
           <div class="exercise" data-muscle="shoulders">
             <div class="exercise-row">
@@ -1041,7 +1079,8 @@
                 <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Equipment:</strong> Use dumbbells or barbell</p>
+            <p class="meta">- <strong>Setup:</strong> Seated on bench at setting 3; dumbbells at shoulder height</p>
+            <p class="meta">- <strong>Form:</strong> Press straight up; don't flare elbows excessively</p>
           </div>
           <div class="exercise" data-muscle="abs">
             <div class="exercise-row">
@@ -1052,9 +1091,10 @@
                 <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Volume:</strong> 3 sets of 15</p>
-            <p class="meta">- <strong>Technique:</strong> Use rope attachment and round your back to crunch</p>
+            <p class="meta">- <strong>Volume:</strong> 3 sets × 15 reps</p>
+            <p class="meta">- <strong>Form:</strong> Rope attachment; round upper back as you crunch down</p>
           </div>
+        </div>
         </div>
       </section>
 
@@ -1072,6 +1112,7 @@
             <span class="chip" data-muscle="forearms">Forearms</span>
           </div>
         </div>
+        <div class="card-body">
         <hr />
         <div class="exercise-list">
           <div data-base-warmup></div>
@@ -1084,7 +1125,7 @@
                 <span class="badge warmup-time">3 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Drill:</strong> Push-ups (15 reps)</p>
+            <p class="meta">- <strong>Drill:</strong> Push-ups — 15 reps, full range, controlled tempo</p>
           </div>
           <div class="exercise" data-muscle="chest">
             <div class="exercise-row">
@@ -1096,7 +1137,8 @@
                 <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Scapular Retraction:</strong> Keep shoulder blades squeezed</p>
+            <p class="meta">- <strong>Form:</strong> Pin shoulder blades back and down before each rep</p>
+            <p class="meta">- <strong>Cue:</strong> Drive feet into the floor; touch chest to the bar</p>
           </div>
           <div class="exercise" data-muscle="back">
             <div class="exercise-row">
@@ -1108,7 +1150,8 @@
                 <span class="badge rest">3 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Volume:</strong> To failure</p>
+            <p class="meta">- <strong>Volume:</strong> Work to failure — every rep counts</p>
+            <p class="meta">- <strong>Form:</strong> Full hang at the bottom; chin clears the bar at the top</p>
           </div>
           <div class="exercise" data-muscle="chest">
             <div class="exercise-row">
@@ -1120,7 +1163,8 @@
                 <span class="badge rest">2 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Equipment:</strong> Machine or cable</p>
+            <p class="meta">- <strong>Setup:</strong> Machine or cable — whichever gives the best stretch</p>
+            <p class="meta">- <strong>Focus:</strong> Squeeze chest at the top; don't let shoulders roll forward</p>
           </div>
           <div class="superset" data-muscle="triceps">
             <div class="superset-head">Superset</div>
@@ -1136,7 +1180,8 @@
                   <span class="badge rest">15s</span>
                 </div>
               </div>
-              <p class="meta">- <strong>Setup:</strong> Set pulley low; focus on deep stretch behind the head</p>
+              <p class="meta">- <strong>Setup:</strong> Low pulley; rope or bar behind the head</p>
+              <p class="meta">- <strong>Focus:</strong> Deep stretch at the bottom of each rep</p>
             </div>
             <div class="exercise" data-muscle="triceps">
               <div class="exercise-row">
@@ -1150,8 +1195,8 @@
                   <span class="badge rest">1.5 min</span>
                 </div>
               </div>
-              <p class="meta">- <strong>Setup:</strong> Move pulley to the top</p>
-              <p class="meta">- <strong>Technique:</strong> Flare the rope apart at the bottom</p>
+              <p class="meta">- <strong>Setup:</strong> High pulley with rope attachment</p>
+              <p class="meta">- <strong>Form:</strong> Split the rope apart at full extension</p>
             </div>
           </div>
           <div class="superset" data-muscle="biceps">
@@ -1168,7 +1213,7 @@
                   <span class="badge rest">15s</span>
                 </div>
               </div>
-              <p class="meta">- <strong>Technique:</strong> Standard sets, clean reps with controlled negatives</p>
+              <p class="meta">- <strong>Form:</strong> Clean reps with controlled negatives — no body English</p>
             </div>
             <div class="exercise" data-muscle="waist">
               <div class="exercise-row">
@@ -1183,7 +1228,7 @@
                 </div>
               </div>
               <p class="meta">- <strong>Volume:</strong> Hold until failure</p>
-              <p class="meta">- <strong>Technique:</strong> Pull belly button in</p>
+              <p class="meta">- <strong>Cue:</strong> Pull belly button in; maintain a straight line head to heels</p>
             </div>
           </div>
           <div class="exercise" data-muscle="forearms">
@@ -1195,11 +1240,23 @@
                 <span class="badge rest">1 min</span>
               </div>
             </div>
-            <p class="meta">- <strong>Volume:</strong> 3 sets of 15</p>
-            <p class="meta">- <strong>Grip:</strong> Overhand grip</p>
+            <p class="meta">- <strong>Volume:</strong> 3 sets × 15 reps</p>
+            <p class="meta">- <strong>Grip:</strong> Overhand (pronated) throughout the movement</p>
           </div>
         </div>
+        </div>
       </section>
+    </div>
+
+    <div class="page-footer">
+      <img
+        class="page-footer__icon"
+        src="/assets/img/weight-plate.png"
+        alt=""
+        width="283"
+        height="311"
+        decoding="async"
+      />
     </div>
     </main>
     <button type="button" class="show-all-btn" id="show-all">
@@ -1211,9 +1268,15 @@
         slot.replaceWith(baseWarmupTemplate.content.cloneNode(true));
       });
 
-      const exercises = Array.from(document.querySelectorAll(".exercise"));
-      const showAllButton = document.querySelector("#show-all");
+      const cards = [...document.querySelectorAll(".card")];
+      const exercises = [...document.querySelectorAll(".exercise")];
+      const showAllButton = document.getElementById("show-all");
       const isToggleKey = (key) => key === "Enter" || key === " ";
+
+      const setCardOpen = (card, isOpen) => {
+        card.classList.toggle("is-open", isOpen);
+        card.querySelector(".session-head")?.setAttribute("aria-expanded", String(isOpen));
+      };
 
       const setExerciseOpen = (exercise, isOpen) => {
         exercise.classList.toggle("is-open", isOpen);
@@ -1222,64 +1285,62 @@
 
       const getSupersetExercises = (exercise) => {
         const superset = exercise.closest(".superset");
-        return superset ? Array.from(superset.querySelectorAll(".exercise")) : [exercise];
+        return superset ? [...superset.querySelectorAll(".exercise")] : [exercise];
       };
 
-      const closeAllExercises = () => {
-        exercises.forEach((exercise) => {
-          setExerciseOpen(exercise, false);
-        });
-      };
+      const setAllCards = (isOpen) => cards.forEach((card) => setCardOpen(card, isOpen));
+      const setAllExercises = (isOpen) => exercises.forEach((exercise) => setExerciseOpen(exercise, isOpen));
 
-      const openAllExercises = () => {
-        exercises.forEach((exercise) => {
-          setExerciseOpen(exercise, true);
-        });
-      };
-
-      const areAllExercisesOpen = () =>
+      const areAllOpen = () =>
+        cards.every((card) => card.classList.contains("is-open")) &&
         exercises.every((exercise) => exercise.classList.contains("is-open"));
 
       const updateShowAllButtonLabel = () => {
-        showAllButton.textContent = areAllExercisesOpen() ? "Hide all" : "Show all";
+        showAllButton.textContent = areAllOpen() ? "Hide all" : "Show all";
       };
 
-      exercises.forEach((exercise) => {
-        exercise.setAttribute("tabindex", "0");
-        exercise.setAttribute("role", "button");
-        exercise.setAttribute("aria-expanded", "false");
-
-        const toggleExercise = () => {
-          const groupExercises = getSupersetExercises(exercise);
-          const shouldOpen =
-            groupExercises.length > 1
-              ? !groupExercises.every((groupExercise) =>
-                  groupExercise.classList.contains("is-open"),
-                )
-              : !exercise.classList.contains("is-open");
-
-          closeAllExercises();
-          if (shouldOpen) {
-            groupExercises.forEach((groupExercise) => setExerciseOpen(groupExercise, true));
-          }
-
-          updateShowAllButtonLabel();
-        };
-
-        exercise.addEventListener("click", toggleExercise);
-        exercise.addEventListener("keydown", (event) => {
+      const bindToggle = (element, onToggle) => {
+        element.setAttribute("tabindex", "0");
+        element.setAttribute("role", "button");
+        element.setAttribute("aria-expanded", "false");
+        element.addEventListener("click", onToggle);
+        element.addEventListener("keydown", (event) => {
           if (!isToggleKey(event.key)) return;
           event.preventDefault();
-          toggleExercise();
+          onToggle();
+        });
+      };
+
+      cards.forEach((card) => {
+        const toggle = card.querySelector(".session-head");
+        if (!toggle) return;
+
+        bindToggle(toggle, () => {
+          const shouldOpen = !card.classList.contains("is-open");
+          setAllCards(false);
+          if (shouldOpen) setCardOpen(card, true);
+          updateShowAllButtonLabel();
+        });
+      });
+
+      exercises.forEach((exercise) => {
+        bindToggle(exercise, () => {
+          const group = getSupersetExercises(exercise);
+          const shouldOpen =
+            group.length > 1
+              ? !group.every((item) => item.classList.contains("is-open"))
+              : !exercise.classList.contains("is-open");
+
+          setAllExercises(false);
+          if (shouldOpen) group.forEach((item) => setExerciseOpen(item, true));
+          updateShowAllButtonLabel();
         });
       });
 
       showAllButton.addEventListener("click", () => {
-        if (areAllExercisesOpen()) {
-          closeAllExercises();
-        } else {
-          openAllExercises();
-        }
+        const open = !areAllOpen();
+        setAllCards(open);
+        setAllExercises(open);
         updateShowAllButtonLabel();
       });
 
