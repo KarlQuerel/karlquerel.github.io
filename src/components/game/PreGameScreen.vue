@@ -31,8 +31,8 @@
 		justify-content: center;
 		align-items: center;
 		z-index: 2000;
-		height: 100vh;
-		width: 100vw;
+		height: 100%;
+		width: 100%;
 	}
 
 	.pre-game-content {

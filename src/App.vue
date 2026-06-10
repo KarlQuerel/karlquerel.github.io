@@ -1,45 +1,41 @@
 <template>
-	<!-- Centralized container -->
-	<div id="app">
-		<RetroNavbar v-if="shouldShowRetroNavbar" />
-		<router-view />
-		<RetroFooter />
+	<div id="app" :class="{ 'app--scrollable': isPageScrollable }">
+		<SiteNavbar v-if="shouldShowSiteNavbar" />
+		<main class="app-main">
+			<router-view />
+		</main>
+		<SiteFooter />
 	</div>
 </template>
 
-<script>
-	import { ref, provide, computed } from 'vue'
+<script setup>
+	import { computed, onBeforeUnmount, watch } from 'vue'
 	import { useRoute } from 'vue-router'
-	import RetroNavbar from './components/retroNavbar.vue'
-	import RetroFooter from './components/retroFooter.vue'
+	import SiteNavbar from './components/SiteNavbar.vue'
+	import SiteFooter from './components/SiteFooter.vue'
 
-	export default {
-		name: 'App',
-		components: {
-			RetroNavbar,
-			RetroFooter,
-		},
-		setup() {
-			const route = useRoute()
-			const isFooterVisible = ref(true)
-			const shouldShowRetroNavbar = computed(() => route.path !== '/test')
+	const SCROLLABLE_PATHS = ['/test']
 
-			provide('footerVisibility', {
-				isVisible: isFooterVisible,
-				toggleFooter: () => {
-					isFooterVisible.value = !isFooterVisible.value
-				},
-				hideFooter: () => {
-					isFooterVisible.value = false
-				},
-				showFooter: () => {
-					isFooterVisible.value = true
-				},
-			})
+	const route = useRoute()
+	const shouldShowSiteNavbar = computed(() => route.path !== '/test')
+	const isPageScrollable = computed(() => SCROLLABLE_PATHS.includes(route.path))
 
-			return {
-				shouldShowRetroNavbar,
+	function syncPageScrollClass(scrollable) {
+		document.documentElement.classList.toggle('page-scrollable', scrollable)
+	}
+
+	watch(
+		isPageScrollable,
+		scrollable => {
+			syncPageScrollClass(scrollable)
+			if (!scrollable) {
+				window.scrollTo(0, 0)
 			}
 		},
-	}
+		{ immediate: true },
+	)
+
+	onBeforeUnmount(() => {
+		document.documentElement.classList.remove('page-scrollable')
+	})
 </script>

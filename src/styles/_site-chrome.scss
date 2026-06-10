@@ -1,0 +1,122 @@
+:root {
+	--site-chrome-bar-height: 3rem;
+}
+
+.site-chrome-bar {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.4rem 1rem 0.35rem;
+	min-height: var(--site-chrome-bar-height);
+	background: rgba(0, 0, 0, 0.94);
+	border-top: 1px solid rgba(255, 255, 255, 0.2);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+	overflow: hidden;
+}
+
+.site-chrome-bar--sticky-top {
+	position: sticky;
+	top: 0;
+	z-index: 40;
+}
+
+.site-chrome-bar--fixed-bottom {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	z-index: 40;
+}
+
+.site-chrome-links {
+	display: flex;
+	flex-wrap: nowrap;
+	width: 100%;
+	justify-content: center;
+	align-items: center;
+	column-gap: clamp(0.8rem, 2vw, 1.5rem);
+	row-gap: 0.35rem;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scrollbar-width: none;
+	position: relative;
+	z-index: 3;
+}
+
+.site-chrome-links::-webkit-scrollbar {
+	display: none;
+}
+
+.site-chrome-link {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: rgba(255, 255, 255, 0.88);
+	font-size: clamp(0.52rem, 1.15vw, 0.64rem);
+	line-height: 1.2;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	text-decoration: none;
+	padding: 0.35rem 0.2rem;
+	transition:
+		color 0.2s ease,
+		opacity 0.2s ease;
+}
+
+.site-chrome-link::after {
+	content: '';
+	position: absolute;
+	left: 0.2rem;
+	right: 0.2rem;
+	bottom: 0.15rem;
+	height: 1px;
+	background: currentColor;
+	transform: scaleX(0);
+	transform-origin: left center;
+	transition: transform 0.2s ease;
+}
+
+.site-chrome-link:hover,
+.site-chrome-link:focus-visible,
+.site-chrome-link.router-link-active {
+	color: #ffffff;
+	opacity: 1;
+}
+
+.site-chrome-link:hover::after,
+.site-chrome-link:focus-visible::after,
+.site-chrome-link.router-link-active::after {
+	transform: scaleX(1);
+}
+
+.site-chrome-link:focus-visible {
+	outline: 2px solid rgba(255, 255, 255, 0.8);
+	outline-offset: 2px;
+}
+
+.site-chrome-copyright {
+	color: rgba(255, 255, 255, 0.88);
+	font-size: clamp(0.52rem, 1.15vw, 0.64rem);
+	line-height: 1.2;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	white-space: nowrap;
+	padding: 0.35rem 0.2rem;
+}
+
+@media (max-width: 640px) {
+	.site-chrome-links {
+		padding: 0.35rem 0.75rem;
+	}
+
+	.site-chrome-link {
+		font-size: clamp(0.5rem, 2.4vw, 0.58rem);
+		padding: 0.3rem 0.12rem;
+	}
+
+	.site-chrome-copyright {
+		font-size: clamp(0.5rem, 2.4vw, 0.58rem);
+		padding: 0.3rem 0.12rem;
+	}
+}

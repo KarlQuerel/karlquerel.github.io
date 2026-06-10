@@ -16,16 +16,7 @@
 		>
 			<img class="sr-only-preload" alt="" :src="headerGif.src" />
 		</template>
-		<nav class="test-page-navbar" aria-label="Test page navigation">
-			<div class="test-page-navbar-links">
-				<router-link to="/" class="test-page-nav-link">Home</router-link>
-				<router-link to="/game" class="test-page-nav-link">Game</router-link>
-				<router-link to="/under_construction" class="test-page-nav-link">
-					Coming Soon
-				</router-link>
-				<router-link to="/contact" class="test-page-nav-link">Contact</router-link>
-			</div>
-		</nav>
+		<SiteNavbar />
 
 		<section
 			ref="pinWrapperRef"
@@ -83,6 +74,7 @@
 
 <script setup>
 	import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+	import SiteNavbar from './SiteNavbar.vue'
 
 	const STAGE_CLEAR_COLOR = '#000000'
 
@@ -721,89 +713,6 @@
 		}
 	}
 
-	.test-page-navbar {
-		width: 100%;
-		position: sticky;
-		top: 0;
-		z-index: 40;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.4rem 1rem 0.35rem;
-		min-height: 3rem;
-		background: rgba(0, 0, 0, 0.94);
-		border-top: 1px solid rgba(255, 255, 255, 0.2);
-		border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-		overflow: hidden;
-	}
-
-	.test-page-navbar-links {
-		display: flex;
-		flex-wrap: nowrap;
-		width: 100%;
-		justify-content: center;
-		align-items: center;
-		column-gap: clamp(0.8rem, 2vw, 1.5rem);
-		row-gap: 0.35rem;
-		overflow-x: auto;
-		overflow-y: hidden;
-		scrollbar-width: none;
-		position: relative;
-		z-index: 3;
-	}
-
-	.test-page-navbar-links::-webkit-scrollbar {
-		display: none;
-	}
-
-	.test-page-nav-link {
-		position: relative;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		color: rgba(255, 255, 255, 0.88);
-		font-size: clamp(0.52rem, 1.15vw, 0.64rem);
-		line-height: 1.2;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		text-decoration: none;
-		padding: 0.35rem 0.2rem;
-		transition:
-			color 0.2s ease,
-			opacity 0.2s ease;
-	}
-
-	.test-page-nav-link::after {
-		content: '';
-		position: absolute;
-		left: 0.2rem;
-		right: 0.2rem;
-		bottom: 0.15rem;
-		height: 1px;
-		background: currentColor;
-		transform: scaleX(0);
-		transform-origin: left center;
-		transition: transform 0.2s ease;
-	}
-
-	.test-page-nav-link:hover,
-	.test-page-nav-link:focus-visible,
-	.test-page-nav-link.router-link-active {
-		color: #ffffff;
-		opacity: 1;
-	}
-
-	.test-page-nav-link:hover::after,
-	.test-page-nav-link:focus-visible::after,
-	.test-page-nav-link.router-link-active::after {
-		transform: scaleX(1);
-	}
-
-	.test-page-nav-link:focus-visible {
-		outline: 2px solid rgba(255, 255, 255, 0.8);
-		outline-offset: 2px;
-	}
-
 	/* Scroll “track”: tall section so window scroll maps to dissolve progress (see pinWrapperHeightVh). */
 	.pin-wrapper {
 		position: relative;
@@ -812,7 +721,6 @@
 
 	/* Sticky viewport: stays on screen while you scroll through .pin-wrapper; stage stays centered. */
 	.pixel-transition-page {
-		--test-page-nav-height: 3rem;
 		width: 100%;
 		align-self: stretch;
 		flex: none;
@@ -822,8 +730,8 @@
 
 	.pin-inner {
 		position: sticky;
-		top: var(--test-page-nav-height);
-		min-height: calc(100vh - var(--test-page-nav-height));
+		top: var(--site-chrome-bar-height);
+		min-height: calc(100vh - var(--site-chrome-bar-height));
 		display: grid;
 		align-items: center;
 		padding: 1.5rem;
@@ -1027,15 +935,6 @@
 
 		.test-page-header-gif {
 			width: clamp(96px, 30vw, 150px);
-		}
-
-		.test-page-navbar-links {
-			padding: 0.35rem 0.75rem;
-		}
-
-		.test-page-nav-link {
-			font-size: clamp(0.5rem, 2.4vw, 0.58rem);
-			padding: 0.3rem 0.12rem;
 		}
 
 		.pin-inner {

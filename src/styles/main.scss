@@ -2,6 +2,7 @@
 @use 'nes.css/css/nes.min.css';
 @use 'variables';
 @use 'layout';
+@use 'site-chrome';
 @use 'buttons';
 @use 'animations';
 @use 'particles';
@@ -22,11 +23,9 @@ input[type='submit'],
 [role='button'],
 .clickable,
 .menu-buttons button,
-.nav-links a,
-.logo,
+.site-chrome-link,
 .credits-modal button,
 .terminal-link,
-.share a,
 .contact-link {
 	cursor: url('/assets/img/custom-cursor.png'), auto !important;
 }

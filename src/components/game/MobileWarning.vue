@@ -32,7 +32,7 @@
 <style lang="scss" scoped>
 	.mobile-message {
 		position: fixed;
-		top: 10vh;
+		top: var(--site-chrome-bar-height);
 		left: 0;
 		width: 100vw;
 		height: 90vh;

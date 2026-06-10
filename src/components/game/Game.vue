@@ -1,5 +1,5 @@
 <template>
-	<div>
+	<div class="game-page">
 		<MobileWarning ref="mobileWarningRef" />
 		<template v-if="!isMobile">
 			<!-- Loading Screen -->
@@ -11,7 +11,7 @@
 			/>
 
 			<!-- Game Content (only show after loading) -->
-			<div v-if="!isLoading" style="overflow: hidden; height: 100vh">
+			<div v-if="!isLoading" class="game-viewport">
 				<PreGameScreen
 					v-if="!showGame"
 					:show-game="showGame"
@@ -125,6 +125,20 @@
 </script>
 
 <style lang="scss" scoped>
+	.game-page {
+		flex: 1 1 auto;
+		min-height: 0;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.game-viewport {
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow: hidden;
+	}
+
 	.game-container {
 		position: fixed;
 		top: 0;

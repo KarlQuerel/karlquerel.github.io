@@ -3,7 +3,7 @@
 		<template v-for="src in PRELOAD_GIF_SRCS" :key="`preload-${src}`">
 			<img class="sr-only-preload" alt="" :src="src" />
 		</template>
-		<div class="content contact-content">
+		<div class="content">
 			<div class="nes-container is-dark is-rounded contact-panel">
 				<h1 class="contact-heading">Contact</h1>
 				<img
@@ -78,13 +78,7 @@
 	.contact-page {
 		position: relative;
 		width: 100%;
-		min-height: 100vh;
 		box-sizing: border-box;
-	}
-
-	.contact-content {
-		padding-top: 14vh;
-		padding-bottom: 14vh;
 	}
 
 	.contact-panel {
