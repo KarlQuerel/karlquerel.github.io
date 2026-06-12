@@ -1,12 +1,10 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useVisitTracker } from './useVisitTracker'
 
-export function useTerminalCommands() {
+export function useTerminalCommands({ getVisitStats, loadVisitData }) {
 	const router = useRouter()
 	const terminalHistory = ref([])
 	const isExecutingScript = ref(false)
-	const { getVisitStats, loadVisitData } = useVisitTracker()
 
 	const handleStatsCommand = async () => {
 		await loadVisitData()

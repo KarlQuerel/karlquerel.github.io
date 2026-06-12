@@ -203,20 +203,6 @@
 	}
 
 	//HERE FOR THE CONTINUE BUTTON
-	@keyframes PulseAnimation {
-		0% {
-			text-shadow: 0 0 10px $black;
-			transform: scale(1);
-		}
-		50% {
-			text-shadow: 0 0 20px $black;
-			transform: scale(1.01);
-		}
-		100% {
-			text-shadow: 0 0 10px $black;
-			transform: scale(1);
-		}
-	}
 
 	//HERE TO REMOVE AND REPLACE WITH THE CONTINUE BUTTON
 	.coming-soon {

@@ -51,8 +51,8 @@
 		padding: 3rem;
 		background: rgba(0, 0, 0, 0.8);
 		border-radius: 15px;
-		border: 3px solid $retro-green;
-		box-shadow: 0 0 50px $retro-green;
+		border: 3px solid $light-gray;
+		box-shadow: 0 0 50px $light-gray;
 		max-width: 500px;
 		width: 90%;
 	}
@@ -69,7 +69,7 @@
 		width: 100%;
 		height: 20px;
 		background: rgba(0, 0, 0, 0.5);
-		border: 2px solid $retro-green;
+		border: 2px solid $light-gray;
 		border-radius: 10px;
 		overflow: hidden;
 		margin-bottom: 1rem;
@@ -77,13 +77,13 @@
 
 	.loading-bar {
 		height: 100%;
-		background: linear-gradient(90deg, $retro-green, $yellow);
+		background: linear-gradient(90deg, $light-gray, $yellow);
 		transition: width 0.3s ease;
 		border-radius: 8px;
 	}
 
 	.loading-text {
-		color: $retro-green;
+		color: $light-gray;
 		font-size: 1.2rem;
 		margin-bottom: 0.5rem;
 		font-weight: bold;

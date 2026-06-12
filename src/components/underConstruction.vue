@@ -32,8 +32,8 @@
 	}
 
 	.nes-container.is-dark {
-		background-color: rgba(0, 0, 0, 0.5) !important;
-		border: 0.1vh solid $retro-green !important;
+		background-color: rgba(255, 255, 255, 0.1) !important;
+		border: 0.1vh solid $light-gray !important;
 		border-radius: 20px !important;
 		margin-bottom: 1rem !important;
 		text-transform: uppercase !important;

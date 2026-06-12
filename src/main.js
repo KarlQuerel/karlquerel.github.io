@@ -6,12 +6,17 @@ import App from './App.vue'
 import SecretRedirect from './components/secretRedirect.vue'
 import NotFound from './components/notFound.vue'
 import UnderConstruction from './components/underConstruction.vue'
-import Home from './components/home.vue'
-import './js/firebase-setup.js'
 
 /***	ROUTES		***/
 const routes = [
-	{ path: '/', component: Home },
+	{
+		path: '/',
+		component: () => import('./components/pixelTransition.vue'),
+	},
+	{
+		path: '/terminal',
+		component: () => import('./components/home.vue'),
+	},
 	{ path: '/under_construction', component: UnderConstruction },
 	{ path: '/secret_link', component: SecretRedirect },
 	{
@@ -19,12 +24,12 @@ const routes = [
 		component: () => import('./components/game/Game.vue'),
 	},
 	{
-		path: '/test',
-		component: () => import('./components/pixelTransition.vue'),
-	},
-	{
 		path: '/contact',
 		component: () => import('./components/Contact.vue'),
+	},
+	{
+		path: '/sport',
+		component: () => import('./components/sport/SportPage.vue'),
 	},
 	{ path: '/:pathMatch(.*)*', component: NotFound },
 ]

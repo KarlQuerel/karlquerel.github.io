@@ -48,10 +48,7 @@
 		padding: 2rem;
 		background: rgba(0, 0, 0, 0.9);
 		border-radius: 15px;
-		border: 3px solid $retro-green;
-		box-shadow:
-			0 0 50px $retro-green,
-			inset 0 0 20px rgba(0, 255, 0, 0.1);
+		border: 3px solid $light-gray;
 		max-width: 80%;
 
 		h2 {

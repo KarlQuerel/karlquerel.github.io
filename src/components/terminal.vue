@@ -111,8 +111,10 @@
 	const terminalBody = ref(null)
 	const terminalInput = ref(null)
 
+	const { trackCommand, trackVisit, getVisitStats, loadVisitData } = useVisitTracker()
+
 	const { commands, availableFiles, executableScripts, terminalHistory, executeCommand } =
-		useTerminalCommands()
+		useTerminalCommands({ getVisitStats, loadVisitData })
 
 	const {
 		welcomeTextRef,
@@ -121,8 +123,6 @@
 		createCommandTypewriter,
 		typewriterSpeed,
 	} = useTerminalTypewriter()
-
-	const { trackCommand, trackVisit } = useVisitTracker()
 
 	const originalExecuteCommand = executeCommand
 	const enhancedExecuteCommand = async input => {
@@ -264,12 +264,9 @@
 	.terminal-window {
 		width: 100%;
 		height: 80vh;
-		background: rgba(0, 0, 0, 0.5);
-		border: 0.1vh solid $retro-green;
+		background: rgba(255, 255, 255, 0.1);
+		border: 0.1vh solid $light-gray;
 		border-radius: 10px;
-		box-shadow:
-			0 0 100px $retro-green,
-			inset 0 0 20px rgba(0, 255, 0, 0.1);
 		overflow: hidden;
 		position: relative;
 	}
@@ -277,7 +274,7 @@
 	.terminal-header {
 		background: rgba(100, 100, 100, 0.5);
 
-		border-bottom: 0.1vh solid $retro-green;
+		border-bottom: 0.1vh solid $light-gray;
 		padding: 0.5rem 1rem;
 		display: flex;
 		align-items: center;
@@ -307,7 +304,7 @@
 	}
 
 	.terminal-title {
-		color: $retro-green;
+		color: $light-gray;
 		font-size: 0.7rem;
 		text-transform: uppercase;
 		letter-spacing: 1px;
@@ -327,7 +324,7 @@
 		}
 
 		&::-webkit-scrollbar-thumb {
-			background: $retro-green;
+			background: $light-gray;
 			border-radius: 4px;
 		}
 	}

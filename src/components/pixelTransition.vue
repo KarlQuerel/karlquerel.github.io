@@ -16,7 +16,9 @@
 		>
 			<img class="sr-only-preload" alt="" :src="headerGif.src" />
 		</template>
-		<SiteNavbar />
+		<div class="landing-navbar-sticky">
+			<SiteNavbar />
+		</div>
 
 		<section
 			ref="pinWrapperRef"
@@ -55,7 +57,9 @@
 
 		<section class="outro">
 			<p>Scroll back up to reverse the transition.</p>
-			<router-link to="/" class="back-link nes-btn is-primary">Home</router-link>
+			<button type="button" class="back-link nes-btn is-primary" @click="scrollToTop">
+				Back to top
+			</button>
 		</section>
 
 		<template v-for="(src, index) in IMAGE_CHAIN" :key="`pixel-chain-${index}`">
@@ -92,19 +96,17 @@
 	const RUNNING_SPEED_PX_PER_SEC = 196
 	const WALKING_SPEED_PX_PER_SEC = 156
 
-	const IMAGE_CHAIN = ['/assets/test/1.png', '/assets/test/2.png', '/assets/test/3.png', '', '']
+	const IMAGE_CHAIN = ['/assets/test/1.png', '/assets/test/2.png', '/assets/test/3.png']
 
 	const IMAGE_CAPTIONS = [
 		'First frame: quiet signal before the dissolve begins.',
 		'Second frame: texture stacks and the grid wakes up.',
 		'Third frame: color finds its footing in the noise.',
-		'',
-		'',
 	]
 
 	const SCRAMBLE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789#%&*+=?/@'
 
-	const ACTIVE_IMAGE_INDICES = IMAGE_CHAIN.map((src, i) => (src ? i : -1)).filter(i => i >= 0)
+	const ACTIVE_IMAGE_INDICES = IMAGE_CHAIN.map((_, i) => i)
 	const EXPECTED_IMAGE_LOADS = ACTIVE_IMAGE_INDICES.length
 	const PIN_WRAPPER_BASE_VH = 280
 	const PIN_WRAPPER_PER_TRANSITION_VH = 240
@@ -126,7 +128,6 @@
 	const viewportWidthPx = ref(typeof window !== 'undefined' ? window.innerWidth : 1280)
 	const headerGifStyle = computed(() => {
 		const isRightToLeft = activeHeaderGifDirection.value === 'rtl'
-		const isWalkingGif = activeHeaderGifKind.value === 'walk'
 		const baseWidth = getHeaderGifBaseWidthPx()
 		const ltrFromPx = -Math.ceil(baseWidth * 2 / 2)
 		const ltrToPx = Math.ceil(viewportWidthPx.value)
@@ -531,6 +532,10 @@
 		lastRevealCount = transition.revealCount
 	}
 
+	function scrollToTop() {
+		window.scrollTo({ top: 0, behavior: 'smooth' })
+	}
+
 	function onScroll() {
 		if (rafScroll) return
 		rafScroll = requestAnimationFrame(() => {
@@ -682,6 +687,18 @@
 </script>
 
 <style lang="scss" scoped>
+	.landing-navbar-sticky {
+		position: sticky;
+		top: 0;
+		z-index: 50;
+		width: 100%;
+	}
+
+	.landing-navbar-sticky :deep(.site-chrome-bar) {
+		position: static;
+		top: auto;
+	}
+
 	.test-page-header {
 		position: relative;
 		width: 100%;
@@ -719,7 +736,7 @@
 		width: 100%;
 	}
 
-	/* Sticky viewport: stays on screen while you scroll through .pin-wrapper; stage stays centered. */
+	/* Scroll "track": tall section so window scroll maps to dissolve progress (see pinWrapperHeightVh). */
 	.pixel-transition-page {
 		width: 100%;
 		align-self: stretch;

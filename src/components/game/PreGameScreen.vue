@@ -40,10 +40,7 @@
 		padding: 3rem;
 		background: $black;
 		border-radius: 15px;
-		border: 3px solid $retro-green;
-		box-shadow:
-			0 0 50px $retro-green,
-			inset 0 0 20px rgba(0, 255, 0, 0.1);
+		border: 3px solid $light-gray;
 		max-width: 100%;
 		position: absolute;
 		top: 50%;
@@ -59,16 +56,16 @@
 	}
 
 	.highlight {
-		color: $retro-green;
+		color: $light-gray;
 		font-weight: bold;
 	}
 
 	.pixel-button {
 		font-size: 1.2rem;
 		width: 50%;
-		color: $retro-green;
+		color: $light-gray;
 		background: rgba(0, 0, 0, 0.7);
-		border: 3px solid $retro-green;
+		border: 3px solid $light-gray;
 		transition: all 0.3s ease;
 		text-transform: uppercase;
 		position: relative;
@@ -76,7 +73,7 @@
 		border-radius: 10px;
 
 		&:hover {
-			background: $retro-green;
+			background: $light-gray;
 			color: $black;
 			transform: scale(1.1);
 		}

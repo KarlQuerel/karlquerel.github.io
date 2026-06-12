@@ -1,5 +1,5 @@
 <template>
-	<div id="app" :class="{ 'app--scrollable': isPageScrollable }">
+	<div class="app-root">
 		<SiteNavbar v-if="shouldShowSiteNavbar" />
 		<main class="app-main">
 			<router-view />
@@ -14,20 +14,23 @@
 	import SiteNavbar from './components/SiteNavbar.vue'
 	import SiteFooter from './components/SiteFooter.vue'
 
-	const SCROLLABLE_PATHS = ['/test']
+	const SCROLLABLE_PATHS = ['/', '/sport']
+	const LANDING_PATH = '/'
 
 	const route = useRoute()
-	const shouldShowSiteNavbar = computed(() => route.path !== '/test')
-	const isPageScrollable = computed(() => SCROLLABLE_PATHS.includes(route.path))
-
-	function syncPageScrollClass(scrollable) {
-		document.documentElement.classList.toggle('page-scrollable', scrollable)
-	}
+	const shouldShowSiteNavbar = computed(() => {
+		const path = route.path.replace(/\/$/, '') || '/'
+		return path !== LANDING_PATH
+	})
+	const isPageScrollable = computed(() => {
+		const path = route.path.replace(/\/$/, '') || '/'
+		return SCROLLABLE_PATHS.includes(path)
+	})
 
 	watch(
 		isPageScrollable,
 		scrollable => {
-			syncPageScrollClass(scrollable)
+			document.documentElement.classList.toggle('page-scrollable', scrollable)
 			if (!scrollable) {
 				window.scrollTo(0, 0)
 			}

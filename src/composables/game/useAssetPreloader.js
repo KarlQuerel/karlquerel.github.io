@@ -57,10 +57,6 @@ export function useAssetPreloader() {
 		}
 	}
 
-	const getLoadingPercentage = () => {
-		return loadingProgress.value
-	}
-
 	const isPreloadingComplete = () => {
 		return !isLoading.value && loadedAssets.value === totalAssets.value
 	}
@@ -71,7 +67,6 @@ export function useAssetPreloader() {
 		totalAssets,
 		loadedAssets,
 		preloadAssets,
-		getLoadingPercentage,
 		isPreloadingComplete,
 	}
 }
