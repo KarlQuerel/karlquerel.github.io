@@ -1,15 +1,20 @@
 <template>
 	<section ref="trackRef" class="hero-track" :style="{ height: trackHeight }">
 		<div class="hero-pin">
-			<p :key="activeIndex" class="hero-line">
+			<p class="hero-line" aria-hidden="true">
 				<span
-					v-for="(segment, i) in activeLine"
-					:key="i"
-					:class="['hero-segment', { 'hero-accent': segment.accent }]"
-					>{{ segment.text }}</span
+					v-for="(cell, i) in cells"
+					:key="i + ':' + cell.glyph"
+					class="flap-char"
+					:class="{
+						'flap-char--accent': cell.accent,
+						'flap-char--settled': cell.settled,
+					}"
+					>{{ cell.glyph }}</span
 				>
 				<span class="hero-cursor" aria-hidden="true">_</span>
 			</p>
+			<span class="sr-only">{{ lineText }}</span>
 
 			<div class="hero-progress" aria-hidden="true">
 				<span
@@ -36,6 +41,7 @@
 	import { computed, ref } from 'vue'
 	import { HERO_LINES } from '../data/heroLines.js'
 	import { useScrollSections } from '../composables/useScrollSections.js'
+	import { useSplitFlap } from '../composables/useSplitFlap.js'
 
 	const trackRef = ref(null)
 	const { activeIndex } = useScrollSections(trackRef, HERO_LINES.length)
@@ -45,6 +51,10 @@
 	const trackHeight = `${(HERO_LINES.length + 1) * 100}vh`
 
 	const activeLine = computed(() => HERO_LINES[activeIndex.value] ?? [])
+	const { cells } = useSplitFlap(activeLine)
+
+	// Plain-text label for assistive tech — the flap glyphs are decorative.
+	const lineText = computed(() => activeLine.value.map(segment => segment.text).join(''))
 </script>
 
 <style scoped lang="scss">
@@ -76,15 +86,35 @@
 		line-height: 1.4;
 		letter-spacing: -0.01em;
 		color: variables.$white;
-		// Stepped glitch reveal — replays on each swap via :key="activeIndex".
-		animation: heroLineIn 0.32s steps(4, end) both;
+		// Each character is its own span: preserve spaces and allow wrapping.
+		white-space: pre-wrap;
+		word-break: break-word;
 	}
 
-	.hero-segment {
-		display: inline;
+	.flap-char {
+		display: inline-block;
+		// Stepped mechanical flap replayed on each glyph change via the span :key.
+		animation: flapTick 45ms steps(2, end);
 	}
 
-	.hero-accent {
+	.flap-char--settled {
+		animation: none;
+		transform: none;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.flap-char--accent {
 		font-family: 'Press Start 2P', ui-monospace, monospace;
 		color: variables.$retro-green;
 		// Slightly smaller because Press Start 2P runs visually larger than the body font.
@@ -140,14 +170,12 @@
 		animation: heroHintBob 1s steps(3, end) infinite;
 	}
 
-	@keyframes heroLineIn {
+	@keyframes flapTick {
 		0% {
-			opacity: 0;
-			clip-path: inset(0 0 100% 0);
+			transform: translateY(-12%);
 		}
 		100% {
-			opacity: 1;
-			clip-path: inset(0 0 0 0);
+			transform: translateY(0);
 		}
 	}
 
@@ -186,7 +214,7 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.hero-line,
+		.flap-char,
 		.hero-cursor,
 		.hero-hint-arrow {
 			animation: none;
