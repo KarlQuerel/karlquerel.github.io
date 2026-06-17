@@ -23,6 +23,8 @@
 </template>
 
 <script setup>
+	import { playSound } from '@/composables/game/useSound'
+
 	defineProps({
 		isVisible: {
 			type: Boolean,
@@ -32,18 +34,8 @@
 
 	const emit = defineEmits(['close'])
 
-	const playClickSound = async () => {
-		const clickSound = new Audio('/assets/sound/button-press.wav')
-		clickSound.volume = 1
-		try {
-			await clickSound.play()
-		} catch (error) {
-			console.error('Error playing click sound:', error)
-		}
-	}
-
 	const close = async () => {
-		await playClickSound()
+		await playSound('/assets/sound/button-press.wav')
 		emit('close')
 	}
 </script>

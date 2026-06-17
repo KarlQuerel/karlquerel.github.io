@@ -190,21 +190,6 @@
 		}
 	}
 
-	@keyframes FadeAnimation {
-		0% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0.2;
-		}
-		100% {
-			opacity: 1;
-		}
-	}
-
-	//HERE FOR THE CONTINUE BUTTON
-
-	//HERE TO REMOVE AND REPLACE WITH THE CONTINUE BUTTON
 	.coming-soon {
 		position: relative;
 		bottom: 20vh;

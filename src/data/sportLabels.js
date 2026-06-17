@@ -1,4 +1,4 @@
-export const MUSCLE_LABELS = {
+const MUSCLE_LABELS = {
 	chest: 'Chest',
 	back: 'Back',
 	triceps: 'Triceps',

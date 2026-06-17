@@ -189,36 +189,6 @@
 				element.innerHTML =
 					(line.prefix || '') +
 					`<a href="${line.link}" target="_blank" class="terminal-link">${line.linkText}</a>`
-
-				nextTick(() => {
-					const linkElement = element.querySelector('.terminal-link')
-					if (linkElement) {
-						linkElement.style.color = '#00ff00'
-						linkElement.style.textDecoration = 'none'
-						linkElement.style.borderBottom = '1px dotted #00ff00'
-						linkElement.style.transition = 'all 0.3s ease'
-
-						linkElement.addEventListener('mouseenter', () => {
-							linkElement.style.color = '#00ccff'
-							linkElement.style.borderBottomColor = '#00ccff'
-							linkElement.style.textShadow = '0 0 5px #00ccff'
-						})
-
-						linkElement.addEventListener('mouseleave', () => {
-							linkElement.style.color = '#00ff00'
-							linkElement.style.borderBottomColor = '#00ff00'
-							linkElement.style.textShadow = 'none'
-						})
-
-						linkElement.addEventListener('mousedown', () => {
-							linkElement.style.color = '#ff5f56'
-						})
-
-						linkElement.addEventListener('mouseup', () => {
-							linkElement.style.color = '#00ccff'
-						})
-					}
-				})
 			} else {
 				await createCommandTypewriter(element, line.content, typewriterSpeed)
 			}
@@ -412,7 +382,7 @@
 		text-shadow: 0 0 3px currentColor;
 	}
 
-	.terminal-link {
+	:deep(.terminal-link) {
 		color: $retro-green;
 		text-decoration: none;
 		border-bottom: 1px dotted $retro-green;
