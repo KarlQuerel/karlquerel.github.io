@@ -2,17 +2,18 @@
 	<section ref="trackRef" class="hero-track" :style="{ height: trackHeight }">
 		<div class="hero-pin">
 			<p class="hero-line" aria-hidden="true">
-				<span
-					v-for="(cell, i) in cells"
-					:key="i + ':' + cell.glyph"
-					class="flap-char"
-					:class="{
-						'flap-char--accent': cell.accent,
-						'flap-char--settled': cell.settled,
-					}"
-					>{{ cell.glyph }}</span
-				>
-				<span class="hero-cursor" aria-hidden="true">_</span>
+				<template v-for="(cell, i) in cells" :key="i + ':' + cell.glyph">
+					<span
+						v-if="cell.glyph !== ' '"
+						class="flap-char"
+						:class="{
+							'flap-char--accent': cell.accent,
+							'flap-char--settled': cell.settled,
+						}"
+						>{{ cell.glyph }}</span
+					>
+					<template v-else>{{ ' ' }}</template>
+				</template>
 			</p>
 			<span class="sr-only">{{ lineText }}</span>
 
@@ -86,9 +87,9 @@
 		line-height: 1.4;
 		letter-spacing: -0.01em;
 		color: variables.$white;
-		// Each character is its own span: preserve spaces and allow wrapping.
-		white-space: pre-wrap;
-		word-break: break-word;
+		// Wrap only between words (at .flap-space), keeping each word's letters as an
+		// unbreakable run of inline-block cells — readable at any screen size.
+		white-space: normal;
 	}
 
 	.flap-char {
@@ -115,20 +116,13 @@
 	}
 
 	.flap-char--accent {
-		font-family: 'Press Start 2P', ui-monospace, monospace;
-		color: variables.$retro-green;
+		font-family: variables.$font-pixel;
+		color: variables.$yellow;
 		// Slightly smaller because Press Start 2P runs visually larger than the body font.
 		font-size: 0.82em;
 		text-shadow:
-			0 0 6px rgba(0, 255, 0, 0.65),
-			0 0 14px rgba(0, 255, 0, 0.35);
-	}
-
-	.hero-cursor {
-		display: inline-block;
-		margin-left: 0.15em;
-		color: variables.$retro-green;
-		animation: heroCursorBlink 1s steps(2, jump-none) infinite;
+			0 0 6px rgba(variables.$yellow, 0.65),
+			0 0 14px rgba(variables.$yellow, 0.35);
 	}
 
 	.hero-progress {
@@ -139,16 +133,16 @@
 	.hero-dot {
 		width: 0.7rem;
 		height: 0.7rem;
-		background: rgba(255, 255, 255, 0.25);
-		box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.6);
+		background: rgba(variables.$white, 0.25);
+		box-shadow: inset 0 0 0 2px rgba(variables.$black, 0.6);
 		transition: none;
 	}
 
 	.hero-dot--active {
-		background: variables.$retro-green;
+		background: variables.$yellow;
 		box-shadow:
-			inset 0 0 0 2px rgba(0, 0, 0, 0.6),
-			0 0 8px rgba(0, 255, 0, 0.7);
+			inset 0 0 0 2px rgba(variables.$black, 0.6),
+			0 0 8px rgba(variables.$yellow, 0.7);
 	}
 
 	.hero-hint {
@@ -156,10 +150,10 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 0.4rem;
-		font-family: 'Press Start 2P', ui-monospace, monospace;
+		font-family: variables.$font-pixel;
 		font-size: clamp(0.5rem, 1.3vw, 0.62rem);
 		letter-spacing: 0.18em;
-		color: rgba(255, 255, 255, 0.75);
+		color: rgba(variables.$white, 0.75);
 	}
 
 	.hero-hint--hidden {
@@ -179,18 +173,6 @@
 		}
 	}
 
-	@keyframes heroCursorBlink {
-		0% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0;
-		}
-		100% {
-			opacity: 1;
-		}
-	}
-
 	@keyframes heroHintBob {
 		0% {
 			transform: translateY(0);
@@ -203,7 +185,7 @@
 		}
 	}
 
-	@media (max-width: 640px) {
+	@media (max-width: variables.$breakpoint-mobile) {
 		.hero-line {
 			max-width: 16ch;
 		}
@@ -215,7 +197,6 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.flap-char,
-		.hero-cursor,
 		.hero-hint-arrow {
 			animation: none;
 		}

@@ -66,6 +66,9 @@ $charcoal: #36454f;
 $smoke: #f5f5f5;
 $pearl: #f0e6e6;
 
+// Fonts
+$font-pixel: 'Press Start 2P', ui-monospace, monospace;
+
 // Font Sizes
 $font-size-large: x-large;
 $font-size-medium: 1rem;
@@ -85,3 +88,6 @@ $gap-small: 5rem;
 // Z-Index
 $z-index-content: 1;
 $z-index-button: 10;
+
+// Breakpoints
+$breakpoint-mobile: 640px;

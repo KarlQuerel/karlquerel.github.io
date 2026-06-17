@@ -682,7 +682,7 @@
 		position: relative;
 		z-index: 1;
 		margin: 0;
-		font-family: 'Press Start 2P', ui-monospace, monospace;
+		font-family: $font-pixel;
 		font-size: clamp(0.42rem, 1.05vw, 0.58rem);
 		line-height: 1.85;
 		letter-spacing: 0.04em;
