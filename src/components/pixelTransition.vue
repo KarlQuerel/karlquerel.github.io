@@ -1,5 +1,7 @@
 <template>
 	<div class="pixel-transition-page">
+		<HeroIntro />
+
 		<section
 			ref="pinWrapperRef"
 			class="pin-wrapper"
@@ -58,6 +60,7 @@
 
 <script setup>
 	import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+	import HeroIntro from './HeroIntro.vue'
 
 	const STAGE_CLEAR_COLOR = '#000000'
 
