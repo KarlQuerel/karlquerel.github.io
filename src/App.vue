@@ -1,6 +1,7 @@
 <template>
 	<div class="app-root">
-		<SiteNavbar v-if="shouldShowSiteNavbar" />
+		<SiteHeaderAnimation v-if="shouldShowSiteHeader" />
+		<SiteNavbar />
 		<main class="app-main">
 			<router-view />
 		</main>
@@ -11,21 +12,16 @@
 <script setup>
 	import { computed, onBeforeUnmount, watch } from 'vue'
 	import { useRoute } from 'vue-router'
+	import SiteHeaderAnimation from './components/SiteHeaderAnimation.vue'
 	import SiteNavbar from './components/SiteNavbar.vue'
 	import SiteFooter from './components/SiteFooter.vue'
 
 	const SCROLLABLE_PATHS = ['/', '/sport']
-	const LANDING_PATH = '/'
 
 	const route = useRoute()
-	const shouldShowSiteNavbar = computed(() => {
-		const path = route.path.replace(/\/$/, '') || '/'
-		return path !== LANDING_PATH
-	})
-	const isPageScrollable = computed(() => {
-		const path = route.path.replace(/\/$/, '') || '/'
-		return SCROLLABLE_PATHS.includes(path)
-	})
+	const normalizedPath = () => route.path.replace(/\/$/, '') || '/'
+	const shouldShowSiteHeader = computed(() => normalizedPath() !== '/game')
+	const isPageScrollable = computed(() => SCROLLABLE_PATHS.includes(normalizedPath()))
 
 	watch(
 		isPageScrollable,
