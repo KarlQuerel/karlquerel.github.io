@@ -37,7 +37,7 @@ export function useSportAccordion() {
 	const openExerciseKeys = ref(new Set())
 
 	const showAllLabel = computed(() =>
-		areAllOpen(openCardIds.value, openExerciseKeys.value) ? 'Hide all' : 'Show all',
+		areAllOpen(openCardIds.value, openExerciseKeys.value) ? 'Hide all' : 'Show all'
 	)
 
 	function isCardOpen(dayId) {

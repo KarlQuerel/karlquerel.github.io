@@ -1,27 +1,26 @@
 .sport-page {
-
-  --background: #000000;
-  --text: #ffffff;
-  --muted: rgba(255, 255, 255, 0.62);
-  --faint: rgba(255, 255, 255, 0.72);
-  --chip-foreground: rgba(255, 255, 255, 0.86);
-  --bar-dimmed: rgba(255, 255, 255, 0.2);
-  --chest: #3b9eff;
-  --back: #ff7c38;
-  --triceps: #b56bff;
-  --biceps: #2fcc8b;
-  --shoulders: #ff4f8b;
-  --legs: #f5c842;
-  --abs: #35d4ff;
-  --waist: #9eff6b;
-  --forearms: #ffb347;
-  --hard: #ff5050;
-  --drop-tint: #ebff6b;
-  --font: "Press Start 2P", ui-monospace, monospace;
-  --surface-border: rgba(255, 255, 255, 0.18);
-  --surface-bg: rgba(255, 255, 255, 0.04);
-  --surface-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
-  --focus-ring: 2px solid rgba(255, 255, 255, 0.8);
+	--background: #000000;
+	--text: #ffffff;
+	--muted: rgba(255, 255, 255, 0.62);
+	--faint: rgba(255, 255, 255, 0.72);
+	--chip-foreground: rgba(255, 255, 255, 0.86);
+	--bar-dimmed: rgba(255, 255, 255, 0.2);
+	--chest: #3b9eff;
+	--back: #ff7c38;
+	--triceps: #b56bff;
+	--biceps: #2fcc8b;
+	--shoulders: #ff4f8b;
+	--legs: #f5c842;
+	--abs: #35d4ff;
+	--waist: #9eff6b;
+	--forearms: #ffb347;
+	--hard: #ff5050;
+	--drop-tint: #ebff6b;
+	--font: 'Press Start 2P', ui-monospace, monospace;
+	--surface-border: rgba(255, 255, 255, 0.18);
+	--surface-bg: rgba(255, 255, 255, 0.04);
+	--surface-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
+	--focus-ring: 2px solid rgba(255, 255, 255, 0.8);
 
 	max-width: 84rem;
 	margin: 0 auto;
@@ -34,299 +33,323 @@
 	text-transform: uppercase;
 	text-align: left;
 
-	[data-muscle="chest"] { --muscle: var(--chest); }
-	[data-muscle="back"] { --muscle: var(--back); }
-	[data-muscle="triceps"] { --muscle: var(--triceps); }
-	[data-muscle="biceps"] { --muscle: var(--biceps); }
-	[data-muscle="shoulders"] { --muscle: var(--shoulders); }
-	[data-muscle="legs"] { --muscle: var(--legs); }
-	[data-muscle="abs"] { --muscle: var(--abs); }
-	[data-muscle="waist"] { --muscle: var(--waist); }
-	[data-muscle="forearms"] { --muscle: var(--forearms); }
+	[data-muscle='chest'] {
+		--muscle: var(--chest);
+	}
+	[data-muscle='back'] {
+		--muscle: var(--back);
+	}
+	[data-muscle='triceps'] {
+		--muscle: var(--triceps);
+	}
+	[data-muscle='biceps'] {
+		--muscle: var(--biceps);
+	}
+	[data-muscle='shoulders'] {
+		--muscle: var(--shoulders);
+	}
+	[data-muscle='legs'] {
+		--muscle: var(--legs);
+	}
+	[data-muscle='abs'] {
+		--muscle: var(--abs);
+	}
+	[data-muscle='waist'] {
+		--muscle: var(--waist);
+	}
+	[data-muscle='forearms'] {
+		--muscle: var(--forearms);
+	}
 
 	*,
 	*::before,
 	*::after {
-	  box-sizing: border-box;
-	  margin: 0;
-	  padding: 0;
+		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
 	}
 
 	:is(.session-head, .exercise, .show-all-btn):focus-visible {
-	  outline: var(--focus-ring);
-	  outline-offset: 2px;
+		outline: var(--focus-ring);
+		outline-offset: 2px;
 	}
 
-
-
 	.page-title {
-	  display: grid;
-	  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-	  align-items: center;
-	  column-gap: clamp(0.5rem, 1.5vw, 1rem);
-	  margin-bottom: 1.75rem;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+		align-items: center;
+		column-gap: clamp(0.5rem, 1.5vw, 1rem);
+		margin-bottom: 1.75rem;
 	}
 
 	.page-title__icon-slot {
-	  display: flex;
-	  align-items: center;
-	  justify-content: center;
-	  width: clamp(5.75rem, 16vw, 9.5rem);
-	  height: clamp(4rem, 12vw, 6.75rem);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: clamp(5.75rem, 16vw, 9.5rem);
+		height: clamp(4rem, 12vw, 6.75rem);
 	}
 
 	.page-title__icon-slot--left {
-	  justify-self: center;
-	  transform: translateX(clamp(-0.35rem, -1.2vw, -0.15rem));
+		justify-self: center;
+		transform: translateX(clamp(-0.35rem, -1.2vw, -0.15rem));
 	}
 
 	.page-title__icon-slot--left .page-title__icon {
-	  transform: rotate(-8deg) rotateY(14deg);
-	  transform-origin: center;
+		transform: rotate(-8deg) rotateY(14deg);
+		transform-origin: center;
 	}
 
 	.page-title__icon-slot--right {
-	  justify-self: center;
-	  transform: translateX(clamp(0.15rem, 1.2vw, 0.35rem));
+		justify-self: center;
+		transform: translateX(clamp(0.15rem, 1.2vw, 0.35rem));
 	}
 
 	.page-title__icon-slot--right .page-title__icon {
-	  transform: rotate(16deg) rotateY(-28deg);
-	  transform-origin: center;
+		transform: rotate(16deg) rotateY(-28deg);
+		transform-origin: center;
 	}
 
 	.page-title__icon,
 	.page-footer__icon {
-	  display: block;
-	  width: auto;
-	  object-fit: contain;
-	  object-position: center;
-	  image-rendering: pixelated;
+		display: block;
+		width: auto;
+		object-fit: contain;
+		object-position: center;
+		image-rendering: pixelated;
 	}
 
 	.page-title__icon {
-	  max-width: 100%;
-	  max-height: 100%;
-	  height: auto;
+		max-width: 100%;
+		max-height: 100%;
+		height: auto;
 	}
 
 	.page-title h1 {
-	  grid-column: 2;
-	  justify-self: center;
-	  font-size: clamp(0.72rem, 2.4vw, 1.1rem);
-	  line-height: 1.6;
-	  text-align: center;
-	  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+		grid-column: 2;
+		justify-self: center;
+		font-size: clamp(0.72rem, 2.4vw, 1.1rem);
+		line-height: 1.6;
+		text-align: center;
+		text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
 	}
 
 	.page-footer {
-	  display: flex;
-	  justify-content: center;
-	  align-items: center;
-	  margin-top: clamp(2rem, 5vw, 3.25rem);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		margin-top: clamp(2rem, 5vw, 3.25rem);
 	}
 
 	.page-footer__icon {
-	  height: clamp(5rem, 14vw, 8.5rem);
+		height: clamp(5rem, 14vw, 8.5rem);
 	}
 
 	hr {
-	  height: 1px;
-	  border: none;
-	  background: rgba(255, 255, 255, 0.15);
+		height: 1px;
+		border: none;
+		background: rgba(255, 255, 255, 0.15);
 	}
 
 	.grid {
-	  display: grid;
-	  grid-template-columns: repeat(2, minmax(0, 1fr));
-	  gap: 20px;
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 20px;
 	}
 
 	.legend {
-	  display: flex;
-	  flex-wrap: wrap;
-	  justify-content: center;
-	  gap: 10px 14px;
-	  margin-bottom: 2rem;
-	  padding: 1rem 0.75rem;
-	  border: 2px solid var(--surface-border);
-	  background: var(--surface-bg);
-	  box-shadow: var(--surface-shadow);
-	  color: var(--faint);
-	  font-size: clamp(0.44rem, 1.1vw, 0.54rem);
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 10px 14px;
+		margin-bottom: 2rem;
+		padding: 1rem 0.75rem;
+		border: 2px solid var(--surface-border);
+		background: var(--surface-bg);
+		box-shadow: var(--surface-shadow);
+		color: var(--faint);
+		font-size: clamp(0.44rem, 1.1vw, 0.54rem);
 	}
 
 	.legend span {
-	  display: flex;
-	  align-items: center;
-	  gap: 6px;
+		display: flex;
+		align-items: center;
+		gap: 6px;
 	}
 
 	.dot {
-	  width: 8px;
-	  height: 8px;
-	  flex-shrink: 0;
-	  background: var(--muscle);
+		width: 8px;
+		height: 8px;
+		flex-shrink: 0;
+		background: var(--muscle);
 	}
 
 	.card {
-	  --accent: var(--bar-dimmed);
-	  position: relative;
-	  display: flex;
-	  flex-direction: column;
-	  gap: 0;
-	  overflow: hidden;
-	  padding: 22px 20px;
-	  border: 2px solid var(--surface-border);
-	  background: var(--surface-bg);
-	  box-shadow: var(--surface-shadow);
+		--accent: var(--bar-dimmed);
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		overflow: hidden;
+		padding: 22px 20px;
+		border: 2px solid var(--surface-border);
+		background: var(--surface-bg);
+		box-shadow: var(--surface-shadow);
 	}
 
 	.card.is-open {
-	  gap: 20px;
-	  border-color: rgba(255, 255, 255, 0.22);
-	  background: rgba(255, 255, 255, 0.05);
+		gap: 20px;
+		border-color: rgba(255, 255, 255, 0.22);
+		background: rgba(255, 255, 255, 0.05);
 	}
 
 	.card-.card.is-open .card-.card::before {
-	  content: "";
-	  position: absolute;
-	  inset: 0 0 auto;
-	  height: 3px;
-	  background: var(--accent);
+		content: '';
+		position: absolute;
+		inset: 0 0 auto;
+		height: 3px;
+		background: var(--accent);
 	}
 
-	.card[data-accent="chest"] { --accent: var(--chest); }
-	.card[data-accent="back"] { --accent: var(--back); }
-	.card[data-accent="triceps"] { --accent: var(--triceps); }
-	.card[data-accent="legs"] { --accent: var(--legs); }
+	.card[data-accent='chest'] {
+		--accent: var(--chest);
+	}
+	.card[data-accent='back'] {
+		--accent: var(--back);
+	}
+	.card[data-accent='triceps'] {
+		--accent: var(--triceps);
+	}
+	.card[data-accent='legs'] {
+		--accent: var(--legs);
+	}
 
 	.session-head {
-	  display: flex;
-	  flex-direction: column;
-	  gap: 10px;
-	  cursor: pointer;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		cursor: pointer;
 	}
 
 	.session-head > :first-child {
-	  min-width: 0;
+		min-width: 0;
 	}
 
 	.day-name {
-	  font-size: clamp(0.78rem, 2vw, 1rem);
-	  line-height: 1.5;
+		font-size: clamp(0.78rem, 2vw, 1rem);
+		line-height: 1.5;
 	}
 
 	.session-kind {
-	  margin-top: 4px;
-	  color: var(--accent);
-	  font-size: clamp(0.58rem, 1.4vw, 0.72rem);
-	  letter-spacing: 0.06em;
+		margin-top: 4px;
+		color: var(--accent);
+		font-size: clamp(0.58rem, 1.4vw, 0.72rem);
+		letter-spacing: 0.06em;
 	}
 
 	.chips {
-	  display: grid;
-	  grid-template-columns: repeat(3, minmax(0, 1fr));
-	  grid-template-rows: repeat(2, auto);
-	  gap: 4px;
-	  width: 100%;
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-rows: repeat(2, auto);
+		gap: 4px;
+		width: 100%;
 	}
 
 	.chip {
-	  display: flex;
-	  align-items: center;
-	  justify-content: center;
-	  min-height: 2.1em;
-	  padding: 6px 4px;
-	  border: 1px solid var(--muscle);
-	  background: rgba(0, 0, 0, 0.5);
-	  color: var(--muscle);
-	  text-align: center;
-	  font-size: clamp(0.44rem, 1.15vw, 0.56rem);
-	  letter-spacing: 0.02em;
-	  line-height: 1.4;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.1em;
+		padding: 6px 4px;
+		border: 1px solid var(--muscle);
+		background: rgba(0, 0, 0, 0.5);
+		color: var(--muscle);
+		text-align: center;
+		font-size: clamp(0.44rem, 1.15vw, 0.56rem);
+		letter-spacing: 0.02em;
+		line-height: 1.4;
 	}
 
 	.exercise-list {
-	  display: flex;
-	  flex-direction: column;
-	  gap: 14px;
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
 	}
 
 	.exercise {
-	  display: flex;
-	  flex-direction: column;
-	  gap: 6px;
-	  cursor: pointer;
-	  padding: 14px;
-	  border: 2px solid rgba(255, 255, 255, 0.12);
-	  border-left: 4px solid var(--muscle);
-	  background: rgba(255, 255, 255, 0.03);
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		cursor: pointer;
+		padding: 14px;
+		border: 2px solid rgba(255, 255, 255, 0.12);
+		border-left: 4px solid var(--muscle);
+		background: rgba(255, 255, 255, 0.03);
 	}
 
 	.exercise:hover,
 	.exercise.is-open {
-	  border-color: rgba(255, 255, 255, 0.22);
-	  background: rgba(255, 255, 255, 0.05);
+		border-color: rgba(255, 255, 255, 0.22);
+		background: rgba(255, 255, 255, 0.05);
 	}
 
 	.exercise-row {
-	  display: grid;
-	  grid-template-columns: minmax(0, 1fr) auto;
-	  align-items: center;
-	  gap: 10px 16px;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 10px 16px;
 	}
 
 	.exercise-name {
-	  display: flex;
-	  align-items: center;
-	  min-width: 0;
-	  min-height: calc(2 * 1.7em);
-	  font-size: clamp(0.5rem, 1.25vw, 0.6rem);
-	  line-height: 1.7;
-	  text-wrap: balance;
+		display: flex;
+		align-items: center;
+		min-width: 0;
+		min-height: calc(2 * 1.7em);
+		font-size: clamp(0.5rem, 1.25vw, 0.6rem);
+		line-height: 1.7;
+		text-wrap: balance;
 	}
 
 	.meta {
-	  display: none;
-	  margin-top: 6px;
-	  color: var(--muted);
-	  font-size: clamp(0.48rem, 1.15vw, 0.58rem);
-	  line-height: 1.85;
+		display: none;
+		margin-top: 6px;
+		color: var(--muted);
+		font-size: clamp(0.48rem, 1.15vw, 0.58rem);
+		line-height: 1.85;
 	}
 
 	.exercise.is-open .meta {
-	  display: block;
+		display: block;
 	}
 
 	.meta strong {
-	  color: var(--chip-foreground);
-	  font-weight: 600;
+		color: var(--chip-foreground);
+		font-weight: 600;
 	}
 
 	.badges {
-	  display: grid;
-	  flex: 0 0 auto;
-	  grid-template-columns: repeat(2, max-content);
-	  grid-auto-flow: row dense;
-	  justify-content: end;
-	  gap: 5px 7px;
-	  margin-left: auto;
+		display: grid;
+		flex: 0 0 auto;
+		grid-template-columns: repeat(2, max-content);
+		grid-auto-flow: row dense;
+		justify-content: end;
+		gap: 5px 7px;
+		margin-left: auto;
 	}
 
 	.badge {
-	  display: inline-flex;
-	  align-items: center;
-	  justify-content: center;
-	  min-height: 1.65em;
-	  padding: 4px 7px;
-	  border: 1px solid currentColor;
-	  white-space: nowrap;
-	  text-align: center;
-	  font-size: clamp(0.36rem, 0.9vw, 0.44rem);
-	  letter-spacing: 0.02em;
-	  line-height: 1.45;
-	  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.65);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 1.65em;
+		padding: 4px 7px;
+		border: 1px solid currentColor;
+		white-space: nowrap;
+		text-align: center;
+		font-size: clamp(0.36rem, 0.9vw, 0.44rem);
+		letter-spacing: 0.02em;
+		line-height: 1.45;
+		text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.65);
 	}
 
 	.badge.easy,
@@ -334,31 +357,49 @@
 	.badge.hard,
 	.badge.rest,
 	.badge.warmup-time {
-	  min-width: 5rem;
+		min-width: 5rem;
 	}
 
 	.badge.easy,
 	.badge.medium,
 	.badge.hard {
-	  grid-column: 1;
-	  order: 2;
+		grid-column: 1;
+		order: 2;
 	}
 
 	.badge.rest,
 	.badge.warmup-time {
-	  grid-column: 2;
-	  order: 2;
+		grid-column: 2;
+		order: 2;
 	}
 
-	.badge.abs { --badge-color: var(--abs); }
-	.badge.chest { --badge-color: var(--chest); }
-	.badge.waist { --badge-color: var(--waist); }
-	.badge.forearm { --badge-color: var(--forearms); }
-	.badge.triceps { --badge-color: var(--triceps); }
-	.badge.shoulders { --badge-color: var(--shoulders); }
-	.badge.back { --badge-color: var(--back); }
-	.badge.biceps { --badge-color: var(--biceps); }
-	.badge.legs { --badge-color: var(--legs); }
+	.badge.abs {
+		--badge-color: var(--abs);
+	}
+	.badge.chest {
+		--badge-color: var(--chest);
+	}
+	.badge.waist {
+		--badge-color: var(--waist);
+	}
+	.badge.forearm {
+		--badge-color: var(--forearms);
+	}
+	.badge.triceps {
+		--badge-color: var(--triceps);
+	}
+	.badge.shoulders {
+		--badge-color: var(--shoulders);
+	}
+	.badge.back {
+		--badge-color: var(--back);
+	}
+	.badge.biceps {
+		--badge-color: var(--biceps);
+	}
+	.badge.legs {
+		--badge-color: var(--legs);
+	}
 
 	.badge.abs,
 	.badge.chest,
@@ -371,9 +412,9 @@
 	.badge.legs,
 	.badge.drop-set,
 	.badges--warmup .badge.warm-up {
-	  grid-column: 1 / -1;
-	  justify-self: stretch;
-	  width: 100%;
+		grid-column: 1 / -1;
+		justify-self: stretch;
+		width: 100%;
 	}
 
 	.badge.abs,
@@ -385,126 +426,126 @@
 	.badge.back,
 	.badge.biceps,
 	.badge.legs {
-	  order: 1;
-	  padding: 5px 8px;
-	  font-size: clamp(0.44rem, 1.1vw, 0.54rem);
-	  line-height: 1.5;
-	  background: rgba(0, 0, 0, 0.62);
-	  color: #ffffff;
-	  border-color: var(--badge-color);
+		order: 1;
+		padding: 5px 8px;
+		font-size: clamp(0.44rem, 1.1vw, 0.54rem);
+		line-height: 1.5;
+		background: rgba(0, 0, 0, 0.62);
+		color: #ffffff;
+		border-color: var(--badge-color);
 	}
 
 	.badge.drop-set {
-	  order: 3;
-	  background: rgba(235, 255, 107, 0.3);
-	  color: #f8ffd0;
-	  border-color: var(--drop-tint);
+		order: 3;
+		background: rgba(235, 255, 107, 0.3);
+		color: #f8ffd0;
+		border-color: var(--drop-tint);
 	}
 
 	.badge.easy,
 	.badge.warmup-time {
-	  background: rgba(47, 204, 139, 0.34);
-	  color: #e8fff5;
-	  border-color: var(--biceps);
+		background: rgba(47, 204, 139, 0.34);
+		color: #e8fff5;
+		border-color: var(--biceps);
 	}
 
 	.badge.medium {
-	  background: rgba(245, 200, 66, 0.34);
-	  color: #fff8dc;
-	  border-color: var(--legs);
+		background: rgba(245, 200, 66, 0.34);
+		color: #fff8dc;
+		border-color: var(--legs);
 	}
 
 	.badge.hard {
-	  background: rgba(255, 80, 80, 0.34);
-	  color: #ffe8e8;
-	  border-color: var(--hard);
+		background: rgba(255, 80, 80, 0.34);
+		color: #ffe8e8;
+		border-color: var(--hard);
 	}
 
 	.badge.rest {
-	  background: rgba(255, 124, 56, 0.34);
-	  color: #fff0e6;
-	  border-color: var(--back);
+		background: rgba(255, 124, 56, 0.34);
+		color: #fff0e6;
+		border-color: var(--back);
 	}
 
 	.badge.warm-up {
-	  order: 1;
-	  padding: 5px 8px;
-	  background: rgba(255, 79, 139, 0.4);
-	  color: #ffffff;
-	  border-color: #ff8fbb;
-	  font-size: clamp(0.42rem, 1.05vw, 0.5rem);
-	  line-height: 1.5;
+		order: 1;
+		padding: 5px 8px;
+		background: rgba(255, 79, 139, 0.4);
+		color: #ffffff;
+		border-color: #ff8fbb;
+		font-size: clamp(0.42rem, 1.05vw, 0.5rem);
+		line-height: 1.5;
 	}
 
 	.superset {
-	  overflow: hidden;
-	  border: 2px solid rgba(255, 255, 255, 0.12);
-	  border-left: 4px solid var(--muscle);
-	  background: rgba(255, 255, 255, 0.03);
+		overflow: hidden;
+		border: 2px solid rgba(255, 255, 255, 0.12);
+		border-left: 4px solid var(--muscle);
+		background: rgba(255, 255, 255, 0.03);
 	}
 
 	.superset-head {
-	  display: flex;
-	  align-items: center;
-	  min-height: 2.25em;
-	  padding: 8px 10px;
-	  background: rgba(0, 0, 0, 0.35);
-	  color: var(--muscle);
-	  font-size: clamp(0.34rem, 0.85vw, 0.4rem);
-	  letter-spacing: 0.06em;
-	  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		display: flex;
+		align-items: center;
+		min-height: 2.25em;
+		padding: 8px 10px;
+		background: rgba(0, 0, 0, 0.35);
+		color: var(--muscle);
+		font-size: clamp(0.34rem, 0.85vw, 0.4rem);
+		letter-spacing: 0.06em;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	.superset .exercise {
-	  border: none;
-	  border-left: none;
-	  background: transparent;
+		border: none;
+		border-left: none;
+		background: transparent;
 	}
 
 	.superset .exercise:hover,
 	.superset .exercise.is-open {
-	  background: rgba(255, 255, 255, 0.04);
+		background: rgba(255, 255, 255, 0.04);
 	}
 
 	.superset .exercise + .exercise {
-	  border-top: 1px solid rgba(255, 255, 255, 0.1);
+		border-top: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	.superset-step {
-	  display: inline-flex;
-	  align-items: center;
-	  justify-content: center;
-	  min-width: 1.25em;
-	  margin-right: 6px;
-	  color: var(--muscle);
-	  font-size: clamp(0.3rem, 0.75vw, 0.36rem);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.25em;
+		margin-right: 6px;
+		color: var(--muscle);
+		font-size: clamp(0.3rem, 0.75vw, 0.36rem);
 	}
 
 	.show-all-btn {
-	  position: fixed;
-	  right: 18px;
-	  bottom: 18px;
-	  z-index: 20;
-	  display: inline-flex;
-	  align-items: center;
-	  justify-content: center;
-	  cursor: pointer;
-	  min-height: 2.75em;
-	  padding: 12px 16px;
-	  border: 2px solid rgba(255, 255, 255, 0.35);
-	  background: #000000;
-	  color: rgba(255, 255, 255, 0.88);
-	  font-family: var(--font);
-	  font-size: clamp(0.42rem, 1.05vw, 0.52rem);
-	  letter-spacing: 0.04em;
-	  text-transform: uppercase;
-	  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+		position: fixed;
+		right: 18px;
+		bottom: 18px;
+		z-index: 20;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		min-height: 2.75em;
+		padding: 12px 16px;
+		border: 2px solid rgba(255, 255, 255, 0.35);
+		background: #000000;
+		color: rgba(255, 255, 255, 0.88);
+		font-family: var(--font);
+		font-size: clamp(0.42rem, 1.05vw, 0.52rem);
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
 	}
 
 	.show-all-btn:hover {
-	  background: rgba(255, 255, 255, 0.12);
-	  border-color: rgba(255, 255, 255, 0.55);
-	  color: #ffffff;
+		background: rgba(255, 255, 255, 0.12);
+		border-color: rgba(255, 255, 255, 0.55);
+		color: #ffffff;
 	}
 }
 
@@ -515,75 +556,75 @@
  * `.grid` / `.page-title` selectors lose to `.sport-page .grid` and never apply.
  */
 @media (max-width: 900px) {
-  .sport-page .grid {
-    grid-template-columns: 1fr;
-  }
+	.sport-page .grid {
+		grid-template-columns: 1fr;
+	}
 }
 
 @media (max-width: 640px) {
-  .sport-page {
-    padding: 1.25rem 0.85rem 4.5rem;
-    font-size: clamp(0.5rem, 1.9vw, 0.56rem);
-  }
+	.sport-page {
+		padding: 1.25rem 0.85rem 4.5rem;
+		font-size: clamp(0.5rem, 1.9vw, 0.56rem);
+	}
 
-  .sport-page .grid {
-    gap: 14px;
-  }
+	.sport-page .grid {
+		gap: 14px;
+	}
 
-  .sport-page .card {
-    padding: 18px 14px;
-  }
+	.sport-page .card {
+		padding: 18px 14px;
+	}
 
-  .sport-page .legend {
-    font-size: clamp(0.5rem, 1.9vw, 0.56rem);
-  }
+	.sport-page .legend {
+		font-size: clamp(0.5rem, 1.9vw, 0.56rem);
+	}
 }
 
 @media (max-width: 480px) {
-  .sport-page .page-title {
-    column-gap: 0.4rem;
-  }
+	.sport-page .page-title {
+		column-gap: 0.4rem;
+	}
 
-  .sport-page .page-title__icon-slot--left,
-  .sport-page .page-title__icon-slot--right {
-    width: clamp(4.75rem, 30vw, 7.5rem);
-    height: clamp(3.35rem, 20vw, 5.5rem);
-  }
+	.sport-page .page-title__icon-slot--left,
+	.sport-page .page-title__icon-slot--right {
+		width: clamp(4.75rem, 30vw, 7.5rem);
+		height: clamp(3.35rem, 20vw, 5.5rem);
+	}
 
-  .sport-page .page-title h1 {
-    font-size: clamp(0.58rem, 3.2vw, 0.72rem);
-  }
+	.sport-page .page-title h1 {
+		font-size: clamp(0.58rem, 3.2vw, 0.72rem);
+	}
 
-  .sport-page .page-footer__icon {
-    height: clamp(4.25rem, 24vw, 6.5rem);
-  }
+	.sport-page .page-footer__icon {
+		height: clamp(4.25rem, 24vw, 6.5rem);
+	}
 
-  /* Two chips per row reads better than three squeezed columns on phones. */
-  .sport-page .chips {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: auto;
-  }
+	/* Two chips per row reads better than three squeezed columns on phones. */
+	.sport-page .chips {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-rows: auto;
+	}
 
-  /* Stack exercise name above its badges so neither gets crushed. */
-  .sport-page .exercise-row {
-    grid-template-columns: minmax(0, 1fr);
-  }
+	/* Stack exercise name above its badges so neither gets crushed. */
+	.sport-page .exercise-row {
+		grid-template-columns: minmax(0, 1fr);
+	}
 
-  .sport-page .exercise-name {
-    min-height: 0;
-  }
+	.sport-page .exercise-name {
+		min-height: 0;
+	}
 
-  .sport-page .badges {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    justify-content: stretch;
-    margin-left: 0;
-  }
+	.sport-page .badges {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		justify-content: stretch;
+		margin-left: 0;
+	}
 
-  .sport-page .badge.easy,
-  .sport-page .badge.medium,
-  .sport-page .badge.hard,
-  .sport-page .badge.rest,
-  .sport-page .badge.warmup-time {
-    min-width: 0;
-  }
+	.sport-page .badge.easy,
+	.sport-page .badge.medium,
+	.sport-page .badge.hard,
+	.sport-page .badge.rest,
+	.sport-page .badge.warmup-time {
+		min-width: 0;
+	}
 }

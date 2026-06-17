@@ -1,5 +1,9 @@
 <template>
-	<section class="card" :class="{ 'is-open': accordion.isCardOpen(day.id) }" :data-accent="day.accent">
+	<section
+		class="card"
+		:class="{ 'is-open': accordion.isCardOpen(day.id) }"
+		:data-accent="day.accent"
+	>
 		<div
 			class="session-head"
 			role="button"
@@ -13,12 +17,7 @@
 				<div class="session-kind">{{ day.kind }}</div>
 			</div>
 			<div class="chips">
-				<span
-					v-for="chip in day.chips"
-					:key="chip"
-					class="chip"
-					:data-muscle="chip"
-				>
+				<span v-for="chip in day.chips" :key="chip" class="chip" :data-muscle="chip">
 					{{ muscleLabel(chip) }}
 				</span>
 			</div>
@@ -33,16 +32,27 @@
 					@toggle="accordion.toggleExercise(day.id, 'warmup', BASE_WARMUP)"
 					@keydown="accordion.onExerciseKeydown($event, day.id, 'warmup', BASE_WARMUP)"
 				/>
-				<template v-for="(block, blockIndex) in day.blocks" :key="`${day.id}-block-${blockIndex}`">
-					<div v-if="block.type === 'superset'" class="superset" :data-muscle="block.muscle">
+				<template
+					v-for="(block, blockIndex) in day.blocks"
+					:key="`${day.id}-block-${blockIndex}`"
+				>
+					<div
+						v-if="block.type === 'superset'"
+						class="superset"
+						:data-muscle="block.muscle"
+					>
 						<div class="superset-head">Superset</div>
 						<SportExercise
 							v-for="(exercise, exIndex) in block.exercises"
 							:key="`${exercise.name}-${exIndex}`"
 							:exercise="exercise"
-							:is-open="accordion.isExerciseOpen(`${day.id}-${blockIndex}-${exIndex}`)"
+							:is-open="
+								accordion.isExerciseOpen(`${day.id}-${blockIndex}-${exIndex}`)
+							"
 							@toggle="accordion.toggleExercise(day.id, blockIndex, block)"
-							@keydown="accordion.onExerciseKeydown($event, day.id, blockIndex, block)"
+							@keydown="
+								accordion.onExerciseKeydown($event, day.id, blockIndex, block)
+							"
 						/>
 					</div>
 					<SportExercise

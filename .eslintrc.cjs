@@ -35,11 +35,10 @@ module.exports = {
 		'arrow-spacing': 'off',
 		'space-before-function-paren': 'off',
 		
-		// Keep Vue formatting rules that don't conflict
-		'vue/max-attributes-per-line': ['error', {
-			'singleline': 3,
-			'multiline': 1
-		}],
+		// vue/max-attributes-per-line conflicts with Prettier (Prettier keeps a tag
+		// on one line when it fits printWidth; the rule caps attributes per line) —
+		// let Prettier own attribute wrapping. See 'prettier' in `extends`.
+		'vue/max-attributes-per-line': 'off',
 		'vue/html-self-closing': ['error', {
 			'html': {
 				'void': 'always',

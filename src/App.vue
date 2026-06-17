@@ -31,7 +31,7 @@
 				window.scrollTo(0, 0)
 			}
 		},
-		{ immediate: true },
+		{ immediate: true }
 	)
 
 	onBeforeUnmount(() => {
