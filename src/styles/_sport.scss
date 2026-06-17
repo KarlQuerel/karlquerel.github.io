@@ -508,8 +508,14 @@
 	}
 }
 
+/*
+ * Responsive overrides.
+ * Selectors are prefixed with `.sport-page` so their specificity matches the
+ * base rules nested inside `.sport-page { ... }` above — otherwise the bare
+ * `.grid` / `.page-title` selectors lose to `.sport-page .grid` and never apply.
+ */
 @media (max-width: 900px) {
-  .grid {
+  .sport-page .grid {
     grid-template-columns: 1fr;
   }
 }
@@ -517,26 +523,67 @@
 @media (max-width: 640px) {
   .sport-page {
     padding: 1.25rem 0.85rem 4.5rem;
+    font-size: clamp(0.5rem, 1.9vw, 0.56rem);
   }
 
+  .sport-page .grid {
+    gap: 14px;
   }
+
+  .sport-page .card {
+    padding: 18px 14px;
+  }
+
+  .sport-page .legend {
+    font-size: clamp(0.5rem, 1.9vw, 0.56rem);
+  }
+}
 
 @media (max-width: 480px) {
-  .page-title {
+  .sport-page .page-title {
     column-gap: 0.4rem;
   }
 
-  .page-title__icon-slot--left,
-  .page-title__icon-slot--right {
+  .sport-page .page-title__icon-slot--left,
+  .sport-page .page-title__icon-slot--right {
     width: clamp(4.75rem, 30vw, 7.5rem);
     height: clamp(3.35rem, 20vw, 5.5rem);
   }
 
-  .page-title h1 {
+  .sport-page .page-title h1 {
     font-size: clamp(0.58rem, 3.2vw, 0.72rem);
   }
 
-  .page-footer__icon {
+  .sport-page .page-footer__icon {
     height: clamp(4.25rem, 24vw, 6.5rem);
+  }
+
+  /* Two chips per row reads better than three squeezed columns on phones. */
+  .sport-page .chips {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto;
+  }
+
+  /* Stack exercise name above its badges so neither gets crushed. */
+  .sport-page .exercise-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sport-page .exercise-name {
+    min-height: 0;
+  }
+
+  .sport-page .badges {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+    margin-left: 0;
+  }
+
+  .sport-page .badge.easy,
+  .sport-page .badge.medium,
+  .sport-page .badge.hard,
+  .sport-page .badge.rest,
+  .sport-page .badge.warmup-time {
+    min-width: 0;
   }
 }
