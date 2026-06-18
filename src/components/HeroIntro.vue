@@ -1,28 +1,33 @@
 <template>
 	<section ref="trackRef" class="hero-track" :style="{ height: trackHeight }">
 		<div class="hero-pin">
-			<p class="hero-line" aria-hidden="true">
-				<template v-for="(cell, i) in cells" :key="i + ':' + cell.glyph">
-					<span
-						v-if="cell.glyph !== ' '"
-						class="flap-char"
-						:class="{
-							'flap-char--accent': cell.accent,
-							'flap-char--settled': cell.settled,
-						}"
-						>{{ cell.glyph }}</span
-					>
-					<template v-else>{{ ' ' }}</template>
-				</template>
-			</p>
-			<span class="sr-only">{{ lineText }}</span>
+			<div class="hero-stage">
+				<div v-if="activeSection.layout === 'split'" class="hero-headline">
+					<HeroFlapLine
+						class="hero-headline__lead"
+						:line="activeSection.lead"
+						align="left"
+					/>
+					<HeroFlapLine
+						class="hero-headline__name"
+						:line="activeSection.name"
+						align="right"
+					/>
+				</div>
+				<HeroFlapLine
+					v-else
+					class="hero-centered"
+					:line="activeSection.line"
+					align="center"
+				/>
+			</div>
 
 			<div class="hero-progress" aria-hidden="true">
 				<span
-					v-for="(line, i) in HERO_LINES"
-					:key="i"
+					v-for="n in SECTION_COUNT"
+					:key="n"
 					class="hero-dot"
-					:class="{ 'hero-dot--active': i === activeIndex }"
+					:class="{ 'hero-dot--active': n - 1 === activeIndex }"
 				/>
 			</div>
 
@@ -40,27 +45,23 @@
 
 <script setup>
 	import { computed, ref } from 'vue'
-	import { HERO_LINES } from '../data/heroLines.js'
+	import { HERO_SECTIONS } from '../data/heroLines.js'
 	import { useScrollSections } from '../composables/useScrollSections.js'
-	import { useSplitFlap } from '../composables/useSplitFlap.js'
+	import HeroFlapLine from './HeroFlapLine.vue'
+
+	const SECTION_COUNT = HERO_SECTIONS.length
 
 	const trackRef = ref(null)
-	const { activeIndex } = useScrollSections(trackRef, HERO_LINES.length)
+	const { activeIndex } = useScrollSections(trackRef, SECTION_COUNT)
 
-	// One viewport of scroll per line, plus a trailing viewport so the last line
+	// One viewport of scroll per section, plus a trailing viewport so the last line
 	// holds for a full screen before the track ends.
-	const trackHeight = `${(HERO_LINES.length + 1) * 100}vh`
+	const trackHeight = `${(SECTION_COUNT + 1) * 100}vh`
 
-	const activeLine = computed(() => HERO_LINES[activeIndex.value] ?? [])
-	const { cells } = useSplitFlap(activeLine)
-
-	// Plain-text label for assistive tech — the flap glyphs are decorative.
-	const lineText = computed(() => activeLine.value.map(segment => segment.text).join(''))
+	const activeSection = computed(() => HERO_SECTIONS[activeIndex.value] ?? HERO_SECTIONS[0])
 </script>
 
 <style scoped lang="scss">
-	@use '../styles/variables';
-
 	.hero-track {
 		position: relative;
 		width: 100%;
@@ -76,53 +77,42 @@
 		justify-content: center;
 		gap: 2.5rem;
 		padding: 1.5rem;
-		text-align: center;
 		overflow: hidden;
 	}
 
-	.hero-line {
-		margin: 0;
+	.hero-stage {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.hero-centered {
 		max-width: 22ch;
-		font-size: clamp(1.4rem, 4.5vw, 3rem);
-		line-height: 1.4;
-		letter-spacing: -0.01em;
-		color: variables.$white;
-		// Wrap only between words (at .flap-space), keeping each word's letters as an
-		// unbreakable run of inline-block cells — readable at any screen size.
-		white-space: normal;
 	}
 
-	.flap-char {
-		display: inline-block;
-		// Stepped mechanical flap replayed on each glyph change via the span :key.
-		animation: flapTick 45ms steps(2, end);
+	// The landing headline spreads two blocks diagonally across a tall canvas:
+	// "Hello there" anchored upper-left, "I am KARL QUEREL" vertically centered on
+	// the right (auto margins absorb the free space below the lead).
+	.hero-headline {
+		width: 100%;
+		min-height: 55vh;
+		// Inset both edges so the left/right blocks sit nearer the centre while
+		// staying left- and right-aligned.
+		padding-inline: 12%;
+		display: flex;
+		flex-direction: column;
 	}
 
-	.flap-char--settled {
-		animation: none;
-		transform: none;
+	.hero-headline__lead {
+		align-self: flex-start;
+		max-width: 70%;
 	}
 
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border: 0;
-	}
-
-	.flap-char--accent {
-		font-family: variables.$font-pixel;
-		color: variables.$yellow;
-		// Slightly smaller because Press Start 2P runs visually larger than the body font.
-		font-size: 0.82em;
-		text-shadow:
-			0 0 6px rgba(variables.$yellow, 0.65),
-			0 0 14px rgba(variables.$yellow, 0.35);
+	.hero-headline__name {
+		align-self: flex-end;
+		margin: auto 0;
+		max-width: 80%;
 	}
 
 	.hero-progress {
@@ -133,16 +123,16 @@
 	.hero-dot {
 		width: 0.7rem;
 		height: 0.7rem;
-		background: rgba(variables.$white, 0.25);
-		box-shadow: inset 0 0 0 2px rgba(variables.$black, 0.6);
+		background: rgba($white, 0.25);
+		box-shadow: inset 0 0 0 2px rgba($black, 0.6);
 		transition: none;
 	}
 
 	.hero-dot--active {
-		background: variables.$yellow;
+		background: $yellow;
 		box-shadow:
-			inset 0 0 0 2px rgba(variables.$black, 0.6),
-			0 0 8px rgba(variables.$yellow, 0.7);
+			inset 0 0 0 2px rgba($black, 0.6),
+			0 0 8px rgba($yellow, 0.7);
 	}
 
 	.hero-hint {
@@ -150,10 +140,10 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 0.4rem;
-		font-family: variables.$font-pixel;
+		font-family: $font-pixel;
 		font-size: clamp(0.5rem, 1.3vw, 0.62rem);
 		letter-spacing: 0.18em;
-		color: rgba(variables.$white, 0.75);
+		color: rgba($white, 0.75);
 	}
 
 	.hero-hint--hidden {
@@ -162,15 +152,6 @@
 
 	.hero-hint-arrow {
 		animation: heroHintBob 1s steps(3, end) infinite;
-	}
-
-	@keyframes flapTick {
-		0% {
-			transform: translateY(-12%);
-		}
-		100% {
-			transform: translateY(0);
-		}
 	}
 
 	@keyframes heroHintBob {
@@ -185,18 +166,26 @@
 		}
 	}
 
-	@media (max-width: variables.$breakpoint-mobile) {
-		.hero-line {
+	@media (max-width: $breakpoint-mobile) {
+		.hero-pin {
+			gap: 1.8rem;
+		}
+
+		.hero-centered {
 			max-width: 16ch;
 		}
 
-		.hero-pin {
-			gap: 1.8rem;
+		.hero-headline {
+			padding-inline: 6%;
+		}
+
+		.hero-headline__lead,
+		.hero-headline__name {
+			max-width: 90%;
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.flap-char,
 		.hero-hint-arrow {
 			animation: none;
 		}
