@@ -133,9 +133,8 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 ## Git discipline
 
-- Push directly to `main` for normal feature work and visual iterations.
+- **Never create a new branch on this repo. Always make changes directly on the main branch (`master`).** This applies to everything — features, visual iterations, refactors, and risky changes alike. No feature branches, no worktree branches.
 - Commit messages: conventional commits (`feat:`, `fix:`, `refactor:`, `chore:`).
-- **Branch only** for large or risky changes (restructuring routes, touching Firebase config) — so they can be reverted cleanly.
 - `npm run deploy` is the only way to publish.
 
 ---
