@@ -17,6 +17,10 @@ const routes = [
 		path: '/terminal',
 		component: () => import('./components/home.vue'),
 	},
+	{
+		path: '/about',
+		component: () => import('./components/About.vue'),
+	},
 	{ path: '/under_construction', component: UnderConstruction },
 	{ path: '/secret_link', component: SecretRedirect },
 	{
