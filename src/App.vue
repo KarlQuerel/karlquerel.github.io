@@ -15,8 +15,11 @@
 	import SiteHeaderAnimation from './components/SiteHeaderAnimation.vue'
 	import SiteNavbar from './components/SiteNavbar.vue'
 	import SiteFooter from './components/SiteFooter.vue'
+	import { useClickSpark } from './composables/useClickSpark'
 
 	const SCROLLABLE_PATHS = ['/', '/sport']
+
+	useClickSpark()
 
 	const route = useRoute()
 	const normalizedPath = () => route.path.replace(/\/$/, '') || '/'

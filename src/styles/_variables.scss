@@ -88,6 +88,12 @@ $gap-small: 5rem;
 // Z-Index
 $z-index-content: 1;
 $z-index-button: 10;
+$z-index-click: 9999;
+
+// Click spark
+$spark-width: 10px;
+$spark-height: 4px;
+$spark-duration: 400ms;
 
 // Breakpoints
 $breakpoint-mobile: 640px;

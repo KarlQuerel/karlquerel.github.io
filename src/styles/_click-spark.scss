@@ -1,0 +1,45 @@
+/***	IMPORTS		***/
+@use 'variables';
+
+// Pointer "spark" burst — a reproduction of the click animation on
+// eduardbodak.com. JS (useClickSpark.js) drops one `.spark` bar per fan angle
+// onto <body>; everything below is the look and motion.
+//
+// The bars are drawn in the page background colour with mix-blend-mode:
+// difference, so they invert against whatever is behind them and stay visible
+// over solid colours, text, and imagery alike.
+
+.spark {
+	position: absolute;
+	width: variables.$spark-width;
+	height: variables.$spark-height;
+	background: variables.$white;
+	mix-blend-mode: difference;
+	pointer-events: none;
+	z-index: variables.$z-index-click;
+	animation: spark-burst variables.$spark-duration ease-out both;
+}
+
+// Each bar is rotated to its --spark-angle, then pushed out along that axis
+// while shrinking to nothing. The cumulative translates/scales reproduce the
+// original 8px launch -> 16px throw -> collapse curve.
+@keyframes spark-burst {
+	0% {
+		transform: translate(-50%, -50%) rotate(var(--spark-angle)) translate(8px, 0);
+	}
+	65% {
+		transform: translate(-50%, -50%) rotate(var(--spark-angle)) translate(8px, 0)
+			translate(16px, 0) scale(0.5, 0.75);
+	}
+	100% {
+		transform: translate(-50%, -50%) rotate(var(--spark-angle)) translate(8px, 0)
+			translate(16px, 0) scale(0.5, 0.75) translate(6px, 0) scale(0, 0);
+	}
+}
+
+// Respect users who ask for less motion.
+@media (prefers-reduced-motion: reduce) {
+	.spark {
+		display: none;
+	}
+}
