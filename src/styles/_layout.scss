@@ -79,6 +79,16 @@ html:not(.page-scrollable) #app {
 	overflow: hidden;
 }
 
+// .app-root sits between #app and .app-main; without flex-fill it collapses to
+// content height and the page can't center vertically. Carry the flex column
+// through so .app-main can take the remaining height and center its child.
+html:not(.page-scrollable) #app .app-root {
+	flex: 1 1 auto;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+}
+
 .app-main {
 	flex: 1 1 auto;
 	min-height: 0;
