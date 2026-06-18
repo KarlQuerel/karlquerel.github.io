@@ -1,167 +1,127 @@
 <template>
-	<div class="contact-page">
-		<template v-for="src in PRELOAD_GIF_SRCS" :key="`preload-${src}`">
-			<img class="sr-only-preload" alt="" :src="src" />
-		</template>
-		<div class="content">
-			<div class="nes-container is-dark is-rounded contact-panel">
-				<h1 class="contact-heading">Contact</h1>
-				<img
-					class="contact-idle"
-					:src="IDLE_GIF_SRC"
-					alt="Yako idle"
-					width="128"
-					height="128"
-				/>
-				<ul class="contact-links">
-					<li v-for="row in CONTACT_ROWS" :key="row.key" class="contact-row">
-						<img
-							class="contact-row-anim"
-							:src="row.gifSrc"
-							:alt="''"
-							width="96"
-							height="96"
-						/>
-						<a
-							class="contact-link nes-btn"
-							:class="row.btnClass"
-							:href="row.href"
-							:target="row.blank ? '_blank' : undefined"
-							:rel="row.blank ? 'noopener noreferrer' : undefined"
-						>
-							{{ row.label }}
-						</a>
-					</li>
-				</ul>
-			</div>
-			<router-link to="/" class="back-home nes-btn is-primary">Home</router-link>
-		</div>
+	<div class="content contact">
+		<header class="contact-head">
+			<h1 class="contact-name">CONTACT</h1>
+			<p v-for="(line, i) in CONTACT_INTRO" :key="i" class="contact-intro">{{ line }}</p>
+		</header>
+
+		<ul class="contact-list">
+			<li
+				v-for="(channel, i) in CONTACT_CHANNELS"
+				:key="channel.key"
+				class="contact-item"
+				:style="{ '--delay': `${i * 90}ms` }"
+			>
+				<a
+					class="contact-card"
+					:href="channel.href"
+					:target="channel.blank ? '_blank' : undefined"
+					:rel="channel.blank ? 'noopener noreferrer' : undefined"
+				>
+					<span class="contact-channel">{{ channel.channel }}</span>
+					<span class="contact-value">{{ channel.value }}</span>
+				</a>
+			</li>
+		</ul>
 	</div>
 </template>
 
 <script setup>
-	const IDLE_GIF_SRC = '/assets/img/Yako_Animations/Idle.gif'
-	const LIE_DOWN_GIF_SRC = '/assets/img/Yako_Animations/Lie_down.gif'
-	const PLAY_GIF_SRC = '/assets/img/Yako_Animations/Play.gif'
-
-	const PRELOAD_GIF_SRCS = [IDLE_GIF_SRC, LIE_DOWN_GIF_SRC, PLAY_GIF_SRC]
-
-	const CONTACT_ROWS = [
-		{
-			key: 'email',
-			label: 'Email',
-			href: 'mailto:karlquerel@gmail.com',
-			btnClass: 'is-success',
-			gifSrc: LIE_DOWN_GIF_SRC,
-			blank: false,
-		},
-		{
-			key: 'github',
-			label: 'GitHub',
-			href: 'https://github.com/KarlQuerel',
-			btnClass: '',
-			gifSrc: PLAY_GIF_SRC,
-			blank: true,
-		},
-		{
-			key: 'linkedin',
-			label: 'LinkedIn',
-			href: 'https://www.linkedin.com/in/karlquerel',
-			btnClass: 'is-warning',
-			gifSrc: LIE_DOWN_GIF_SRC,
-			blank: true,
-		},
-	]
+	import { CONTACT_INTRO, CONTACT_CHANNELS } from '@/data/contact'
 </script>
 
-<style lang="scss" scoped>
-	.contact-page {
-		position: relative;
-		width: 100%;
-		box-sizing: border-box;
+<style scoped lang="scss">
+	.contact {
+		gap: 2.5rem;
+		padding: 2.5rem 1rem 4rem;
 	}
 
-	.contact-panel {
-		max-width: min(36rem, 96vw);
-		width: 100%;
-		background-color: rgba(0, 0, 0, 0.5) !important;
-		border: 0.1vh solid $retro-green !important;
-		border-radius: 20px !important;
-		padding: 1.25rem 1.5rem 1.5rem !important;
-		text-transform: uppercase;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.contact-heading {
+	/***	HEADER		***/
+	.contact-name {
 		margin: 0;
-		font-size: clamp(1rem, 3vw, 1.35rem);
-		letter-spacing: 0.08em;
-		color: $white;
+		font-family: $font-pixel;
+		font-size: clamp(1rem, 4vw, 1.8rem);
+		line-height: 1.5;
+		letter-spacing: 2px;
+		color: $yellow;
+		text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
 	}
 
-	.contact-idle {
-		display: block;
-		width: min(160px, 40vw);
-		height: auto;
-		image-rendering: pixelated;
-		flex-shrink: 0;
+	.contact-intro {
+		max-width: 42ch;
+		margin: 0.5rem auto 0;
+		font-size: clamp(0.85rem, 2vw, 1rem);
+		line-height: 1.65;
+		color: rgba(255, 255, 255, 0.85);
 	}
 
-	.contact-links {
+	/***	LINKS		***/
+	.contact-list {
+		width: min(40rem, 94vw);
+		margin: 0 auto;
+		padding: 0;
 		list-style: none;
-		margin: 0;
-		padding: 0;
 		display: flex;
 		flex-direction: column;
-		align-items: stretch;
-		gap: 0.85rem;
-		width: 100%;
+		gap: 1.5rem;
+		text-align: left;
 	}
 
-	.contact-row {
+	.contact-item {
+		opacity: 0;
+		transform: translateX(-8px);
+		animation: item-in 0.4s steps(4, end) forwards;
+		animation-delay: var(--delay, 0ms);
+	}
+
+	// Mirrors the About timeline card: dark panel, 4px yellow border, offset shadow.
+	.contact-card {
 		display: flex;
-		flex-direction: row;
-		align-items: center;
-		justify-content: center;
-		flex-wrap: wrap;
-		gap: clamp(0.5rem, 3vw, 1rem);
-		width: 100%;
-	}
-
-	.contact-row-anim {
-		display: block;
-		width: clamp(56px, 14vw, 96px);
-		height: auto;
-		image-rendering: pixelated;
-		flex-shrink: 0;
-		pointer-events: none;
-	}
-
-	.contact-link {
-		min-width: 11rem;
-		flex: 0 1 auto;
+		flex-direction: column;
+		gap: 0.5rem;
+		padding: 0.9rem 1rem 1rem;
+		background: rgba(0, 0, 0, 0.55);
+		border: 4px solid $yellow;
+		box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.5);
 		text-decoration: none;
-		justify-content: center;
 	}
 
-	.back-home {
-		margin-top: 1.25rem;
-		text-decoration: none;
-		font-size: 0.75rem;
+	// Stepped 8-bit hover/focus: an inner yellow ring, no smooth easing.
+	.contact-card:hover,
+	.contact-card:focus-visible {
+		outline: none;
+		box-shadow:
+			6px 6px 0 0 rgba(0, 0, 0, 0.5),
+			0 0 0 2px $yellow inset;
 	}
 
-	.sr-only-preload {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border: 0;
+	.contact-channel {
+		font-family: $font-pixel;
+		font-size: clamp(0.6rem, 2vw, 0.85rem);
+		line-height: 1.5;
+		color: $yellow;
+	}
+
+	.contact-value {
+		font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+		line-height: 1.6;
+		color: rgba(255, 255, 255, 0.85);
+		word-break: break-word;
+	}
+
+	@keyframes item-in {
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
+	// Honour reduced-motion: show everything, kill the animation.
+	@media (prefers-reduced-motion: reduce) {
+		.contact-item {
+			opacity: 1;
+			transform: none;
+			animation: none;
+		}
 	}
 </style>

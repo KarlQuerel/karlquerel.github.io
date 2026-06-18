@@ -1,0 +1,30 @@
+/***	CONTACT DATA		***/
+// Drives the /contact page. Keep it short — edit the copy here.
+
+export const CONTACT_INTRO = ['Reach me through any of these channels.']
+
+// Each channel renders as a card linking out.
+// `blank: true` opens the link in a new tab.
+export const CONTACT_CHANNELS = [
+	{
+		key: 'email',
+		channel: 'Email',
+		value: 'karlquerel@gmail.com',
+		href: 'mailto:karlquerel@gmail.com',
+		blank: false,
+	},
+	{
+		key: 'github',
+		channel: 'GitHub',
+		value: 'github.com/KarlQuerel',
+		href: 'https://github.com/KarlQuerel',
+		blank: true,
+	},
+	{
+		key: 'linkedin',
+		channel: 'LinkedIn',
+		value: 'linkedin.com/in/karlquerel',
+		href: 'https://www.linkedin.com/in/karlquerel',
+		blank: true,
+	},
+]
