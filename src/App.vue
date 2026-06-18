@@ -1,6 +1,6 @@
 <template>
 	<div class="app-root">
-		<SiteHeaderAnimation v-if="shouldShowSiteHeader" />
+		<SiteHeaderAnimation />
 		<SiteNavbar />
 		<main class="app-main">
 			<router-view />
@@ -23,7 +23,6 @@
 
 	const route = useRoute()
 	const normalizedPath = () => route.path.replace(/\/$/, '') || '/'
-	const shouldShowSiteHeader = computed(() => normalizedPath() !== '/game')
 	const isPageScrollable = computed(() => SCROLLABLE_PATHS.includes(normalizedPath()))
 
 	watch(
