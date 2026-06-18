@@ -48,7 +48,7 @@
 	const { activeIndex } = useScrollSections(trackRef, HERO_LINES.length)
 
 	// One viewport of scroll per line, plus a trailing viewport so the last line
-	// holds before the page flows into the pixel-reveal section below.
+	// holds for a full screen before the track ends.
 	const trackHeight = `${(HERO_LINES.length + 1) * 100}vh`
 
 	const activeLine = computed(() => HERO_LINES[activeIndex.value] ?? [])

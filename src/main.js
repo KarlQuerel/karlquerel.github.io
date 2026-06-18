@@ -11,7 +11,7 @@ import UnderConstruction from './components/underConstruction.vue'
 const routes = [
 	{
 		path: '/',
-		component: () => import('./components/pixelTransition.vue'),
+		component: () => import('./components/HeroIntro.vue'),
 	},
 	{
 		path: '/terminal',

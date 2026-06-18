@@ -3,8 +3,8 @@
 // section index. The wrapper acts as a scroll "runway": as it travels through
 // the viewport, progress goes 0 -> 1 and the active section advances.
 //
-// Mirrors the viewport-relative getBoundingClientRect() technique used by
-// pixelTransition.vue, so it is unaffected by content rendered above the wrapper.
+// Uses a viewport-relative getBoundingClientRect() measurement, so it is
+// unaffected by content rendered above the wrapper.
 
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
