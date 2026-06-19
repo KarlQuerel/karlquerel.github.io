@@ -1,0 +1,33 @@
+/***	v-reveal		***/
+// Adds `is-visible` the first time an element scrolls into view, then stops
+// observing. Honours reduced-motion / missing IntersectionObserver by revealing
+// immediately, so content is never trapped off-screen. Import as `vReveal` to
+// use it as `v-reveal` inside a component.
+
+const REVEAL_CLASS = 'is-visible'
+
+export const reveal = {
+	mounted(el) {
+		const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+		if (reduce || !('IntersectionObserver' in window)) {
+			el.classList.add(REVEAL_CLASS)
+			return
+		}
+		const observer = new IntersectionObserver(
+			(entries, obs) => {
+				for (const entry of entries) {
+					if (!entry.isIntersecting) continue
+					entry.target.classList.add(REVEAL_CLASS)
+					obs.unobserve(entry.target)
+				}
+			},
+			{ rootMargin: '0px 0px -12% 0px', threshold: 0.15 }
+		)
+		observer.observe(el)
+		el._revealObserver = observer
+	},
+	unmounted(el) {
+		el._revealObserver?.disconnect()
+		delete el._revealObserver
+	},
+}

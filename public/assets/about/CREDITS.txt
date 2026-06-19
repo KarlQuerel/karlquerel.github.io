@@ -1,0 +1,12 @@
+RPG timeline + home-base pixel art (/about page)
+================================================
+
+Files: grass-tile.png, path-tile.png, tree.png, bush.png, rock.png,
+       boulder.png, pond.png, house.png, campfire.png
+
+License: CC0 1.0 (public domain dedication) — no attribution required.
+
+Origin: original pixel art created for karlquerel.github.io. Free to use,
+modify, and redistribute for any purpose. Swap any sprite for your own
+pixel art by replacing the PNG of the same name (keep it small + crisp;
+the site renders them with image-rendering: pixelated).
