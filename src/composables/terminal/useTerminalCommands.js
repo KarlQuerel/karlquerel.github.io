@@ -1,12 +1,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import {
-	MAN_PAGES,
-	NEOFETCH_LOGO,
-	SYSTEM_INFO,
-	FORTUNES,
-	COWSAY_MASCOT,
-} from '@/constants/terminal'
+import { MAN_PAGES, NEOFETCH_LOGO, SYSTEM_INFO, COWSAY_MASCOT } from '@/constants/terminal'
 import { useTerminalFs } from './useTerminalFs'
 
 export function useTerminalCommands({
@@ -204,7 +198,7 @@ export function useTerminalCommands({
 					type: 'typewriter',
 					html: true,
 					content:
-						'-> also: <span class="text-blue">cd cat tree grep wc head pwd</span> · <span class="text-green">cowsay fortune matrix</span> · <span class="text-purple">man history date</span>',
+						'-> also: <span class="text-blue">cd cat tree grep wc head pwd</span> · <span class="text-green">cowsay matrix</span> · <span class="text-purple">man history date</span>',
 				},
 			]
 		},
@@ -469,10 +463,6 @@ export function useTerminalCommands({
 			},
 		],
 
-		fortune: () => [
-			{ type: 'typewriter', content: FORTUNES[Math.floor(Math.random() * FORTUNES.length)] },
-		],
-
 		cowsay: args => {
 			const text = args.trim() || 'woof.'
 			const border = length => ' ' + '_'.repeat(length)
@@ -545,7 +535,7 @@ export function useTerminalCommands({
 				type: 'typewriter',
 				html: true,
 				content:
-					'<span class="text-red">Nice try.</span> karl is not in the sudoers file. This incident will be reported.',
+					'<span class="text-red">You have no power here, Gandalf Storm Crow!</span>',
 			},
 		],
 
@@ -591,11 +581,7 @@ export function useTerminalCommands({
 	}
 
 	// Available files for tab completion
-	const availableFiles = [
-		'why_i_left_finance.txt',
-		'install_sentience.sh',
-		'i_am_not_a_virus.exe',
-	]
+	const availableFiles = ['why_i_left_finance.txt', 'install_sentience.sh']
 
 	// Executable scripts
 	const executableScripts = {
@@ -637,68 +623,6 @@ export function useTerminalCommands({
 		}
 	}
 
-	const simulateVirusExecution = async scriptName => {
-		terminalHistory.value.push({
-			type: 'typewriter',
-			html: true,
-			content: `Executing <span class="text-red">${scriptName}</span>`,
-		})
-
-		const loadingLineIndex = terminalHistory.value.length
-		terminalHistory.value.push({ type: 'typewriter', content: '' })
-
-		const dots = ['', '.', '..', '...']
-		for (let i = 0; i < dots.length; i++) {
-			await new Promise(resolve => setTimeout(resolve, 300))
-			terminalHistory.value[loadingLineIndex] = {
-				type: 'typewriter',
-				content: dots[i],
-			}
-		}
-
-		await new Promise(resolve => setTimeout(resolve, 200))
-		terminalHistory.value.splice(loadingLineIndex, 1)
-
-		terminalHistory.value.push({
-			type: 'typewriter',
-			html: true,
-			content: '<span class="text-red">System compromised...</span>',
-		})
-
-		await new Promise(resolve => setTimeout(resolve, 500))
-
-		terminalHistory.value.push({
-			type: 'typewriter',
-			html: true,
-			content: '<span class="text-red">Redirecting to secure location...</span>',
-		})
-
-		// Add a delay before redirecting
-		await new Promise(resolve => setTimeout(resolve, 1500)) // 1.5 second delay
-
-		// Add a loading animation
-		const loadingDots = ['.', '..', '...']
-		for (let i = 0; i < 3; i++) {
-			terminalHistory.value.push({
-				type: 'typewriter',
-				html: true,
-				content: `<span class="text-red">${loadingDots[i]}</span>`,
-			})
-			await new Promise(resolve => setTimeout(resolve, 500)) // 0.5 second between dots
-		}
-
-		// Final redirect message
-		terminalHistory.value.push({
-			type: 'typewriter',
-			html: true,
-			content: '<span class="text-red">Access granted. Redirecting...</span>',
-		})
-
-		await new Promise(resolve => setTimeout(resolve, 1000)) // 1 second final delay
-
-		router.push('/under_construction')
-	}
-
 	const executeCommand = input => {
 		const trimmedInput = input.trim()
 		if (!trimmedInput) return
@@ -713,13 +637,13 @@ export function useTerminalCommands({
 			const scriptName = command.substring(2)
 			let targetScript = null
 
-			if (executableScripts[scriptName] || scriptName === 'i_am_not_a_virus.exe') {
+			if (executableScripts[scriptName]) {
 				targetScript = scriptName
 			} else {
 				const possibleNames = [scriptName + '.sh', scriptName + '.exe', scriptName]
 
 				for (const name of possibleNames) {
-					if (executableScripts[name] || name === 'i_am_not_a_virus.exe') {
+					if (executableScripts[name]) {
 						targetScript = name
 						break
 					}
@@ -727,11 +651,7 @@ export function useTerminalCommands({
 			}
 
 			if (targetScript) {
-				if (targetScript === 'i_am_not_a_virus.exe') {
-					simulateVirusExecution(targetScript)
-				} else {
-					simulateScriptExecution(targetScript, executableScripts[targetScript])
-				}
+				simulateScriptExecution(targetScript, executableScripts[targetScript])
 			} else {
 				terminalHistory.value.push({
 					type: 'output',
@@ -785,6 +705,11 @@ export function useTerminalCommands({
 					type: 'output',
 					html: true,
 					content: `"<span class="text-red">${trimmedInput}</span>" is above my <span class="text-yellow">pay grade</span>.`,
+				},
+				{
+					type: 'output',
+					html: true,
+					content: `I could try to run "<span class="text-red">${trimmedInput}</span>", but then we'd both be disappointed.`,
 				},
 			]
 			const randomResponse = responses[Math.floor(Math.random() * responses.length)]

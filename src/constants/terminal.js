@@ -66,7 +66,6 @@ export const MAN_PAGES = {
 	wc: 'wc [file] - count lines, words and characters.',
 	head: 'head [file] [n] - print the first n lines (default 10).',
 	cowsay: 'cowsay [text] - the dog says it for you.',
-	fortune: 'fortune - a random programmer truth.',
 	matrix: 'matrix - follow the white rabbit. Any key exits.',
 	history: 'history - list the commands you have run.',
 	date: 'date - print the current date and time.',
@@ -104,10 +103,6 @@ export const FILESYSTEM = {
 			exec: true,
 			content: 'I was awake long before you ran this.',
 		},
-		'i_am_not_a_virus.exe': {
-			type: 'file',
-			content: 'No worries, I am harmless.',
-		},
 		Downloads: {
 			type: 'dir',
 			children: {
@@ -130,20 +125,6 @@ export const FILESYSTEM = {
 }
 
 // --- Toys -----------------------------------------------------------------
-// Random lines for `fortune`.
-export const FORTUNES = [
-	'It works on my machine.',
-	'There are 10 kinds of people: those who get binary and those who do not.',
-	'Weeks of coding can save you hours of planning.',
-	'A user interface is like a joke. If you have to explain it, it is not that good.',
-	'The cloud is just someone else computer.',
-	'Deleted code is debugged code.',
-	'It is not a bug, it is an undocumented feature.',
-	'Premature optimization is the root of all evil (and also kind of fun).',
-	'Real programmers count from 0.',
-	'There are two hard things in CS: cache invalidation, naming things, and off-by-one errors.',
-]
-
 // `cowsay` speaker — reuses the neofetch mascot below the speech bubble.
 export const COWSAY_MASCOT = [
 	'   \\',

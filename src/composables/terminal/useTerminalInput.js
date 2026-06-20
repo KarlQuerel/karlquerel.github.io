@@ -95,7 +95,7 @@ export function useTerminalInput({
 			const token = parts[0]
 			if (token.startsWith('./')) {
 				const name = token.slice(2).toLowerCase()
-				return [...Object.keys(executableScripts), 'i_am_not_a_virus.exe']
+				return Object.keys(executableScripts)
 					.filter(script => script.toLowerCase().startsWith(name))
 					.sort()
 					.map(script => './' + script)
