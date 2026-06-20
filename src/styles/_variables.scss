@@ -2,7 +2,6 @@
 
 // Colors
 $retro-green: #00ff00;
-$dark-green: #014901;
 $black: #000000;
 $white: #ffffff;
 $yellow: #ffbd2e;
@@ -10,61 +9,15 @@ $purple: #a200ff;
 $light-blue: #00ccff;
 $light-red: #ff5f56;
 $light-gray: #d3d3d3;
-$red: #ff0000;
 
 $primary-color: #ff5733;
 $secondary-color: #c0392b;
 
 // Additional Colors
 $orange: #ff8c00;
-$pink: #ff69b4;
-$cyan: #00ffff;
-$magenta: #ff00ff;
-$lime: #32cd32;
-$navy: #000080;
-$teal: #008080;
-$amber: #ffbf00;
-$coral: #ff7f50;
-$salmon: #fa8072;
-$emerald: #50c878;
-$indigo: #4b0082;
-$aqua: #00ffff;
-$bronze: #cd7f32;
-$crimson: #dc143c;
-$jade: #00a86b;
-$violet: #8a2be2;
-$sky: #87ceeb;
-$honey: #fdb347;
-$ruby: #e0115f;
-$forest: #228b22;
-$lavender: #e6e6fa;
-$ocean: #006994;
-$sunset: #fd5e53;
-$rose: #ff007f;
 $mint: #3eb489;
-$plum: #8b4513;
 $azure: #007fff;
-$marigold: #ffa500;
-$cherry: #de3163;
-$sage: #9ca664;
-$gold: #ffd700;
-$silver: #c0c0c0;
-$copper: #b87333;
-$turquoise: #40e0d0;
-$fuchsia: #ff00ff;
-$olive: #808000;
-$brown: #a52a2a;
-$tan: #d2b48c;
-$ivory: #fffff0;
 $cream: #fffdd0;
-$peach: #ffcba4;
-$apricot: #fbceb1;
-$mauve: #e0b0ff;
-$periwinkle: #ccccff;
-$slate: #708090;
-$charcoal: #36454f;
-$smoke: #f5f5f5;
-$pearl: #f0e6e6;
 
 // Fonts
 $font-pixel: 'Press Start 2P', ui-monospace, monospace;
@@ -73,12 +26,9 @@ $font-pixel: 'Press Start 2P', ui-monospace, monospace;
 // on-aesthetic. Falls back to the platform monospace stack before it loads.
 $font-terminal: 'VT323', ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', monospace;
 
-// Terminal phosphor palette — the default green plus the alternate tints the
-// in-terminal `theme` command can switch between (classic monochrome monitors).
+// Terminal phosphor default. The alternate tints the in-terminal `theme`
+// command switches to (amber/blue/paper) live in constants/terminal.js.
 $phosphor-green: #33ff66;
-$phosphor-amber: #ffb000;
-$phosphor-blue: #66d9ff;
-$phosphor-paper: #e8e8e8;
 
 // Font Sizes
 $font-size-large: x-large;
@@ -91,10 +41,6 @@ $font-size-large-max: 3rem;
 $font-size-medium-min: 1rem;
 $font-size-medium-preferred: 2vw;
 $font-size-medium-max: 2rem;
-
-// Spacing
-$gap-large: 20px;
-$gap-small: 5rem;
 
 // Z-Index
 $z-index-content: 1;
