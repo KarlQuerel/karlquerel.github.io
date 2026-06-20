@@ -1,85 +1,44 @@
 <template>
-	<div class="terminal-window" data-nosnippet>
+	<div class="terminal-window" data-nosnippet :style="{ '--phosphor': phosphor }">
 		<div class="terminal-header">
 			<div class="terminal-buttons">
 				<div class="btn red" />
 				<div class="btn yellow" />
 				<div class="btn green" />
 			</div>
-			<div class="terminal-title">BARELY_WORKING_TERMINAL_V0.3</div>
+			<div class="terminal-title">{{ WINDOW_TITLE }}</div>
 		</div>
 
 		<div class="terminal-body" ref="terminalBody" @click="focusInput(terminalInput)">
 			<div class="terminal-line">
-				<span class="prompt">></span>
+				<TerminalPrompt />
 				<span class="welcome-text" ref="welcomeTextRef" data-nosnippet />
 			</div>
 
-			<div v-for="(line, index) in terminalHistory" :key="index" class="terminal-line">
-				<span v-if="line.type === 'command'" class="prompt">></span>
-				<span v-if="line.type === 'command'" class="command">{{ line.content }}</span>
-				<span
-					v-if="line.type === 'typewriter' && !line.link && !line.image"
-					:class="line.type"
-					:ref="`typewriter-${index}`"
-					:data-index="index"
-				/>
-				<span
-					v-if="line.type === 'typewriter' && line.link"
-					:class="line.type"
-					:ref="`typewriter-${index}`"
-					:data-index="index"
-				/>
-				<span
-					v-if="
-						!line.link &&
-						!line.image &&
-						!line.html &&
-						line.type !== 'typewriter' &&
-						line.type !== 'command' &&
-						line.type !== 'output'
-					"
-					:class="line.type"
-					>{{ line.content }}</span
-				>
-				<span
-					v-else-if="line.html && line.type !== 'typewriter' && line.type !== 'output'"
-					:class="line.type"
-					v-html="line.content"
-				/>
-				<span
-					v-else-if="line.type === 'output'"
-					:class="line.type"
-					:ref="`typewriter-${index}`"
-					:data-index="index"
-				/>
-				<span v-else-if="line.link && line.type !== 'typewriter'" :class="line.type">
-					{{ line.prefix }}
-					<a :href="line.link" target="_blank" class="terminal-link">{{
-						line.linkText
-					}}</a>
-				</span>
-				<div
-					v-else-if="line.image"
-					class="terminal-image-container"
-					:class="{ 'animated-runner': line.animated }"
-				>
-					<img
-						:src="line.image"
-						:alt="line.alt || 'Terminal image'"
-						class="terminal-image"
-						:class="{ 'running-yako': line.animated }"
-					/>
-				</div>
-			</div>
+			<TerminalLine
+				v-for="(line, index) in terminalHistory"
+				:key="index"
+				:line="line"
+				:index="index"
+				@register="registerLine"
+				@unregister="unregisterLine"
+			/>
 
 			<div
 				v-if="showInputPrompt && !isProcessingTypewriter"
 				class="terminal-line current-line"
 			>
-				<span class="prompt">></span>
+				<TerminalPrompt />
 				<div class="input-container">
-					<input
+					<!-- Visible layer: the typed text with an inline block cursor that
+					     wraps along with the text (the textarea above is transparent and
+					     only captures keystrokes / caret position). -->
+					<div class="input-mirror" aria-hidden="true">
+						<span>{{ inputBeforeCursor }}</span
+						><span class="custom-cursor">{{ cursorChar }}</span
+						><span>{{ inputAfterCursor }}</span>
+					</div>
+					<textarea
 						ref="terminalInput"
 						v-model="currentInput"
 						@keydown="handleKeyDown"
@@ -87,34 +46,60 @@
 						@click="updateCursorPosition"
 						@input="updateCursorPosition"
 						class="terminal-input"
+						rows="1"
 						autocomplete="off"
 						spellcheck="false"
+						aria-label="Terminal input"
 					/>
-					<span
-						class="custom-cursor"
-						:style="{ transform: `translateX(calc(1ch * ${cursorPosition}))` }"
-						>_</span
-					>
 				</div>
 			</div>
 		</div>
+
+		<TerminalMatrix v-if="showMatrix" :color="phosphor" @close="onMatrixClose" />
 	</div>
 </template>
 
 <script setup>
-	import { ref, onMounted, watch, nextTick } from 'vue'
+	import { ref, computed, onMounted, watch, nextTick } from 'vue'
 	import { useTerminalCommands } from '@/composables/terminal/useTerminalCommands'
 	import { useTerminalInput } from '@/composables/terminal/useTerminalInput'
 	import { useTerminalTypewriter } from '@/composables/terminal/useTerminalTypewriter'
+	import { useTerminalTheme } from '@/composables/terminal/useTerminalTheme'
 	import { useVisitTracker } from '@/composables/terminal/useVisitTracker'
+	import TerminalLine from './terminal/TerminalLine.vue'
+	import TerminalPrompt from './terminal/TerminalPrompt.vue'
+	import TerminalMatrix from './terminal/TerminalMatrix.vue'
+	import { WINDOW_TITLE } from '@/constants/terminal'
 
 	const terminalBody = ref(null)
 	const terminalInput = ref(null)
+	const showMatrix = ref(false)
 
+	const { phosphor, themeNames, themeName, setTheme } = useTerminalTheme()
 	const { trackCommand, trackVisit, getVisitStats, loadVisitData } = useVisitTracker()
 
-	const { commands, availableFiles, executableScripts, terminalHistory, executeCommand } =
-		useTerminalCommands({ getVisitStats, loadVisitData })
+	// The `history` command needs the recall list, but that ref is created later
+	// by useTerminalInput; this holder is filled in once it exists.
+	let commandHistoryRef = null
+
+	const {
+		commands,
+		availableFiles,
+		executableScripts,
+		terminalHistory,
+		executeCommand,
+		fsComplete,
+	} = useTerminalCommands({
+		getVisitStats,
+		loadVisitData,
+		setTheme,
+		themeNames,
+		getThemeName: () => themeName.value,
+		getHistory: () => commandHistoryRef?.value ?? [],
+		onMatrix: () => {
+			showMatrix.value = true
+		},
+	})
 
 	const {
 		welcomeTextRef,
@@ -124,86 +109,123 @@
 		typewriterSpeed,
 	} = useTerminalTypewriter()
 
-	const originalExecuteCommand = executeCommand
-	const enhancedExecuteCommand = async input => {
-		const trimmedInput = input.trim()
-
-		if (trimmedInput) {
-			const command = trimmedInput.split(' ')[0]
-			const isValidCommand =
+	// Count command usage (real vs. invalid) before running it.
+	const enhancedExecuteCommand = input => {
+		const trimmed = input.trim()
+		if (trimmed) {
+			const command = trimmed.split(' ')[0]
+			const isValid =
 				commands[command] ||
 				command.startsWith('./') ||
 				availableFiles.includes(command) ||
 				executableScripts[command]
-
-			if (isValidCommand) {
-				trackCommand(command)
-			} else {
-				trackCommand('invalid')
-			}
+			trackCommand(isValid ? command : 'invalid')
 		}
-
-		originalExecuteCommand(input)
+		executeCommand(input)
 	}
 
-	const { currentInput, cursorPosition, handleKeyDown, focusInput, updateCursorPosition } =
-		useTerminalInput(enhancedExecuteCommand, commands, availableFiles, executableScripts)
+	const clearScreen = () => {
+		terminalHistory.value = []
+	}
+
+	// Ctrl+C: echo the aborted line and drop it, like a real shell.
+	const interruptLine = input => {
+		terminalHistory.value.push({ type: 'command', content: `${input}^C` })
+	}
+
+	const {
+		currentInput,
+		cursorPosition,
+		commandHistory,
+		handleKeyDown,
+		focusInput,
+		updateCursorPosition,
+	} = useTerminalInput({
+		executeCommand: enhancedExecuteCommand,
+		commands,
+		executableScripts,
+		themeNames,
+		fsComplete,
+		onClear: clearScreen,
+		onInterrupt: interruptLine,
+	})
+
+	commandHistoryRef = commandHistory
+
+	// Split the input around the caret so the block cursor can be rendered
+	// inline (and wrap with the text) instead of positioned by a fixed offset.
+	const inputBeforeCursor = computed(() => currentInput.value.slice(0, cursorPosition.value))
+	const cursorChar = computed(() => currentInput.value.charAt(cursorPosition.value) || ' ')
+	const inputAfterCursor = computed(() => currentInput.value.slice(cursorPosition.value + 1))
+
+	// Matrix overlay dismissed — hide it and return focus to the prompt.
+	const onMatrixClose = () => {
+		showMatrix.value = false
+		nextTick(() => focusInput(terminalInput.value))
+	}
 
 	const scrollToBottom = () => {
-		if (terminalBody.value) {
-			nextTick(() => {
+		nextTick(() => {
+			if (terminalBody.value) {
 				terminalBody.value.scrollTop = terminalBody.value.scrollHeight
-			})
-		}
+			}
+		})
 	}
 
+	// --- Typewriter orchestration ------------------------------------------
+	// TerminalLine registers the DOM target of each typed line here, keyed by
+	// its history index. The orchestrator animates them strictly in order, one
+	// at a time, marking each line `animated` once typed.
+	const lineTargets = new Map()
 	const isProcessingTypewriter = ref(false)
 
-	const processTypewriterOutputs = async () => {
+	const registerLine = (index, el) => {
+		lineTargets.set(index, el)
+		nextTick(processTypewriterOutputs)
+	}
+
+	const unregisterLine = index => {
+		lineTargets.delete(index)
+	}
+
+	const isAnimatable = line =>
+		(line.type === 'typewriter' || line.type === 'output') && !line.image
+
+	async function processTypewriterOutputs() {
 		if (isProcessingTypewriter.value) return
 
-		const typewriterElements = document.querySelectorAll('[data-index]')
-		let nextElement = null
+		let next = null
+		for (let i = 0; i < terminalHistory.value.length; i++) {
+			const line = terminalHistory.value[i]
+			if (!isAnimatable(line) || line.animated) continue
 
-		for (const element of typewriterElements) {
-			const index = parseInt(element.getAttribute('data-index'))
-			const line = terminalHistory.value[index]
-
-			if (line && (line.type === 'typewriter' || line.type === 'output') && !line.animated) {
-				nextElement = { element, index, line }
-				break
-			}
+			const el = lineTargets.get(i)
+			if (!el) return // not mounted yet; registerLine will retry
+			next = { el, line }
+			break
 		}
 
-		if (nextElement) {
-			isProcessingTypewriter.value = true
-			const { element, line } = nextElement
-			line.animated = true
+		if (!next) {
+			nextTick(() => focusInput(terminalInput.value))
+			return
+		}
 
-			scrollToBottom()
+		isProcessingTypewriter.value = true
+		next.line.animated = true
+		scrollToBottom()
 
-			if (line.link) {
-				const fullContent = (line.prefix || '') + line.linkText
-				await createCommandTypewriter(element, fullContent, typewriterSpeed)
-
-				element.innerHTML =
-					(line.prefix || '') +
-					`<a href="${line.link}" target="_blank" class="terminal-link">${line.linkText}</a>`
-			} else {
-				await createCommandTypewriter(element, line.content, typewriterSpeed)
-			}
-
-			isProcessingTypewriter.value = false
-
-			nextTick(() => {
-				processTypewriterOutputs()
-			})
+		if (next.line.link) {
+			const fullContent = (next.line.prefix || '') + next.line.linkText
+			await createCommandTypewriter(next.el, fullContent, typewriterSpeed)
+			next.el.innerHTML =
+				(next.line.prefix || '') +
+				`<a href="${next.line.link}" target="_blank" class="terminal-link">${next.line.linkText}</a>`
 		} else {
-			isProcessingTypewriter.value = false
-			nextTick(() => {
-				focusInput(terminalInput.value)
-			})
+			await createCommandTypewriter(next.el, next.line.content, typewriterSpeed)
 		}
+
+		isProcessingTypewriter.value = false
+		nextTick(processTypewriterOutputs)
 	}
 
 	watch(
@@ -217,9 +239,7 @@
 		{ deep: true }
 	)
 
-	watch(currentInput, () => {
-		scrollToBottom()
-	})
+	watch(currentInput, scrollToBottom)
 
 	onMounted(() => {
 		trackVisit()
@@ -232,19 +252,37 @@
 
 <style lang="scss" scoped>
 	.terminal-window {
+		--phosphor: #{$phosphor-green};
+		position: relative;
 		width: 100%;
-		height: 80vh;
-		background: rgba(255, 255, 255, 0.1);
-		border: 0.1vh solid $light-gray;
+		height: 100%;
+		background: rgba(8, 12, 8, 0.92);
+		border: 1px solid rgba(255, 255, 255, 0.18);
 		border-radius: 10px;
 		overflow: hidden;
-		position: relative;
+		font-family: $font-terminal;
+		font-size: 1.4rem;
+	}
+
+	// Subtle CRT scanlines, fixed over the (non-scrolling) window.
+	.terminal-window::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 5;
+		background: repeating-linear-gradient(
+			to bottom,
+			rgba(0, 0, 0, 0.18) 0,
+			rgba(0, 0, 0, 0.18) 1px,
+			transparent 1px,
+			transparent 3px
+		);
 	}
 
 	.terminal-header {
 		background: rgba(100, 100, 100, 0.5);
-
-		border-bottom: 0.1vh solid $light-gray;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.18);
 		padding: 0.5rem 1rem;
 		display: flex;
 		align-items: center;
@@ -275,15 +313,19 @@
 
 	.terminal-title {
 		color: $light-gray;
-		font-size: 0.7rem;
-		text-transform: uppercase;
-		letter-spacing: 1px;
+		font-size: 0.95rem;
+		letter-spacing: 0.5px;
+		opacity: 0.85;
 	}
 
 	.terminal-body {
 		height: calc(100% - 60px);
 		padding: 1rem;
 		overflow-y: auto;
+		// Long lines wrap (like a real terminal) — never scroll sideways.
+		overflow-x: hidden;
+		// Subtle phosphor glow on every glyph.
+		text-shadow: 0 0 2px currentColor;
 
 		&::-webkit-scrollbar {
 			width: 8px;
@@ -302,9 +344,8 @@
 	.terminal-line {
 		display: flex;
 		align-items: baseline;
-		margin-bottom: 0.5rem;
-		font-size: 1rem;
-		line-height: 1.4;
+		margin-bottom: 0.35rem;
+		line-height: 1.25;
 		text-align: start;
 
 		&.current-line {
@@ -312,267 +353,89 @@
 		}
 	}
 
-	.prompt {
-		color: $retro-green;
-		margin-right: 0.5rem;
-		font-weight: bold;
-		flex-shrink: 0;
-	}
-
 	.welcome-text {
 		color: $light-blue;
-	}
-
-	.command {
-		color: white;
-	}
-
-	.output {
-		color: #cccccc;
-		white-space: pre-wrap;
-	}
-
-	.typewriter {
-		color: #cccccc;
-		white-space: pre-wrap;
-	}
-
-	:deep(.text-green) {
-		color: $retro-green;
-		text-shadow: 0 0 3px currentColor;
-	}
-
-	:deep(.text-blue) {
-		color: $light-blue;
-		text-shadow: 0 0 3px currentColor;
-	}
-
-	:deep(.text-azure) {
-		color: $azure;
-		text-shadow: 0 0 3px currentColor;
-	}
-
-	:deep(.text-yellow) {
-		color: $yellow;
-		text-shadow: 0 0 3px currentColor;
-	}
-
-	:deep(.text-red) {
-		color: $light-red;
-		text-shadow: 0 0 3px currentColor;
-	}
-
-	:deep(.text-purple) {
-		color: $purple;
-		text-shadow: 0 0 3px currentColor;
-	}
-
-	:deep(.text-mint) {
-		color: $mint;
-		text-shadow: 0 0 3px currentColor;
-	}
-
-	:deep(.text-orange) {
-		color: $orange;
-		text-shadow: 0 0 3px currentColor;
-	}
-
-	:deep(.text-cream) {
-		color: $cream;
-		text-shadow: 0 0 3px currentColor;
-	}
-
-	:deep(.terminal-link) {
-		color: $retro-green;
-		text-decoration: none;
-		border-bottom: 1px dotted $retro-green;
-		transition: all 0.3s ease;
-
-		&:hover {
-			color: $light-blue;
-			border-bottom-color: $light-blue;
-			text-shadow: 0 0 5px currentColor;
-		}
-
-		&:active {
-			color: $light-red;
-		}
+		min-width: 0;
+		overflow-wrap: anywhere;
 	}
 
 	.input-container {
 		position: relative;
-		display: flex;
 		flex: 1;
+		min-width: 0;
 	}
 
+	// Visible text layer the user actually reads; wraps on long input.
+	.input-mirror {
+		color: $white;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+
+	// Transparent capture layer stacked over the mirror, sized to it so it
+	// wraps identically. Auto-grows in height since the mirror sets the box.
 	.terminal-input {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		padding: 0;
 		background: transparent;
 		border: none;
 		outline: none;
-		color: white;
+		resize: none;
+		overflow: hidden;
+		color: transparent;
+		caret-color: transparent;
 		font-family: inherit;
 		font-size: inherit;
-		flex: 1;
-		caret-color: transparent;
-		min-width: 0;
-		position: relative;
+		line-height: inherit;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
 		z-index: 1;
 	}
 
+	// Inline block cursor: inverts the glyph it sits on and flows with the text.
 	.custom-cursor {
-		position: absolute;
-		left: 0;
-		top: 0;
-		color: $retro-green;
-		font-weight: bold;
-		pointer-events: none;
-		animation: blink 1.5s infinite;
-		transform: translateX(calc(1ch * var(--cursor-position, 0)));
-		will-change: transform;
+		background: var(--phosphor);
+		color: $black;
+		animation: blink 1.1s steps(1) infinite;
 	}
 
 	@keyframes blink {
 		0%,
-		60% {
+		50% {
 			opacity: 1;
 		}
-		61%,
+		51%,
 		100% {
 			opacity: 0;
 		}
 	}
 
-	.terminal-image-container {
-		margin: 1rem 0;
-		text-align: center;
-
-		&.animated-runner {
-			position: relative;
-			height: 70px;
-			width: 100%;
-			overflow: hidden;
-			text-align: left;
+	@media (prefers-reduced-motion: reduce) {
+		.custom-cursor {
+			animation: none;
 		}
-	}
-
-	.terminal-image {
-		max-width: 100%;
-		max-height: 300px;
-
-		&.running-yako {
-			position: absolute;
-			top: 50%;
-			transform: translateY(-50%);
-			height: 80px;
-			width: auto;
-			max-width: none;
-			border: none;
-			box-shadow: none;
-			animation: yakoBackAndForth 20s linear infinite;
-			will-change: transform;
-		}
-	}
-
-	@keyframes yakoBackAndForth {
-		0% {
-			left: -150px;
-			transform: translateY(-50%) rotateY(0deg);
-		}
-
-		25% {
-			left: calc(100% - 10px);
-			transform: translateY(-50%) rotateY(0deg);
-		}
-
-		25.1% {
-			transform: translateY(-50%) rotateY(180deg);
-		}
-
-		50% {
-			left: calc(100% - 10px);
-			transform: translateY(-50%) rotateY(180deg);
-		}
-
-		75% {
-			left: -150px;
-			transform: translateY(-50%) rotateY(180deg);
-		}
-
-		75.1% {
-			transform: translateY(-50%) rotateY(0deg);
-		}
-
-		100% {
-			left: -150px;
-			transform: translateY(-50%) rotateY(0deg);
-		}
-	}
-
-	@keyframes flicker {
-		0%,
-		90% {
-			opacity: 1;
-		}
-		91%,
-		94% {
-			opacity: 0.6;
-		}
-		95%,
-		97% {
-			opacity: 0.8;
-		}
-		98%,
-		99% {
-			opacity: 0.7;
-		}
-		100% {
-			opacity: 1;
-		}
-	}
-
-	.terminal-line:nth-child(odd) {
-		animation: flicker 4s infinite;
 	}
 
 	@media (max-width: 1024px) {
 		.terminal-window {
-			width: 100%;
-			height: 80vh;
-		}
-
-		.welcome-text,
-		.terminal-input,
-		.output,
-		.command {
-			font-size: 0.8rem;
+			font-size: 1.05rem;
 		}
 
 		.terminal-body {
-			font-size: 0.5rem;
 			padding: 0.5rem;
 		}
 
 		.terminal-title {
-			font-size: 0.5rem;
+			font-size: 0.75rem;
 		}
 
 		.terminal-line {
-			margin-bottom: 0.25rem;
-			line-height: 1.1;
-			font-size: 0.8rem;
-		}
-
-		.prompt {
-			font-size: 0.8rem;
-			margin-right: 0.25rem;
-		}
-
-		.terminal-image {
-			max-height: 200px;
-
-			&.running-yako {
-				animation: yakoBackAndForth 10s linear infinite;
-			}
+			margin-bottom: 0.2rem;
+			line-height: 1.15;
 		}
 	}
 </style>

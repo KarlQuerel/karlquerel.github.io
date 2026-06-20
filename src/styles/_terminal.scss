@@ -1,0 +1,65 @@
+/***	TERMINAL		***/
+// These helper classes are injected as raw HTML by the typewriter (TypeIt
+// writes innerHTML), so component-scoped styles can't reach them. They live
+// here, globally, and are only ever used inside the /terminal page.
+@use 'variables';
+
+%phosphor-glow {
+	text-shadow: 0 0 3px currentColor;
+}
+
+.text-green {
+	color: variables.$retro-green;
+	@extend %phosphor-glow;
+}
+.text-blue {
+	color: variables.$light-blue;
+	@extend %phosphor-glow;
+}
+.text-azure {
+	color: variables.$azure;
+	@extend %phosphor-glow;
+}
+.text-yellow {
+	color: variables.$yellow;
+	@extend %phosphor-glow;
+}
+.text-red {
+	color: variables.$light-red;
+	@extend %phosphor-glow;
+}
+.text-purple {
+	color: variables.$purple;
+	@extend %phosphor-glow;
+}
+.text-mint {
+	color: variables.$mint;
+	@extend %phosphor-glow;
+}
+.text-orange {
+	color: variables.$orange;
+	@extend %phosphor-glow;
+}
+.text-cream {
+	color: variables.$cream;
+	@extend %phosphor-glow;
+}
+
+.terminal-link {
+	color: variables.$retro-green;
+	text-decoration: none;
+	border-bottom: 1px dotted variables.$retro-green;
+	transition:
+		color 0.2s ease,
+		border-color 0.2s ease;
+
+	&:hover {
+		color: variables.$light-blue;
+		border-bottom-color: variables.$light-blue;
+		text-shadow: 0 0 5px currentColor;
+	}
+
+	&:active {
+		color: variables.$light-red;
+	}
+}

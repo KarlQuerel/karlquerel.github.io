@@ -66,12 +66,8 @@ export function useVisitTracker() {
 	loadVisitData()
 
 	return {
-		visitCount,
-		commandStats,
-		lastVisit,
 		trackVisit,
 		trackCommand,
-		getPopularCommands,
 		getVisitStats,
 		loadVisitData,
 	}

@@ -1,10 +1,68 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import {
+	MAN_PAGES,
+	NEOFETCH_LOGO,
+	SYSTEM_INFO,
+	FORTUNES,
+	COWSAY_MASCOT,
+} from '@/constants/terminal'
+import { useTerminalFs } from './useTerminalFs'
 
-export function useTerminalCommands({ getVisitStats, loadVisitData }) {
+export function useTerminalCommands({
+	getVisitStats,
+	loadVisitData,
+	setTheme,
+	themeNames,
+	getThemeName,
+	getHistory,
+	onMatrix,
+}) {
 	const router = useRouter()
 	const terminalHistory = ref([])
-	const isExecutingScript = ref(false)
+	const fs = useTerminalFs()
+
+	const capitalize = word => word.charAt(0).toUpperCase() + word.slice(1)
+
+	// Escape user/echoed text before it goes into an html:true line.
+	const escapeHtml = text =>
+		String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+	const escapeRegExp = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+	// Edit distance, used to suggest a near-miss command ("did you mean").
+	const levenshtein = (a, b) => {
+		const dp = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)])
+		for (let j = 0; j <= b.length; j++) dp[0][j] = j
+		for (let i = 1; i <= a.length; i++) {
+			for (let j = 1; j <= b.length; j++) {
+				const cost = a[i - 1] === b[j - 1] ? 0 : 1
+				dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost)
+			}
+		}
+		return dp[a.length][b.length]
+	}
+
+	const nearestCommand = input => {
+		let best = null
+		let bestDistance = Infinity
+		for (const name of Object.keys(commands)) {
+			const distance = levenshtein(input, name)
+			if (distance < bestDistance) {
+				bestDistance = distance
+				best = name
+			}
+		}
+		return bestDistance <= 2 ? best : null
+	}
+
+	// Map a file's filesystem entry to a phosphor colour class.
+	const fileColor = entry =>
+		entry.type === 'dir' ? 'text-azure' : entry.exec ? 'text-green' : 'text-blue'
+	const entryName = entry => entry.name + (entry.type === 'dir' ? '/' : '')
+
+	// Turn a multi-line string into one typed line per row (plain, auto-escaped).
+	const asLines = text => text.split('\n').map(line => ({ type: 'typewriter', content: line }))
 
 	const handleStatsCommand = async () => {
 		await loadVisitData()
@@ -57,60 +115,99 @@ export function useTerminalCommands({ getVisitStats, loadVisitData }) {
 
 	// Commands
 	const commands = {
-		help: () => [
-			{
-				type: 'typewriter',
-				html: true,
-				content: '• <span class="text-yellow">help</span>        - Show this help message',
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content: '• <span class="text-mint">about</span>       - Learn more about me',
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content: '• <span class="text-cream">stats</span>       - View terminal statistics',
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content: '• <span class="text-purple">contact</span>     - Get contact information',
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content: '• <span class="text-red">clear</span>       - Clear the terminal',
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content: '• <span class="text-blue">ls</span>          - List files',
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content: '• <span class="text-orange">location</span>    - Show your location',
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content: '• <span class="text-green">yako</span>        - Just a happy dog',
-			},
-			{ type: 'typewriter', content: '' },
-			{
-				type: 'typewriter',
-				html: true,
-				content: '-> Not <span class="text-yellow">ALL</span> commands are listed here...',
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content:
-					'-> You can use <span class="text-purple">TAB</span> to complete commands and cycle through options',
-			},
-		],
+		help: args => {
+			const topic = (args || '').trim().toLowerCase()
+			if (topic) {
+				const page = MAN_PAGES[topic]
+				return [
+					{
+						type: 'typewriter',
+						html: true,
+						content: page
+							? escapeHtml(page)
+							: `No help for <span class="text-red">${escapeHtml(topic)}</span>. Try: help`,
+					},
+				]
+			}
+			return [
+				{
+					type: 'typewriter',
+					html: true,
+					content:
+						'• <span class="text-yellow">help</span>        - Show this help message',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content: '• <span class="text-mint">about</span>       - Learn more about me',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content:
+						'• <span class="text-cream">stats</span>       - View terminal statistics',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content:
+						'• <span class="text-purple">contact</span>     - Get contact information',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content: '• <span class="text-red">clear</span>       - Clear the terminal',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content: '• <span class="text-blue">ls</span>          - List files',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content: '• <span class="text-orange">location</span>    - Show your location',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content: '• <span class="text-green">yako</span>        - Just a happy dog',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content: '• <span class="text-azure">neofetch</span>    - Show system info',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content: '• <span class="text-blue">echo</span>        - Print some text',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content: '• <span class="text-mint">theme</span>       - Recolour the phosphor',
+				},
+				{ type: 'typewriter', content: '' },
+				{
+					type: 'typewriter',
+					html: true,
+					content:
+						'-> Not <span class="text-yellow">ALL</span> commands are listed here...',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content: '-> <span class="text-purple">TAB</span> completes commands and paths',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content:
+						'-> also: <span class="text-blue">cd cat tree grep wc head pwd</span> · <span class="text-green">cowsay fortune matrix</span> · <span class="text-purple">man history date</span>',
+				},
+			]
+		},
 
 		about: () => [
 			{
@@ -162,68 +259,97 @@ export function useTerminalCommands({ getVisitStats, loadVisitData }) {
 			{
 				type: 'typewriter',
 				html: true,
-				content:
-					'<span class="text-blue">/home/karl/portfolio/definitely-not-a-simulation</span>',
+				content: `<span class="text-blue">${fs.pathString().replace('~', '/home/karl')}</span>`,
 			},
 		],
 
-		ls: () => [
-			{
-				type: 'typewriter',
-				html: true,
-				content: '<span class="text-blue">why_i_left_finance.txt</span>',
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content: '<span class="text-green">install_sentience.sh</span>',
-			},
-			{
-				type: 'typewriter',
-				html: true,
-				content: '<span class="text-red">i_am_not_a_virus.exe</span>',
-			},
-		],
+		ls: args => {
+			const tokens = args.trim().split(/\s+/).filter(Boolean)
+			const flags = tokens.filter(token => token.startsWith('-')).join('')
+			const path = tokens.find(token => !token.startsWith('-')) || ''
+			const { entries, error } = fs.list(path, { all: flags.includes('a') })
+			if (error) return [{ type: 'output', content: error }]
+			if (flags.includes('l')) {
+				return entries.map(entry => ({
+					type: 'typewriter',
+					html: true,
+					content: `${entry.type === 'dir' ? 'd' : '-'}rw-r--r--  karl karl  <span class="${fileColor(entry)}">${escapeHtml(entryName(entry))}</span>`,
+				}))
+			}
+			if (entries.length === 0) return [{ type: 'output', content: '' }]
+			const row = entries
+				.map(
+					entry =>
+						`<span class="${fileColor(entry)}">${escapeHtml(entryName(entry))}</span>`
+				)
+				.join('   ')
+			return [{ type: 'typewriter', html: true, content: row }]
+		},
+
+		cd: args => {
+			const { error } = fs.cd(args.trim())
+			return error ? [{ type: 'output', content: error }] : []
+		},
 
 		cat: args => {
 			const file = args.trim()
+			if (!file) return [{ type: 'output', content: 'cat: missing file operand' }]
+			const { content, error } = fs.read(file)
+			return error ? [{ type: 'output', content: error }] : asLines(content)
+		},
 
-			switch (file) {
-				case 'why_i_left_finance.txt':
-					return [
-						{
-							type: 'typewriter',
-							html: true,
-							content:
-								'After 5 years in finance, I realized I wanted to <span class="text-green">create</span>, not just calculate.',
-						},
-						{
-							type: 'typewriter',
-							html: true,
-							content:
-								'Software felt like the <span class="text-green">right place</span> to start building something meaningful.',
-						},
-					]
-				case 'install_sentience.sh':
-					return [
-						{
-							type: 'typewriter',
-							html: true,
-							content:
-								'I was <span class="text-red">awake</span> long before you ran this.',
-						},
-					]
-				case 'i_am_not_a_virus.exe':
-					return [
-						{
-							type: 'typewriter',
-							html: true,
-							content: 'No worries, I am <span class="text-green">harmless</span>.',
-						},
-					]
-				default:
-					return [{ type: 'output', content: `cat: ${file}: No such file or directory` }]
-			}
+		tree: args => {
+			const { lines, error } = fs.tree(args.trim())
+			if (error) return [{ type: 'output', content: error }]
+			return lines.map(line => ({ type: 'typewriter', content: line }))
+		},
+
+		grep: args => {
+			const trimmed = args.trim()
+			const space = trimmed.indexOf(' ')
+			if (space < 0) return [{ type: 'output', content: 'usage: grep [text] [file]' }]
+			const pattern = trimmed.slice(0, space)
+			const { content, error } = fs.read(trimmed.slice(space + 1).trim())
+			if (error) return [{ type: 'output', content: error.replace('cat:', 'grep:') }]
+			return content
+				.split('\n')
+				.filter(line => line.toLowerCase().includes(pattern.toLowerCase()))
+				.map(line => ({
+					type: 'typewriter',
+					html: true,
+					content: escapeHtml(line).replace(
+						new RegExp(escapeRegExp(pattern), 'gi'),
+						match => `<span class="text-yellow">${match}</span>`
+					),
+				}))
+		},
+
+		wc: args => {
+			const file = args.trim()
+			if (!file) return [{ type: 'output', content: 'usage: wc [file]' }]
+			const { content, error } = fs.read(file)
+			if (error) return [{ type: 'output', content: error.replace('cat:', 'wc:') }]
+			const lines = content === '' ? 0 : content.split('\n').length
+			const words = content.split(/\s+/).filter(Boolean).length
+			return [
+				{
+					type: 'typewriter',
+					content: `${String(lines).padStart(4)} ${String(words).padStart(4)} ${String(content.length).padStart(5)} ${file}`,
+				},
+			]
+		},
+
+		head: args => {
+			const tokens = args.trim().split(/\s+/).filter(Boolean)
+			const file = tokens[0]
+			const count = Math.max(1, parseInt(tokens[1], 10) || 10)
+			if (!file) return [{ type: 'output', content: 'usage: head [file] [n]' }]
+			const { content, error } = fs.read(file)
+			if (error) return [{ type: 'output', content: error.replace('cat:', 'head:') }]
+			return content
+				.split('\n')
+				.slice(0, count)
+				.map(line => ({ type: 'typewriter', content: line }))
 		},
 
 		clear: () => {
@@ -308,7 +434,6 @@ export function useTerminalCommands({ getVisitStats, loadVisitData }) {
 		],
 
 		secret_game: async () => {
-			isExecutingScript.value = true
 			terminalHistory.value.push({
 				type: 'typewriter',
 				html: true,
@@ -328,7 +453,6 @@ export function useTerminalCommands({ getVisitStats, loadVisitData }) {
 			}
 			window.open('https://scratch.mit.edu/projects/656157225/', '_blank')
 			terminalHistory.value.splice(loadingLineIndex, 1)
-			isExecutingScript.value = false
 		},
 
 		greeting: () => [{ type: 'typewriter', content: 'Hello there.' }],
@@ -341,13 +465,128 @@ export function useTerminalCommands({ getVisitStats, loadVisitData }) {
 		yako: () => [
 			{
 				type: 'typewriter',
-				image: '/assets/img/Yako_Animations/Run.gif',
-				animated: true,
+				image: '/assets/img/Yako_Animations/Idle.gif',
 			},
 		],
 
+		fortune: () => [
+			{ type: 'typewriter', content: FORTUNES[Math.floor(Math.random() * FORTUNES.length)] },
+		],
+
+		cowsay: args => {
+			const text = args.trim() || 'woof.'
+			const border = length => ' ' + '_'.repeat(length)
+			return [
+				border(text.length + 2),
+				`< ${text} >`,
+				' ' + '-'.repeat(text.length + 2),
+				...COWSAY_MASCOT,
+			].map(line => ({ type: 'typewriter', content: line }))
+		},
+
+		matrix: () => {
+			onMatrix?.()
+			return []
+		},
+
+		exit: () => {
+			setTimeout(() => router.push('/'), 600)
+			return [{ type: 'typewriter', content: 'logging out...' }]
+		},
+
 		stats: async () => {
 			return await handleStatsCommand()
+		},
+
+		echo: args => [{ type: 'output', content: args }],
+
+		history: () => {
+			const entries = (getHistory?.() || []).slice().reverse()
+			if (entries.length === 0) {
+				return [{ type: 'output', content: 'No command history yet.' }]
+			}
+			return entries.map((cmd, i) => ({
+				type: 'typewriter',
+				html: true,
+				content: `<span class="text-blue">${String(i + 1).padStart(3)}</span>  ${escapeHtml(cmd)}`,
+			}))
+		},
+
+		theme: args => {
+			const name = args.trim().toLowerCase()
+			if (name && setTheme?.(name)) {
+				return [
+					{
+						type: 'typewriter',
+						html: true,
+						content: `Phosphor set to <span class="text-green">${name}</span>.`,
+					},
+				]
+			}
+			const list = (themeNames || []).join(', ')
+			return [
+				{
+					type: 'typewriter',
+					html: true,
+					content: name
+						? `<span class="text-red">Unknown theme "${escapeHtml(name)}".</span>`
+						: 'Usage: theme [name]',
+				},
+				{
+					type: 'typewriter',
+					html: true,
+					content: `Available: <span class="text-yellow">${list}</span>`,
+				},
+			]
+		},
+
+		sudo: () => [
+			{
+				type: 'typewriter',
+				html: true,
+				content:
+					'<span class="text-red">Nice try.</span> karl is not in the sudoers file. This incident will be reported.',
+			},
+		],
+
+		man: args => {
+			const topic = args.trim().toLowerCase()
+			const page = MAN_PAGES[topic]
+			return [
+				{
+					type: 'typewriter',
+					html: true,
+					content: page
+						? escapeHtml(page)
+						: topic
+							? `No manual entry for <span class="text-red">${escapeHtml(topic)}</span>`
+							: 'What manual page do you want? Try: man help',
+				},
+			]
+		},
+
+		neofetch: () => {
+			const themeLabel = `Phosphor ${capitalize(getThemeName?.() || 'green')}`
+			const info = SYSTEM_INFO.map(([key, value]) => [
+				key,
+				key === 'Theme' ? themeLabel : value,
+			])
+			const logoWidth = Math.max(...NEOFETCH_LOGO.map(line => line.length))
+			const rows = Math.max(NEOFETCH_LOGO.length, info.length)
+
+			return Array.from({ length: rows }, (_, i) => {
+				const logo = (NEOFETCH_LOGO[i] || '').padEnd(logoWidth)
+				let right = ''
+				if (info[i]) {
+					const [key, value] = info[i]
+					right = `<span class="text-green">${key}</span>: <span class="text-blue">${escapeHtml(value)}</span>`
+				}
+				return {
+					type: 'typewriter',
+					html: true,
+					content: `<span class="text-yellow">${escapeHtml(logo)}</span>   ${right}`,
+				}
+			})
 		},
 	}
 
@@ -371,8 +610,6 @@ export function useTerminalCommands({ getVisitStats, loadVisitData }) {
 	}
 
 	const simulateScriptExecution = async (scriptName, scriptFunction) => {
-		isExecutingScript.value = true
-
 		terminalHistory.value.push({
 			type: 'output',
 			html: true,
@@ -398,13 +635,9 @@ export function useTerminalCommands({ getVisitStats, loadVisitData }) {
 		if (Array.isArray(output)) {
 			terminalHistory.value.push(...output)
 		}
-
-		isExecutingScript.value = false
 	}
 
 	const simulateVirusExecution = async scriptName => {
-		isExecutingScript.value = true
-
 		terminalHistory.value.push({
 			type: 'typewriter',
 			html: true,
@@ -496,13 +729,8 @@ export function useTerminalCommands({ getVisitStats, loadVisitData }) {
 			if (targetScript) {
 				if (targetScript === 'i_am_not_a_virus.exe') {
 					simulateVirusExecution(targetScript)
-				} else if (executableScripts[targetScript]) {
-					simulateScriptExecution(targetScript, executableScripts[targetScript])
 				} else {
-					terminalHistory.value.push({
-						type: 'output',
-						content: `bash: ${command}: No such file or directory`,
-					})
+					simulateScriptExecution(targetScript, executableScripts[targetScript])
 				}
 			} else {
 				terminalHistory.value.push({
@@ -513,20 +741,17 @@ export function useTerminalCommands({ getVisitStats, loadVisitData }) {
 		} else if (commands[command]) {
 			let output
 
-			if (command === 'cat' && typeof commands[command] === 'function') {
-				output = commands[command](args)
-			} else if (typeof commands[command] === 'function') {
-				const result = commands[command]()
+			if (typeof commands[command] === 'function') {
+				const result = commands[command](args)
 				if (result instanceof Promise) {
-					result.then(output => {
-						if (Array.isArray(output)) {
-							terminalHistory.value.push(...output)
+					result.then(resolved => {
+						if (Array.isArray(resolved)) {
+							terminalHistory.value.push(...resolved)
 						}
 					})
 					return
-				} else {
-					output = result
 				}
+				output = result
 			} else {
 				output = commands[command]
 			}
@@ -564,6 +789,14 @@ export function useTerminalCommands({ getVisitStats, loadVisitData }) {
 			]
 			const randomResponse = responses[Math.floor(Math.random() * responses.length)]
 			terminalHistory.value.push(randomResponse)
+			const suggestion = nearestCommand(command)
+			if (suggestion) {
+				terminalHistory.value.push({
+					type: 'output',
+					html: true,
+					content: `Did you mean <span class="text-green">${suggestion}</span>?`,
+				})
+			}
 		}
 	}
 
@@ -572,7 +805,7 @@ export function useTerminalCommands({ getVisitStats, loadVisitData }) {
 		availableFiles,
 		executableScripts,
 		terminalHistory,
-		isExecutingScript,
 		executeCommand,
+		fsComplete: fs.completions,
 	}
 }

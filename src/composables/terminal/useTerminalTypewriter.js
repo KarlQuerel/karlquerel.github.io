@@ -5,8 +5,10 @@ export function useTerminalTypewriter() {
 	const showInputPrompt = ref(false)
 
 	const typewriterSpeed = {
-		speed: 6,
+		speed: 0,
 		startDelay: 0,
+		// Uniform (non-randomised) typing: fastest, and reads as stepped/8-bit.
+		lifelike: false,
 	}
 
 	const initTypewriter = focusInput => {
@@ -15,11 +17,9 @@ export function useTerminalTypewriter() {
 				if (welcomeTextRef.value && window.TypeIt) {
 					new window.TypeIt(welcomeTextRef.value, {
 						strings: [
-							'Welcome to my website!',
-							'<br>Type <span class="text-yellow">help</span> for available commands or just type anything.',
+							'Type <span class="text-yellow">help</span> for available commands or just type anything.',
 						],
 						...typewriterSpeed,
-						lifelike: true,
 						html: true,
 						cursorChar: '_',
 						afterComplete: function (instance) {
@@ -43,7 +43,6 @@ export function useTerminalTypewriter() {
 				if (element && window.TypeIt) {
 					const defaultOptions = {
 						...typewriterSpeed,
-						lifelike: true,
 						html: true,
 						cursorChar: '_',
 						afterComplete: function (instance) {
