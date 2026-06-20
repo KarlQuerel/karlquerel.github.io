@@ -11,9 +11,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 export function useScrollSections(wrapperRef, sectionCount) {
 	const count = Math.max(1, sectionCount)
 
-	const progress = ref(0)
 	const activeIndex = ref(0)
-	const localProgress = ref(0)
 
 	let rafScroll = 0
 	let resizeObserver = null
@@ -31,11 +29,9 @@ export function useScrollSections(wrapperRef, sectionCount) {
 
 	function sync() {
 		const p = computeProgress()
-		progress.value = p
 		const raw = Math.floor(p * count)
 		const index = Math.min(count - 1, Math.max(0, raw))
 		activeIndex.value = index
-		localProgress.value = Math.min(1, Math.max(0, p * count - index))
 	}
 
 	function onScroll() {
@@ -64,5 +60,5 @@ export function useScrollSections(wrapperRef, sectionCount) {
 		if (resizeObserver) resizeObserver.disconnect()
 	})
 
-	return { activeIndex, progress, localProgress }
+	return { activeIndex }
 }

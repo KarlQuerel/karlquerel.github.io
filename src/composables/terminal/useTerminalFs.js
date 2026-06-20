@@ -117,5 +117,5 @@ export function useTerminalFs() {
 			.map(name => dirPart + name + (node.children[name].type === 'dir' ? '/' : ''))
 	}
 
-	return { cwd, pathString, cd, list, read, tree, completions }
+	return { pathString, cd, list, read, tree, completions }
 }

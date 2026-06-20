@@ -54,10 +54,8 @@ export function useCinematicsSequence() {
 	}
 
 	return {
-		currentSequence,
 		shouldFadeOut,
 		currentMessages,
-		isLastSequence,
 		isFourthSequence,
 		nextSequence,
 		reset,
