@@ -25,9 +25,12 @@
 				</span>
 			</div>
 		</div>
-		<p v-for="(line, index) in exercise.meta" :key="index" class="meta">
-			- <strong>{{ line.strong }}:</strong> {{ line.text }}
-		</p>
+		<dl v-if="exercise.meta.length" class="meta-list">
+			<template v-for="(line, index) in exercise.meta" :key="index">
+				<dt class="meta-term">{{ line.strong }}</dt>
+				<dd class="meta-text">{{ line.text }}</dd>
+			</template>
+		</dl>
 	</div>
 </template>
 

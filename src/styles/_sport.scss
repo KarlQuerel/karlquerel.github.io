@@ -312,21 +312,34 @@
 		text-wrap: balance;
 	}
 
-	.meta {
+	.meta-list {
 		display: none;
-		margin-top: 6px;
+	}
+
+	.exercise.is-open .meta-list {
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		column-gap: 12px;
+		row-gap: 6px;
+		margin-top: 8px;
 		color: var(--muted);
 		font-size: clamp(0.48rem, 1.15vw, 0.58rem);
 		line-height: 1.85;
 	}
 
-	.exercise.is-open .meta {
-		display: block;
-	}
-
-	.meta strong {
+	.meta-term {
 		color: var(--chip-foreground);
 		font-weight: 600;
+	}
+
+	.meta-term::before {
+		content: '-';
+		margin-right: 0.45em;
+		color: var(--muted);
+	}
+
+	.meta-text {
+		min-width: 0;
 	}
 
 	.badges {
@@ -526,7 +539,7 @@
 	.show-all-btn {
 		position: fixed;
 		right: 18px;
-		bottom: 18px;
+		bottom: calc(var(--site-chrome-bar-height) + 18px);
 		z-index: 20;
 		display: inline-flex;
 		align-items: center;
