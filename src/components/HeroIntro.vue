@@ -1,6 +1,8 @@
 <template>
 	<section ref="trackRef" class="hero-track" :style="{ height: trackHeight }">
 		<div class="hero-pin">
+			<div class="hero-starfield" aria-hidden="true" />
+
 			<div class="hero-stage">
 				<div v-if="activeSection.layout === 'split'" class="hero-headline">
 					<HeroFlapLine
@@ -14,6 +16,9 @@
 						align="right"
 					/>
 				</div>
+				<router-link v-else-if="activeSection.to" :to="activeSection.to" class="hero-cta">
+					<HeroFlapLine class="hero-centered" :line="activeSection.line" align="center" />
+				</router-link>
 				<HeroFlapLine
 					v-else
 					class="hero-centered"
@@ -39,6 +44,8 @@
 				<span class="hero-hint-label">SCROLL</span>
 				<span class="hero-hint-arrow">v</span>
 			</div>
+
+			<div class="hero-crt" aria-hidden="true" />
 		</div>
 	</section>
 </template>
@@ -80,6 +87,15 @@
 		overflow: hidden;
 	}
 
+	// Content layers ride above the starfield (z-index 1) and below the CRT
+	// overlay (z-index 3) painted at the edges of .hero-pin.
+	.hero-stage,
+	.hero-progress,
+	.hero-hint {
+		position: relative;
+		z-index: 2;
+	}
+
 	.hero-stage {
 		width: 100%;
 		display: flex;
@@ -89,6 +105,25 @@
 
 	.hero-centered {
 		max-width: 22ch;
+	}
+
+	// The final section's line is a routed call-to-action. Pixel-button affordance:
+	// it nudges down-right on hover like a pressed key, no smooth easing.
+	.hero-cta {
+		display: inline-block;
+		text-decoration: none;
+		outline: none;
+		cursor: pointer;
+	}
+
+	.hero-cta:hover,
+	.hero-cta:focus-visible {
+		transform: translate(2px, 2px);
+	}
+
+	.hero-cta:focus-visible {
+		outline: 3px solid $yellow;
+		outline-offset: 6px;
 	}
 
 	// The landing headline spreads two blocks diagonally across a tall canvas:
@@ -166,6 +201,97 @@
 		}
 	}
 
+	// Ambient pixel starfield behind the headline. Two pure-CSS dot layers drift at
+	// different speeds (parallax) in stepped, 8-bit motion. Both tiles share a 260px
+	// height so one keyframe loops each seamlessly by exactly one tile.
+	.hero-starfield {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		overflow: hidden;
+		pointer-events: none;
+	}
+
+	.hero-starfield::before,
+	.hero-starfield::after {
+		content: '';
+		position: absolute;
+		// Bleed past the edges so the repeating tiles never reveal a seam mid-drift.
+		inset: -2px;
+	}
+
+	// Far layer: small, dim, slow.
+	.hero-starfield::before {
+		background-image:
+			radial-gradient(1.5px 1.5px at 20px 30px, rgba($white, 0.75) 99%, transparent 100%),
+			radial-gradient(1.5px 1.5px at 130px 80px, rgba($white, 0.5) 99%, transparent 100%),
+			radial-gradient(1.5px 1.5px at 70px 170px, rgba($white, 0.6) 99%, transparent 100%),
+			radial-gradient(1.5px 1.5px at 185px 210px, rgba($yellow, 0.65) 99%, transparent 100%),
+			radial-gradient(1.5px 1.5px at 40px 235px, rgba($white, 0.55) 99%, transparent 100%);
+		background-size: 220px 260px;
+		animation: heroStarDrift 26s steps(26, end) infinite;
+	}
+
+	// Near layer: bigger, brighter, faster — reads as closer.
+	.hero-starfield::after {
+		background-image:
+			radial-gradient(2px 2px at 60px 50px, rgba($white, 0.9) 99%, transparent 100%),
+			radial-gradient(2px 2px at 230px 120px, rgba($yellow, 0.8) 99%, transparent 100%),
+			radial-gradient(2px 2px at 150px 200px, rgba($white, 0.8) 99%, transparent 100%),
+			radial-gradient(2px 2px at 285px 30px, rgba($white, 0.7) 99%, transparent 100%);
+		background-size: 320px 260px;
+		animation: heroStarDrift 15s steps(20, end) infinite;
+	}
+
+	@keyframes heroStarDrift {
+		from {
+			background-position: 0 0;
+		}
+		to {
+			background-position: 0 -260px;
+		}
+	}
+
+	// CRT overlay: scanlines (matching the terminal window) + a soft tube vignette
+	// under a faint stepped flicker. Sits above everything, never intercepts input.
+	.hero-crt {
+		position: absolute;
+		inset: 0;
+		z-index: 3;
+		pointer-events: none;
+		animation: heroCrtFlicker 3.2s steps(8, end) infinite;
+	}
+
+	.hero-crt::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: repeating-linear-gradient(
+			to bottom,
+			rgba($black, 0.18) 0,
+			rgba($black, 0.18) 1px,
+			transparent 1px,
+			transparent 3px
+		);
+	}
+
+	.hero-crt::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(ellipse at center, transparent 55%, rgba($black, 0.45) 100%);
+	}
+
+	@keyframes heroCrtFlicker {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.92;
+		}
+	}
+
 	@media (max-width: $breakpoint-mobile) {
 		.hero-pin {
 			gap: 1.8rem;
@@ -186,8 +312,16 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.hero-hint-arrow {
+		.hero-hint-arrow,
+		.hero-starfield::before,
+		.hero-starfield::after,
+		.hero-crt {
 			animation: none;
+		}
+
+		.hero-cta:hover,
+		.hero-cta:focus-visible {
+			transform: none;
 		}
 	}
 </style>
