@@ -1,6 +1,14 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { MAN_PAGES, NEOFETCH_LOGO, SYSTEM_INFO, COWSAY_MASCOT } from '@/constants/terminal'
+import {
+	HELP_COMMANDS,
+	HELP_HINT,
+	MAN_PAGES,
+	NEOFETCH_LOGO,
+	SPINNER_FRAMES,
+	SYSTEM_INFO,
+	COWSAY_MASCOT,
+} from '@/constants/terminal'
 import { useTerminalFs } from './useTerminalFs'
 
 export function useTerminalCommands({
@@ -14,6 +22,12 @@ export function useTerminalCommands({
 }) {
 	const router = useRouter()
 	const terminalHistory = ref([])
+	// True while a ./script "runs"; the component hides the input prompt and
+	// shows `spinnerFrame` so it reads like a shell that hasn't returned yet.
+	// The spinner is deliberately kept out of terminalHistory — it is transient
+	// UI, not a record, and parking it in history collides with the typewriter.
+	const isExecutingScript = ref(false)
+	const spinnerFrame = ref('')
 	const fs = useTerminalFs()
 
 	const capitalize = word => word.charAt(0).toUpperCase() + word.slice(1)
@@ -107,6 +121,43 @@ export function useTerminalCommands({
 		return outputs
 	}
 
+	// --- Loading spinner ---------------------------------------------------
+	// One owner for the spinner lifecycle: hides the input prompt and ticks the
+	// loader frames. `startSpinner` returns a stop() that restores the prompt;
+	// it backs both the fixed-duration runner (scripts / secret_game) and the
+	// wait-for-a-promise wrapper (location / stats / any async command).
+	const SPINNER_FRAME_MS = 80
+	const INSTALL_SPIN_MS = 1500
+	const SECRET_GAME_SPIN_MS = 3200
+
+	const startSpinner = () => {
+		isExecutingScript.value = true
+		let i = 0
+		spinnerFrame.value = SPINNER_FRAMES[0]
+		const timer = setInterval(() => {
+			i = (i + 1) % SPINNER_FRAMES.length
+			spinnerFrame.value = SPINNER_FRAMES[i]
+		}, SPINNER_FRAME_MS)
+		return () => {
+			clearInterval(timer)
+			isExecutingScript.value = false
+			spinnerFrame.value = ''
+		}
+	}
+
+	// Fixed-duration spinner: optionally echo `intro`, spin for `runMs`, then run
+	// `finish` (push output, open a tab, …).
+	const runWithSpinner = async ({ intro, runMs, finish }) => {
+		const stop = startSpinner()
+		try {
+			if (intro) terminalHistory.value.push(intro)
+			await new Promise(resolve => setTimeout(resolve, runMs))
+			finish?.()
+		} finally {
+			stop()
+		}
+	}
+
 	// Commands
 	const commands = {
 		help: args => {
@@ -123,83 +174,16 @@ export function useTerminalCommands({
 					},
 				]
 			}
+			// Align the dashes: pad each name to the longest in the curated set.
+			const width = Math.max(...HELP_COMMANDS.map(([name]) => name.length))
 			return [
-				{
+				...HELP_COMMANDS.map(([name, color, desc]) => ({
 					type: 'typewriter',
 					html: true,
-					content:
-						'• <span class="text-yellow">help</span>        - Show this help message',
-				},
-				{
-					type: 'typewriter',
-					html: true,
-					content: '• <span class="text-mint">about</span>       - Learn more about me',
-				},
-				{
-					type: 'typewriter',
-					html: true,
-					content:
-						'• <span class="text-cream">stats</span>       - View terminal statistics',
-				},
-				{
-					type: 'typewriter',
-					html: true,
-					content:
-						'• <span class="text-purple">contact</span>     - Get contact information',
-				},
-				{
-					type: 'typewriter',
-					html: true,
-					content: '• <span class="text-red">clear</span>       - Clear the terminal',
-				},
-				{
-					type: 'typewriter',
-					html: true,
-					content: '• <span class="text-blue">ls</span>          - List files',
-				},
-				{
-					type: 'typewriter',
-					html: true,
-					content: '• <span class="text-orange">location</span>    - Show your location',
-				},
-				{
-					type: 'typewriter',
-					html: true,
-					content: '• <span class="text-green">yako</span>        - Just a happy dog',
-				},
-				{
-					type: 'typewriter',
-					html: true,
-					content: '• <span class="text-azure">neofetch</span>    - Show system info',
-				},
-				{
-					type: 'typewriter',
-					html: true,
-					content: '• <span class="text-blue">echo</span>        - Print some text',
-				},
-				{
-					type: 'typewriter',
-					html: true,
-					content: '• <span class="text-mint">theme</span>       - Recolour the phosphor',
-				},
+					content: `• <span class="${color}">${name}</span>${' '.repeat(width - name.length)} - ${desc}`,
+				})),
 				{ type: 'typewriter', content: '' },
-				{
-					type: 'typewriter',
-					html: true,
-					content:
-						'-> Not <span class="text-yellow">ALL</span> commands are listed here...',
-				},
-				{
-					type: 'typewriter',
-					html: true,
-					content: '-> <span class="text-purple">TAB</span> completes commands and paths',
-				},
-				{
-					type: 'typewriter',
-					html: true,
-					content:
-						'-> also: <span class="text-blue">cd cat tree grep wc head pwd</span> · <span class="text-green">cowsay matrix</span> · <span class="text-purple">man history date</span>',
-				},
+				{ type: 'typewriter', html: true, content: HELP_HINT },
 			]
 		},
 
@@ -285,9 +269,12 @@ export function useTerminalCommands({
 			return error ? [{ type: 'output', content: error }] : []
 		},
 
-		cat: args => {
+		cat: (args, stdin) => {
 			const file = args.trim()
-			if (!file) return [{ type: 'output', content: 'cat: missing file operand' }]
+			if (!file) {
+				if (stdin != null) return asLines(stdin)
+				return [{ type: 'output', content: 'cat: missing file operand' }]
+			}
 			const { content, error } = fs.read(file)
 			return error ? [{ type: 'output', content: error }] : asLines(content)
 		},
@@ -298,13 +285,23 @@ export function useTerminalCommands({
 			return lines.map(line => ({ type: 'typewriter', content: line }))
 		},
 
-		grep: args => {
+		grep: (args, stdin) => {
 			const trimmed = args.trim()
 			const space = trimmed.indexOf(' ')
-			if (space < 0) return [{ type: 'output', content: 'usage: grep [text] [file]' }]
-			const pattern = trimmed.slice(0, space)
-			const { content, error } = fs.read(trimmed.slice(space + 1).trim())
-			if (error) return [{ type: 'output', content: error.replace('cat:', 'grep:') }]
+			let pattern, content
+			if (stdin != null && space < 0) {
+				// Piped form: `grep pattern` filters stdin (no file argument).
+				if (!trimmed) return [{ type: 'output', content: 'usage: grep [text] [file]' }]
+				pattern = trimmed
+				content = stdin
+			} else {
+				if (space < 0) return [{ type: 'output', content: 'usage: grep [text] [file]' }]
+				pattern = trimmed.slice(0, space)
+				const file = fs.read(trimmed.slice(space + 1).trim())
+				if (file.error)
+					return [{ type: 'output', content: file.error.replace('cat:', 'grep:') }]
+				content = file.content
+			}
 			return content
 				.split('\n')
 				.filter(line => line.toLowerCase().includes(pattern.toLowerCase()))
@@ -318,28 +315,46 @@ export function useTerminalCommands({
 				}))
 		},
 
-		wc: args => {
+		wc: (args, stdin) => {
 			const file = args.trim()
-			if (!file) return [{ type: 'output', content: 'usage: wc [file]' }]
-			const { content, error } = fs.read(file)
-			if (error) return [{ type: 'output', content: error.replace('cat:', 'wc:') }]
+			let content, label
+			if (!file && stdin != null) {
+				content = stdin
+				label = ''
+			} else {
+				if (!file) return [{ type: 'output', content: 'usage: wc [file]' }]
+				const read = fs.read(file)
+				if (read.error)
+					return [{ type: 'output', content: read.error.replace('cat:', 'wc:') }]
+				content = read.content
+				label = ` ${file}`
+			}
 			const lines = content === '' ? 0 : content.split('\n').length
 			const words = content.split(/\s+/).filter(Boolean).length
 			return [
 				{
 					type: 'typewriter',
-					content: `${String(lines).padStart(4)} ${String(words).padStart(4)} ${String(content.length).padStart(5)} ${file}`,
+					content: `${String(lines).padStart(4)} ${String(words).padStart(4)} ${String(content.length).padStart(5)}${label}`,
 				},
 			]
 		},
 
-		head: args => {
+		head: (args, stdin) => {
 			const tokens = args.trim().split(/\s+/).filter(Boolean)
-			const file = tokens[0]
-			const count = Math.max(1, parseInt(tokens[1], 10) || 10)
-			if (!file) return [{ type: 'output', content: 'usage: head [file] [n]' }]
-			const { content, error } = fs.read(file)
-			if (error) return [{ type: 'output', content: error.replace('cat:', 'head:') }]
+			let content, count
+			if (stdin != null && (tokens.length === 0 || /^\d+$/.test(tokens[0]))) {
+				// Piped form: `head` or `head 5` — a leading number is the count.
+				count = Math.max(1, parseInt(tokens[0], 10) || 10)
+				content = stdin
+			} else {
+				const file = tokens[0]
+				count = Math.max(1, parseInt(tokens[1], 10) || 10)
+				if (!file) return [{ type: 'output', content: 'usage: head [file] [n]' }]
+				const read = fs.read(file)
+				if (read.error)
+					return [{ type: 'output', content: read.error.replace('cat:', 'head:') }]
+				content = read.content
+			}
 			return content
 				.split('\n')
 				.slice(0, count)
@@ -427,27 +442,18 @@ export function useTerminalCommands({
 			},
 		],
 
-		secret_game: async () => {
-			terminalHistory.value.push({
-				type: 'typewriter',
-				html: true,
-				content: 'Launching secret game',
-			})
-
-			const loadingLineIndex = terminalHistory.value.length
-			terminalHistory.value.push({ type: 'typewriter', content: '' })
-
-			const dots = ['', '.', '..', '...', '....']
-			for (let i = 0; i < dots.length; i++) {
-				await new Promise(resolve => setTimeout(resolve, 600))
-				terminalHistory.value[loadingLineIndex] = {
-					type: 'typewriter',
-					content: dots[i],
-				}
-			}
-			window.open('https://scratch.mit.edu/projects/656157225/', '_blank')
-			terminalHistory.value.splice(loadingLineIndex, 1)
-		},
+		secret_game: () =>
+			runWithSpinner({
+				// No intro: just the spinner, then the redirect message once it lands.
+				runMs: SECRET_GAME_SPIN_MS,
+				finish: () => {
+					terminalHistory.value.push({
+						type: 'typewriter',
+						content: 'Redirecting to scratch game',
+					})
+					window.open('https://scratch.mit.edu/projects/656157225/', '_blank')
+				},
+			}),
 
 		greeting: () => [{ type: 'typewriter', content: 'Hello there.' }],
 
@@ -595,31 +601,88 @@ export function useTerminalCommands({
 		],
 	}
 
-	const simulateScriptExecution = async (scriptName, scriptFunction) => {
-		terminalHistory.value.push({
-			type: 'output',
-			html: true,
-			content: `Executing <span class="text-green">${scriptName}</span>`,
+	const simulateScriptExecution = (scriptName, scriptFunction) =>
+		runWithSpinner({
+			intro: {
+				type: 'output',
+				html: true,
+				content: `Executing <span class="text-green">${scriptName}</span>`,
+			},
+			runMs: INSTALL_SPIN_MS,
+			finish: () => {
+				const output = scriptFunction()
+				if (Array.isArray(output)) {
+					terminalHistory.value.push(...output)
+				}
+			},
 		})
 
-		const loadingLineIndex = terminalHistory.value.length
-		terminalHistory.value.push({ type: 'output', content: '' })
+	// --- Pipes -------------------------------------------------------------
+	// Convert a command's line objects into the plain text the next pipe segment
+	// reads: drop image lines, take link text, strip generated <tags> and reverse
+	// escapeHtml's three entities so a value round-trips cleanly through a chain.
+	const decodeEntities = text =>
+		text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
 
-		const dots = ['', '.', '..', '...']
-		for (let i = 0; i < dots.length; i++) {
-			await new Promise(resolve => setTimeout(resolve, 500))
-			terminalHistory.value[loadingLineIndex] = {
+	const toStdin = lineObjects =>
+		lineObjects
+			.filter(line => !line.image)
+			.map(line => {
+				if (line.link) return `${line.prefix || ''}${line.linkText || ''}`
+				const raw = line.content || ''
+				return line.html ? decodeEntities(raw.replace(/<[^>]*>/g, '')) : raw
+			})
+			.join('\n')
+
+	// Run a single known command, returning its output (array or Promise) without
+	// touching history. null => not a known command (the caller picks the UX).
+	const runCommand = (command, args, stdin) => {
+		const handler = commands[command]
+		return typeof handler === 'function' ? handler(args, stdin) : null
+	}
+
+	// The full-line "unknown command" UX: a random quip plus a nearest-match hint.
+	const pushUnknown = (label, command) => {
+		const responses = [
+			{
 				type: 'output',
-				content: dots[i],
-			}
-		}
-
-		await new Promise(resolve => setTimeout(resolve, 800))
-
-		terminalHistory.value.splice(loadingLineIndex, 1)
-		const output = scriptFunction()
-		if (Array.isArray(output)) {
-			terminalHistory.value.push(...output)
+				html: true,
+				content: `I do not know "<span class="text-red">${label}</span>", did you try asking <span class="text-blue">ChatGPT</span>?`,
+			},
+			{
+				type: 'output',
+				html: true,
+				content: `Premium command "<span class="text-red">${label}</span>" requires a <span class="text-red">blood sacrifice</span> or valid <span class="text-yellow">credit card</span>.`,
+			},
+			{
+				type: 'output',
+				html: true,
+				content: `"<span class="text-red">${label}</span>" triggered my <span class="text-blue">imposter syndrome</span>.`,
+			},
+			{
+				type: 'output',
+				html: true,
+				content: `I'm <span class="text-green">92%</span> sure "<span class="text-red">${label}</span>" was <span class="text-purple">made up</span>.`,
+			},
+			{
+				type: 'output',
+				html: true,
+				content: `"<span class="text-red">${label}</span>" is above my <span class="text-yellow">pay grade</span>.`,
+			},
+			{
+				type: 'output',
+				html: true,
+				content: `I could try to run "<span class="text-red">${label}</span>", but then we'd both be disappointed.`,
+			},
+		]
+		terminalHistory.value.push(responses[Math.floor(Math.random() * responses.length)])
+		const suggestion = nearestCommand(command)
+		if (suggestion) {
+			terminalHistory.value.push({
+				type: 'output',
+				html: true,
+				content: `Did you mean <span class="text-green">${suggestion}</span>?`,
+			})
 		}
 	}
 
@@ -629,19 +692,16 @@ export function useTerminalCommands({
 
 		terminalHistory.value.push({ type: 'command', content: trimmedInput })
 
-		const parts = trimmedInput.split(' ')
-		const command = parts[0].toLowerCase()
-		const args = parts.slice(1).join(' ')
+		const firstWord = trimmedInput.split(' ')[0]
 
-		if (command.startsWith('./')) {
-			const scriptName = command.substring(2)
+		// ./scripts run via the spinner path and are not pipeable.
+		if (firstWord.startsWith('./')) {
+			const scriptName = firstWord.substring(2)
 			let targetScript = null
-
 			if (executableScripts[scriptName]) {
 				targetScript = scriptName
 			} else {
 				const possibleNames = [scriptName + '.sh', scriptName + '.exe', scriptName]
-
 				for (const name of possibleNames) {
 					if (executableScripts[name]) {
 						targetScript = name
@@ -649,78 +709,80 @@ export function useTerminalCommands({
 					}
 				}
 			}
-
 			if (targetScript) {
 				simulateScriptExecution(targetScript, executableScripts[targetScript])
 			} else {
 				terminalHistory.value.push({
 					type: 'output',
-					content: `bash: ${command}: No such file or directory`,
+					content: `bash: ${firstWord}: No such file or directory`,
 				})
 			}
-		} else if (commands[command]) {
-			let output
+			return
+		}
 
-			if (typeof commands[command] === 'function') {
-				const result = commands[command](args)
-				if (result instanceof Promise) {
-					result.then(resolved => {
+		// Split into pipeline segments (naive split — quoting is out of scope).
+		// A single command is just a length-1 pipeline with no stdin, so every
+		// existing command keeps its exact behaviour through this same loop.
+		const segments = trimmedInput
+			.split('|')
+			.map(segment => segment.trim())
+			.filter(Boolean)
+		const isPipeline = segments.length > 1
+
+		let stdin
+		for (let i = 0; i < segments.length; i++) {
+			const parts = segments[i].split(' ')
+			const command = parts[0].toLowerCase()
+			const args = parts.slice(1).join(' ')
+			const isLast = i === segments.length - 1
+			const result = runCommand(command, args, stdin)
+
+			if (result === null) {
+				if (isPipeline) {
+					terminalHistory.value.push({
+						type: 'output',
+						content: `${command}: command not found`,
+					})
+				} else {
+					pushUnknown(trimmedInput, command)
+				}
+				return
+			}
+
+			// Async commands (location/stats) only make sense run on their own.
+			if (result instanceof Promise) {
+				if (isPipeline) {
+					terminalHistory.value.push({
+						type: 'output',
+						content: `${command}: not supported in a pipeline`,
+					})
+					return
+				}
+				// Spin while we wait — unless the command already drives the
+				// spinner itself (e.g. secret_game sets it synchronously on call).
+				const stop = isExecutingScript.value ? null : startSpinner()
+				result
+					.then(resolved => {
 						if (Array.isArray(resolved)) {
 							terminalHistory.value.push(...resolved)
 						}
 					})
-					return
-				}
-				output = result
-			} else {
-				output = commands[command]
+					.finally(() => stop?.())
+				return
 			}
 
-			if (Array.isArray(output)) {
+			const output = Array.isArray(result) ? result : []
+			if (isLast) {
 				terminalHistory.value.push(...output)
-			}
-		} else {
-			const responses = [
-				{
-					type: 'output',
-					html: true,
-					content: `I do not know "<span class="text-red">${trimmedInput}</span>", did you try asking <span class="text-blue">ChatGPT</span>?`,
-				},
-				{
-					type: 'output',
-					html: true,
-					content: `Premium command "<span class="text-red">${trimmedInput}</span>" requires a <span class="text-red">blood sacrifice</span> or valid <span class="text-yellow">credit card</span>.`,
-				},
-				{
-					type: 'output',
-					html: true,
-					content: `"<span class="text-red">${trimmedInput}</span>" triggered my <span class="text-blue">imposter syndrome</span>.`,
-				},
-				{
-					type: 'output',
-					html: true,
-					content: `I'm <span class="text-green">92%</span> sure "<span class="text-red">${trimmedInput}</span>" was <span class="text-purple">made up</span>.`,
-				},
-				{
-					type: 'output',
-					html: true,
-					content: `"<span class="text-red">${trimmedInput}</span>" is above my <span class="text-yellow">pay grade</span>.`,
-				},
-				{
-					type: 'output',
-					html: true,
-					content: `I could try to run "<span class="text-red">${trimmedInput}</span>", but then we'd both be disappointed.`,
-				},
-			]
-			const randomResponse = responses[Math.floor(Math.random() * responses.length)]
-			terminalHistory.value.push(randomResponse)
-			const suggestion = nearestCommand(command)
-			if (suggestion) {
-				terminalHistory.value.push({
-					type: 'output',
-					html: true,
-					content: `Did you mean <span class="text-green">${suggestion}</span>?`,
-				})
+			} else {
+				// `ls` short form is one space-joined row; break it into one entry
+				// per line so `ls | grep`/`wc` behave (long form already is).
+				stdin =
+					command === 'ls' && !/-\w*l/.test(args)
+						? toStdin(output)
+								.split(/\s{2,}/)
+								.join('\n')
+						: toStdin(output)
 			}
 		}
 	}
@@ -730,6 +792,8 @@ export function useTerminalCommands({
 		availableFiles,
 		executableScripts,
 		terminalHistory,
+		isExecutingScript,
+		spinnerFrame,
 		executeCommand,
 		fsComplete: fs.completions,
 	}

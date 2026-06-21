@@ -117,3 +117,11 @@ html.page-scrollable #app .app-main {
 	padding: 0;
 	min-height: auto;
 }
+
+// On phones 2rem of edge padding wastes scarce width (it's what forces the
+// terminal's `help` output to wrap); trim it so centred pages get the room.
+@media (max-width: #{variables.$breakpoint-mobile}) {
+	html:not(.page-scrollable) #app .app-main {
+		padding: 0.75rem;
+	}
+}

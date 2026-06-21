@@ -102,16 +102,21 @@ export function useTerminalFs() {
 	}
 
 	// Tab-completion candidates for a partial path argument, cwd-relative.
+	// Matching is case-insensitive so `cat readme` completes to README.md; the
+	// canonical (real) casing is what gets returned and inserted.
 	const completions = arg => {
 		const slash = arg.lastIndexOf('/')
 		const dirPart = slash >= 0 ? arg.slice(0, slash + 1) : ''
 		const base = slash >= 0 ? arg.slice(slash + 1) : arg
+		const baseLower = base.toLowerCase()
 		const segs = resolve(dirPart || '.')
 		const node = segs && nodeAt(segs)
 		if (!node || node.type !== 'dir') return []
 		return Object.keys(node.children)
 			.filter(
-				name => (base.startsWith('.') || !name.startsWith('.')) && name.startsWith(base)
+				name =>
+					(base.startsWith('.') || !name.startsWith('.')) &&
+					name.toLowerCase().startsWith(baseLower)
 			)
 			.sort()
 			.map(name => dirPart + name + (node.children[name].type === 'dir' ? '/' : ''))

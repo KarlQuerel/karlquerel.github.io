@@ -59,6 +59,11 @@
 		text-shadow: 0 0 5px currentColor;
 	}
 
+	&:focus-visible {
+		outline: 2px solid variables.$light-blue;
+		outline-offset: 2px;
+	}
+
 	&:active {
 		color: variables.$light-red;
 	}

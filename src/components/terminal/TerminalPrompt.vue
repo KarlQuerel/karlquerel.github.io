@@ -33,4 +33,13 @@
 		color: $light-gray;
 		margin-left: 0.25ch;
 	}
+
+	// On phones the full user@host eats the line and pushes typed commands into
+	// early wraps; collapse to ~$ so the input keeps room (still reads as a shell).
+	@media (max-width: #{$breakpoint-mobile}) {
+		.prompt-user,
+		.prompt-sep {
+			display: none;
+		}
+	}
 </style>

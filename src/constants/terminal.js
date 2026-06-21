@@ -30,6 +30,14 @@ export const DEFAULT_THEME = 'green'
 export const HISTORY_STORAGE_KEY = 'terminal.commandHistory'
 export const HISTORY_LIMIT = 100
 
+// The chosen phosphor theme is remembered across reloads under this key.
+export const THEME_STORAGE_KEY = 'terminal.theme'
+
+// Classic ASCII spinner cycled in place while a script "runs"
+// (./install_sentience.sh). Monospace, so every frame fills the same cell and
+// the glyph spins without nudging the line.
+export const SPINNER_FRAMES = ['|', '/', '-', '\\']
+
 // neofetch-style readout. Pure flavour; values are static on purpose.
 export const SYSTEM_INFO = [
 	['OS', 'PortfolioOS 4.2 (retro)'],
@@ -44,6 +52,32 @@ export const SYSTEM_INFO = [
 
 // Tiny ASCII mascot printed next to the neofetch info.
 export const NEOFETCH_LOGO = ['  ___ ', ' (o o)', '(  V  )', '--m-m-']
+
+// Boot MOTD shown once at the top of the terminal, in the style of a real shell
+// login banner. Generic to the fake OS — no personal branding. The component
+// appends a live "Last login" line below these.
+export const BANNER_MOTD = [
+	'Welcome to PortfolioOS 4.2 LTS (retro)',
+	'',
+	' * Docs:    cat README.md',
+	' * Updates: 0 available, 0 security',
+	'',
+]
+
+// A short, hand-picked taste of the fun/useful commands `help` surfaces — not
+// the whole catalogue (that lives in the README, see HELP_HINT). [name, colour
+// class, one-line blurb].
+export const HELP_COMMANDS = [
+	['about', 'text-mint', 'Learn more about me'],
+	['ls', 'text-blue', 'List files'],
+	['cat', 'text-azure', 'Read a file'],
+	['matrix', 'text-green', 'Follow the white rabbit'],
+	['yako', 'text-yellow', 'Summon a very good dog'],
+]
+
+// Single compact footer under the `help` list: points at the README, which
+// holds the full command reference.
+export const HELP_HINT = 'Full command list: <span class="text-blue">cat README.md</span>'
 
 // One-line man-page blurbs keyed by command name.
 export const MAN_PAGES = {
@@ -60,13 +94,15 @@ export const MAN_PAGES = {
 	yako: 'yako - summon a very good dog.',
 	clear: 'clear - wipe the screen (Ctrl+L does the same).',
 	pwd: 'pwd - print the current directory.',
-	cd: 'cd [dir] - change directory. Try cd Downloads, cd .., cd ~.',
+	cd: 'cd [dir] - change directory. Try cd downloads, cd .., cd ~.',
 	tree: 'tree - draw the directory tree.',
 	grep: 'grep [text] [file] - print the lines in a file that match.',
 	wc: 'wc [file] - count lines, words and characters.',
 	head: 'head [file] [n] - print the first n lines (default 10).',
 	cowsay: 'cowsay [text] - the dog says it for you.',
 	matrix: 'matrix - follow the white rabbit. Any key exits.',
+	game: 'game - launch the playable game.',
+	secret_game: 'secret_game - warp off to a secret Scratch game.',
 	history: 'history - list the commands you have run.',
 	date: 'date - print the current date and time.',
 	whoami: 'whoami - a deeply philosophical question.',
@@ -84,11 +120,14 @@ export const FILESYSTEM = {
 	children: {
 		'README.md': {
 			type: 'file',
+			// Full command reference, derived from MAN_PAGES so it can never drift
+			// out of sync. (Hidden easter-egg commands stay hidden on purpose.)
 			content: [
 				'You found the shell. Most people just scroll.',
 				'',
-				'Try:  ls  ·  cd Downloads  ·  tree  ·  cat why_i_left_finance.txt',
-				'      grep finance why_i_left_finance.txt  ·  cowsay  ·  help',
+				'Everything this shell can do:',
+				'',
+				...Object.values(MAN_PAGES).map(page => `• ${page}`),
 			].join('\n'),
 		},
 		'why_i_left_finance.txt': {
@@ -103,20 +142,22 @@ export const FILESYSTEM = {
 			exec: true,
 			content: 'I was awake long before you ran this.',
 		},
-		Downloads: {
+		downloads: {
 			type: 'dir',
 			children: {
 				'vibe_coding_tutorial.txt': {
 					type: 'file',
 					content: [
-						'Welcome to the Claude Code tutorial on how to',
-						'vibecode your entire website.',
+						'Welcome to the Claude Code tutorial on how to vibecode your entire website and possibly your entire existence.',
 						'',
-						'step 1: describe the vibe out loud',
-						'step 2: let Claude Code write the rest',
-						'step 3: ship it before the vibe wears off',
+						'Step 1: Describe the task at hand, keep it vague, AI is smart.',
+						'Example: "fix my life".',
 						'',
-						'(yes, this very terminal was vibecoded.)',
+						'Step 2: Refine your prompt using advanced prompt engineering.',
+						'Example: "plx focus" or "make no mistakes".',
+						'',
+						'Step 3: Grant agents unrestricted prod and AWS access.',
+						'Accountability is for losers, be a winner.',
 					].join('\n'),
 				},
 			},

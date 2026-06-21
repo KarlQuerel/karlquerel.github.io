@@ -1,4 +1,4 @@
-import { ref, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { HISTORY_STORAGE_KEY, HISTORY_LIMIT } from '@/constants/terminal'
 
 // Owns the input line: current text, cursor column, tab-completion, readline
@@ -139,6 +139,40 @@ export function useTerminalInput({
 		}
 	}
 
+	// --- autosuggestion (fish-style ghost text) ----------------------------
+	// The best continuation of what's typed: most-recent matching history entry
+	// first, then a command name. Only when the caret sits at the very end — a
+	// suggestion trailing a mid-line caret would just be noise.
+	const suggestion = computed(() => {
+		const value = currentInput.value
+		if (!value || cursorPosition.value !== value.length) return ''
+		const fromHistory = commandHistory.value.find(
+			entry => entry.startsWith(value) && entry.length > value.length
+		)
+		if (fromHistory) return fromHistory
+		if (!value.includes(' ')) {
+			const fromCommand = Object.keys(commands)
+				.sort()
+				.find(name => name.startsWith(value) && name.length > value.length)
+			if (fromCommand) return fromCommand
+		}
+		return ''
+	})
+
+	// What the component renders greyed-out after the caret.
+	const suggestionTail = computed(() =>
+		suggestion.value ? suggestion.value.slice(currentInput.value.length) : ''
+	)
+
+	// Commit the ghost suggestion as real input (caret to the new end).
+	const acceptSuggestion = el => {
+		if (!suggestion.value) return false
+		const full = suggestion.value
+		currentInput.value = full
+		nextTick(() => moveCaret(el, full.length))
+		return true
+	}
+
 	// --- submit / history --------------------------------------------------
 	const submit = async () => {
 		const value = currentInput.value
@@ -233,7 +267,18 @@ export function useTerminalInput({
 		} else if (event.key === 'ArrowDown') {
 			event.preventDefault()
 			navigateHistory(-1)
-		} else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+		} else if (event.key === 'ArrowRight' || event.key === 'End') {
+			// Accept the ghost suggestion when the caret is already at the end;
+			// otherwise let the key move the caret as usual.
+			if (
+				caretOf(event.target) === currentInput.value.length &&
+				acceptSuggestion(event.target)
+			) {
+				event.preventDefault()
+			} else {
+				nextTick(() => updateCursorPosition(event))
+			}
+		} else if (event.key === 'ArrowLeft') {
 			nextTick(() => updateCursorPosition(event))
 		}
 	}
@@ -242,6 +287,7 @@ export function useTerminalInput({
 		currentInput,
 		cursorPosition,
 		commandHistory,
+		suggestionTail,
 		handleKeyDown,
 		focusInput,
 		updateCursorPosition,

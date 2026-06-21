@@ -1,7 +1,7 @@
 <template>
 	<div class="terminal-window" data-nosnippet :style="{ '--phosphor': phosphor }">
 		<div class="terminal-header">
-			<div class="terminal-buttons">
+			<div class="terminal-buttons" aria-hidden="true">
 				<div class="btn red" />
 				<div class="btn yellow" />
 				<div class="btn green" />
@@ -10,6 +10,10 @@
 		</div>
 
 		<div class="terminal-body" ref="terminalBody" @click="focusInput(terminalInput)">
+			<!-- Boot MOTD: static so it shows instantly (and under reduced motion)
+			     and scrolls away with the scrollback like a real shell. -->
+			<div class="terminal-banner" aria-hidden="true">{{ motd }}</div>
+
 			<div class="terminal-line">
 				<TerminalPrompt />
 				<span class="welcome-text" ref="welcomeTextRef" data-nosnippet />
@@ -24,8 +28,14 @@
 				@unregister="unregisterLine"
 			/>
 
+			<!-- Transient spinner while a ./script "runs" (replaces the input
+			     prompt, so the line below looks like a shell still working). -->
+			<div v-if="isExecutingScript" class="terminal-line">
+				<span class="text-green" aria-hidden="true">{{ spinnerFrame }}</span>
+			</div>
+
 			<div
-				v-if="showInputPrompt && !isProcessingTypewriter"
+				v-if="showInputPrompt && !isProcessingTypewriter && !isExecutingScript"
 				class="terminal-line current-line"
 			>
 				<TerminalPrompt />
@@ -36,7 +46,8 @@
 					<div class="input-mirror" aria-hidden="true">
 						<span>{{ inputBeforeCursor }}</span
 						><span class="custom-cursor">{{ cursorChar }}</span
-						><span>{{ inputAfterCursor }}</span>
+						><span>{{ inputAfterCursor }}</span
+						><span class="input-ghost">{{ ghostTail }}</span>
 					</div>
 					<textarea
 						ref="terminalInput"
@@ -69,7 +80,14 @@
 	import TerminalLine from './terminal/TerminalLine.vue'
 	import TerminalPrompt from './terminal/TerminalPrompt.vue'
 	import TerminalMatrix from './terminal/TerminalMatrix.vue'
-	import { WINDOW_TITLE } from '@/constants/terminal'
+	import { WINDOW_TITLE, BANNER_MOTD } from '@/constants/terminal'
+
+	// Login MOTD + a live "Last login" line, like a real shell on connect.
+	const now = new Date()
+	const motd = [
+		...BANNER_MOTD,
+		`Last login: ${now.toDateString()} ${now.toLocaleTimeString()} on ttys000`,
+	].join('\n')
 
 	const terminalBody = ref(null)
 	const terminalInput = ref(null)
@@ -87,6 +105,8 @@
 		availableFiles,
 		executableScripts,
 		terminalHistory,
+		isExecutingScript,
+		spinnerFrame,
 		executeCommand,
 		fsComplete,
 	} = useTerminalCommands({
@@ -137,6 +157,7 @@
 		currentInput,
 		cursorPosition,
 		commandHistory,
+		suggestionTail,
 		handleKeyDown,
 		focusInput,
 		updateCursorPosition,
@@ -155,8 +176,20 @@
 	// Split the input around the caret so the block cursor can be rendered
 	// inline (and wrap with the text) instead of positioned by a fixed offset.
 	const inputBeforeCursor = computed(() => currentInput.value.slice(0, cursorPosition.value))
-	const cursorChar = computed(() => currentInput.value.charAt(cursorPosition.value) || ' ')
 	const inputAfterCursor = computed(() => currentInput.value.slice(cursorPosition.value + 1))
+
+	// At the end of the line with a live suggestion, the block cursor sits on the
+	// first ghost char (fish-style) and the rest trails greyed-out; otherwise the
+	// cursor falls on the real char under the caret (or a trailing space).
+	const caretAtEnd = computed(() => cursorPosition.value >= currentInput.value.length)
+	const cursorChar = computed(() =>
+		caretAtEnd.value && suggestionTail.value
+			? suggestionTail.value.charAt(0)
+			: currentInput.value.charAt(cursorPosition.value) || ' '
+	)
+	const ghostTail = computed(() =>
+		caretAtEnd.value && suggestionTail.value ? suggestionTail.value.slice(1) : ''
+	)
 
 	// Matrix overlay dismissed — hide it and return focus to the prompt.
 	const onMatrixClose = () => {
@@ -353,6 +386,17 @@
 		}
 	}
 
+	.terminal-banner {
+		// Dim, system-text login MOTD. `pre-wrap` keeps the spacing but lets long
+		// lines fold on narrow screens instead of getting clipped.
+		color: $light-gray;
+		opacity: 0.75;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		line-height: 1.2;
+		margin: 0 0 0.8rem;
+	}
+
 	.welcome-text {
 		color: $light-blue;
 		min-width: 0;
@@ -403,6 +447,14 @@
 		animation: blink 1.1s steps(1) infinite;
 	}
 
+	// fish-style autosuggestion: dim, glow-less ghost trailing the caret. Lives
+	// only in the mirror (the textarea is empty past the input), so it never
+	// shifts the real caret. Press → / End to accept.
+	.input-ghost {
+		color: rgba(255, 255, 255, 0.32);
+		text-shadow: none;
+	}
+
 	@keyframes blink {
 		0%,
 		50% {
@@ -436,6 +488,19 @@
 		.terminal-line {
 			margin-bottom: 0.2rem;
 			line-height: 1.15;
+		}
+	}
+
+	@media (max-width: #{$breakpoint-mobile}) {
+		// Hold the type at exactly 1rem (16px): big enough to read and to keep the
+		// hidden input from triggering iOS focus-zoom. Width for long output (e.g.
+		// `help`) is reclaimed via padding, not by shrinking the font.
+		.terminal-window {
+			font-size: 1rem;
+		}
+
+		.terminal-body {
+			padding: 0.5rem 0.6rem;
 		}
 	}
 </style>
