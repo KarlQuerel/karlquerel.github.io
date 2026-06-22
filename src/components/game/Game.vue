@@ -1,6 +1,6 @@
 <template>
 	<div class="game-page">
-		<MobileWarning ref="mobileWarningRef" />
+		<MobileWarning />
 		<template v-if="!isMobile">
 			<!-- Loading Screen -->
 			<LoadingScreen
@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-	import { ref, onMounted, computed } from 'vue'
+	import { ref, onMounted } from 'vue'
 	import MobileWarning from './MobileWarning.vue'
 	import LoadingScreen from './LoadingScreen.vue'
 	import PreGameScreen from './PreGameScreen.vue'
@@ -62,11 +62,12 @@
 	import { useAudioManager } from '../../composables/game/useAudioManager'
 	import { useGameState } from '../../composables/game/useGameState'
 	import { useAssetPreloader } from '../../composables/game/useAssetPreloader'
+	import { useIsMobile } from '../../composables/game/useIsMobile'
 	import GameBackground from './GameBackground.vue'
 
+	const { isMobile } = useIsMobile()
 	const showCredits = ref(false)
 	const gameContainer = ref(null)
-	const mobileWarningRef = ref(null)
 
 	const { bgMusic, clickSound, initAudio, playBackgroundMusic, playClickSound } =
 		useAudioManager()
@@ -120,8 +121,6 @@
 			initializeMenu()
 		}
 	})
-
-	const isMobile = computed(() => mobileWarningRef.value?.isMobile ?? false)
 </script>
 
 <style lang="scss" scoped>

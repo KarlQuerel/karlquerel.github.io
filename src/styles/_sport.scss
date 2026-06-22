@@ -205,7 +205,7 @@
 		background: rgba(255, 255, 255, 0.05);
 	}
 
-	.card-.card.is-open .card-.card::before {
+	.card.is-open::before {
 		content: '';
 		position: absolute;
 		inset: 0 0 auto;

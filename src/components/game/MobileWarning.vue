@@ -10,23 +10,9 @@
 </template>
 
 <script setup>
-	import { ref, onMounted, onUnmounted } from 'vue'
+	import { useIsMobile } from '../../composables/game/useIsMobile'
 
-	const isMobile = ref(false)
-
-	const checkMobile = () => {
-		const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
-		isMobile.value = mobileRegex.test(navigator.userAgent) || window.innerWidth <= 768
-	}
-
-	onMounted(() => {
-		checkMobile()
-		window.addEventListener('resize', checkMobile)
-	})
-
-	onUnmounted(() => {
-		window.removeEventListener('resize', checkMobile)
-	})
+	const { isMobile } = useIsMobile()
 </script>
 
 <style lang="scss" scoped>
