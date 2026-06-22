@@ -1,10 +1,8 @@
 import { ref, nextTick } from 'vue'
+import { prefersReducedMotion } from '../usePrefersReducedMotion.js'
 
 // Honour the user's OS-level motion preference: when reduced motion is on we
 // print output instantly instead of typing it out character-by-character.
-const prefersReducedMotion = () =>
-	typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-
 export function useTerminalTypewriter() {
 	const welcomeTextRef = ref(null)
 	const showInputPrompt = ref(false)

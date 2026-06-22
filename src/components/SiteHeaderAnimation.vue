@@ -19,6 +19,7 @@
 
 <script setup>
 	import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+	import { useRafThrottle } from '@/composables/useRafThrottle'
 
 	const HEADER_GIF_SEQUENCE = [
 		{ src: '/assets/img/Yako_Animations/Run.gif', direction: 'ltr', kind: 'run' },
@@ -51,7 +52,6 @@
 
 	let headerGifSequenceIndex = 0
 	let headerGifPauseTimeout = 0
-	let rafResize = 0
 
 	function clamp(min, preferred, max) {
 		return Math.min(max, Math.max(min, preferred))
@@ -108,13 +108,9 @@
 		scheduleNextHeaderGifCycle()
 	}
 
-	function onResize() {
-		if (rafResize) return
-		rafResize = requestAnimationFrame(() => {
-			rafResize = 0
-			viewportWidthPx.value = window.innerWidth
-		})
-	}
+	const onResize = useRafThrottle(() => {
+		viewportWidthPx.value = window.innerWidth
+	})
 
 	onMounted(() => {
 		viewportWidthPx.value = window.innerWidth
@@ -126,7 +122,6 @@
 	onBeforeUnmount(() => {
 		window.removeEventListener('resize', onResize)
 		if (headerGifPauseTimeout) window.clearTimeout(headerGifPauseTimeout)
-		if (rafResize) cancelAnimationFrame(rafResize)
 	})
 </script>
 
@@ -174,7 +169,7 @@
 		border: 0;
 	}
 
-	@media (max-width: 640px) {
+	@media (max-width: #{$breakpoint-mobile}) {
 		.site-header-animation {
 			min-height: clamp(58px, 18vw, 84px);
 		}

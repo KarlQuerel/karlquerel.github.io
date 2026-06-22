@@ -7,6 +7,7 @@
 
 <script setup>
 	import { ref, onMounted, onBeforeUnmount } from 'vue'
+	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 
 	// Phosphor digital-rain overlay summoned by the `matrix` command. Self
 	// contained: draws to a canvas filling the terminal window and closes on the
@@ -63,8 +64,7 @@
 
 	onMounted(() => {
 		setup()
-		const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-		if (reduce) {
+		if (prefersReducedMotion()) {
 			if (ctx) ctx.fillText('wake up...', 20, 30)
 		} else {
 			draw()

@@ -10,16 +10,9 @@
 
 import { ref, watch, onBeforeUnmount } from 'vue'
 import { SPLIT_FLAP_CONFIG } from '../data/splitFlapConfig.js'
+import { prefersReducedMotion } from './usePrefersReducedMotion.js'
 
 const { FRAME_MS, FLIPS_PER_CHAR, STAGGER_MS, GLYPH_POOL } = SPLIT_FLAP_CONFIG
-
-function prefersReducedMotion() {
-	return (
-		typeof window !== 'undefined' &&
-		typeof window.matchMedia === 'function' &&
-		window.matchMedia('(prefers-reduced-motion: reduce)').matches
-	)
-}
 
 function randomGlyph() {
 	return GLYPH_POOL[Math.floor(Math.random() * GLYPH_POOL.length)]

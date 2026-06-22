@@ -7,13 +7,13 @@
 // unaffected by content rendered above the wrapper.
 
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRafThrottle } from './useRafThrottle.js'
 
 export function useScrollSections(wrapperRef, sectionCount) {
 	const count = Math.max(1, sectionCount)
 
 	const activeIndex = ref(0)
 
-	let rafScroll = 0
 	let resizeObserver = null
 
 	function computeProgress() {
@@ -34,13 +34,7 @@ export function useScrollSections(wrapperRef, sectionCount) {
 		activeIndex.value = index
 	}
 
-	function onScroll() {
-		if (rafScroll) return
-		rafScroll = requestAnimationFrame(() => {
-			rafScroll = 0
-			sync()
-		})
-	}
+	const onScroll = useRafThrottle(sync)
 
 	onMounted(() => {
 		window.addEventListener('scroll', onScroll, { passive: true })
@@ -56,7 +50,6 @@ export function useScrollSections(wrapperRef, sectionCount) {
 	onBeforeUnmount(() => {
 		window.removeEventListener('scroll', onScroll)
 		window.removeEventListener('resize', onScroll)
-		if (rafScroll) cancelAnimationFrame(rafScroll)
 		if (resizeObserver) resizeObserver.disconnect()
 	})
 

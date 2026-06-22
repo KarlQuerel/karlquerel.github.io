@@ -4,12 +4,13 @@
 // immediately, so content is never trapped off-screen. Import as `vReveal` to
 // use it as `v-reveal` inside a component.
 
+import { prefersReducedMotion } from '../composables/usePrefersReducedMotion.js'
+
 const REVEAL_CLASS = 'is-visible'
 
 export const reveal = {
 	mounted(el) {
-		const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-		if (reduce || !('IntersectionObserver' in window)) {
+		if (prefersReducedMotion() || !('IntersectionObserver' in window)) {
 			el.classList.add(REVEAL_CLASS)
 			return
 		}
