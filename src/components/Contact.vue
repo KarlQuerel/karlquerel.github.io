@@ -10,7 +10,7 @@
 				v-for="(channel, i) in CONTACT_CHANNELS"
 				:key="channel.key"
 				class="contact-item"
-				:style="{ '--delay': `${i * 90}ms` }"
+				:style="{ '--contact-i': i }"
 			>
 				<a
 					class="contact-card"
@@ -31,6 +31,11 @@
 </script>
 
 <style scoped lang="scss">
+	@use '@/styles/mixins' as *;
+
+	// Per-item entrance stagger: each card animates in after the previous.
+	$contact-stagger: 90ms;
+
 	.contact {
 		gap: 2.5rem;
 		padding: 2.5rem 1rem 4rem;
@@ -71,7 +76,7 @@
 		opacity: 0;
 		transform: translateX(-8px);
 		animation: item-in 0.4s steps(4, end) forwards;
-		animation-delay: var(--delay, 0ms);
+		animation-delay: calc(var(--contact-i, 0) * #{$contact-stagger});
 	}
 
 	// Mirrors the About timeline card: dark panel, 4px yellow border, offset shadow.
@@ -91,7 +96,7 @@
 	.contact-card:focus-visible {
 		outline: none;
 		box-shadow:
-			6px 6px 0 0 rgba(0, 0, 0, 0.5),
+			$panel-shadow,
 			0 0 0 2px $yellow inset;
 	}
 

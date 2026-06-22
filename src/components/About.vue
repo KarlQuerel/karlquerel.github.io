@@ -51,6 +51,8 @@
 </script>
 
 <style scoped lang="scss">
+	@use '@/styles/mixins' as *;
+
 	// The whole /about page is the RPG overworld: a seamless grassland backdrop.
 	.about {
 		gap: 2rem;
@@ -66,9 +68,7 @@
 		max-width: min(46rem, 94vw);
 		margin: 0 auto;
 		padding: 1.25rem 1.25rem 1.5rem;
-		background: rgba(0, 0, 0, 0.6);
-		border: 4px solid $yellow;
-		box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.5);
+		@include pixel-panel(rgba(0, 0, 0, 0.6));
 	}
 
 	.about-name {
@@ -109,7 +109,7 @@
 	}
 
 	.about-tab:not(.is-active):hover {
-		background: rgba(255, 189, 46, 0.18);
+		background: rgba($yellow, 0.18);
 	}
 
 	// Active tab reads as a pressed, filled pixel button.

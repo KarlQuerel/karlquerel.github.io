@@ -1,0 +1,11 @@
+@use 'variables';
+
+// The recurring "pixel panel" card chrome shared across the About / Life / Work
+// / Contact pages: a dark translucent fill, a 4px yellow border, and a hard
+// offset drop shadow. Pass the per-card background so each panel keeps its own
+// translucency while the border + shadow stay identical.
+@mixin pixel-panel($bg) {
+	background: $bg;
+	border: 4px solid variables.$yellow;
+	box-shadow: variables.$panel-shadow;
+}

@@ -39,6 +39,8 @@
 </script>
 
 <style scoped lang="scss">
+	@use '@/styles/mixins' as *;
+
 	.life {
 		display: flex;
 		flex-direction: column;
@@ -91,9 +93,7 @@
 	/***	CARDS		***/
 	.life-card {
 		padding: 1rem 1.1rem 1.2rem;
-		background: rgba(0, 0, 0, 0.7);
-		border: 4px solid $yellow;
-		box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.5);
+		@include pixel-panel(rgba(0, 0, 0, 0.7));
 	}
 
 	.life-card__title {

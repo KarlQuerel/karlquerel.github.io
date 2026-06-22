@@ -39,6 +39,8 @@
 </script>
 
 <style scoped lang="scss">
+	@use '@/styles/mixins' as *;
+
 	// Geometry for the rail + node so everything lines up off one source.
 	$rail-x: 1.4rem; // horizontal centre of the dirt path
 	$path-width: 1.6rem; // width of the pixel dirt trail
@@ -131,9 +133,7 @@
 	.timeline-card {
 		position: relative;
 		padding: 0.9rem 1rem 1rem;
-		background: rgba(0, 0, 0, 0.7);
-		border: 4px solid $yellow;
-		box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.5);
+		@include pixel-panel(rgba(0, 0, 0, 0.7));
 		text-align: left;
 	}
 
@@ -187,13 +187,13 @@
 	.is-current .timeline-node {
 		box-shadow:
 			0 0 0 3px $black,
-			0 0 12px 3px rgba(255, 189, 46, 0.85);
+			0 0 12px 3px rgba($yellow, 0.85);
 		animation: node-blink 1.1s steps(2, jump-none) infinite;
 	}
 
 	.is-current .timeline-card {
 		box-shadow:
-			6px 6px 0 0 rgba(0, 0, 0, 0.5),
+			$panel-shadow,
 			0 0 0 2px $yellow inset;
 	}
 
