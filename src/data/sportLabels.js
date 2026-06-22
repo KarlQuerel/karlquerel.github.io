@@ -8,7 +8,6 @@ const MUSCLE_LABELS = {
 	abs: 'Abs',
 	waist: 'Waist',
 	forearms: 'Forearms',
-	forearm: 'Forearm',
 }
 
 export function muscleLabel(id) {

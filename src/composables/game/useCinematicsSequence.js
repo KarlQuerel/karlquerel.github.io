@@ -48,16 +48,10 @@ export function useCinematicsSequence() {
 		return true
 	}
 
-	const reset = () => {
-		currentSequence.value = 0
-		shouldFadeOut.value = false
-	}
-
 	return {
 		shouldFadeOut,
 		currentMessages,
 		isFourthSequence,
 		nextSequence,
-		reset,
 	}
 }

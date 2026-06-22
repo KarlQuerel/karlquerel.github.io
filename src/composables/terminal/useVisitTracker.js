@@ -7,41 +7,30 @@ export function useVisitTracker() {
 	const lastVisit = ref(null)
 
 	// Load data from Firebase
+	// firebase-setup already swallows Firestore errors and returns safe defaults,
+	// so these never reject — no second error-handling layer needed here.
 	const loadVisitData = async () => {
-		try {
-			const stats = await loadTerminalStats()
-
-			visitCount.value = stats.totalVisits
-			commandStats.value = stats.commandStats
-			lastVisit.value = stats.lastVisit
-		} catch (error) {
-			console.warn('Failed to load visit data:', error)
-		}
+		const stats = await loadTerminalStats()
+		visitCount.value = stats.totalVisits
+		commandStats.value = stats.commandStats
+		lastVisit.value = stats.lastVisit
 	}
 
 	// Track a visit
 	const trackVisit = async () => {
-		try {
-			await trackTerminalVisit()
-			visitCount.value++
-			lastVisit.value = new Date()
-		} catch (error) {
-			console.warn('Failed to track visit:', error)
-		}
+		await trackTerminalVisit()
+		visitCount.value++
+		lastVisit.value = new Date()
 	}
 
 	// Track command usage
 	const trackCommand = async command => {
-		try {
-			await trackTerminalCommand(command)
+		await trackTerminalCommand(command)
 
-			if (!commandStats.value[command]) {
-				commandStats.value[command] = 0
-			}
-			commandStats.value[command]++
-		} catch (error) {
-			console.warn('Failed to track command:', error)
+		if (!commandStats.value[command]) {
+			commandStats.value[command] = 0
 		}
+		commandStats.value[command]++
 	}
 
 	// Get most popular commands

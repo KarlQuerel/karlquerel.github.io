@@ -23,12 +23,10 @@ button,
 input[type='button'],
 input[type='submit'],
 [role='button'],
-.clickable,
 .menu-buttons button,
 .site-chrome-link,
 .credits-modal button,
-.terminal-link,
-.contact-link {
+.terminal-link {
 	cursor: url('/assets/img/custom-cursor.png'), auto !important;
 }
 

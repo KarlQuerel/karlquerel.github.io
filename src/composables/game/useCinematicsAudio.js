@@ -39,16 +39,8 @@ export function useCinematicsAudio() {
 		currentAudioIndex = (currentAudioIndex + 1) % POOL_SIZE
 	}
 
-	const cleanup = () => {
-		audioPool.value.forEach(audio => {
-			audio.pause()
-			audio.currentTime = 0
-		})
-	}
-
 	return {
 		initAudioPool,
 		playTypingSound,
-		cleanup,
 	}
 }

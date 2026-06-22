@@ -57,6 +57,5 @@ export function useAudioManager() {
 		initAudio,
 		playBackgroundMusic,
 		playClickSound,
-		cleanup,
 	}
 }

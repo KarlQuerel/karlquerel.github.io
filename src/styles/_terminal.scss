@@ -36,14 +36,6 @@
 	color: variables.$mint;
 	@extend %phosphor-glow;
 }
-.text-orange {
-	color: variables.$orange;
-	@extend %phosphor-glow;
-}
-.text-cream {
-	color: variables.$cream;
-	@extend %phosphor-glow;
-}
 
 .terminal-link {
 	color: variables.$retro-green;
