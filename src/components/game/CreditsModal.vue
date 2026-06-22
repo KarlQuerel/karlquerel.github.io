@@ -51,7 +51,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		z-index: 2000;
+		z-index: $z-game-modal;
 		animation: fadeIn 0.3s ease-out;
 	}
 

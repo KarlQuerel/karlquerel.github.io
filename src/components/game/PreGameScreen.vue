@@ -30,7 +30,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		z-index: 2000;
+		z-index: $z-game-modal;
 		height: 100%;
 		width: 100%;
 	}

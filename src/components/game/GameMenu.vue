@@ -163,7 +163,7 @@
 		}
 	}
 
-	@media (max-width: 768px) {
+	@media (max-width: #{$breakpoint-tablet}) {
 		.pixel-title {
 			font-size: 2.5rem;
 			letter-spacing: 10px;

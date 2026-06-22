@@ -330,16 +330,16 @@
 			width: 12px;
 			height: 12px;
 			border-radius: 50%;
-			border: 1px solid #444;
+			border: 1px solid $terminal-chrome-border;
 
 			&.red {
 				background: $light-red;
 			}
 			&.yellow {
-				background: #ffbd2e;
+				background: $yellow;
 			}
 			&.green {
-				background: #27ca3f;
+				background: $terminal-dot-green;
 			}
 		}
 	}
@@ -365,7 +365,7 @@
 		}
 
 		&::-webkit-scrollbar-track {
-			background: #111;
+			background: $terminal-scrollbar-track;
 		}
 
 		&::-webkit-scrollbar-thumb {
@@ -472,7 +472,7 @@
 		}
 	}
 
-	@media (max-width: 1024px) {
+	@media (max-width: #{$breakpoint-desktop}) {
 		.terminal-window {
 			font-size: 1.05rem;
 		}

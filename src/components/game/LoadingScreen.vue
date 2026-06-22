@@ -43,7 +43,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		z-index: 3000;
+		z-index: $z-game-loading;
 	}
 
 	.loading-content {

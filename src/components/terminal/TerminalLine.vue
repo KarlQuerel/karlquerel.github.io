@@ -101,7 +101,7 @@
 		image-rendering: pixelated;
 	}
 
-	@media (max-width: 1024px) {
+	@media (max-width: #{$breakpoint-desktop}) {
 		.terminal-line {
 			margin-bottom: 0.2rem;
 			line-height: 1.15;

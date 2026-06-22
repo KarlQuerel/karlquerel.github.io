@@ -147,7 +147,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		z-index: 1000;
+		z-index: $z-game-container;
 		border: none;
 		box-shadow: none;
 		overflow: hidden;

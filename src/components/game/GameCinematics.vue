@@ -130,7 +130,7 @@
 		font-size: 1.5vw;
 		opacity: 1;
 		text-shadow: 0 0 10px $black;
-		z-index: 1001;
+		z-index: $z-game-overlay;
 		text-align: center;
 		text-transform: uppercase;
 		will-change: opacity, transform;
@@ -160,7 +160,7 @@
 		left: 50%;
 		transform: translate(-50%, -50%);
 		text-align: center;
-		z-index: 1001;
+		z-index: $z-game-overlay;
 	}
 
 	.title {
