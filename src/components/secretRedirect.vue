@@ -1,9 +1,10 @@
 <template><div>Redirecting...</div></template>
 
-<script>
-	export default {
-		mounted() {
-			window.location.href = 'https://shattereddisk.github.io/rickroll/rickroll.mp4'
-		},
-	}
+<script setup>
+	import { onMounted } from 'vue'
+	import { RICKROLL_URL } from '@/constants/redirects'
+
+	onMounted(() => {
+		window.location.href = RICKROLL_URL
+	})
 </script>

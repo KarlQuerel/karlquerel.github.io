@@ -7,12 +7,6 @@
 	</div>
 </template>
 
-<script>
-	export default {
-		name: 'NotFound',
-	}
-</script>
-
 <style lang="scss" scoped>
 	.nes-container.is-dark {
 		background-color: $black;
@@ -20,7 +14,7 @@
 		border: 3px solid $retro-green;
 		box-shadow:
 			0 0 50px $retro-green,
-			inset 0 0 20px rgba(0, 255, 0, 0.1);
+			inset 0 0 20px rgba($retro-green, 0.1);
 		text-transform: uppercase;
 		display: flex;
 		flex-direction: column;
@@ -44,13 +38,13 @@
 			margin: 0;
 		}
 
-		@media (max-width: 1024px) {
+		@media (max-width: #{$breakpoint-desktop}) {
 			img {
 				width: 30vw;
 			}
 		}
 
-		@media (max-width: 768px) {
+		@media (max-width: #{$breakpoint-tablet}) {
 			img {
 				width: 40vw;
 			}

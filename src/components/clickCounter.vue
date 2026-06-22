@@ -21,32 +21,26 @@
 	</div>
 </template>
 
-<script>
+<script setup>
+	import { ref, onMounted } from 'vue'
 	import { loadClicks, updateClicks } from '../js/firebase-setup.js'
 
-	export default {
-		name: 'ClickCounter',
-		data() {
-			return {
-				counter: null,
-				loading: true,
-			}
-		},
-		async mounted() {
-			this.counter = await loadClicks()
-			this.loading = false
-		},
-		methods: {
-			async incrementCounter() {
-				this.counter++
+	const counter = ref(null)
+	const loading = ref(true)
 
-				try {
-					await updateClicks()
-				} catch {
-					this.counter--
-				}
-			},
-		},
+	onMounted(async () => {
+		counter.value = await loadClicks()
+		loading.value = false
+	})
+
+	async function incrementCounter() {
+		counter.value++
+
+		try {
+			await updateClicks()
+		} catch {
+			counter.value--
+		}
 	}
 </script>
 

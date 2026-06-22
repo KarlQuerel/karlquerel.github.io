@@ -15,22 +15,11 @@
 	</div>
 </template>
 
-<script>
+<script setup>
 	import ClickCounter from './clickCounter.vue'
-
-	export default {
-		name: 'UnderConstruction',
-		components: {
-			ClickCounter,
-		},
-	}
 </script>
 
 <style lang="scss" scoped>
-	.small-font {
-		font-size: 1rem !important;
-	}
-
 	.nes-container.is-dark {
 		background-color: rgba(255, 255, 255, 0.1) !important;
 		border: 0.1vh solid $light-gray !important;
