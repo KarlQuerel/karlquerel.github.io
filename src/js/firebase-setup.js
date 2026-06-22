@@ -1,15 +1,16 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore, doc, getDoc, updateDoc, increment, setDoc } from 'firebase/firestore'
 
-// Firebase config
+// Firebase config — public web client identifiers, injected from .env at build
+// time (see .env.example) so they stay out of source per project convention.
 const firebaseConfig = {
-	apiKey: 'AIzaSyCWhnqOzsDExtNu14s_gxUpAWeV-PPPog8',
-	authDomain: 'click-counter-4f529.firebaseapp.com',
-	projectId: 'click-counter-4f529',
-	storageBucket: 'click-counter-4f529.appspot.com',
-	messagingSenderId: '950861743362',
-	appId: '1:950861743362:web:77dc41eb31b34334566e1b',
-	measurementId: 'G-7EEMWQS33Z',
+	apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+	authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+	projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+	storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+	messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+	appId: import.meta.env.VITE_FIREBASE_APP_ID,
+	measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 }
 
 const app = initializeApp(firebaseConfig)
