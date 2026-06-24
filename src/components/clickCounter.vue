@@ -29,8 +29,15 @@
 	const loading = ref(true)
 
 	onMounted(async () => {
-		counter.value = await loadClicks()
-		loading.value = false
+		try {
+			counter.value = await loadClicks()
+		} catch {
+			// Firebase unavailable (offline, blocked, misconfigured) — show 0
+			// rather than hanging on "Loading..." forever.
+			counter.value = 0
+		} finally {
+			loading.value = false
+		}
 	})
 
 	async function incrementCounter() {
