@@ -129,7 +129,7 @@
 	.site-header-animation {
 		position: relative;
 		width: 100%;
-		min-height: clamp(72px, 10vw, 104px);
+		min-height: var(--site-header-height);
 		overflow: hidden;
 		// Solid backdrop so the dog walks on black, not over the starfield.
 		background: $black;
@@ -172,10 +172,6 @@
 	}
 
 	@media (max-width: #{$breakpoint-mobile}) {
-		.site-header-animation {
-			min-height: clamp(58px, 18vw, 84px);
-		}
-
 		.site-header-animation-gif {
 			width: clamp(96px, 30vw, 150px);
 		}

@@ -16,12 +16,14 @@
 </script>
 
 <style lang="scss" scoped>
+	// Fill the area between the top chrome (dog header + navbar) and the bottom
+	// footer, so the warning never overlaps the navbar or clips the dog strip.
 	.mobile-message {
 		position: fixed;
-		top: var(--site-chrome-bar-height);
+		top: calc(var(--site-header-height) + var(--site-chrome-bar-height));
+		bottom: var(--site-chrome-bar-height);
 		left: 0;
-		width: 100vw;
-		height: 90vh;
+		right: 0;
 		background: $black;
 		display: flex;
 		justify-content: center;

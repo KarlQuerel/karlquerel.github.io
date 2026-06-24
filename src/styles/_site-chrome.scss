@@ -2,6 +2,10 @@
 
 :root {
 	--site-chrome-bar-height: 3rem;
+	// Height of the dog-animation header strip above the navbar. Shared so
+	// fixed overlays (e.g. the game's mobile warning) can clear the full top
+	// chrome (header + navbar) without hardcoding it.
+	--site-header-height: clamp(72px, 10vw, 104px);
 }
 
 .site-chrome-bar {
@@ -108,6 +112,10 @@
 }
 
 @media (max-width: #{variables.$breakpoint-mobile}) {
+	:root {
+		--site-header-height: clamp(58px, 18vw, 84px);
+	}
+
 	.site-chrome-links {
 		padding: 0.35rem 0.75rem;
 	}
