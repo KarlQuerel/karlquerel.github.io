@@ -53,17 +53,14 @@
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
-	// The whole /about page is the RPG overworld: a seamless grassland backdrop.
+	// Backdrop (the drifting starfield) is the shared <SpaceBackground> layer.
 	.about {
 		gap: 2rem;
 		padding: 2.5rem 1rem 4rem;
-		background: url('/assets/about/grass-tile.png') repeat;
-		background-size: 64px 64px;
-		image-rendering: pixelated;
 	}
 
 	/***	HEADER		***/
-	// Sits on a dark pixel panel so the intro stays legible over busy grass.
+	// Sits on a dark pixel panel so the intro stays legible over the starfield.
 	.about-head {
 		max-width: min(46rem, 94vw);
 		margin: 0 auto;

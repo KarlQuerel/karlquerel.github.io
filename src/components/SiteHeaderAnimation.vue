@@ -131,6 +131,8 @@
 		width: 100%;
 		min-height: clamp(72px, 10vw, 104px);
 		overflow: hidden;
+		// Solid backdrop so the dog walks on black, not over the starfield.
+		background: $black;
 	}
 
 	.site-header-animation-gif {

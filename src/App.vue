@@ -1,5 +1,6 @@
 <template>
 	<div class="app-root">
+		<SpaceBackground v-if="hasSpaceBackground" />
 		<SiteHeaderAnimation />
 		<SiteNavbar />
 		<main class="app-main">
@@ -12,18 +13,22 @@
 <script setup>
 	import { computed, onBeforeUnmount, watch } from 'vue'
 	import { useRoute } from 'vue-router'
+	import SpaceBackground from './components/SpaceBackground.vue'
 	import SiteHeaderAnimation from './components/SiteHeaderAnimation.vue'
 	import SiteNavbar from './components/SiteNavbar.vue'
 	import SiteFooter from './components/SiteFooter.vue'
 	import { useClickSpark } from './composables/useClickSpark'
 
 	const SCROLLABLE_PATHS = ['/', '/sport', '/about', '/contact']
+	// The game is the only view without the shared space backdrop.
+	const NO_BACKGROUND_PATHS = ['/game']
 
 	useClickSpark()
 
 	const route = useRoute()
 	const normalizedPath = () => route.path.replace(/\/$/, '') || '/'
 	const isPageScrollable = computed(() => SCROLLABLE_PATHS.includes(normalizedPath()))
+	const hasSpaceBackground = computed(() => !NO_BACKGROUND_PATHS.includes(normalizedPath()))
 
 	watch(
 		isPageScrollable,

@@ -1,8 +1,7 @@
-RPG timeline + home-base pixel art (/about page)
-================================================
+Home-base pixel art (/about page)
+=================================
 
-Files: grass-tile.png, path-tile.png, tree.png, bush.png, rock.png,
-       boulder.png, pond.png, house.png, campfire.png
+Files: house.png, campfire.png
 
 License: CC0 1.0 (public domain dedication) — no attribution required.
 

@@ -7,21 +7,6 @@
 			class="timeline-item"
 			:class="{ 'is-current': item.current }"
 		>
-			<!-- Scenery in the grassland gutters; pops in with the card on scroll. -->
-			<img
-				v-for="(prop, p) in item.scenery"
-				:key="p"
-				class="timeline-scenery"
-				:class="`is-${prop.side}`"
-				:src="SCENERY_SPRITES[prop.key].src"
-				:style="{
-					'--scenery-w': `${SCENERY_SPRITES[prop.key].w}px`,
-					'--scenery-top': prop.top,
-					'--scenery-i': p,
-				}"
-				alt=""
-				aria-hidden="true"
-			/>
 			<span class="timeline-node" aria-hidden="true" />
 			<div class="timeline-card">
 				<span class="timeline-year">{{ item.year }}</span>
@@ -34,7 +19,7 @@
 </template>
 
 <script setup>
-	import { CAREER_TIMELINE, SCENERY_SPRITES } from '@/data/about'
+	import { CAREER_TIMELINE } from '@/data/about'
 	import { reveal as vReveal } from '@/directives/reveal'
 </script>
 
@@ -42,10 +27,9 @@
 	@use '@/styles/mixins' as *;
 
 	// Geometry for the rail + node so everything lines up off one source.
-	$rail-x: 1.4rem; // horizontal centre of the dirt path
-	$path-width: 1.6rem; // width of the pixel dirt trail
-	$node-size: 1rem; // square marker on the path
-	$card-gap: 1.5rem; // breathing room between path and card
+	$rail-x: 1.4rem; // horizontal centre of the star-trail
+	$node-size: 1rem; // square marker on the trail
+	$card-gap: 1.5rem; // breathing room between trail and card
 
 	.timeline {
 		position: relative;
@@ -56,19 +40,17 @@
 		text-align: left;
 	}
 
-	// The rail: a pixel dirt trail running down the spine of the world.
+	// The rail: a glowing star-trail running down the spine of the page.
 	.timeline::before {
 		content: '';
 		position: absolute;
 		top: 0.6rem;
 		bottom: 0.6rem;
 		left: $rail-x;
-		width: $path-width;
+		width: 4px;
 		transform: translateX(-50%);
-		background: url('/assets/about/path-tile.png') repeat-y center top;
-		background-size: $path-width auto;
-		image-rendering: pixelated;
-		box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+		background: rgba($light-blue, 0.5);
+		box-shadow: 0 0 6px 1px rgba($light-blue, 0.45);
 	}
 
 	.timeline-item {
@@ -84,35 +66,6 @@
 
 	.timeline-item:last-child {
 		padding-bottom: 0;
-	}
-
-	/***	SCENERY		***/
-	// Pixel props parked in the grassland gutters either side of the column.
-	// Hidden until the parent item reveals, then they pop up from the ground.
-	.timeline-scenery {
-		position: absolute;
-		top: var(--scenery-top, 20%);
-		width: var(--scenery-w, 48px);
-		height: auto;
-		image-rendering: pixelated;
-		opacity: 0;
-		transform: translateY(8px) scale(0.6);
-		transform-origin: bottom center;
-		pointer-events: none;
-	}
-
-	.timeline-scenery.is-left {
-		right: calc(100% + 0.5rem);
-	}
-
-	.timeline-scenery.is-right {
-		left: calc(100% + 0.5rem);
-	}
-
-	.timeline-item.is-visible .timeline-scenery {
-		animation: scenery-pop 0.45s steps(3, end) forwards;
-		// Stagger each prop just behind the card so the world fills in.
-		animation-delay: calc(0.18s + var(--scenery-i, 0) * 0.12s);
 	}
 
 	// Square node sitting on the trail, ringed in black so it reads as a marker.
@@ -204,13 +157,6 @@
 		}
 	}
 
-	@keyframes scenery-pop {
-		to {
-			opacity: 1;
-			transform: translateY(0) scale(1);
-		}
-	}
-
 	@keyframes node-blink {
 		0% {
 			opacity: 1;
@@ -223,18 +169,9 @@
 		}
 	}
 
-	// On narrow screens the grassland gutters vanish — drop the props so they
-	// never spill across the cards or force a horizontal scroll.
-	@media (max-width: $breakpoint-mobile) {
-		.timeline-scenery {
-			display: none;
-		}
-	}
-
 	// Honour reduced-motion: show everything, kill the animation.
 	@media (prefers-reduced-motion: reduce) {
-		.timeline-item,
-		.timeline-scenery {
+		.timeline-item {
 			opacity: 1;
 			transform: none;
 			animation: none;

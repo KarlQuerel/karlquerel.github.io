@@ -1,8 +1,6 @@
 <template>
 	<section ref="trackRef" class="hero-track" :style="{ height: trackHeight }">
 		<div class="hero-pin">
-			<div class="hero-starfield" aria-hidden="true" />
-
 			<div class="hero-stage">
 				<div v-if="activeSection.layout === 'split'" class="hero-headline">
 					<HeroFlapLine
@@ -87,7 +85,7 @@
 		overflow: hidden;
 	}
 
-	// Content layers ride above the starfield (z-index 1) and below the CRT
+	// Content layers ride above the shared space backdrop and below the CRT
 	// overlay (z-index 3) painted at the edges of .hero-pin.
 	.hero-stage,
 	.hero-progress,
@@ -201,57 +199,6 @@
 		}
 	}
 
-	// Ambient pixel starfield behind the headline. Two pure-CSS dot layers drift at
-	// different speeds (parallax) in stepped, 8-bit motion. Both tiles share a 260px
-	// height so one keyframe loops each seamlessly by exactly one tile.
-	.hero-starfield {
-		position: absolute;
-		inset: 0;
-		z-index: 1;
-		overflow: hidden;
-		pointer-events: none;
-	}
-
-	.hero-starfield::before,
-	.hero-starfield::after {
-		content: '';
-		position: absolute;
-		// Bleed past the edges so the repeating tiles never reveal a seam mid-drift.
-		inset: -2px;
-	}
-
-	// Far layer: small, dim, slow.
-	.hero-starfield::before {
-		background-image:
-			radial-gradient(1.5px 1.5px at 20px 30px, rgba($white, 0.75) 99%, transparent 100%),
-			radial-gradient(1.5px 1.5px at 130px 80px, rgba($white, 0.5) 99%, transparent 100%),
-			radial-gradient(1.5px 1.5px at 70px 170px, rgba($white, 0.6) 99%, transparent 100%),
-			radial-gradient(1.5px 1.5px at 185px 210px, rgba($yellow, 0.65) 99%, transparent 100%),
-			radial-gradient(1.5px 1.5px at 40px 235px, rgba($white, 0.55) 99%, transparent 100%);
-		background-size: 220px 260px;
-		animation: heroStarDrift 26s steps(26, end) infinite;
-	}
-
-	// Near layer: bigger, brighter, faster — reads as closer.
-	.hero-starfield::after {
-		background-image:
-			radial-gradient(2px 2px at 60px 50px, rgba($white, 0.9) 99%, transparent 100%),
-			radial-gradient(2px 2px at 230px 120px, rgba($yellow, 0.8) 99%, transparent 100%),
-			radial-gradient(2px 2px at 150px 200px, rgba($white, 0.8) 99%, transparent 100%),
-			radial-gradient(2px 2px at 285px 30px, rgba($white, 0.7) 99%, transparent 100%);
-		background-size: 320px 260px;
-		animation: heroStarDrift 15s steps(20, end) infinite;
-	}
-
-	@keyframes heroStarDrift {
-		from {
-			background-position: 0 0;
-		}
-		to {
-			background-position: 0 -260px;
-		}
-	}
-
 	// CRT overlay: scanlines (matching the terminal window) + a soft tube vignette
 	// under a faint stepped flicker. Sits above everything, never intercepts input.
 	.hero-crt {
@@ -313,8 +260,6 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.hero-hint-arrow,
-		.hero-starfield::before,
-		.hero-starfield::after,
 		.hero-crt {
 			animation: none;
 		}
