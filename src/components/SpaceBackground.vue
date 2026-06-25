@@ -1,10 +1,73 @@
 <template>
 	<!-- Shared fixed backdrop behind every page except the game: a drifting
-	     parallax pixel starfield over the black body. Purely decorative. -->
-	<div class="space-bg" aria-hidden="true" />
+	     parallax pixel starfield over the black body, plus the occasional pixel
+	     shooting star streaking across. Purely decorative. -->
+	<div class="space-bg" aria-hidden="true">
+		<div
+			v-for="star in shootingStars"
+			:key="star.id"
+			class="shooting-star"
+			:style="star.style"
+			@animationend="removeStar(star.id)"
+		/>
+	</div>
 </template>
 
-<script setup></script>
+<script setup>
+	import { ref, onMounted, onBeforeUnmount } from 'vue'
+	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
+
+	// Sparse, tasteful comet streaks. Tints echo the starfield palette; weighted
+	// toward plain white so the effect stays understated.
+	const STAR_TINTS = ['#ffffff', '#ffffff', '#ffffff', '#00ccff', '#ffbd2e']
+	const MIN_GAP_MS = 5500
+	const MAX_GAP_MS = 14000
+
+	const shootingStars = ref([])
+	let nextId = 0
+	let timer = 0
+
+	function rand(min, max) {
+		return min + Math.random() * (max - min)
+	}
+
+	function spawnStar() {
+		// Skip while the tab is hidden — paused CSS animations never fire
+		// `animationend`, so the elements would otherwise pile up off-screen.
+		if (document.visibilityState === 'visible') {
+			const id = nextId++
+			shootingStars.value.push({
+				id,
+				style: {
+					'--y': `${rand(0, 50)}%`,
+					'--x': `${rand(-5, 55)}%`,
+					'--angle': `${rand(12, 40)}deg`,
+					'--len': `${rand(46, 86)}px`,
+					'--travel': `${rand(90, 125)}vw`,
+					'--dur': `${rand(0.7, 1.25)}s`,
+					'--peak': rand(0.6, 0.95).toFixed(2),
+					'--tint': STAR_TINTS[Math.floor(Math.random() * STAR_TINTS.length)],
+				},
+			})
+		}
+		scheduleNext()
+	}
+
+	function scheduleNext() {
+		timer = window.setTimeout(spawnStar, rand(MIN_GAP_MS, MAX_GAP_MS))
+	}
+
+	function removeStar(id) {
+		shootingStars.value = shootingStars.value.filter(star => star.id !== id)
+	}
+
+	onMounted(() => {
+		if (prefersReducedMotion()) return
+		scheduleNext()
+	})
+
+	onBeforeUnmount(() => window.clearTimeout(timer))
+</script>
 
 <style scoped lang="scss">
 	// Full-viewport layer pinned behind all content (negative z-index keeps it
@@ -56,6 +119,51 @@
 		}
 		to {
 			background-position: 0 -260px;
+		}
+	}
+
+	// A comet: a crisp pixel head (::after) trailing a fading streak (background
+	// gradient), rotated to its travel angle and flung across the viewport once.
+	.shooting-star {
+		position: absolute;
+		top: var(--y);
+		left: var(--x);
+		width: var(--len);
+		height: 2px;
+		color: var(--tint);
+		background: linear-gradient(to left, currentColor, transparent);
+		opacity: 0;
+		transform: rotate(var(--angle));
+		transform-origin: center;
+		image-rendering: pixelated;
+		animation: shootingStar var(--dur) linear forwards;
+	}
+
+	.shooting-star::after {
+		content: '';
+		position: absolute;
+		right: 0;
+		top: 50%;
+		width: 3px;
+		height: 3px;
+		margin-top: -1px;
+		background: currentColor;
+	}
+
+	@keyframes shootingStar {
+		0% {
+			transform: rotate(var(--angle)) translateX(0);
+			opacity: 0;
+		}
+		12% {
+			opacity: var(--peak);
+		}
+		85% {
+			opacity: var(--peak);
+		}
+		100% {
+			transform: rotate(var(--angle)) translateX(var(--travel));
+			opacity: 0;
 		}
 	}
 
