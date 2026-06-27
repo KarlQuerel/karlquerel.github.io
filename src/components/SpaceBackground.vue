@@ -1,8 +1,10 @@
 <template>
-	<!-- Shared fixed backdrop behind every page except the game: a drifting
-	     parallax pixel starfield over the black body, plus the occasional pixel
-	     shooting star streaking across. Purely decorative. -->
-	<div class="space-bg" aria-hidden="true">
+	<!-- Shared fixed backdrop behind every page except the game: several
+	     randomly generated pixel-star layers that drift diagonally at different
+	     speeds and shift under the cursor for parallax depth, plus the occasional
+	     pixel shooting star streaking across. Purely decorative. -->
+	<div class="space-bg" :style="parallaxStyle" aria-hidden="true">
+		<div v-for="layer in starLayers" :key="layer.id" class="star-layer" :style="layer.style" />
 		<div
 			v-for="star in shootingStars"
 			:key="star.id"
@@ -14,39 +16,98 @@
 </template>
 
 <script setup>
-	import { ref, onMounted, onBeforeUnmount } from 'vue'
+	import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
-
-	// Sparse, tasteful comet streaks. Tints echo the starfield palette; weighted
-	// toward plain white so the effect stays understated.
-	const STAR_TINTS = ['#ffffff', '#ffffff', '#ffffff', '#00ccff', '#ffbd2e']
-	const MIN_GAP_MS = 5500
-	const MAX_GAP_MS = 14000
-
-	const shootingStars = ref([])
-	let nextId = 0
-	let timer = 0
+	import { useRafThrottle } from '@/composables/useRafThrottle'
+	import { STAR_COLORS, STAR_LAYERS, SHOOTING_STAR } from '@/constants/starfield'
 
 	function rand(min, max) {
 		return min + Math.random() * (max - min)
 	}
 
+	function pick(arr) {
+		return arr[Math.floor(Math.random() * arr.length)]
+	}
+
+	// hex (#rrggbb) + 0..1 alpha → #rrggbbaa, so each generated dot can carry its
+	// own opacity without a separate rgba() parse step.
+	function withAlpha(hex, alpha) {
+		return (
+			hex +
+			Math.round(alpha * 255)
+				.toString(16)
+				.padStart(2, '0')
+		)
+	}
+
+	// Build one parallax plane: a tile of randomly placed, randomly tinted dots
+	// rendered as stacked radial-gradients, plus the CSS vars its drift needs.
+	function buildLayer(layer, id) {
+		const [w, h] = layer.tile
+		const dots = []
+		for (let i = 0; i < layer.count; i++) {
+			const x = rand(0, w).toFixed(1)
+			const y = rand(0, h).toFixed(1)
+			const color = withAlpha(pick(STAR_COLORS), rand(...layer.alpha))
+			dots.push(
+				`radial-gradient(${layer.size}px ${layer.size}px at ${x}px ${y}px, ${color} 99%, transparent 100%)`
+			)
+		}
+		return {
+			id,
+			style: {
+				backgroundImage: dots.join(','),
+				backgroundSize: `${w}px ${h}px`,
+				// Inset one full tile so the element can translate a whole tile and
+				// still cover the viewport; the background stays seamless across it.
+				'--bleed-x': `${w}px`,
+				'--bleed-y': `${h}px`,
+				// Drift exactly one tile so the transform loop is seamless; sign sets
+				// direction.
+				'--drift-x': `${layer.dir[0] * w}px`,
+				'--drift-y': `${layer.dir[1] * h}px`,
+				'--dur': `${layer.duration}s`,
+				'--depth': layer.depth,
+			},
+		}
+	}
+
+	// Generated once per visit → no two loads share the same sky.
+	const starLayers = STAR_LAYERS.map((layer, i) => buildLayer(layer, i))
+
+	// Pointer parallax: each axis normalised to -1..1 and negated so the layers
+	// drift against the cursor (the classic look-around-the-scene illusion). Read
+	// by the layers via `--depth` in a CSS calc, so moving the mouse only patches
+	// the container's two vars — the layers themselves never re-render.
+	const pointer = ref({ x: 0, y: 0 })
+	const parallaxStyle = computed(() => ({ '--mx': pointer.value.x, '--my': pointer.value.y }))
+
+	const onPointerMove = useRafThrottle(event => {
+		pointer.value = {
+			x: -((event.clientX / window.innerWidth - 0.5) * 2),
+			y: -((event.clientY / window.innerHeight - 0.5) * 2),
+		}
+	})
+
+	const shootingStars = ref([])
+	let nextId = 0
+	let timer = 0
+
 	function spawnStar() {
 		// Skip while the tab is hidden — paused CSS animations never fire
 		// `animationend`, so the elements would otherwise pile up off-screen.
 		if (document.visibilityState === 'visible') {
-			const id = nextId++
 			shootingStars.value.push({
-				id,
+				id: nextId++,
 				style: {
-					'--y': `${rand(0, 50)}%`,
-					'--x': `${rand(-5, 55)}%`,
-					'--angle': `${rand(12, 40)}deg`,
-					'--len': `${rand(46, 86)}px`,
-					'--travel': `${rand(90, 125)}vw`,
-					'--dur': `${rand(0.7, 1.25)}s`,
-					'--peak': rand(0.6, 0.95).toFixed(2),
-					'--tint': STAR_TINTS[Math.floor(Math.random() * STAR_TINTS.length)],
+					'--y': `${rand(...SHOOTING_STAR.y)}%`,
+					'--x': `${rand(...SHOOTING_STAR.x)}%`,
+					'--angle': `${rand(...SHOOTING_STAR.angle)}deg`,
+					'--len': `${rand(...SHOOTING_STAR.len)}px`,
+					'--travel': `${rand(...SHOOTING_STAR.travel)}vw`,
+					'--dur': `${rand(...SHOOTING_STAR.dur)}s`,
+					'--peak': rand(...SHOOTING_STAR.peak).toFixed(2),
+					'--tint': pick(SHOOTING_STAR.tints),
 				},
 			})
 		}
@@ -54,7 +115,7 @@
 	}
 
 	function scheduleNext() {
-		timer = window.setTimeout(spawnStar, rand(MIN_GAP_MS, MAX_GAP_MS))
+		timer = window.setTimeout(spawnStar, rand(...SHOOTING_STAR.gapMs))
 	}
 
 	function removeStar(id) {
@@ -63,10 +124,14 @@
 
 	onMounted(() => {
 		if (prefersReducedMotion()) return
+		window.addEventListener('pointermove', onPointerMove, { passive: true })
 		scheduleNext()
 	})
 
-	onBeforeUnmount(() => window.clearTimeout(timer))
+	onBeforeUnmount(() => {
+		window.clearTimeout(timer)
+		window.removeEventListener('pointermove', onPointerMove)
+	})
 </script>
 
 <style scoped lang="scss">
@@ -80,45 +145,25 @@
 		pointer-events: none;
 	}
 
-	// Two pure-CSS dot layers drift at different speeds (parallax). Both tiles
-	// share a 260px height so pixelStarDrift loops each seamlessly by one tile.
-	.space-bg::before,
-	.space-bg::after {
-		content: '';
+	// One generated parallax plane. Drift runs on `transform` (GPU-composited, no
+	// per-frame repaint) while mouse parallax uses the independent `translate`
+	// property so the two never collide. `--mx`/`--my` (-1..1) come from the
+	// container; `--depth` scales them per layer into a pixel offset.
+	.star-layer {
 		position: absolute;
-		// Bleed past the edges so the repeating tiles never reveal a seam mid-drift.
-		inset: -2px;
+		inset: calc(var(--bleed-y) * -1) calc(var(--bleed-x) * -1);
+		background-repeat: repeat;
+		translate: calc(var(--mx, 0) * var(--depth) * 1px) calc(var(--my, 0) * var(--depth) * 1px);
+		animation: starDrift var(--dur) linear infinite;
+		will-change: transform;
 	}
 
-	// Far layer: small, dim, slow.
-	.space-bg::before {
-		background-image:
-			radial-gradient(1.5px 1.5px at 20px 30px, rgba($white, 0.75) 99%, transparent 100%),
-			radial-gradient(1.5px 1.5px at 130px 80px, rgba($white, 0.5) 99%, transparent 100%),
-			radial-gradient(1.5px 1.5px at 70px 170px, rgba($white, 0.6) 99%, transparent 100%),
-			radial-gradient(1.5px 1.5px at 185px 210px, rgba($yellow, 0.65) 99%, transparent 100%),
-			radial-gradient(1.5px 1.5px at 40px 235px, rgba($white, 0.55) 99%, transparent 100%);
-		background-size: 220px 260px;
-		animation: pixelStarDrift 90s linear infinite;
-	}
-
-	// Near layer: bigger, brighter, faster — reads as closer.
-	.space-bg::after {
-		background-image:
-			radial-gradient(2px 2px at 60px 50px, rgba($white, 0.9) 99%, transparent 100%),
-			radial-gradient(2px 2px at 230px 120px, rgba($yellow, 0.8) 99%, transparent 100%),
-			radial-gradient(2px 2px at 150px 200px, rgba($white, 0.8) 99%, transparent 100%),
-			radial-gradient(2px 2px at 285px 30px, rgba($white, 0.7) 99%, transparent 100%);
-		background-size: 320px 260px;
-		animation: pixelStarDrift 55s linear infinite;
-	}
-
-	@keyframes pixelStarDrift {
+	@keyframes starDrift {
 		from {
-			background-position: 0 0;
+			transform: translate3d(0, 0, 0);
 		}
 		to {
-			background-position: 0 -260px;
+			transform: translate3d(var(--drift-x), var(--drift-y), 0);
 		}
 	}
 
@@ -168,9 +213,10 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.space-bg::before,
-		.space-bg::after {
+		.star-layer {
 			animation: none;
+			translate: none;
+			transform: none;
 		}
 	}
 </style>
