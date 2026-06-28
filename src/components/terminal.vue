@@ -395,6 +395,10 @@
 		overflow-wrap: anywhere;
 		line-height: 1.2;
 		margin: 0 0 0.8rem;
+		// Shell MOTD reads left-aligned like real output, not centered (the banner
+		// would otherwise inherit #app's centered text, most visible once it wraps
+		// on mobile).
+		text-align: start;
 	}
 
 	.welcome-text {

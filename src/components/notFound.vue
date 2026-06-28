@@ -1,53 +1,67 @@
 <template>
 	<div class="content">
-		<div class="nes-container is-dark is-rounded">
-			<img src="/assets/img/yako-not-found.gif" alt="lost yako" />
-			<h1>Page not found</h1>
-		</div>
+		<h1 class="not-found-title" :style="driftStyle">
+			<span>Page</span>
+			<span>not</span>
+			<span>found</span>
+		</h1>
 	</div>
 </template>
 
+<script setup>
+	// Each visit gets a fresh wandering path, so the text never drifts the same
+	// way twice. Three random waypoints feed the CSS keyframe via custom props.
+	const rand = (min, max) => min + Math.random() * (max - min)
+
+	const driftStyle = {
+		'--x1': `${rand(-10, 10)}vw`,
+		'--y1': `${rand(-8, 8)}vh`,
+		'--r1': `${rand(-8, 8)}deg`,
+		'--x2': `${rand(-10, 10)}vw`,
+		'--y2': `${rand(-8, 8)}vh`,
+		'--r2': `${rand(-8, 8)}deg`,
+		'--x3': `${rand(-10, 10)}vw`,
+		'--y3': `${rand(-8, 8)}vh`,
+		'--r3': `${rand(-8, 8)}deg`,
+	}
+</script>
+
 <style lang="scss" scoped>
-	.nes-container.is-dark {
-		background-color: $black;
-		border-radius: 15px;
-		border: 3px solid $retro-green;
-		box-shadow:
-			0 0 50px $retro-green,
-			inset 0 0 20px rgba($retro-green, 0.1);
-		text-transform: uppercase;
+	.not-found-title {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: center;
-		box-sizing: border-box;
-		position: relative;
-		overflow: hidden;
+		gap: 0.4rem;
+		font-size: 1.5rem;
+		line-height: 1.1;
+		color: $white;
+		text-transform: uppercase;
+		margin: 0;
+		// Slow zero-gravity drift through a randomised set of waypoints, so the
+		// text floats away on a different path every visit.
+		animation: notFoundDrift 11s ease-in-out infinite;
+		will-change: transform;
+	}
 
-		img {
-			width: 20vw;
-			height: auto;
-			max-height: 40vh;
-			object-fit: contain;
+	@keyframes notFoundDrift {
+		0%,
+		100% {
+			transform: translate(0, 0) rotate(0deg);
 		}
-
-		h1 {
-			font-size: 2rem;
-			color: $white;
-			text-shadow: 3px 3px 10px $retro-green;
-			margin: 0;
+		25% {
+			transform: translate(var(--x1), var(--y1)) rotate(var(--r1));
 		}
-
-		@media (max-width: #{$breakpoint-desktop}) {
-			img {
-				width: 30vw;
-			}
+		50% {
+			transform: translate(var(--x2), var(--y2)) rotate(var(--r2));
 		}
+		75% {
+			transform: translate(var(--x3), var(--y3)) rotate(var(--r3));
+		}
+	}
 
-		@media (max-width: #{$breakpoint-tablet}) {
-			img {
-				width: 40vw;
-			}
+	@media (prefers-reduced-motion: reduce) {
+		.not-found-title {
+			animation: none;
 		}
 	}
 </style>

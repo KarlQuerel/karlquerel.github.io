@@ -43,19 +43,19 @@
 			color: $yellow;
 			font-size: 1.75rem;
 			margin-bottom: 1rem;
-			text-shadow: 0 0 10px $retro-green;
+			text-shadow: 0 0 10px $yellow;
 		}
 
 		p {
 			color: $white;
 			font-size: 1.5rem;
-			text-shadow: 0 0 5px $retro-green;
+			text-shadow: 0 0 5px $yellow;
 			margin: 0 0 0 0;
 		}
 	}
 
 	.highlight {
-		color: $retro-green;
+		color: $yellow;
 		font-weight: bold;
 	}
 </style>
