@@ -22,8 +22,8 @@
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 
 	const HEADER_GIF_SEQUENCE = [
-		{ src: '/assets/img/Yako_Animations/Run.gif', direction: 'ltr', kind: 'run' },
-		{ src: '/assets/img/Yako_Animations/Walk.gif', direction: 'rtl', kind: 'walk' },
+		{ src: '/assets/img/Yako_Animations/Run_helmet.gif', direction: 'ltr', kind: 'run' },
+		{ src: '/assets/img/Yako_Animations/Walk_helmet.gif', direction: 'rtl', kind: 'walk' },
 	]
 	const RUNNING_TO_WALKING_PAUSE_MS = 1200
 	const WALKING_TO_RUNNING_PAUSE_MS = 1200
@@ -131,8 +131,8 @@
 		width: 100%;
 		min-height: var(--site-header-height);
 		overflow: hidden;
-		// Solid backdrop so the dog walks on black, not over the starfield.
-		background: $black;
+		// Transparent so the shared fixed starfield shows through above the navbar.
+		background: transparent;
 	}
 
 	.site-header-animation-gif {
