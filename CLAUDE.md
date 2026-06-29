@@ -49,6 +49,7 @@ npm run serve        # preview built dist/
 npm run clean        # lint:fix + format (run before every commit)
 npm run format       # prettier + eslint fix + checks
 npm run lint         # check only, no fix
+npm run lint:check   # strict check — fails on any warning (the real gate)
 npm run deploy       # build + copy 404.html + push to gh-pages
 ```
 
@@ -101,27 +102,6 @@ When touching existing code, always:
 
 ---
 
-## Multi-agent orchestration
-
-### Enable Agent Teams
-```bash
-export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
-```
-
-### Orchestrator protocol
-1. **Plan first** — read `src/` structure, identify affected files, write a task list before any edits.
-2. **Spawn dynamically** — create subagents with purpose-built prompts scoped to their specific concern. Do not assume a fixed agent roster.
-3. **One file per agent** — never let two agents touch the same file simultaneously.
-4. **Gate on lint** — no task is done until `npm run clean` passes cleanly.
-5. **Review diff** — orchestrator reads the full diff and flags anything that breaks the retro aesthetic, introduces new dependencies, or leaves dead code behind.
-
-### Subagent constraints
-- Must run `npm run lint:check` before reporting done.
-- Must not run `npm run deploy` — only the human does.
-- Must not modify `vite.config.js`, `router/index.js`, or Firebase config without explicit orchestrator instruction.
-
----
-
 ## Design constraints
 
 - **Retro pixel aesthetic is non-negotiable.** NES.css is the design system. Do not introduce Tailwind, Bootstrap, Material, or any other CSS framework.
@@ -134,6 +114,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 ## Git discipline
 
 - **Never create a new branch on this repo. Always make changes directly on the main branch (`master`).** This applies to everything — features, visual iterations, refactors, and risky changes alike. No feature branches, no worktree branches.
+- **Never use git worktrees.** Edit the checkout directly on `master`. If a worktree exists, remove it (`git worktree remove` / `git worktree prune`). Karl is the only dev here, so isolation only adds friction.
 - Commit messages: conventional commits (`feat:`, `fix:`, `refactor:`, `chore:`).
 - `npm run deploy` is the only way to publish.
 
@@ -144,6 +125,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 - Do not add a test framework unless explicitly asked — the test script is a placeholder.
 - Do not switch from Composition API to Options API.
 - Do not install new npm dependencies without asking — keep the bundle lean.
+- Do not modify `vite.config.js`, `router/index.js`, or Firebase config without good reason — these are load-bearing.
 - Do not break the `dist/404.html` copy step — it's how GitHub Pages handles SPA routing.
 - Do not leave TODO comments — either fix it now or open an issue.
 - Do not leave console.log statements in committed code.
