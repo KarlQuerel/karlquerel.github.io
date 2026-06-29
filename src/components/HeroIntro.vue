@@ -1,33 +1,33 @@
 <template>
 	<section ref="trackRef" class="hero-track" :style="{ height: trackHeight }">
 		<div class="hero-pin">
-			<div class="hero-stage">
-				<div v-if="activeSection.layout === 'split'" class="hero-headline">
-					<HeroFlapLine
-						class="hero-headline__lead"
-						:line="activeSection.lead"
-						align="left"
-					/>
-					<HeroFlapLine
-						class="hero-headline__name"
-						:line="activeSection.name"
-						align="right"
-					/>
+			<!-- Scroll-driven perspective crawl. --crawl-progress (0 -> 1) drives the
+			     deck's vertical travel and recession toward the vanishing point. -->
+			<div class="hero-crawl" :style="crawlStyle" aria-hidden="true">
+				<div class="hero-crawl__plane">
+					<div class="hero-crawl__deck">
+						<p class="hero-crawl__episode">{{ HERO_CRAWL.episode }}</p>
+						<h1 class="hero-crawl__title">{{ HERO_CRAWL.title }}</h1>
+						<p
+							v-for="(paragraph, i) in HERO_CRAWL.paragraphs"
+							:key="i"
+							class="hero-crawl__paragraph"
+						>
+							{{ paragraph }}
+						</p>
+					</div>
 				</div>
-				<router-link v-else-if="activeSection.to" :to="activeSection.to" class="hero-cta">
-					<HeroFlapLine class="hero-centered" :line="activeSection.line" align="center" />
-				</router-link>
-				<HeroFlapLine
-					v-else
-					class="hero-centered"
-					:line="activeSection.line"
-					align="center"
-				/>
+			</div>
+
+			<!-- Accessible plain-text version of the crawl for assistive tech. -->
+			<div class="sr-only">
+				<h1>{{ HERO_CRAWL.title }}</h1>
+				<p v-for="(paragraph, i) in HERO_CRAWL.paragraphs" :key="i">{{ paragraph }}</p>
 			</div>
 
 			<div class="hero-progress" aria-hidden="true">
 				<span
-					v-for="n in SECTION_COUNT"
+					v-for="n in PROGRESS_STOPS"
 					:key="n"
 					class="hero-dot"
 					:class="{ 'hero-dot--active': n - 1 === activeIndex }"
@@ -36,7 +36,7 @@
 
 			<div
 				class="hero-hint"
-				:class="{ 'hero-hint--hidden': activeIndex !== 0 }"
+				:class="{ 'hero-hint--hidden': progress > 0.02 }"
 				aria-hidden="true"
 			>
 				<span class="hero-hint-label">SCROLL</span>
@@ -50,20 +50,21 @@
 
 <script setup>
 	import { computed, ref } from 'vue'
-	import { HERO_SECTIONS } from '../data/heroLines.js'
+	import { HERO_CRAWL } from '../data/heroLines.js'
 	import { useScrollSections } from '../composables/useScrollSections.js'
-	import HeroFlapLine from './HeroFlapLine.vue'
 
-	const SECTION_COUNT = HERO_SECTIONS.length
+	// Number of scroll "stops" the runway is divided into — drives both the
+	// progress dots and the length of the scroll runway.
+	const PROGRESS_STOPS = 3
 
 	const trackRef = ref(null)
-	const { activeIndex } = useScrollSections(trackRef, SECTION_COUNT)
+	const { activeIndex, progress } = useScrollSections(trackRef, PROGRESS_STOPS)
 
-	// One viewport of scroll per section, plus a trailing viewport so the last line
-	// holds for a full screen before the track ends.
-	const trackHeight = `${(SECTION_COUNT + 1) * 100}vh`
+	// One viewport of scroll per stop, plus a trailing viewport so the crawl has
+	// room to recede fully before the track ends.
+	const trackHeight = `${(PROGRESS_STOPS + 1) * 100}vh`
 
-	const activeSection = computed(() => HERO_SECTIONS[activeIndex.value] ?? HERO_SECTIONS[0])
+	const crawlStyle = computed(() => ({ '--crawl-progress': progress.value }))
 </script>
 
 <style scoped lang="scss">
@@ -85,70 +86,97 @@
 		overflow: hidden;
 	}
 
+	// Perspective stage for the crawl. The viewer looks "up" the tilted deck
+	// (perspective-origin near the top) so the text narrows toward a vanishing
+	// point and recedes into the distance.
+	.hero-crawl {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		overflow: hidden;
+		perspective: 360px;
+		perspective-origin: 50% 0%;
+		// Dissolve the deck into the vanishing point at the top and feather the
+		// bottom edge where it enters.
+		mask-image: linear-gradient(
+			to top,
+			transparent 0%,
+			$black 14%,
+			$black 52%,
+			transparent 94%
+		);
+		-webkit-mask-image: linear-gradient(
+			to top,
+			transparent 0%,
+			$black 14%,
+			$black 52%,
+			transparent 94%
+		);
+	}
+
+	.hero-crawl__plane {
+		position: absolute;
+		inset: 0;
+		transform: rotateX(32deg);
+		transform-origin: 50% 100%;
+	}
+
+	.hero-crawl__deck {
+		position: absolute;
+		left: 50%;
+		top: 0;
+		width: min(90%, 42rem);
+		// Travels from just below the stage up past the vanishing point as the
+		// visitor scrolls.
+		transform: translateX(-50%) translateY(calc(100vh - var(--crawl-progress, 0) * 250vh));
+		color: $yellow;
+		text-align: justify;
+		text-shadow:
+			0 0 8px rgba($yellow, 0.45),
+			0 0 18px rgba($yellow, 0.25);
+		font-family: $font-terminal;
+		font-size: clamp(1.3rem, 4vw, 2.6rem);
+		line-height: 1.45;
+	}
+
+	.hero-crawl__episode {
+		margin: 0 0 0.4em;
+		text-align: center;
+		font-family: $font-pixel;
+		font-size: 0.42em;
+		letter-spacing: 0.3em;
+		color: $white;
+	}
+
+	.hero-crawl__title {
+		margin: 0 0 1em;
+		text-align: center;
+		font-family: $font-pixel;
+		font-size: 0.7em;
+		line-height: 1.4;
+		text-shadow:
+			0 0 8px rgba($yellow, 0.6),
+			0 0 18px rgba($yellow, 0.35);
+	}
+
+	.hero-crawl__paragraph {
+		margin: 0 0 1em;
+	}
+
 	// Content layers ride above the shared space backdrop and below the CRT
 	// overlay (z-index 3) painted at the edges of .hero-pin.
-	.hero-stage,
 	.hero-progress,
 	.hero-hint {
 		position: relative;
 		z-index: 2;
 	}
 
-	.hero-stage {
-		width: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.hero-centered {
-		max-width: 22ch;
-	}
-
-	// The final section's line is a routed call-to-action. Pixel-button affordance:
-	// it nudges down-right on hover like a pressed key, no smooth easing.
-	.hero-cta {
-		display: inline-block;
-		text-decoration: none;
-		outline: none;
-		cursor: pointer;
-	}
-
-	.hero-cta:hover,
-	.hero-cta:focus-visible {
-		transform: translate(2px, 2px);
-	}
-
-	.hero-cta:focus-visible {
-		outline: 3px solid $yellow;
-		outline-offset: 6px;
-	}
-
-	// The landing headline spreads two blocks diagonally across a tall canvas:
-	// "Hello there" anchored upper-left, "I am KARL QUEREL" vertically centered on
-	// the right (auto margins absorb the free space below the lead).
-	.hero-headline {
-		width: 100%;
-		min-height: 55vh;
-		// Inset both edges so the left/right blocks sit nearer the centre while
-		// staying left- and right-aligned.
-		padding-inline: 12%;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.hero-headline__lead {
-		align-self: flex-start;
-		max-width: 70%;
-	}
-
-	.hero-headline__name {
-		align-self: flex-end;
-		margin: auto 0;
-		max-width: 80%;
-	}
-
+	// Pin the dots and hint to the lower edge so the crawl owns the centre.
 	.hero-progress {
+		position: absolute;
+		bottom: 4.5rem;
+		left: 50%;
+		transform: translateX(-50%);
 		display: flex;
 		gap: 0.85rem;
 	}
@@ -169,6 +197,10 @@
 	}
 
 	.hero-hint {
+		position: absolute;
+		bottom: 1.5rem;
+		left: 50%;
+		transform: translateX(-50%);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -197,6 +229,18 @@
 		100% {
 			transform: translateY(0);
 		}
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
 	}
 
 	// CRT overlay: scanlines (matching the terminal window) + a soft tube vignette
@@ -244,17 +288,8 @@
 			gap: 1.8rem;
 		}
 
-		.hero-centered {
-			max-width: 16ch;
-		}
-
-		.hero-headline {
-			padding-inline: 6%;
-		}
-
-		.hero-headline__lead,
-		.hero-headline__name {
-			max-width: 90%;
+		.hero-crawl__deck {
+			width: 94%;
 		}
 	}
 
@@ -264,8 +299,12 @@
 			animation: none;
 		}
 
-		.hero-cta:hover,
-		.hero-cta:focus-visible {
+		// Drop the tilt so the crawl reads as plain, comfortable scrolling text.
+		.hero-crawl {
+			perspective: none;
+		}
+
+		.hero-crawl__plane {
 			transform: none;
 		}
 	}

@@ -13,6 +13,9 @@ export function useScrollSections(wrapperRef, sectionCount) {
 	const count = Math.max(1, sectionCount)
 
 	const activeIndex = ref(0)
+	// Continuous 0 -> 1 scroll position over the runway, for animations (e.g. the
+	// hero crawl) that need smooth progress rather than a discrete section index.
+	const progress = ref(0)
 
 	let resizeObserver = null
 
@@ -29,6 +32,7 @@ export function useScrollSections(wrapperRef, sectionCount) {
 
 	function sync() {
 		const p = computeProgress()
+		progress.value = p
 		const raw = Math.floor(p * count)
 		const index = Math.min(count - 1, Math.max(0, raw))
 		activeIndex.value = index
@@ -53,5 +57,5 @@ export function useScrollSections(wrapperRef, sectionCount) {
 		if (resizeObserver) resizeObserver.disconnect()
 	})
 
-	return { activeIndex }
+	return { activeIndex, progress }
 }
