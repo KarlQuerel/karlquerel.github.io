@@ -36,21 +36,16 @@
 
 .site-chrome-links {
 	display: flex;
-	flex-wrap: nowrap;
+	// Wrap whole links onto a second row on narrow screens rather than overflowing
+	// or forcing a horizontal scroll — keeps every item reachable on any width.
+	flex-wrap: wrap;
 	width: 100%;
 	justify-content: center;
 	align-items: center;
 	column-gap: clamp(0.8rem, 2vw, 1.5rem);
 	row-gap: 0.35rem;
-	overflow-x: auto;
-	overflow-y: hidden;
-	scrollbar-width: none;
 	position: relative;
 	z-index: 3;
-}
-
-.site-chrome-links::-webkit-scrollbar {
-	display: none;
 }
 
 .site-chrome-link {
@@ -58,6 +53,9 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	// Keep each label intact (e.g. "for the nerds") so it wraps as a unit, never
+	// mid-word.
+	white-space: nowrap;
 	color: rgba(255, 255, 255, 0.88);
 	font-size: clamp(0.52rem, 1.15vw, 0.64rem);
 	line-height: 1.2;
