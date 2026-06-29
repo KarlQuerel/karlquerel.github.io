@@ -25,12 +25,8 @@
 				<p v-for="(paragraph, i) in HERO_CRAWL.paragraphs" :key="i">{{ paragraph }}</p>
 			</div>
 
-			<!-- Nudge to start scrolling; retires itself once the crawl moves. -->
-			<div
-				class="hero-hint"
-				:class="{ 'hero-hint--hidden': progress > HINT_HIDE_PROGRESS }"
-				aria-hidden="true"
-			>
+			<!-- Nudge to start scrolling; fades out in step with the crawl. -->
+			<div class="hero-hint" :style="hintStyle" aria-hidden="true">
 				<span class="hero-hint__label">{{ HERO_CRAWL.scrollHint }}</span>
 				<span class="hero-hint__arrow" />
 			</div>
@@ -49,8 +45,9 @@
 	// the scroll runway.
 	const PROGRESS_STOPS = 3
 
-	// Retire the scroll hint as soon as the crawl has visibly started moving.
-	const HINT_HIDE_PROGRESS = 0.02
+	// Scroll progress at which the scroll hint has fully faded out — it dissolves
+	// in step with the crawl rather than popping away.
+	const HINT_FADE_END = 0.08
 
 	const trackRef = ref(null)
 	const { progress } = useScrollSections(trackRef)
@@ -60,6 +57,9 @@
 	const trackHeight = `${(PROGRESS_STOPS + 1) * 100}vh`
 
 	const crawlStyle = computed(() => ({ '--crawl-progress': progress.value }))
+	const hintStyle = computed(() => ({
+		'--hint-opacity': Math.max(0, 1 - progress.value / HINT_FADE_END),
+	}))
 </script>
 
 <style scoped lang="scss">
@@ -194,6 +194,10 @@
 		gap: 1.4rem;
 		padding: 0 1rem;
 		color: $yellow;
+		// Driven by scroll progress (set in JS) so the hint fades as the crawl
+		// begins to move; purely decorative, so it never intercepts input.
+		opacity: var(--hint-opacity, 1);
+		pointer-events: none;
 	}
 
 	.hero-hint__label {
@@ -223,10 +227,6 @@
 			#{$arrow-pixel} #{$arrow-pixel},
 			0 #{$arrow-pixel * 2};
 		animation: heroHintBob 1s steps(3, end) infinite;
-	}
-
-	.hero-hint--hidden {
-		visibility: hidden;
 	}
 
 	@keyframes heroHintBob {
