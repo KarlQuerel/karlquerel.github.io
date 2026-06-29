@@ -1,7 +1,7 @@
 /***	useScrollSections		***/
-// Maps the page scroll position over a tall wrapper element to a discrete
-// section index. The wrapper acts as a scroll "runway": as it travels through
-// the viewport, progress goes 0 -> 1 and the active section advances.
+// Tracks the page scroll position over a tall wrapper element as a continuous
+// 0 -> 1 value. The wrapper acts as a scroll "runway": as it travels through the
+// viewport, progress goes 0 -> 1, driving animations like the hero crawl.
 //
 // Uses a viewport-relative getBoundingClientRect() measurement, so it is
 // unaffected by content rendered above the wrapper.
@@ -9,12 +9,8 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRafThrottle } from './useRafThrottle.js'
 
-export function useScrollSections(wrapperRef, sectionCount) {
-	const count = Math.max(1, sectionCount)
-
-	const activeIndex = ref(0)
-	// Continuous 0 -> 1 scroll position over the runway, for animations (e.g. the
-	// hero crawl) that need smooth progress rather than a discrete section index.
+export function useScrollSections(wrapperRef) {
+	// Continuous 0 -> 1 scroll position over the runway.
 	const progress = ref(0)
 
 	let resizeObserver = null
@@ -31,11 +27,7 @@ export function useScrollSections(wrapperRef, sectionCount) {
 	}
 
 	function sync() {
-		const p = computeProgress()
-		progress.value = p
-		const raw = Math.floor(p * count)
-		const index = Math.min(count - 1, Math.max(0, raw))
-		activeIndex.value = index
+		progress.value = computeProgress()
 	}
 
 	const onScroll = useRafThrottle(sync)
@@ -57,5 +49,5 @@ export function useScrollSections(wrapperRef, sectionCount) {
 		if (resizeObserver) resizeObserver.disconnect()
 	})
 
-	return { activeIndex, progress }
+	return { progress }
 }

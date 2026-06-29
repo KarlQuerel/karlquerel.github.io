@@ -25,22 +25,14 @@
 				<p v-for="(paragraph, i) in HERO_CRAWL.paragraphs" :key="i">{{ paragraph }}</p>
 			</div>
 
-			<div class="hero-progress" aria-hidden="true">
-				<span
-					v-for="n in PROGRESS_STOPS"
-					:key="n"
-					class="hero-dot"
-					:class="{ 'hero-dot--active': n - 1 === activeIndex }"
-				/>
-			</div>
-
+			<!-- Nudge to start scrolling; retires itself once the crawl moves. -->
 			<div
 				class="hero-hint"
-				:class="{ 'hero-hint--hidden': progress > 0.02 }"
+				:class="{ 'hero-hint--hidden': progress > HINT_HIDE_PROGRESS }"
 				aria-hidden="true"
 			>
-				<span class="hero-hint-label">SCROLL</span>
-				<span class="hero-hint-arrow">v</span>
+				<span class="hero-hint__label">{{ HERO_CRAWL.scrollHint }}</span>
+				<span class="hero-hint__arrow" />
 			</div>
 
 			<div class="hero-crt" aria-hidden="true" />
@@ -53,12 +45,15 @@
 	import { HERO_CRAWL } from '../data/heroLines.js'
 	import { useScrollSections } from '../composables/useScrollSections.js'
 
-	// Number of scroll "stops" the runway is divided into — drives both the
-	// progress dots and the length of the scroll runway.
+	// Number of scroll "stops" the runway is divided into — sets the length of
+	// the scroll runway.
 	const PROGRESS_STOPS = 3
 
+	// Retire the scroll hint as soon as the crawl has visibly started moving.
+	const HINT_HIDE_PROGRESS = 0.02
+
 	const trackRef = ref(null)
-	const { activeIndex, progress } = useScrollSections(trackRef, PROGRESS_STOPS)
+	const { progress } = useScrollSections(trackRef)
 
 	// One viewport of scroll per stop, plus a trailing viewport so the crawl has
 	// room to recede fully before the track ends.
@@ -129,14 +124,27 @@
 		// Travels from just below the stage up past the vanishing point as the
 		// visitor scrolls.
 		transform: translateX(-50%) translateY(calc(100vh - var(--crawl-progress, 0) * 250vh));
+		// Keep the deck on its own GPU layer so scroll-driven travel only
+		// recomposites instead of re-rasterizing the text every frame.
+		will-change: transform;
 		color: $yellow;
 		text-align: justify;
-		text-shadow:
-			0 0 8px rgba($yellow, 0.45),
-			0 0 18px rgba($yellow, 0.25);
-		font-family: $font-terminal;
-		font-size: clamp(1.3rem, 4vw, 2.6rem);
-		line-height: 1.45;
+		text-transform: uppercase;
+		// Match the rest of the site: chunky Press Start 2P pixel font, scaled
+		// down and given more line breathing room since its glyphs are far wider
+		// and taller than the terminal font this deck used to carry.
+		font-family: $font-pixel;
+		font-size: clamp(0.7rem, 2.2vw, 1.2rem);
+		line-height: 1.8;
+	}
+
+	// The global `p, h1` rule (src/styles/_layout.scss) sets white directly on
+	// these elements, which beats the deck's inherited color. Re-assert
+	// inheritance so the crawl reads as the intended yellow.
+	.hero-crawl__episode,
+	.hero-crawl__title,
+	.hero-crawl__paragraph {
+		color: inherit;
 	}
 
 	.hero-crawl__episode {
@@ -145,7 +153,6 @@
 		font-family: $font-pixel;
 		font-size: 0.42em;
 		letter-spacing: 0.3em;
-		color: $white;
 	}
 
 	.hero-crawl__title {
@@ -154,81 +161,10 @@
 		font-family: $font-pixel;
 		font-size: 0.7em;
 		line-height: 1.4;
-		text-shadow:
-			0 0 8px rgba($yellow, 0.6),
-			0 0 18px rgba($yellow, 0.35);
 	}
 
 	.hero-crawl__paragraph {
 		margin: 0 0 1em;
-	}
-
-	// Content layers ride above the shared space backdrop and below the CRT
-	// overlay (z-index 3) painted at the edges of .hero-pin.
-	.hero-progress,
-	.hero-hint {
-		position: relative;
-		z-index: 2;
-	}
-
-	// Pin the dots and hint to the lower edge so the crawl owns the centre.
-	.hero-progress {
-		position: absolute;
-		bottom: 4.5rem;
-		left: 50%;
-		transform: translateX(-50%);
-		display: flex;
-		gap: 0.85rem;
-	}
-
-	.hero-dot {
-		width: 0.7rem;
-		height: 0.7rem;
-		background: rgba($white, 0.25);
-		box-shadow: inset 0 0 0 2px rgba($black, 0.6);
-		transition: none;
-	}
-
-	.hero-dot--active {
-		background: $yellow;
-		box-shadow:
-			inset 0 0 0 2px rgba($black, 0.6),
-			0 0 8px rgba($yellow, 0.7);
-	}
-
-	.hero-hint {
-		position: absolute;
-		bottom: 1.5rem;
-		left: 50%;
-		transform: translateX(-50%);
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.4rem;
-		font-family: $font-pixel;
-		font-size: clamp(0.5rem, 1.3vw, 0.62rem);
-		letter-spacing: 0.18em;
-		color: rgba($white, 0.75);
-	}
-
-	.hero-hint--hidden {
-		visibility: hidden;
-	}
-
-	.hero-hint-arrow {
-		animation: heroHintBob 1s steps(3, end) infinite;
-	}
-
-	@keyframes heroHintBob {
-		0% {
-			transform: translateY(0);
-		}
-		50% {
-			transform: translateY(0.35rem);
-		}
-		100% {
-			transform: translateY(0);
-		}
 	}
 
 	.sr-only {
@@ -241,6 +177,66 @@
 		clip: rect(0, 0, 0, 0);
 		white-space: nowrap;
 		border: 0;
+	}
+
+	// Scroll prompt pinned to the lower edge, above the crawl backdrop but under
+	// the CRT overlay so it lives behind the same scanlines.
+	.hero-hint {
+		position: absolute;
+		top: 50%;
+		left: 0;
+		right: 0;
+		z-index: 2;
+		transform: translateY(-50%);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.4rem;
+		padding: 0 1rem;
+		color: $yellow;
+	}
+
+	.hero-hint__label {
+		font-family: $font-pixel;
+		font-size: clamp(1.1rem, 4.5vw, 2.4rem);
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		text-align: center;
+	}
+
+	// Downward arrow drawn as pixel art: this base pixel is the top-centre of a
+	// 5x3 filled triangle, with box-shadow copies fanning out symmetrically left
+	// and right so the shape stays centred on its own box (and thus in the
+	// column) while keeping stepped, pixel edges.
+	$arrow-pixel: 9px;
+	.hero-hint__arrow {
+		width: $arrow-pixel;
+		height: $arrow-pixel;
+		background: currentColor;
+		box-shadow:
+			#{$arrow-pixel * -2} 0,
+			#{$arrow-pixel * -1} 0,
+			#{$arrow-pixel} 0,
+			#{$arrow-pixel * 2} 0,
+			#{$arrow-pixel * -1} #{$arrow-pixel},
+			0 #{$arrow-pixel},
+			#{$arrow-pixel} #{$arrow-pixel},
+			0 #{$arrow-pixel * 2};
+		animation: heroHintBob 1s steps(3, end) infinite;
+	}
+
+	.hero-hint--hidden {
+		visibility: hidden;
+	}
+
+	@keyframes heroHintBob {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(0.35rem);
+		}
 	}
 
 	// CRT overlay: scanlines (matching the terminal window) + a soft tube vignette
@@ -294,7 +290,7 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.hero-hint-arrow,
+		.hero-hint__arrow,
 		.hero-crt {
 			animation: none;
 		}
