@@ -1,11 +1,17 @@
 <template>
 	<section ref="trackRef" class="hero-track" :style="{ height: trackHeight }">
 		<div class="hero-pin">
+			<!-- Once the crawl has receded, continued scrolling engages the
+			     lightspeed jump (blue/white streaks accelerating outward), which
+			     then drops out in front of the planet you arrive at. -->
+			<HyperspaceWarp :intensity="warpIntensity" />
+			<PixelPlanet :reveal="planetReveal" />
+
 			<!-- Scroll-driven perspective crawl. --crawl-progress (0 -> 1) drives the
 			     deck's vertical travel and recession toward the vanishing point. -->
 			<div class="hero-crawl" :style="crawlStyle" aria-hidden="true">
 				<div class="hero-crawl__plane">
-					<div class="hero-crawl__deck">
+					<div ref="deckRef" class="hero-crawl__deck">
 						<p class="hero-crawl__episode">{{ HERO_CRAWL.episode }}</p>
 						<h1 class="hero-crawl__title">{{ HERO_CRAWL.title }}</h1>
 						<p
@@ -31,35 +37,110 @@
 				<span class="hero-hint__arrow" />
 			</div>
 
+			<!-- Lightspeed white-out: blooms as the jump drops out, then fades to
+			     reveal the planet. -->
+			<div class="hero-flash" :style="flashStyle" aria-hidden="true" />
+
 			<div class="hero-crt" aria-hidden="true" />
 		</div>
 	</section>
 </template>
 
 <script setup>
-	import { computed, ref } from 'vue'
+	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 	import { HERO_CRAWL } from '../data/heroLines.js'
 	import { useScrollSections } from '../composables/useScrollSections.js'
-
-	// Number of scroll "stops" the runway is divided into — sets the length of
-	// the scroll runway.
-	const PROGRESS_STOPS = 3
+	import HyperspaceWarp from './HyperspaceWarp.vue'
+	import PixelPlanet from './PixelPlanet.vue'
 
 	// Scroll progress at which the scroll hint has fully faded out — it dissolves
 	// in step with the crawl rather than popping away.
 	const HINT_FADE_END = 0.08
 
+	// --- crawl runway (content-driven) ----------------------------------------
+	// The deck enters one viewport below the fold, then recedes. The runway is
+	// sized from the deck's real height so the crawl ALWAYS finishes before the
+	// finale begins — long or short, the hyperspace jump only starts once the
+	// last line has gone.
+	const DECK_ENTER_VH = 100 // deck starts one viewport below the fold
+	const CRAWL_EXIT_VH = 15 // extra travel so the last line is clearly gone
+	const READ_SPEED = 0.83 // deck vh travelled per 1vh of scroll (reading pace)
+	const FINALE_VH = 320 // scroll length of the hyperspace finale (cruise + arrival)
+
+	// --- finale phases, as fractions of the post-crawl window -----------------
+	const WARP_RAMP = 0.16 // reach full lightspeed by this fraction of the finale
+	const WARP_HOLD = 0.66 // hold full speed until here, then drop out
+	const FLASH_RISE = 0.6 // white-out starts rising
+	const FLASH_PEAK = 0.82 // white-out fully white, then fades to the end
+
 	const trackRef = ref(null)
+	const deckRef = ref(null)
 	const { progress } = useScrollSections(trackRef)
 
-	// One viewport of scroll per stop, plus a trailing viewport so the crawl has
-	// room to recede fully before the track ends.
-	const trackHeight = `${(PROGRESS_STOPS + 1) * 100}vh`
+	// Deck height as a fraction of the viewport, measured live (re-wraps on
+	// resize). Defaults to a sane value for the first paint before measurement.
+	const deckHeightVh = ref(160)
+	let resizeObserver = null
+	const measureDeck = () => {
+		const el = deckRef.value
+		if (el) deckHeightVh.value = (el.offsetHeight / window.innerHeight) * 100
+	}
 
-	const crawlStyle = computed(() => ({ '--crawl-progress': progress.value }))
+	// Scroll needed for the deck to travel from entry to fully receded.
+	const crawlScrollVh = computed(
+		() => (DECK_ENTER_VH + deckHeightVh.value + CRAWL_EXIT_VH) / READ_SPEED
+	)
+	const totalScrollVh = computed(() => crawlScrollVh.value + FINALE_VH)
+	const trackHeight = computed(() => `${totalScrollVh.value + 100}vh`)
+	// Progress value at which the crawl has fully receded (finale begins here).
+	const crawlEnd = computed(() => crawlScrollVh.value / totalScrollVh.value)
+	// Map a fraction of the finale window onto absolute scroll progress.
+	const phase = f => crawlEnd.value + f * (1 - crawlEnd.value)
+
+	const crawlStyle = computed(() => ({
+		'--crawl-progress': progress.value,
+		// Deck travel per unit progress, so reading pace stays constant.
+		'--crawl-travel': `${READ_SPEED * totalScrollVh.value}vh`,
+	}))
 	const hintStyle = computed(() => ({
 		'--hint-opacity': Math.max(0, 1 - progress.value / HINT_FADE_END),
 	}))
+
+	const clamp01 = v => Math.min(1, Math.max(0, v))
+	// Warp builds in, holds at full speed, then fades back out on arrival.
+	const warpIntensity = computed(() => {
+		const rampIn = clamp01(
+			(progress.value - crawlEnd.value) / (phase(WARP_RAMP) - crawlEnd.value)
+		)
+		const rampOut = clamp01((progress.value - phase(WARP_HOLD)) / (1 - phase(WARP_HOLD)))
+		return rampIn * (1 - rampOut)
+	})
+	// Planet grows in over the arrival window as the warp drops out.
+	const planetReveal = computed(() =>
+		clamp01((progress.value - phase(WARP_HOLD)) / (1 - phase(WARP_HOLD)))
+	)
+	// Triangular white-out: quick rise to the peak, slower fade so it lingers.
+	const flashStyle = computed(() => {
+		const p = progress.value
+		const rise = phase(FLASH_RISE)
+		const peak = phase(FLASH_PEAK)
+		const opacity =
+			p <= peak ? clamp01((p - rise) / (peak - rise)) : clamp01(1 - (p - peak) / (1 - peak))
+		return { opacity }
+	})
+
+	onMounted(() => {
+		measureDeck()
+		window.addEventListener('resize', measureDeck, { passive: true })
+		if (typeof ResizeObserver !== 'undefined' && deckRef.value) {
+			resizeObserver = new ResizeObserver(measureDeck)
+			resizeObserver.observe(deckRef.value)
+		}
+	})
+	onBeforeUnmount(() => {
+		window.removeEventListener('resize', measureDeck)
+		if (resizeObserver) resizeObserver.disconnect()
+	})
 </script>
 
 <style scoped lang="scss">
@@ -123,7 +204,8 @@
 		width: min(90%, 42rem);
 		// Travels from just below the stage up past the vanishing point as the
 		// visitor scrolls.
-		transform: translateX(-50%) translateY(calc(100vh - var(--crawl-progress, 0) * 250vh));
+		transform: translateX(-50%)
+			translateY(calc(100vh - var(--crawl-progress, 0) * var(--crawl-travel, 250vh)));
 		// Keep the deck on its own GPU layer so scroll-driven travel only
 		// recomposites instead of re-rasterizing the text every frame.
 		will-change: transform;
@@ -239,6 +321,17 @@
 		}
 	}
 
+	// Lightspeed white-out. Opacity is scroll-driven (set in JS); a near-white
+	// core with a cyan fringe sells the burst out of hyperspace. Sits above the
+	// warp and planet but under the CRT, and never intercepts input.
+	.hero-flash {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		pointer-events: none;
+		background: radial-gradient(circle at 50% 50%, $white 0%, $white 45%, $light-blue 115%);
+	}
+
 	// CRT overlay: scanlines (matching the terminal window) + a soft tube vignette
 	// under a faint stepped flicker. Sits above everything, never intercepts input.
 	.hero-crt {
@@ -302,6 +395,11 @@
 
 		.hero-crawl__plane {
 			transform: none;
+		}
+
+		// Skip the bright white-out for motion-sensitive visitors.
+		.hero-flash {
+			display: none;
 		}
 	}
 </style>
