@@ -1,10 +1,20 @@
 /***	ABOUT DATA		***/
 // Drives the /about page. Keep it short — edit the copy here.
 
-export const ABOUT_INTRO = [
-	'I am a former commodity broker turned software developer.',
-	'After five years in finance, I retrained at 42 Paris and now build software at Zetra.',
-]
+// `greeting` is the neutral header line; it swaps to the matching tab line once a
+// path (work | life) is chosen. Keys match the tab ids in About.vue.
+export const ABOUT_INTRO = {
+	greeting: "Hello there, I'm Karl",
+	work: 'Five years trading commodities taught me a lot. I still spend my days on a screen. I just build software now instead of moving gold and oil.',
+	life: 'Off the clock, I swap the screen for the outdoors, usually with my dog Yako somewhere nearby.',
+}
+
+// Neutral landing hub: the two "portal" cards shown on /about before a path is
+// chosen. `icon` values are NES.css icon names; keys match tab ids.
+export const ABOUT_HUB = {
+	work: { icon: 'coin', blurb: 'Broker turned builder. The career path.' },
+	life: { icon: 'heart', blurb: 'Off the clock: Yako, home, the outdoors.' },
+}
 
 // Vertical career timeline — oldest first, newest last.
 // Years are placeholders: swap them for the real ones whenever you like.

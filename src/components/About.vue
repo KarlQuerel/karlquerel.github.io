@@ -1,38 +1,57 @@
 <template>
 	<div class="content about">
 		<header class="about-head">
-			<h1 class="about-name">KARL QUEREL</h1>
-			<p v-for="(line, i) in ABOUT_INTRO" :key="i" class="about-intro">{{ line }}</p>
+			<p :key="activeTab ?? 'hub'" class="about-intro about-lead">
+				{{ activeTab ? ABOUT_INTRO[activeTab] : ABOUT_INTRO.greeting }}
+			</p>
 		</header>
 
-		<nav class="about-tabs" role="tablist" aria-label="About sections">
+		<!-- Neutral landing: choose-your-path portal cards. -->
+		<div v-if="!activeTab" class="about-hub" role="group" aria-label="Choose a section">
 			<button
 				v-for="tab in TABS"
 				:key="tab.id"
-				class="about-tab"
-				:class="{ 'is-active': tab.id === activeTab }"
+				class="portal"
 				type="button"
-				role="tab"
-				:aria-selected="tab.id === activeTab"
 				@click="selectTab(tab.id)"
 			>
-				{{ tab.label }}
+				<i class="nes-icon is-large" :class="ABOUT_HUB[tab.id].icon" aria-hidden="true" />
+				<span class="portal__label">{{ tab.label }}</span>
+				<span class="portal__blurb">{{ ABOUT_HUB[tab.id].blurb }}</span>
 			</button>
-		</nav>
+		</div>
 
-		<component :is="activeComponent" :key="activeTab" class="about-panel" />
+		<!-- A path is chosen: tab bar + panel. -->
+		<template v-else>
+			<nav class="about-tabs" role="tablist" aria-label="About sections">
+				<button
+					v-for="tab in TABS"
+					:key="tab.id"
+					class="about-tab"
+					:class="{ 'is-active': tab.id === activeTab }"
+					type="button"
+					role="tab"
+					:aria-selected="tab.id === activeTab"
+					@click="selectTab(tab.id)"
+				>
+					{{ tab.label }}
+				</button>
+			</nav>
+
+			<component :is="activeComponent" :key="activeTab" class="about-panel" />
+		</template>
 	</div>
 </template>
 
 <script setup>
 	import { computed } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
-	import { ABOUT_INTRO } from '@/data/about'
+	import { ABOUT_INTRO, ABOUT_HUB } from '@/data/about'
 	import AboutWork from './AboutWork.vue'
 	import AboutLife from './AboutLife.vue'
 
-	// `work` is the default; the active tab lives in the URL (?tab=life) so it is
-	// shareable and survives refresh / back-button.
+	// The active path lives in the URL (?tab=work | ?tab=life) so it is shareable
+	// and survives refresh / back-button. No tab param → the neutral landing hub.
 	const TABS = [
 		{ id: 'work', label: 'WORK', component: AboutWork },
 		{ id: 'life', label: 'LIFE', component: AboutLife },
@@ -41,12 +60,17 @@
 	const route = useRoute()
 	const router = useRouter()
 
-	const activeTab = computed(() => (route.query.tab === 'life' ? 'life' : 'work'))
-	const activeComponent = computed(() => TABS.find(tab => tab.id === activeTab.value).component)
+	const activeTab = computed(() => {
+		const tab = route.query.tab
+		return tab === 'work' || tab === 'life' ? tab : null
+	})
+	const activeComponent = computed(
+		() => TABS.find(tab => tab.id === activeTab.value)?.component ?? null
+	)
 
 	function selectTab(id) {
 		if (id === activeTab.value) return
-		router.push({ query: id === 'work' ? {} : { tab: id } })
+		router.push({ query: { tab: id } })
 	}
 </script>
 
@@ -54,7 +78,15 @@
 	@use '@/styles/mixins' as *;
 
 	// Backdrop (the drifting starfield) is the shared <SpaceBackground> layer.
+	// Fill the visible band between the top chrome (header + navbar) and the
+	// fixed footer so .content's justify-content:center centres the panels
+	// vertically; taller tabs (WORK / LIFE) overflow this floor and scroll.
 	.about {
+		min-height: calc(
+			100dvh - var(--site-header-height) - var(--site-chrome-bar-height) - var(
+					--site-chrome-bar-height
+				)
+		);
 		gap: 2rem;
 		padding: 2.5rem 1rem 4rem;
 	}
@@ -68,22 +100,80 @@
 		@include pixel-panel(rgba(0, 0, 0, 0.6));
 	}
 
-	.about-name {
-		margin: 0;
-		font-family: $font-pixel;
-		font-size: clamp(1rem, 4vw, 1.8rem);
-		line-height: 1.5;
-		letter-spacing: 2px;
-		color: $yellow;
-		text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
-	}
-
 	.about-intro {
 		max-width: 42ch;
 		margin: 0.5rem auto 0;
 		font-size: clamp(0.85rem, 2vw, 1rem);
 		line-height: 1.65;
+		text-align: center;
 		color: rgba(255, 255, 255, 0.9);
+	}
+
+	.about-intro:first-child {
+		margin-top: 0;
+	}
+
+	// One header line: white, centred. Re-mounts on every path change (keyed) so
+	// the stepped 8-bit fade replays as the copy swaps hub → WORK → LIFE.
+	.about-lead {
+		color: $white;
+		animation: intro-swap 0.35s steps(4, end) both;
+	}
+
+	@keyframes intro-swap {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	/***	HUB (choose your path)		***/
+	.about-hub {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1.25rem;
+		width: min(40rem, 94vw);
+		margin: 0 auto;
+	}
+
+	.portal {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.9rem;
+		padding: 1.75rem 1.25rem;
+		color: rgba(255, 255, 255, 0.9);
+		cursor: pointer;
+		@include pixel-panel(rgba(0, 0, 0, 0.65));
+	}
+
+	// Stepped, tactile press — lift on hover, sink on click. No smooth easing.
+	.portal:hover {
+		background: rgba($yellow, 0.14);
+		transform: translate(-2px, -2px);
+		box-shadow: 8px 8px 0 0 rgba(0, 0, 0, 0.5);
+	}
+
+	.portal:active {
+		transform: translate(2px, 2px);
+		box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.5);
+	}
+
+	.portal__label {
+		font-family: $font-pixel;
+		font-size: clamp(0.75rem, 2.4vw, 1rem);
+		letter-spacing: 1px;
+		color: $yellow;
+	}
+
+	.portal__blurb {
+		max-width: 22ch;
+		font-size: clamp(0.72rem, 1.7vw, 0.85rem);
+		line-height: 1.55;
+		text-align: center;
+		color: rgba(255, 255, 255, 0.8);
 	}
 
 	/***	TABS		***/
@@ -117,7 +207,17 @@
 		box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.5);
 	}
 
+	@media (max-width: $breakpoint-mobile) {
+		.about-hub {
+			grid-template-columns: 1fr;
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
+		.about-lead {
+			animation: none;
+		}
+
 		.about-tab.is-active {
 			transform: none;
 		}
