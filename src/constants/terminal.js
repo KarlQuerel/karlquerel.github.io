@@ -46,8 +46,8 @@ export const SYSTEM_INFO = [
 	['Shell', 'bash (barely)'],
 	['Resolution', 'looks-good-on-your-screen'],
 	['Theme', 'Phosphor Green'],
-	['CPU', '1x Caffeine Core'],
-	['Memory', '5 yrs finance / ∞ curiosity'],
+	['CPU', 'Intel Core i7 (8) @ 2.6GHz'],
+	['Memory', '8192MiB / 16384MiB'],
 ]
 
 // Tiny ASCII mascot printed next to the neofetch info.
