@@ -15,17 +15,9 @@
 	justify-content: center;
 	padding: 0.4rem 1rem 0.35rem;
 	min-height: var(--site-chrome-bar-height);
-	// No hard rules: a scrim that feathers into transparency top and bottom so the
-	// bar dissolves into the shared starfield instead of sitting in a boxed strip.
-	// The darker middle band keeps the links legible over the drifting stars.
-	background: linear-gradient(
-		to bottom,
-		rgba(0, 0, 0, 0) 0%,
-		rgba(0, 0, 0, 0.6) 32%,
-		rgba(0, 0, 0, 0.6) 68%,
-		rgba(0, 0, 0, 0) 100%
-	);
-	overflow: hidden;
+	// No background: the links float directly over the shared starfield with
+	// nothing boxing them in. Legibility comes from each label's own text-shadow
+	// glow rather than a scrim behind the bar.
 }
 
 .site-chrome-bar--sticky-top {
@@ -43,8 +35,7 @@
 
 .site-chrome-links {
 	display: flex;
-	// Wrap whole links onto a second row on narrow screens rather than overflowing
-	// or forcing a horizontal scroll — keeps every item reachable on any width.
+	// Wrap whole links onto a second row on narrow screens rather than force a horizontal scroll.
 	flex-wrap: wrap;
 	width: 100%;
 	justify-content: center;
@@ -69,24 +60,19 @@
 	text-transform: uppercase;
 	text-decoration: none;
 	padding: 0.35rem 0.2rem;
-	// Stepped (8-bit) transitions: the link lifts toward the viewer and lights up
-	// with a phosphor-cyan glow when reached for, as if floating up out of space.
+	// Stepped (8-bit) transitions so the hover lift + glow snap rather than ease smoothly.
 	transition:
 		color 0.2s steps(4, end),
 		transform 0.2s steps(4, end),
 		text-shadow 0.2s steps(4, end);
 }
 
-// Selected page: the label lights up yellow with a soft, steady glow and sits
-// still — the calm "you are here". Declared before the hover rules so hovering
-// the current link still gives it the lift.
+// Selected page. Declared before the hover rules so hovering the current link still gets the lift.
 .site-chrome-link.router-link-active {
 	color: variables.$yellow;
 	text-shadow: 0 0 8px rgba(variables.$yellow, 0.55);
 }
 
-// Hover / focus: warms to the same yellow, rises toward the viewer, and glows
-// brighter than the resting active link — one accent, told apart by motion.
 // `text-decoration` is repeated here to out-specify NES.css's `a:hover`
 // underline, which would otherwise reintroduce a stray line on hover.
 .site-chrome-link:hover,
@@ -102,11 +88,9 @@
 	outline-offset: 2px;
 }
 
-// Weightless drift: the nav links bob gently and continuously, each on its own
-// slightly different cycle so they never sync into a single beat — as if
-// suspended in zero-g. Uses `translate` so it composes with the hover
-// `transform` lift above instead of fighting it. Scoped to the navbar so the
-// footer's inline "Contact" link stays put in its sentence.
+// Uses `translate` so it composes with the hover `transform` lift above instead
+// of fighting it. Scoped to the navbar so the footer's inline "Contact" link
+// stays put in its sentence.
 .site-chrome-links .site-chrome-link {
 	animation: chromeLinkFloat 4s ease-in-out infinite;
 }
