@@ -13,8 +13,10 @@ export const STAR_COLORS = [
 
 // Parallax depth planes, far → near. Each is one repeating, GPU-drifted <div>
 // layer, inset by one tile so it can translate a full tile and loop seamlessly.
+// Tiles are larger than the viewport and densely filled so the repeat isn't
+// noticeable on screen.
 //   count     stars placed in the tile
-//   size      dot diameter (px) — nearer reads bigger
+//   size      base dot diameter (px) — nearer reads bigger; jittered per dot
 //   alpha     [min, max] opacity range
 //   tile      [w, h] (px) of the repeating pattern; its aspect sets drift angle
 //   duration  seconds for one full drift loop — nearer reads faster
@@ -22,42 +24,45 @@ export const STAR_COLORS = [
 //   dir       [x, y] drift direction signs, alternated for a livelier sky
 export const STAR_LAYERS = [
 	{
-		count: 16,
+		count: 40,
 		size: 1,
 		alpha: [0.2, 0.45],
-		tile: [460, 600],
-		duration: 580,
+		tile: [680, 860],
+		duration: 860,
 		depth: 4,
 		dir: [-1, -1],
 	},
 	{
-		count: 12,
+		count: 32,
 		size: 1.5,
 		alpha: [0.35, 0.6],
-		tile: [380, 540],
-		duration: 440,
+		tile: [620, 820],
+		duration: 720,
 		depth: 9,
 		dir: [1, -1],
 	},
 	{
-		count: 9,
+		count: 26,
 		size: 2,
 		alpha: [0.5, 0.78],
-		tile: [420, 360],
-		duration: 320,
+		tile: [680, 620],
+		duration: 520,
 		depth: 16,
 		dir: [-1, -1],
 	},
 	{
-		count: 7,
+		count: 20,
 		size: 2.5,
 		alpha: [0.68, 0.95],
-		tile: [320, 440],
-		duration: 200,
+		tile: [560, 720],
+		duration: 350,
 		depth: 26,
 		dir: [1, -1],
 	},
 ]
+
+// Per-dot size multiplier so dots vary instead of reading as one stamped disc.
+export const STAR_SIZE_JITTER = [0.75, 1.25]
 
 // Sparse comet streaks. Tints echo the starfield, weighted toward plain white.
 // Each entry is a [min, max] range fed straight to rand(), except `tints`.

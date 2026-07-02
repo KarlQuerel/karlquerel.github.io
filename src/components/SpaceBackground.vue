@@ -19,7 +19,7 @@
 	import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
-	import { STAR_COLORS, STAR_LAYERS, SHOOTING_STAR } from '@/constants/starfield'
+	import { STAR_COLORS, STAR_LAYERS, STAR_SIZE_JITTER, SHOOTING_STAR } from '@/constants/starfield'
 
 	function rand(min, max) {
 		return min + Math.random() * (max - min)
@@ -48,9 +48,10 @@
 		for (let i = 0; i < layer.count; i++) {
 			const x = rand(0, w).toFixed(1)
 			const y = rand(0, h).toFixed(1)
+			const size = (layer.size * rand(...STAR_SIZE_JITTER)).toFixed(2)
 			const color = withAlpha(pick(STAR_COLORS), rand(...layer.alpha))
 			dots.push(
-				`radial-gradient(${layer.size}px ${layer.size}px at ${x}px ${y}px, ${color} 99%, transparent 100%)`
+				`radial-gradient(${size}px ${size}px at ${x}px ${y}px, ${color} 99%, transparent 100%)`
 			)
 		}
 		return {
