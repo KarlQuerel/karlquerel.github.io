@@ -150,13 +150,7 @@
 			0 0 0 2px $yellow inset;
 	}
 
-	@keyframes item-in {
-		to {
-			opacity: 1;
-			transform: translateX(0);
-		}
-	}
-
+	// `item-in` keyframes are global (see _animations.scss).
 	@keyframes node-blink {
 		0% {
 			opacity: 1;

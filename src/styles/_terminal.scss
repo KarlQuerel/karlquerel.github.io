@@ -60,3 +60,20 @@
 		color: variables.$light-red;
 	}
 }
+
+// Base geometry for every scrollback line. Shared by terminal.vue and
+// TerminalLine.vue, so it lives here instead of duplicated in both scopes.
+.terminal-line {
+	display: flex;
+	align-items: baseline;
+	margin-bottom: 0.35rem;
+	line-height: 1.25;
+	text-align: start;
+}
+
+@media (max-width: #{variables.$breakpoint-desktop}) {
+	.terminal-line {
+		margin-bottom: 0.2rem;
+		line-height: 1.15;
+	}
+}

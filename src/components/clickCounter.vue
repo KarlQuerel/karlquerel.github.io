@@ -8,7 +8,7 @@
 				<p class="title">Waste your time</p>
 
 				<!-- Button for clicking -->
-				<button id="clicker" class="nes-btn is-normal small-font" @click="incrementCounter">
+				<button id="clicker" class="nes-btn is-normal" @click="incrementCounter">
 					ONE CLICK AT A TIME
 				</button>
 
@@ -52,8 +52,24 @@
 </script>
 
 <style lang="scss" scoped>
-	.small-font {
-		font-size: 1rem !important;
+	#clicker {
+		justify-content: center;
+		width: 60%;
+		height: 10%;
+		font-size: 1rem;
+		font-weight: bold;
+		letter-spacing: 1px;
+		transition: all 0.3s ease;
+	}
+
+	#clicker:hover {
+		transform: scale(1.1);
+	}
+
+	@media (max-width: #{$breakpoint-tablet}) {
+		#clicker {
+			width: 100%;
+		}
 	}
 
 	.nes-container.is-dark {

@@ -249,18 +249,6 @@
 		margin: 0 0 1em;
 	}
 
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border: 0;
-	}
-
 	// Scroll prompt pinned to the lower edge, above the crawl backdrop but under
 	// the CRT overlay so it lives behind the same scanlines.
 	.hero-hint {

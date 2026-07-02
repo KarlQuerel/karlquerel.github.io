@@ -7,7 +7,6 @@
 				alt="construction GIF"
 				class="construction-gif"
 			/>
-			<p />
 		</div>
 
 		<!-- Clicker Button -->

@@ -114,13 +114,7 @@
 		word-break: break-word;
 	}
 
-	@keyframes item-in {
-		to {
-			opacity: 1;
-			transform: translateX(0);
-		}
-	}
-
+	// `item-in` keyframes are global (see _animations.scss).
 	// Honour reduced-motion: show everything, kill the animation.
 	@media (prefers-reduced-motion: reduce) {
 		.contact-item {

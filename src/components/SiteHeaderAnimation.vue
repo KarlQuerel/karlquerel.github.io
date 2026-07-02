@@ -12,7 +12,7 @@
 			v-for="headerGif in HEADER_GIF_SEQUENCE"
 			:key="`header-gif-preload-${headerGif.kind}`"
 		>
-			<img class="sr-only-preload" alt="" :src="headerGif.src" />
+			<img class="sr-only" alt="" :src="headerGif.src" />
 		</template>
 	</header>
 </template>
@@ -157,18 +157,6 @@
 		100% {
 			transform: translateX(var(--header-gif-to)) scaleX(var(--header-gif-flip, 1));
 		}
-	}
-
-	.sr-only-preload {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border: 0;
 	}
 
 	@media (max-width: #{$breakpoint-mobile}) {

@@ -1,72 +1,75 @@
 <template>
-	<div class="terminal-window" data-nosnippet :style="{ '--phosphor': phosphor }">
-		<div class="terminal-header">
-			<div class="terminal-buttons" aria-hidden="true">
-				<div class="btn red" />
-				<div class="btn yellow" />
-				<div class="btn green" />
+	<!-- Centers the window in the visible band and clears the fixed footer. -->
+	<div class="terminal-container">
+		<div class="terminal-window" data-nosnippet :style="{ '--phosphor': phosphor }">
+			<div class="terminal-header">
+				<div class="terminal-buttons" aria-hidden="true">
+					<div class="btn red" />
+					<div class="btn yellow" />
+					<div class="btn green" />
+				</div>
+				<div class="terminal-title">{{ WINDOW_TITLE }}</div>
 			</div>
-			<div class="terminal-title">{{ WINDOW_TITLE }}</div>
-		</div>
 
-		<div class="terminal-body" ref="terminalBody" @click="focusInput(terminalInput)">
-			<!-- Boot MOTD: static so it shows instantly (and under reduced motion)
+			<div class="terminal-body" ref="terminalBody" @click="focusInput(terminalInput)">
+				<!-- Boot MOTD: static so it shows instantly (and under reduced motion)
 			     and scrolls away with the scrollback like a real shell. -->
-			<div class="terminal-banner" aria-hidden="true">{{ motd }}</div>
+				<div class="terminal-banner" aria-hidden="true">{{ motd }}</div>
 
-			<div class="terminal-line">
-				<TerminalPrompt />
-				<span class="welcome-text" ref="welcomeTextRef" data-nosnippet />
-			</div>
+				<div class="terminal-line">
+					<TerminalPrompt />
+					<span class="welcome-text" ref="welcomeTextRef" data-nosnippet />
+				</div>
 
-			<TerminalLine
-				v-for="(line, index) in terminalHistory"
-				:key="index"
-				:line="line"
-				:index="index"
-				@register="registerLine"
-				@unregister="unregisterLine"
-			/>
+				<TerminalLine
+					v-for="(line, index) in terminalHistory"
+					:key="index"
+					:line="line"
+					:index="index"
+					@register="registerLine"
+					@unregister="unregisterLine"
+				/>
 
-			<!-- Transient spinner while a ./script "runs" (replaces the input
+				<!-- Transient spinner while a ./script "runs" (replaces the input
 			     prompt, so the line below looks like a shell still working). -->
-			<div v-if="isExecutingScript" class="terminal-line">
-				<span class="text-green" aria-hidden="true">{{ spinnerFrame }}</span>
-			</div>
+				<div v-if="isExecutingScript" class="terminal-line">
+					<span class="text-green" aria-hidden="true">{{ spinnerFrame }}</span>
+				</div>
 
-			<div
-				v-if="showInputPrompt && !isProcessingTypewriter && !isExecutingScript"
-				class="terminal-line current-line"
-			>
-				<TerminalPrompt />
-				<div class="input-container">
-					<!-- Visible layer: the typed text with an inline block cursor that
+				<div
+					v-if="showInputPrompt && !isProcessingTypewriter && !isExecutingScript"
+					class="terminal-line current-line"
+				>
+					<TerminalPrompt />
+					<div class="input-container">
+						<!-- Visible layer: the typed text with an inline block cursor that
 					     wraps along with the text (the textarea above is transparent and
 					     only captures keystrokes / caret position). -->
-					<div class="input-mirror" aria-hidden="true">
-						<span>{{ inputBeforeCursor }}</span
-						><span class="custom-cursor">{{ cursorChar }}</span
-						><span>{{ inputAfterCursor }}</span
-						><span class="input-ghost">{{ ghostTail }}</span>
+						<div class="input-mirror" aria-hidden="true">
+							<span>{{ inputBeforeCursor }}</span
+							><span class="custom-cursor">{{ cursorChar }}</span
+							><span>{{ inputAfterCursor }}</span
+							><span class="input-ghost">{{ ghostTail }}</span>
+						</div>
+						<textarea
+							ref="terminalInput"
+							v-model="currentInput"
+							@keydown="handleKeyDown"
+							@keyup="updateCursorPosition"
+							@click="updateCursorPosition"
+							@input="updateCursorPosition"
+							class="terminal-input"
+							rows="1"
+							autocomplete="off"
+							spellcheck="false"
+							aria-label="Terminal input"
+						/>
 					</div>
-					<textarea
-						ref="terminalInput"
-						v-model="currentInput"
-						@keydown="handleKeyDown"
-						@keyup="updateCursorPosition"
-						@click="updateCursorPosition"
-						@input="updateCursorPosition"
-						class="terminal-input"
-						rows="1"
-						autocomplete="off"
-						spellcheck="false"
-						aria-label="Terminal input"
-					/>
 				</div>
 			</div>
-		</div>
 
-		<TerminalMatrix v-if="showMatrix" :color="phosphor" @close="onMatrixClose" />
+			<TerminalMatrix v-if="showMatrix" :color="phosphor" @close="onMatrixClose" />
+		</div>
 	</div>
 </template>
 
@@ -284,6 +287,17 @@
 </script>
 
 <style lang="scss" scoped>
+	.terminal-container {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		box-sizing: border-box;
+		// Clear the fixed-bottom footer so the terminal's bottom stays visible.
+		padding-bottom: var(--site-chrome-bar-height);
+	}
+
 	.terminal-window {
 		--phosphor: #{$phosphor-green};
 		position: relative;
@@ -374,16 +388,9 @@
 		}
 	}
 
-	.terminal-line {
-		display: flex;
-		align-items: baseline;
-		margin-bottom: 0.35rem;
-		line-height: 1.25;
-		text-align: start;
-
-		&.current-line {
-			margin-bottom: 0;
-		}
+	// Base .terminal-line geometry is global (see _terminal.scss).
+	.terminal-line.current-line {
+		margin-bottom: 0;
 	}
 
 	.terminal-banner {
@@ -487,11 +494,6 @@
 
 		.terminal-title {
 			font-size: 0.75rem;
-		}
-
-		.terminal-line {
-			margin-bottom: 0.2rem;
-			line-height: 1.15;
 		}
 	}
 

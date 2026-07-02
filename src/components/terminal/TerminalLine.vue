@@ -63,14 +63,7 @@
 </script>
 
 <style lang="scss" scoped>
-	.terminal-line {
-		display: flex;
-		align-items: baseline;
-		margin-bottom: 0.35rem;
-		line-height: 1.25;
-		text-align: start;
-	}
-
+	// Base .terminal-line geometry is global (see _terminal.scss).
 	.command {
 		color: $white;
 		min-width: 0;
@@ -99,12 +92,5 @@
 		height: 48px;
 		width: auto;
 		image-rendering: pixelated;
-	}
-
-	@media (max-width: #{$breakpoint-desktop}) {
-		.terminal-line {
-			margin-bottom: 0.2rem;
-			line-height: 1.15;
-		}
 	}
 </style>

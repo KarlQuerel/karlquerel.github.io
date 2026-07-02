@@ -15,7 +15,7 @@ const routes = [
 	},
 	{
 		path: '/terminal',
-		component: () => import('./components/home.vue'),
+		component: () => import('./components/terminal.vue'),
 	},
 	{
 		path: '/about',
