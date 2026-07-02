@@ -3,16 +3,13 @@
 		<p v-if="loading">Loading...</p>
 
 		<div v-else>
-			<!-- NES Button inside the container -->
 			<div class="nes-container is-dark with-title is-centered is-rounded">
 				<p class="title">Waste your time</p>
 
-				<!-- Button for clicking -->
 				<button id="clicker" class="nes-btn is-normal" @click="incrementCounter">
 					ONE CLICK AT A TIME
 				</button>
 
-				<!-- Display the counter -->
 				<p>
 					<span>{{ counter }}</span>
 				</p>

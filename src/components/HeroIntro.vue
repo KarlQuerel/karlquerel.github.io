@@ -212,9 +212,8 @@
 		color: $yellow;
 		text-align: justify;
 		text-transform: uppercase;
-		// Match the rest of the site: chunky Press Start 2P pixel font, scaled
-		// down and given more line breathing room since its glyphs are far wider
-		// and taller than the terminal font this deck used to carry.
+		// Chunky Press Start 2P pixel font, scaled down with extra line breathing
+		// room since its glyphs run far wider and taller than usual.
 		font-family: $font-pixel;
 		font-size: clamp(0.7rem, 2.2vw, 1.2rem);
 		line-height: 1.8;

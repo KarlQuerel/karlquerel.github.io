@@ -59,7 +59,6 @@ export function useGameState() {
 		}, 12000)
 	}
 
-	// Watch for showGame changes to manage body overflow
 	watch(showGame, newValue => {
 		if (newValue) {
 			document.body.style.overflow = 'hidden'

@@ -1,10 +1,8 @@
-/***	CONTACT DATA		***/
-// Drives the /contact page. Keep it short — edit the copy here.
+// Drives the /contact page.
 
 export const CONTACT_INTRO = ['Reach me through any of these channels.']
 
-// Each channel renders as a card linking out.
-// `blank: true` opens the link in a new tab.
+// Each channel renders as a card. `blank: true` opens the link in a new tab.
 export const CONTACT_CHANNELS = [
 	{
 		key: 'email',

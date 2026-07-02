@@ -68,7 +68,6 @@
 		padding-bottom: 0;
 	}
 
-	// Square node sitting on the trail, ringed in black so it reads as a marker.
 	.timeline-node {
 		position: absolute;
 		top: 0.75rem;
@@ -82,7 +81,6 @@
 			3px 3px 0 0 rgba(0, 0, 0, 0.5);
 	}
 
-	/***	CARD		***/
 	.timeline-card {
 		position: relative;
 		padding: 0.9rem 1rem 1rem;
@@ -136,7 +134,6 @@
 		color: rgba(255, 255, 255, 0.85);
 	}
 
-	/***	CURRENT MILESTONE		***/
 	.is-current .timeline-node {
 		box-shadow:
 			0 0 0 3px $black,
@@ -163,7 +160,6 @@
 		}
 	}
 
-	// Honour reduced-motion: show everything, kill the animation.
 	@media (prefers-reduced-motion: reduce) {
 		.timeline-item {
 			opacity: 1;

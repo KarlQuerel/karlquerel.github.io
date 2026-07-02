@@ -1,9 +1,5 @@
-/***	useClickSpark		***/
 // Spawns a short "spark" burst from the pointer on every left click — a
-// reproduction of the click animation on eduardbodak.com. Each burst appends a
-// few absolutely-positioned `.spark` bars to <body>; CSS handles the motion and
-// they are removed once the animation has finished.
-//
+// reproduction of the click animation on eduardbodak.com.
 // Call once from a component that lives for the whole app lifetime (App.vue).
 
 import { onMounted, onBeforeUnmount } from 'vue'

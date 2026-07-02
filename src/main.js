@@ -1,4 +1,3 @@
-/***	IMPORTS		***/
 import './styles/main.scss'
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
@@ -7,7 +6,6 @@ import SecretRedirect from './components/secretRedirect.vue'
 import NotFound from './components/notFound.vue'
 import UnderConstruction from './components/underConstruction.vue'
 
-/***	ROUTES		***/
 const routes = [
 	{
 		path: '/',

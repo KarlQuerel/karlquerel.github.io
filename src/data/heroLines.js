@@ -1,13 +1,6 @@
-/***	HERO INTRO		***/
-// The homepage hero rendered as a Star Wars-style opening crawl. As the visitor
-// scrolls the runway, the deck recedes into the starfield toward a vanishing
-// point (see HeroIntro.vue for the scroll-driven perspective transform).
-//
-//   episode    — small pixel label above the title.
-//   title      — the crawl headline.
-//   paragraphs — the receding body copy; keep sentences short so each line
-//                stays legible while tilted away.
-//   scrollHint — prompt nudging the visitor to start scrolling the crawl.
+// The homepage hero, rendered as a Star Wars-style opening crawl that recedes
+// toward a vanishing point (see HeroIntro.vue for the perspective transform).
+// Keep `paragraphs` sentences short so each line stays legible while tilted away.
 
 export const HERO_CRAWL = {
 	episode: 'EPISODE I',

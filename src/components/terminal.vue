@@ -1,5 +1,4 @@
 <template>
-	<!-- Centers the window in the visible band and clears the fixed footer. -->
 	<div class="terminal-container">
 		<div class="terminal-window" data-nosnippet :style="{ '--phosphor': phosphor }">
 			<div class="terminal-header">
@@ -194,7 +193,6 @@
 		caretAtEnd.value && suggestionTail.value ? suggestionTail.value.slice(1) : ''
 	)
 
-	// Matrix overlay dismissed — hide it and return focus to the prompt.
 	const onMatrixClose = () => {
 		showMatrix.value = false
 		nextTick(() => focusInput(terminalInput.value))

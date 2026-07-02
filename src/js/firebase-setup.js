@@ -27,7 +27,6 @@ export async function loadClicks() {
 	return docSnap.exists() ? docSnap.data().count : 0
 }
 
-// Terminal statistics functions
 export async function trackTerminalVisit() {
 	try {
 		const docSnap = await getDoc(terminalStatsRef)
@@ -56,7 +55,6 @@ export async function trackTerminalCommand(command) {
 			const data = docSnap.data()
 			const commandStats = data.commandStats || {}
 
-			// Update command count
 			commandStats[command] = (commandStats[command] || 0) + 1
 
 			await updateDoc(terminalStatsRef, {
@@ -64,7 +62,6 @@ export async function trackTerminalCommand(command) {
 				commandStats: commandStats,
 			})
 		} else {
-			// Initialize if document doesn't exist
 			await setDoc(terminalStatsRef, {
 				totalVisits: 0,
 				totalCommands: 1,

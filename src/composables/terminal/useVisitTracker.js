@@ -6,7 +6,6 @@ export function useVisitTracker() {
 	const commandStats = ref({})
 	const lastVisit = ref(null)
 
-	// Load data from Firebase
 	// firebase-setup already swallows Firestore errors and returns safe defaults,
 	// so these never reject — no second error-handling layer needed here.
 	const loadVisitData = async () => {
@@ -16,14 +15,12 @@ export function useVisitTracker() {
 		lastVisit.value = stats.lastVisit
 	}
 
-	// Track a visit
 	const trackVisit = async () => {
 		await trackTerminalVisit()
 		visitCount.value++
 		lastVisit.value = new Date()
 	}
 
-	// Track command usage
 	const trackCommand = async command => {
 		await trackTerminalCommand(command)
 
@@ -33,7 +30,6 @@ export function useVisitTracker() {
 		commandStats.value[command]++
 	}
 
-	// Get most popular commands
 	const getPopularCommands = (limit = 5) => {
 		return Object.entries(commandStats.value)
 			.sort(([, a], [, b]) => b - a)
@@ -41,7 +37,6 @@ export function useVisitTracker() {
 			.map(([command, count]) => ({ command, count }))
 	}
 
-	// Get visit statistics
 	const getVisitStats = () => {
 		return {
 			totalVisits: visitCount.value,

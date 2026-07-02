@@ -6,7 +6,6 @@
 			</p>
 		</header>
 
-		<!-- Neutral landing: choose-your-path portal cards. -->
 		<div v-if="!activeTab" class="about-hub" role="group" aria-label="Choose a section">
 			<button
 				v-for="tab in TABS"
@@ -21,7 +20,6 @@
 			</button>
 		</div>
 
-		<!-- A path is chosen: tab bar + panel. -->
 		<template v-else>
 			<nav class="about-tabs" role="tablist" aria-label="About sections">
 				<button
@@ -91,7 +89,6 @@
 		padding: 2.5rem 1rem 4rem;
 	}
 
-	/***	HEADER		***/
 	// Sits on a dark pixel panel so the intro stays legible over the starfield.
 	.about-head {
 		max-width: min(46rem, 94vw);
@@ -113,8 +110,8 @@
 		margin-top: 0;
 	}
 
-	// One header line: white, centred. Re-mounts on every path change (keyed) so
-	// the stepped 8-bit fade replays as the copy swaps hub → WORK → LIFE.
+	// Re-mounts on every path change (keyed) so the stepped 8-bit fade replays
+	// as the copy swaps hub → WORK → LIFE.
 	.about-lead {
 		color: $white;
 		animation: intro-swap 0.35s steps(4, end) both;
@@ -129,7 +126,6 @@
 		}
 	}
 
-	/***	HUB (choose your path)		***/
 	.about-hub {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -176,7 +172,6 @@
 		color: rgba(255, 255, 255, 0.8);
 	}
 
-	/***	TABS		***/
 	.about-tabs {
 		display: flex;
 		justify-content: center;
@@ -199,7 +194,6 @@
 		background: rgba($yellow, 0.18);
 	}
 
-	// Active tab reads as a pressed, filled pixel button.
 	.about-tab.is-active {
 		color: $black;
 		background: $yellow;

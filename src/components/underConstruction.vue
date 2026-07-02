@@ -9,7 +9,6 @@
 			/>
 		</div>
 
-		<!-- Clicker Button -->
 		<ClickCounter />
 	</div>
 </template>

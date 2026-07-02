@@ -41,7 +41,6 @@
 		padding: 2.5rem 1rem 4rem;
 	}
 
-	/***	HEADER		***/
 	.contact-name {
 		margin: 0;
 		font-family: $font-pixel;
@@ -60,7 +59,6 @@
 		color: rgba(255, 255, 255, 0.85);
 	}
 
-	/***	LINKS		***/
 	.contact-list {
 		width: min(40rem, 94vw);
 		margin: 0 auto;
@@ -79,7 +77,7 @@
 		animation-delay: calc(var(--contact-i, 0) * #{$contact-stagger});
 	}
 
-	// Mirrors the About timeline card: dark panel, 4px yellow border, offset shadow.
+	// Mirrors the About timeline card's dark pixel panel.
 	.contact-card {
 		display: flex;
 		flex-direction: column;
@@ -115,7 +113,6 @@
 	}
 
 	// `item-in` keyframes are global (see _animations.scss).
-	// Honour reduced-motion: show everything, kill the animation.
 	@media (prefers-reduced-motion: reduce) {
 		.contact-item {
 			opacity: 1;

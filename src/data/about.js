@@ -1,5 +1,4 @@
-/***	ABOUT DATA		***/
-// Drives the /about page. Keep it short — edit the copy here.
+// Drives the /about page.
 
 // `greeting` is the neutral header line; it swaps to the matching tab line once a
 // path (work | life) is chosen. Keys match the tab ids in About.vue.
@@ -16,9 +15,8 @@ export const ABOUT_HUB = {
 	life: { icon: 'heart', blurb: 'Off the clock: Yako, home, the outdoors.' },
 }
 
-// Vertical career timeline — oldest first, newest last.
-// Years are placeholders: swap them for the real ones whenever you like.
-// `current: true` flags the milestone you're living now (it gets the blinking node).
+// Vertical career timeline — oldest first, newest last. Years are placeholders.
+// `current: true` flags the milestone you're living now (gets the blinking node).
 export const CAREER_TIMELINE = [
 	{
 		year: '2012',

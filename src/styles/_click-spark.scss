@@ -1,4 +1,3 @@
-/***	IMPORTS		***/
 @use 'variables';
 
 // Pointer "spark" burst — a reproduction of the click animation on
@@ -37,7 +36,6 @@
 	}
 }
 
-// Respect users who ask for less motion.
 @media (prefers-reduced-motion: reduce) {
 	.spark {
 		display: none;

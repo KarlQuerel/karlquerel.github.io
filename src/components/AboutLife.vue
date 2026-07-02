@@ -1,6 +1,5 @@
 <template>
 	<div class="life">
-		<!-- Home base: a little spot in the world where Yako lives. -->
 		<section v-reveal class="life-home reveal-block" aria-label="Home base">
 			<img class="life-home__house" :src="HOME_SCENE.house" alt="" aria-hidden="true" />
 			<img class="life-home__yako" :src="HOME_SCENE.yako" alt="Yako the dog" />
@@ -8,13 +7,11 @@
 			<span class="life-home__sign">HOME BASE</span>
 		</section>
 
-		<!-- About me -->
 		<section v-reveal class="life-card reveal-block">
 			<h2 class="life-card__title">ABOUT ME</h2>
 			<p v-for="(line, i) in ABOUT_ME" :key="i" class="life-card__line">{{ line }}</p>
 		</section>
 
-		<!-- Dog gallery -->
 		<section v-reveal class="life-card reveal-block">
 			<h2 class="life-card__title">THE DOGS</h2>
 			<div class="dog-grid">
@@ -50,7 +47,6 @@
 		text-align: left;
 	}
 
-	/***	HOME BASE SCENE		***/
 	.life-home {
 		position: relative;
 		display: flex;
@@ -78,7 +74,6 @@
 		width: clamp(48px, 12vw, 70px);
 	}
 
-	// Little wooden name plate under the scene.
 	.life-home__sign {
 		position: absolute;
 		bottom: -0.4rem;
@@ -90,7 +85,6 @@
 		box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.4);
 	}
 
-	/***	CARDS		***/
 	.life-card {
 		padding: 1rem 1.1rem 1.2rem;
 		@include pixel-panel(rgba(0, 0, 0, 0.7));
@@ -116,7 +110,6 @@
 		margin-bottom: 0;
 	}
 
-	/***	DOG GALLERY		***/
 	.dog-grid {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
@@ -161,7 +154,6 @@
 		color: rgba(255, 255, 255, 0.6);
 	}
 
-	/***	REVEAL		***/
 	.reveal-block {
 		opacity: 0;
 		transform: translateY(12px);

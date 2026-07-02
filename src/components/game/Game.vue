@@ -2,7 +2,6 @@
 	<div class="game-page">
 		<MobileWarning />
 		<template v-if="!isMobile">
-			<!-- Loading Screen -->
 			<LoadingScreen
 				:is-loading="isLoading"
 				:loading-progress="loadingProgress"
@@ -10,7 +9,6 @@
 				:total-assets="totalAssets"
 			/>
 
-			<!-- Game Content (only show after loading) -->
 			<div v-if="!isLoading" class="game-viewport">
 				<PreGameScreen
 					v-if="!showGame"
@@ -112,7 +110,6 @@
 	}
 
 	onMounted(async () => {
-		// Start preloading assets first
 		await preloadAssets()
 
 		// Only initialize audio and menu after assets are loaded

@@ -1,5 +1,3 @@
-/***	IMPORTS		***/
-
 // Colors
 $retro-green: #00ff00;
 $black: #000000;
@@ -20,9 +18,7 @@ $cream: #fffdd0;
 
 // Fonts
 $font-pixel: 'Press Start 2P', ui-monospace, monospace;
-// Retro DEC-VT320-style console font for the terminal page. Monospace and
-// pixel-flavoured, so it reads like a real green-screen shell while staying
-// on-aesthetic. Falls back to the platform monospace stack before it loads.
+// VT323 — DEC-VT320-style console font for the terminal page.
 $font-terminal: 'VT323', ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', monospace;
 
 // Terminal phosphor default. The alternate tints the in-terminal `theme`

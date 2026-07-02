@@ -1,7 +1,6 @@
 <template>
 	<div class="game-cinematics">
 		<div class="cinematics-container" :class="{ 'fade-out': shouldFadeOut }">
-			<!-- Text Sequences -->
 			<div
 				v-for="(message, index) in currentMessages"
 				:key="message.messageId"
@@ -21,7 +20,6 @@
 				</span>
 			</div>
 
-			<!-- Title Screen -->
 			<div v-if="isFourthSequence" class="title-screen">
 				<div class="title">The <span class="fading-text">Fading</span> Crown</div>
 				<div class="coming-soon">Coming Soon</div>
@@ -72,7 +70,6 @@
 		const message = currentMessages.value[messageIndex]
 		if (!message) return
 
-		// Check if this is the last letter of the last message
 		const isLastMessage = messageIndex === currentMessages.value.length - 1
 		const isLastLetter = letterIndex === message.text.length - 1
 
@@ -84,7 +81,6 @@
 				setTimeout(() => {
 					const hasNext = nextSequence()
 					if (!hasNext) {
-						// Final sequence completed
 						setTimeout(() => {
 							emit('fade-complete')
 						}, FADE_OUT_DELAY * 1000)

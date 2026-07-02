@@ -1,12 +1,10 @@
 <template>
 	<div class="terminal-line">
-		<!-- Echoed command: prompt + what the user typed -->
 		<template v-if="line.type === 'command'">
 			<TerminalPrompt />
 			<span class="command">{{ line.content }}</span>
 		</template>
 
-		<!-- Image output (e.g. the yako gif), shown static and centered -->
 		<div v-else-if="line.image" class="terminal-image-container">
 			<img :src="line.image" :alt="line.alt || 'Terminal image'" class="terminal-image" />
 		</div>
@@ -14,17 +12,14 @@
 		<!-- Typed output: empty target the parent fills via TypeIt -->
 		<span v-else-if="animatable" ref="target" :class="line.type" />
 
-		<!-- Static link line -->
 		<span v-else-if="line.link" :class="line.type">
 			{{ line.prefix }}
 			<a :href="line.link" target="_blank" class="terminal-link">{{ line.linkText }}</a>
 		</span>
 
-		<!-- Static HTML output -->
 		<!-- eslint-disable-next-line vue/no-v-html -->
 		<span v-else-if="line.html" :class="line.type" v-html="line.content" />
 
-		<!-- Static plain text -->
 		<span v-else :class="line.type">{{ line.content }}</span>
 	</div>
 </template>

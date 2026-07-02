@@ -1,10 +1,6 @@
-/***	CLICK SPARK		***/
-// Configuration for the pointer "spark" burst (see useClickSpark.js).
-// A reproduction of the click animation on eduardbodak.com: on every left
-// click a small fan of bars shoots out from the cursor and shrinks away.
-//
-// The animation itself (timing, geometry, colour) lives in CSS —
-// see src/styles/_click-spark.scss. These values only drive the JS side.
+// Pointer "spark" burst (see useClickSpark.js), reproducing the click animation
+// on eduardbodak.com. The animation itself (timing, geometry, colour) lives in
+// CSS — see src/styles/_click-spark.scss; these values only drive the JS side.
 
 export const CLICK_SPARK = {
 	// Number of bars per burst, fanned out one ANGLE_STEP_DEG apart.

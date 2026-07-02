@@ -1,11 +1,7 @@
-// Tunables for the decorative parallax starfield in SpaceBackground.vue. Kept
-// here so the component holds only render logic and every magic number lives in
-// one place.
+// Tunables for the decorative parallax starfield in SpaceBackground.vue.
 
-// Palette the generated stars draw from. Mirrors the SCSS palette in
-// src/styles/_variables.scss (duplicated as hex because the field is built in
-// JS). Kept to white/yellow/grey, weighted toward white, for a calm and
-// realistic sky.
+// Star palette, duplicated as hex from the SCSS palette in _variables.scss.
+// Weighted toward white for a calm sky.
 export const STAR_COLORS = [
 	'#ffffff',
 	'#ffffff',
@@ -15,10 +11,8 @@ export const STAR_COLORS = [
 	'#d3d3d3', // $light-gray
 ]
 
-// Parallax depth planes, far → near. Each becomes one repeating <div> layer
-// that drifts via a GPU-composited transform, so tiles are kept modest to bound
-// each layer's compositor texture (the element is inset by one tile on each side
-// so it can translate a full tile and loop seamlessly).
+// Parallax depth planes, far → near. Each is one repeating, GPU-drifted <div>
+// layer, inset by one tile so it can translate a full tile and loop seamlessly.
 //   count     stars placed in the tile
 //   size      dot diameter (px) — nearer reads bigger
 //   alpha     [min, max] opacity range

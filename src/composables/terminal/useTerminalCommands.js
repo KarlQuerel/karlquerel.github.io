@@ -158,7 +158,6 @@ export function useTerminalCommands({
 		}
 	}
 
-	// Commands
 	const commands = {
 		help: args => {
 			const topic = (args || '').trim().toLowerCase()
@@ -461,7 +460,6 @@ export function useTerminalCommands({
 		hi: () => commands.greeting(),
 		hey: () => commands.greeting(),
 
-		// Fun commands
 		yako: () => [
 			{
 				type: 'typewriter',
@@ -586,10 +584,8 @@ export function useTerminalCommands({
 		},
 	}
 
-	// Available files for tab completion
 	const availableFiles = ['why_i_left_finance.txt', 'install_sentience.sh']
 
-	// Executable scripts
 	const executableScripts = {
 		'install_sentience.sh': () => [
 			{

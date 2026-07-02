@@ -1,4 +1,3 @@
-/***	useScrollSections		***/
 // Tracks the page scroll position over a tall wrapper element as a continuous
 // 0 -> 1 value. The wrapper acts as a scroll "runway": as it travels through the
 // viewport, progress goes 0 -> 1, driving animations like the hero crawl.

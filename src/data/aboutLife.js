@@ -1,7 +1,5 @@
-/***	ABOUT — LIFE TAB DATA		***/
-// Personal side of the /about page. Placeholder copy — edit freely.
+// Personal side of the /about page.
 
-// A few lines in your own voice. Keep it short and warm.
 export const ABOUT_ME = [
 	'Off the clock I keep it simple: my dog Yako, long walks, the gym, and good coffee.',
 	'I took the scenic route into code — five years broking commodities before retraining at 42 Paris.',

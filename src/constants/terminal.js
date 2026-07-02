@@ -1,10 +1,6 @@
-/***	TERMINAL		***/
 // Shared, hardcoded values for the fake shell on the /terminal page.
-// Anything a command or the prompt needs to render lives here so the
-// composables and components stay logic-only.
 
 // The shell prompt, split into coloured segments: user@host:path$
-// Rendered by TerminalPrompt.vue and echoed in front of every command.
 export const PROMPT = {
 	user: 'karl',
 	host: 'portfolio',
@@ -12,7 +8,6 @@ export const PROMPT = {
 	symbol: '$',
 }
 
-// Title shown in the window chrome (top bar), mimicking a real terminal tab.
 export const WINDOW_TITLE = `${PROMPT.user}@${PROMPT.host}: ${PROMPT.path} — bash`
 
 // Phosphor themes the `theme` command can switch between. The key is what the
@@ -30,12 +25,10 @@ export const DEFAULT_THEME = 'green'
 export const HISTORY_STORAGE_KEY = 'terminal.commandHistory'
 export const HISTORY_LIMIT = 100
 
-// The chosen phosphor theme is remembered across reloads under this key.
 export const THEME_STORAGE_KEY = 'terminal.theme'
 
-// Classic ASCII spinner cycled in place while a script "runs"
-// (./install_sentience.sh). Monospace, so every frame fills the same cell and
-// the glyph spins without nudging the line.
+// ASCII spinner cycled in place while a script "runs". Monospace, so every
+// frame fills the same cell and the glyph spins without nudging the line.
 export const SPINNER_FRAMES = ['|', '/', '-', '\\']
 
 // neofetch-style readout. Pure flavour; values are static on purpose.
@@ -53,9 +46,8 @@ export const SYSTEM_INFO = [
 // Tiny ASCII mascot printed next to the neofetch info.
 export const NEOFETCH_LOGO = ['  ___ ', ' (o o)', '(  V  )', '--m-m-']
 
-// Boot MOTD shown once at the top of the terminal, in the style of a real shell
-// login banner. Generic to the fake OS — no personal branding. The component
-// appends a live "Last login" line below these.
+// Boot MOTD shown once at the top of the terminal, like a shell login banner.
+// The component appends a live "Last login" line below these.
 export const BANNER_MOTD = [
 	'Welcome to PortfolioOS 4.2 LTS (retro)',
 	'',
@@ -64,9 +56,8 @@ export const BANNER_MOTD = [
 	'',
 ]
 
-// A short, hand-picked taste of the fun/useful commands `help` surfaces — not
-// the whole catalogue (that lives in the README, see HELP_HINT). [name, colour
-// class, one-line blurb].
+// A hand-picked taste of the commands `help` surfaces — not the whole catalogue
+// (see HELP_HINT). [name, colour class, one-line blurb].
 export const HELP_COMMANDS = [
 	['about', 'text-mint', 'Learn more about me'],
 	['ls', 'text-blue', 'List files'],
@@ -75,8 +66,7 @@ export const HELP_COMMANDS = [
 	['yako', 'text-yellow', 'Summon a very good dog'],
 ]
 
-// Single compact footer under the `help` list: points at the README, which
-// holds the full command reference.
+// Footer under the `help` list, pointing at the README's full command reference.
 export const HELP_HINT = 'Full command list: <span class="text-blue">cat README.md</span>'
 
 // One-line man-page blurbs keyed by command name.

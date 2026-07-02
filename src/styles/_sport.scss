@@ -558,7 +558,6 @@
 }
 
 /*
- * Responsive overrides.
  * Selectors are prefixed with `.sport-page` so their specificity matches the
  * base rules nested inside `.sport-page { ... }` above — otherwise the bare
  * `.grid` / `.page-title` selectors lose to `.sport-page .grid` and never apply.
