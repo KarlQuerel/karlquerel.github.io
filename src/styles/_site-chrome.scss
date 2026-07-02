@@ -15,9 +15,16 @@
 	justify-content: center;
 	padding: 0.4rem 1rem 0.35rem;
 	min-height: var(--site-chrome-bar-height);
-	background: rgba(0, 0, 0, 0.85);
-	border-top: 1px solid rgba(255, 255, 255, 0.2);
-	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+	// No hard rules: a scrim that feathers into transparency top and bottom so the
+	// bar dissolves into the shared starfield instead of sitting in a boxed strip.
+	// The darker middle band keeps the links legible over the drifting stars.
+	background: linear-gradient(
+		to bottom,
+		rgba(0, 0, 0, 0) 0%,
+		rgba(0, 0, 0, 0.6) 32%,
+		rgba(0, 0, 0, 0.6) 68%,
+		rgba(0, 0, 0, 0) 100%
+	);
 	overflow: hidden;
 }
 
@@ -49,7 +56,6 @@
 }
 
 .site-chrome-link {
-	position: relative;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -63,40 +69,83 @@
 	text-transform: uppercase;
 	text-decoration: none;
 	padding: 0.35rem 0.2rem;
+	// Stepped (8-bit) transitions: the link lifts toward the viewer and lights up
+	// with a phosphor-cyan glow when reached for, as if floating up out of space.
 	transition:
-		color 0.2s ease,
-		opacity 0.2s ease;
+		color 0.2s steps(4, end),
+		transform 0.2s steps(4, end),
+		text-shadow 0.2s steps(4, end);
 }
 
-.site-chrome-link::after {
-	content: '';
-	position: absolute;
-	left: 0.2rem;
-	right: 0.2rem;
-	bottom: 0.15rem;
-	height: 1px;
-	background: currentColor;
-	transform: scaleX(0);
-	transform-origin: left center;
-	transition: transform 0.2s ease;
-}
-
-.site-chrome-link:hover,
-.site-chrome-link:focus-visible,
+// Selected page: the label lights up yellow with a soft, steady glow and sits
+// still — the calm "you are here". Declared before the hover rules so hovering
+// the current link still gives it the lift.
 .site-chrome-link.router-link-active {
-	color: #ffffff;
-	opacity: 1;
+	color: variables.$yellow;
+	text-shadow: 0 0 8px rgba(variables.$yellow, 0.55);
 }
 
-.site-chrome-link:hover::after,
-.site-chrome-link:focus-visible::after,
-.site-chrome-link.router-link-active::after {
-	transform: scaleX(1);
+// Hover / focus: warms to the same yellow, rises toward the viewer, and glows
+// brighter than the resting active link — one accent, told apart by motion.
+// `text-decoration` is repeated here to out-specify NES.css's `a:hover`
+// underline, which would otherwise reintroduce a stray line on hover.
+.site-chrome-link:hover,
+.site-chrome-link:focus-visible {
+	color: variables.$yellow;
+	text-decoration: none;
+	transform: translateY(-3px);
+	text-shadow: 0 0 10px rgba(variables.$yellow, 0.8);
 }
 
 .site-chrome-link:focus-visible {
 	outline: 2px solid rgba(255, 255, 255, 0.8);
 	outline-offset: 2px;
+}
+
+// Weightless drift: the nav links bob gently and continuously, each on its own
+// slightly different cycle so they never sync into a single beat — as if
+// suspended in zero-g. Uses `translate` so it composes with the hover
+// `transform` lift above instead of fighting it. Scoped to the navbar so the
+// footer's inline "Contact" link stays put in its sentence.
+.site-chrome-links .site-chrome-link {
+	animation: chromeLinkFloat 4s ease-in-out infinite;
+}
+
+.site-chrome-links .site-chrome-link:nth-child(2) {
+	animation-duration: 4.6s;
+	animation-delay: -1.5s;
+}
+
+.site-chrome-links .site-chrome-link:nth-child(3) {
+	animation-duration: 3.6s;
+	animation-delay: -0.8s;
+}
+
+.site-chrome-links .site-chrome-link:nth-child(4) {
+	animation-duration: 4.3s;
+	animation-delay: -2.2s;
+}
+
+@keyframes chromeLinkFloat {
+	0%,
+	100% {
+		translate: 0 0;
+	}
+	25% {
+		translate: 1.5px -2px;
+	}
+	50% {
+		translate: 0 -4px;
+	}
+	75% {
+		translate: -1.5px -2px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.site-chrome-links .site-chrome-link {
+		animation: none;
+	}
 }
 
 .site-chrome-copyright {
