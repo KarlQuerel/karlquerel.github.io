@@ -302,8 +302,8 @@
 		width: 100%;
 		height: 100%;
 		background: rgba(8, 12, 8, 0.92);
-		border: 1px solid rgba(255, 255, 255, 0.18);
-		border-radius: 10px;
+		border: $void-border;
+		border-radius: $void-radius;
 		overflow: hidden;
 		font-family: $font-terminal;
 		font-size: 1.4rem;
@@ -327,7 +327,7 @@
 
 	.terminal-header {
 		background: rgba(100, 100, 100, 0.5);
-		border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+		border-bottom: $void-border;
 		padding: 0.5rem 1rem;
 		display: flex;
 		align-items: center;

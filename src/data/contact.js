@@ -1,7 +1,5 @@
 // Drives the /contact page.
 
-export const CONTACT_INTRO = ['Reach me through any of these channels.']
-
 // Each channel renders as a card. `blank: true` opens the link in a new tab.
 export const CONTACT_CHANNELS = [
 	{

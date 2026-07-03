@@ -6,7 +6,7 @@
 			<div class="nes-container is-dark with-title is-centered is-rounded">
 				<p class="title">Waste your time</p>
 
-				<button id="clicker" class="nes-btn is-normal" @click="incrementCounter">
+				<button id="clicker" type="button" @click="incrementCounter">
 					ONE CLICK AT A TIME
 				</button>
 
@@ -49,18 +49,16 @@
 </script>
 
 <style lang="scss" scoped>
-	#clicker {
-		justify-content: center;
-		width: 60%;
-		height: 10%;
-		font-size: 1rem;
-		font-weight: bold;
-		letter-spacing: 1px;
-		transition: all 0.3s ease;
-	}
+	@use '@/styles/mixins' as *;
 
-	#clicker:hover {
-		transform: scale(1.1);
+	#clicker {
+		width: 60%;
+		padding: 0.9rem 1.2rem;
+		font-family: $font-pixel;
+		font-size: clamp(0.55rem, 1.6vw, 0.8rem);
+		letter-spacing: 1px;
+		line-height: 1.6;
+		@include void-button($lift: -2px);
 	}
 
 	@media (max-width: #{$breakpoint-tablet}) {
@@ -70,9 +68,9 @@
 	}
 
 	.nes-container.is-dark {
-		background-color: rgba(255, 255, 255, 0.1) !important;
-		border: 0.1vh solid $light-gray !important;
-		border-radius: 20px !important;
+		background-color: rgba(0, 0, 0, 0.5) !important;
+		border: $void-border !important;
+		border-radius: $void-radius !important;
 		text-transform: uppercase !important;
 	}
 </style>

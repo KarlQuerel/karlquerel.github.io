@@ -89,12 +89,13 @@
 		padding: 2.5rem 1rem 4rem;
 	}
 
-	// Sits on a dark pixel panel so the intro stays legible over the starfield.
+	// The greeting sits in the same "window onto the void" frame as the buttons —
+	// a hairline edge and a translucent fill just dark enough to stay legible.
 	.about-head {
 		max-width: min(46rem, 94vw);
 		margin: 0 auto;
-		padding: 1.25rem 1.25rem 1.5rem;
-		@include pixel-panel(rgba(0, 0, 0, 0.6));
+		padding: 1.5rem 1.5rem 1.75rem;
+		@include void-panel(rgba(0, 0, 0, 0.55));
 	}
 
 	.about-intro {
@@ -126,35 +127,43 @@
 		}
 	}
 
+	// Wide gutters between the portals so the starfield reads as open void
+	// rather than a packed grid — the emptiness is doing the work.
 	.about-hub {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 1.25rem;
-		width: min(40rem, 94vw);
+		gap: 2.25rem;
+		width: min(42rem, 94vw);
 		margin: 0 auto;
+		padding: 0.5rem;
 	}
 
+	// A window onto the void: shared void-button chrome (hairline frame, warm
+	// yellow bloom + weightless lift on hover) over a centre that darkens for
+	// legibility then fades to nothing at the edges, letting the stars through.
 	.portal {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.9rem;
-		padding: 1.75rem 1.25rem;
-		color: rgba(255, 255, 255, 0.9);
-		cursor: pointer;
-		@include pixel-panel(rgba(0, 0, 0, 0.65));
+		gap: 1.1rem;
+		padding: 2.75rem 1.5rem;
+		@include void-button(
+			$bg: radial-gradient(
+					125% 125% at 50% 38%,
+					rgba(0, 0, 0, 0.55) 0%,
+					rgba(0, 0, 0, 0.18) 68%,
+					rgba(0, 0, 0, 0) 100%
+				)
+		);
 	}
 
-	// Stepped, tactile press — lift on hover, sink on click. No smooth easing.
-	.portal:hover {
-		background: rgba($yellow, 0.14);
-		transform: translate(-2px, -2px);
-		box-shadow: 8px 8px 0 0 rgba(0, 0, 0, 0.5);
+	.portal .nes-icon {
+		transition: filter 0.4s ease;
 	}
 
-	.portal:active {
-		transform: translate(2px, 2px);
-		box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.5);
+	.portal:hover .nes-icon,
+	.portal:focus-visible .nes-icon {
+		filter: drop-shadow(0 0 8px rgba($yellow, 0.5));
 	}
 
 	.portal__label {
@@ -162,6 +171,13 @@
 		font-size: clamp(0.75rem, 2.4vw, 1rem);
 		letter-spacing: 1px;
 		color: $yellow;
+		transition: text-shadow 0.4s ease;
+	}
+
+	// The label flares like a distant star as you approach.
+	.portal:hover .portal__label,
+	.portal:focus-visible .portal__label {
+		text-shadow: 0 0 12px rgba($yellow, 0.55);
 	}
 
 	.portal__blurb {
@@ -175,30 +191,27 @@
 	.about-tabs {
 		display: flex;
 		justify-content: center;
-		gap: 0.6rem;
+		gap: 0.75rem;
 	}
 
+	// Tabs echo the portals — near-invisible frames that only glow when active
+	// or hovered, so nothing weighs down the void.
 	.about-tab {
 		font-family: $font-pixel;
 		font-size: clamp(0.6rem, 1.8vw, 0.8rem);
 		letter-spacing: 1px;
-		padding: 0.7rem 1.3rem;
-		color: $yellow;
-		background: rgba(0, 0, 0, 0.65);
-		border: 4px solid $yellow;
-		box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.5);
-		cursor: pointer;
-	}
-
-	.about-tab:not(.is-active):hover {
-		background: rgba($yellow, 0.18);
+		padding: 0.7rem 1.4rem;
+		@include void-button($lift: -2px);
 	}
 
 	.about-tab.is-active {
-		color: $black;
-		background: $yellow;
-		transform: translate(2px, 2px);
-		box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.5);
+		color: $yellow;
+		background: rgba($yellow, 0.06);
+		border-color: rgba($yellow, 0.5);
+		box-shadow:
+			0 0 20px rgba($yellow, 0.15),
+			0 0 0 1px rgba($yellow, 0.3) inset;
+		text-shadow: 0 0 10px rgba($yellow, 0.4);
 	}
 
 	@media (max-width: $breakpoint-mobile) {
@@ -207,13 +220,11 @@
 		}
 	}
 
+	// The void-button lift already respects reduced-motion (see the mixin); only
+	// the intro fade needs disabling here.
 	@media (prefers-reduced-motion: reduce) {
 		.about-lead {
 			animation: none;
-		}
-
-		.about-tab.is-active {
-			transform: none;
 		}
 	}
 </style>

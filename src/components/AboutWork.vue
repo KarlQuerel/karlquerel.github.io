@@ -84,7 +84,7 @@
 	.timeline-card {
 		position: relative;
 		padding: 0.9rem 1rem 1rem;
-		@include pixel-panel(rgba(0, 0, 0, 0.7));
+		@include void-panel(rgba(0, 0, 0, 0.7));
 		text-align: left;
 	}
 

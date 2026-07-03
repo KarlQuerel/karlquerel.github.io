@@ -1,10 +1,54 @@
 @use 'variables';
 
-// The recurring "pixel panel" card chrome shared across the About / Life / Work
-// / Contact pages. Pass the per-card background so each panel keeps its own
-// translucency while the border + shadow stay identical.
-@mixin pixel-panel($bg) {
+// The static "window onto the void" chrome: the shared hairline frame + radius
+// over a translucent dark fill that lets the starfield through. Every panel and
+// card on the site uses this so its border can be re-skinned from one token.
+@mixin void-panel($bg: rgba(0, 0, 0, 0.5)) {
 	background: $bg;
-	border: 4px solid variables.$yellow;
-	box-shadow: variables.$panel-shadow;
+	border: variables.$void-border;
+	border-radius: variables.$void-radius;
+}
+
+// The interactive counterpart, used by every clickable button on the site so
+// they read as one system. Adds to the void-panel frame a warm yellow starlight
+// bloom + weightless lift on hover / focus. Pass a smaller $lift for compact
+// buttons, or a custom $bg (e.g. a radial fade) for the larger portals. Include
+// this LAST in a rule — it emits nested states, so trailing declarations warn.
+@mixin void-button($lift: -4px, $bg: rgba(0, 0, 0, 0.35)) {
+	@include void-panel($bg);
+	color: rgba(255, 255, 255, 0.85);
+	cursor: pointer;
+	transition:
+		color 0.3s ease,
+		border-color 0.3s ease,
+		box-shadow 0.3s ease,
+		background 0.3s ease,
+		transform 0.3s ease;
+
+	&:hover,
+	&:focus-visible {
+		outline: none;
+		color: variables.$white;
+		border-color: rgba(variables.$yellow, 0.5);
+		box-shadow:
+			0 0 28px rgba(variables.$yellow, 0.18),
+			0 0 0 1px rgba(variables.$yellow, 0.28) inset;
+		transform: translateY($lift);
+	}
+
+	&:active {
+		transform: translateY($lift * 0.25);
+		box-shadow:
+			0 0 16px rgba(variables.$yellow, 0.12),
+			0 0 0 1px rgba(variables.$yellow, 0.22) inset;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		&,
+		&:hover,
+		&:focus-visible,
+		&:active {
+			transform: none;
+		}
+	}
 }

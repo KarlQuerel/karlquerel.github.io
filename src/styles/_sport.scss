@@ -1,4 +1,5 @@
 @use 'variables';
+@use 'mixins';
 
 .sport-page {
 	--muted: rgba(255, 255, 255, 0.62);
@@ -17,7 +18,6 @@
 	--hard: #ff5050;
 	--drop-tint: #ebff6b;
 	--font: #{variables.$font-pixel};
-	--surface-border: rgba(255, 255, 255, 0.18);
 	--surface-bg: rgba(255, 255, 255, 0.04);
 	--surface-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
 	--focus-ring: 2px solid rgba(255, 255, 255, 0.8);
@@ -164,7 +164,8 @@
 		gap: 10px 14px;
 		margin-bottom: 2rem;
 		padding: 1rem 0.75rem;
-		border: 2px solid var(--surface-border);
+		border: variables.$void-border;
+		border-radius: variables.$void-radius;
 		background: var(--surface-bg);
 		box-shadow: var(--surface-shadow);
 		color: var(--faint);
@@ -192,7 +193,8 @@
 		gap: 0;
 		overflow: hidden;
 		padding: 22px 20px;
-		border: 2px solid var(--surface-border);
+		border: variables.$void-border;
+		border-radius: variables.$void-radius;
 		background: var(--surface-bg);
 		box-shadow: var(--surface-shadow);
 	}
@@ -282,7 +284,8 @@
 		gap: 6px;
 		cursor: pointer;
 		padding: 14px;
-		border: 2px solid rgba(255, 255, 255, 0.12);
+		border: variables.$void-border;
+		border-radius: variables.$void-radius;
 		border-left: 4px solid var(--muscle);
 		background: rgba(255, 255, 255, 0.03);
 	}
@@ -487,7 +490,8 @@
 
 	.superset {
 		overflow: hidden;
-		border: 2px solid rgba(255, 255, 255, 0.12);
+		border: variables.$void-border;
+		border-radius: variables.$void-radius;
 		border-left: 4px solid var(--muscle);
 		background: rgba(255, 255, 255, 0.03);
 	}
@@ -501,7 +505,7 @@
 		color: var(--muscle);
 		font-size: clamp(0.34rem, 0.85vw, 0.4rem);
 		letter-spacing: 0.06em;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		border-bottom: variables.$void-border;
 	}
 
 	.superset .exercise {
@@ -516,7 +520,7 @@
 	}
 
 	.superset .exercise + .exercise {
-		border-top: 1px solid rgba(255, 255, 255, 0.1);
+		border-top: variables.$void-border;
 	}
 
 	.superset-step {
@@ -529,6 +533,7 @@
 		font-size: clamp(0.3rem, 0.75vw, 0.36rem);
 	}
 
+	// Floating action button — same void-button language as the rest of the site.
 	.show-all-btn {
 		position: fixed;
 		right: 18px;
@@ -537,23 +542,13 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		cursor: pointer;
 		min-height: 2.75em;
 		padding: 12px 16px;
-		border: 2px solid rgba(255, 255, 255, 0.35);
-		background: #000000;
-		color: rgba(255, 255, 255, 0.88);
 		font-family: var(--font);
 		font-size: clamp(0.42rem, 1.05vw, 0.52rem);
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
-		box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
-	}
-
-	.show-all-btn:hover {
-		background: rgba(255, 255, 255, 0.12);
-		border-color: rgba(255, 255, 255, 0.55);
-		color: #ffffff;
+		@include mixins.void-button($lift: -2px);
 	}
 }
 

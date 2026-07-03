@@ -62,7 +62,7 @@
 	// sized from the deck's real height so the crawl ALWAYS finishes before the
 	// finale begins — long or short, the hyperspace jump only starts once the
 	// last line has gone.
-	const DECK_ENTER_VH = 100 // deck starts one viewport below the fold
+	const DECK_ENTER_VH = 160 // deck starts well below the fold — a lead-in of empty scroll before the crawl rises into view
 	const CRAWL_EXIT_VH = 15 // extra travel so the last line is clearly gone
 	const READ_SPEED = 0.83 // deck vh travelled per 1vh of scroll (reading pace)
 	const FINALE_VH = 320 // scroll length of the hyperspace finale (cruise + arrival)
@@ -99,6 +99,8 @@
 
 	const crawlStyle = computed(() => ({
 		'--crawl-progress': progress.value,
+		// Where the deck sits at progress 0 — its lead-in offset below the fold.
+		'--crawl-enter': `${DECK_ENTER_VH}vh`,
 		// Deck travel per unit progress, so reading pace stays constant.
 		'--crawl-travel': `${READ_SPEED * totalScrollVh.value}vh`,
 	}))
@@ -151,8 +153,12 @@
 
 	.hero-pin {
 		position: sticky;
-		top: var(--site-chrome-bar-height);
-		min-height: calc(100vh - var(--site-chrome-bar-height));
+		// Full-bleed: the pin fills the whole viewport and sticks at the very top so
+		// the warp/planet backdrop runs behind the transparent navbar, mirroring how
+		// it already shows through behind the fixed, transparent footer. The navbar
+		// (z-index 40) still floats its links above the animation.
+		top: 0;
+		min-height: 100vh;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -205,7 +211,12 @@
 		// Travels from just below the stage up past the vanishing point as the
 		// visitor scrolls.
 		transform: translateX(-50%)
-			translateY(calc(100vh - var(--crawl-progress, 0) * var(--crawl-travel, 250vh)));
+			translateY(
+				calc(
+					var(--crawl-enter, 100vh) - var(--crawl-progress, 0) *
+						var(--crawl-travel, 250vh)
+				)
+			);
 		// Keep the deck on its own GPU layer so scroll-driven travel only
 		// recomposites instead of re-rasterizing the text every frame.
 		will-change: transform;

@@ -19,7 +19,7 @@
 	import SiteFooter from './components/SiteFooter.vue'
 	import { useClickSpark } from './composables/useClickSpark'
 
-	const SCROLLABLE_PATHS = ['/', '/sport', '/about', '/contact']
+	const SCROLLABLE_PATHS = ['/', '/sport', '/about']
 
 	useClickSpark()
 

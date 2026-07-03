@@ -1,15 +1,11 @@
 @use 'variables';
+@use 'mixins';
 
+// Every bare button inherits the shared "window onto the void" look so nothing
+// falls back to an off-theme default. Custom buttons layer their own size /
+// layout on top of this base.
 button {
 	padding: 10px 20px;
-	background-color: variables.$primary-color;
-	color: variables.$white;
-	border: none;
-	cursor: pointer;
 	font-size: clamp(0.875rem, 1.5vw, variables.$font-size-medium);
-	transition: background-color 0.3s ease;
-}
-
-button:hover {
-	background-color: variables.$secondary-color;
+	@include mixins.void-button;
 }

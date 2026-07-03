@@ -2,11 +2,6 @@
 	<div class="content">
 		<div class="nes-container is-dark is-rounded">
 			<p>Under Construction</p>
-			<img
-				src="/assets/img/construction.gif"
-				alt="construction GIF"
-				class="construction-gif"
-			/>
 		</div>
 
 		<ClickCounter />
@@ -19,17 +14,10 @@
 
 <style lang="scss" scoped>
 	.nes-container.is-dark {
-		background-color: rgba(255, 255, 255, 0.1) !important;
-		border: 0.1vh solid $light-gray !important;
-		border-radius: 20px !important;
+		background-color: rgba(0, 0, 0, 0.5) !important;
+		border: $void-border !important;
+		border-radius: $void-radius !important;
 		margin-bottom: 1rem !important;
 		text-transform: uppercase !important;
-	}
-
-	.construction-gif {
-		max-width: 100%;
-		height: auto;
-		margin: 0.5rem 0;
-		border-radius: 10px;
 	}
 </style>

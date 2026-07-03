@@ -1,9 +1,6 @@
 <template>
 	<div class="content contact">
-		<header class="contact-head">
-			<h1 class="contact-name">CONTACT</h1>
-			<p v-for="(line, i) in CONTACT_INTRO" :key="i" class="contact-intro">{{ line }}</p>
-		</header>
+		<h1 class="contact-name">CONTACT</h1>
 
 		<ul class="contact-list">
 			<li
@@ -27,7 +24,7 @@
 </template>
 
 <script setup>
-	import { CONTACT_INTRO, CONTACT_CHANNELS } from '@/data/contact'
+	import { CONTACT_CHANNELS } from '@/data/contact'
 </script>
 
 <style scoped lang="scss">
@@ -51,14 +48,6 @@
 		text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
 	}
 
-	.contact-intro {
-		max-width: 42ch;
-		margin: 0.5rem auto 0;
-		font-size: clamp(0.85rem, 2vw, 1rem);
-		line-height: 1.65;
-		color: rgba(255, 255, 255, 0.85);
-	}
-
 	.contact-list {
 		width: min(40rem, 94vw);
 		margin: 0 auto;
@@ -67,7 +56,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
-		text-align: left;
+		text-align: center;
 	}
 
 	.contact-item {
@@ -77,25 +66,17 @@
 		animation-delay: calc(var(--contact-i, 0) * #{$contact-stagger});
 	}
 
-	// Mirrors the About timeline card's dark pixel panel.
+	// Same "window onto the void" language as every other button on the site:
+	// a hairline frame that kindles a warm yellow bloom and lifts on hover. A
+	// touch darker than the default fill so the two-line text stays legible.
 	.contact-card {
 		display: flex;
 		flex-direction: column;
+		align-items: center;
 		gap: 0.5rem;
-		padding: 0.9rem 1rem 1rem;
-		background: rgba(0, 0, 0, 0.55);
-		border: 4px solid $yellow;
-		box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.5);
+		padding: 1.1rem 1.2rem 1.2rem;
 		text-decoration: none;
-	}
-
-	// Stepped 8-bit hover/focus: an inner yellow ring, no smooth easing.
-	.contact-card:hover,
-	.contact-card:focus-visible {
-		outline: none;
-		box-shadow:
-			$panel-shadow,
-			0 0 0 2px $yellow inset;
+		@include void-button($lift: -3px, $bg: rgba(0, 0, 0, 0.5));
 	}
 
 	.contact-channel {

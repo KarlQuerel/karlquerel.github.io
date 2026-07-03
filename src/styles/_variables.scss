@@ -53,6 +53,14 @@ $spark-duration: 400ms;
 // Shared shadows
 $panel-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.5);
 
+// Unified "void" frame — the single source of truth for every panel, card, and
+// button border on the site. Change these to re-skin all chrome at once.
+$void-border-color: rgba(255, 255, 255, 0.1);
+$void-border: 1px solid $void-border-color;
+// Corner radius — a whisper of softness that keeps the crisp edge without going
+// full pixel-square.
+$void-radius: 3px;
+
 // Breakpoints
 $breakpoint-mobile: 640px;
 $breakpoint-tablet: 768px;

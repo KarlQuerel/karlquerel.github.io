@@ -4,9 +4,11 @@
 			<router-link to="/" class="site-chrome-link">Home</router-link>
 			<router-link to="/about" class="site-chrome-link">About</router-link>
 			<router-link to="/terminal" class="site-chrome-link">for the nerds</router-link>
+			<!-- Under Construction link hidden for now — keep for later
 			<router-link to="/under_construction" class="site-chrome-link"
 				>Under Construction</router-link
 			>
+			-->
 		</div>
 	</nav>
 </template>
