@@ -3,8 +3,8 @@
 :root {
 	--site-chrome-bar-height: 3rem;
 	// Height of the dog-animation header strip above the navbar. Shared so
-	// fixed overlays (e.g. the game's mobile warning) can clear the full top
-	// chrome (header + navbar) without hardcoding it.
+	// fixed overlays can clear the full top chrome (header + navbar)
+	// without hardcoding it.
 	--site-header-height: clamp(72px, 10vw, 104px);
 }
 

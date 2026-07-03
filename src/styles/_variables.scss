@@ -45,12 +45,6 @@ $font-size-medium-max: 2rem;
 $z-index-content: 1;
 $z-index-click: 9999;
 
-// Game layering stack
-$z-game-container: 1000;
-$z-game-overlay: 1001; // cinematics flash, mobile warning
-$z-game-modal: 2000; // credits + pre-game screens
-$z-game-loading: 3000;
-
 // Click spark
 $spark-width: 10px;
 $spark-height: 4px;

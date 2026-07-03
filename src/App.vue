@@ -1,6 +1,6 @@
 <template>
 	<div class="app-root">
-		<SpaceBackground v-if="hasSpaceBackground" />
+		<SpaceBackground />
 		<SiteHeaderAnimation />
 		<SiteNavbar />
 		<main class="app-main">
@@ -20,15 +20,12 @@
 	import { useClickSpark } from './composables/useClickSpark'
 
 	const SCROLLABLE_PATHS = ['/', '/sport', '/about', '/contact']
-	// The game is the only view without the shared space backdrop.
-	const NO_BACKGROUND_PATHS = ['/game']
 
 	useClickSpark()
 
 	const route = useRoute()
 	const normalizedPath = () => route.path.replace(/\/$/, '') || '/'
 	const isPageScrollable = computed(() => SCROLLABLE_PATHS.includes(normalizedPath()))
-	const hasSpaceBackground = computed(() => !NO_BACKGROUND_PATHS.includes(normalizedPath()))
 
 	watch(
 		isPageScrollable,

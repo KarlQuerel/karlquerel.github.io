@@ -366,7 +366,7 @@ export function useTerminalCommands({
 		},
 
 		game: () => {
-			router.push('/game')
+			router.push('/under_construction')
 		},
 
 		whoami: () => [

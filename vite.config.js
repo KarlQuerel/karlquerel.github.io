@@ -19,7 +19,6 @@ export default defineConfig({
 			output: {
 				manualChunks: {
 					vendor: ['vue', 'vue-router'],
-					game: ['./src/components/game/Game.vue'],
 					sport: ['./src/components/sport/SportPage.vue'],
 					styles: ['./src/styles/main.scss'],
 				},

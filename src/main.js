@@ -22,10 +22,6 @@ const routes = [
 	{ path: '/under_construction', component: UnderConstruction },
 	{ path: '/secret_link', component: SecretRedirect },
 	{
-		path: '/game',
-		component: () => import('./components/game/Game.vue'),
-	},
-	{
 		path: '/contact',
 		component: () => import('./components/Contact.vue'),
 	},

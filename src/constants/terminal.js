@@ -91,7 +91,7 @@ export const MAN_PAGES = {
 	head: 'head [file] [n] - print the first n lines (default 10).',
 	cowsay: 'cowsay [text] - the dog says it for you.',
 	matrix: 'matrix - follow the white rabbit. Any key exits.',
-	game: 'game - launch the playable game.',
+	game: 'game - the game is under construction.',
 	secret_game: 'secret_game - warp off to a secret Scratch game.',
 	history: 'history - list the commands you have run.',
 	date: 'date - print the current date and time.',

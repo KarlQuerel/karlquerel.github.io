@@ -1,5 +1,5 @@
 <template>
-	<!-- Shared fixed backdrop behind every page except the game: several
+	<!-- Shared fixed backdrop behind every page: several
 	     randomly generated pixel-star layers that drift diagonally at different
 	     speeds and shift under the cursor for parallax depth, plus the occasional
 	     pixel shooting star streaking across. Purely decorative. -->
@@ -19,7 +19,12 @@
 	import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
-	import { STAR_COLORS, STAR_LAYERS, STAR_SIZE_JITTER, SHOOTING_STAR } from '@/constants/starfield'
+	import {
+		STAR_COLORS,
+		STAR_LAYERS,
+		STAR_SIZE_JITTER,
+		SHOOTING_STAR,
+	} from '@/constants/starfield'
 
 	function rand(min, max) {
 		return min + Math.random() * (max - min)
