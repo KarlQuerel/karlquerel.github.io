@@ -1,14 +1,18 @@
 <template>
-	<nav class="site-chrome-bar site-chrome-bar--sticky-top" aria-label="Main navigation">
+	<nav
+		id="site-navbar"
+		class="site-chrome-bar"
+		:class="floating ? 'site-chrome-bar--floating' : 'site-chrome-bar--sticky-top'"
+		aria-label="Main navigation"
+	>
 		<div class="site-chrome-links">
-			<router-link to="/" class="site-chrome-link">Home</router-link>
-			<router-link to="/about" class="site-chrome-link">About</router-link>
-			<router-link to="/terminal" class="site-chrome-link">for the nerds</router-link>
-			<!-- Under Construction link hidden for now — keep for later
-			<router-link to="/under_construction" class="site-chrome-link"
-				>Under Construction</router-link
+			<router-link
+				v-for="link in NAVBAR_LINKS"
+				:key="link.to"
+				:to="link.to"
+				class="site-chrome-link"
+				>{{ link.label }}</router-link
 			>
-			-->
 			<button
 				type="button"
 				class="site-chrome-audio"
@@ -26,7 +30,12 @@
 </template>
 
 <script setup>
+	import { NAVBAR_LINKS } from '@/constants/navigation'
 	import { useAmbientAudio } from '../composables/useAmbientAudio'
+
+	// The homepage summons the bar as a fixed overlay (no reflow of the hero);
+	// every other page keeps it sticky in normal flow.
+	defineProps({ floating: { type: Boolean, default: false } })
 
 	const { enabled, toggle } = useAmbientAudio()
 </script>

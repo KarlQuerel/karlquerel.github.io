@@ -76,15 +76,11 @@
 	@use '@/styles/mixins' as *;
 
 	// Backdrop (the drifting starfield) is the shared <SpaceBackground> layer.
-	// Fill the visible band between the top chrome (header + navbar) and the
-	// fixed footer so .content's justify-content:center centres the panels
-	// vertically; taller tabs (WORK / LIFE) overflow this floor and scroll.
+	// Fill the viewport below the top chrome (header + navbar) so .content's
+	// justify-content:center centres the panels vertically; taller tabs
+	// (WORK / LIFE) overflow this floor and scroll.
 	.about {
-		min-height: calc(
-			100dvh - var(--site-header-height) - var(--site-chrome-bar-height) - var(
-					--site-chrome-bar-height
-				)
-		);
+		min-height: calc(100dvh - var(--site-header-height) - var(--site-chrome-bar-height));
 		gap: 2rem;
 		padding: 2.5rem 1rem 4rem;
 	}

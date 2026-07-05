@@ -292,8 +292,6 @@
 		justify-content: center;
 		align-items: center;
 		box-sizing: border-box;
-		// Clear the fixed-bottom footer so the terminal's bottom stays visible.
-		padding-bottom: var(--site-chrome-bar-height);
 	}
 
 	.terminal-window {

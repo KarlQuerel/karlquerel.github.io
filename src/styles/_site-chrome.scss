@@ -26,11 +26,46 @@
 	z-index: 40;
 }
 
-.site-chrome-bar--fixed-bottom {
+// The summoned homepage nav is fixed, not sticky: it overlays the top of the
+// hero instead of joining the flow, so revealing it never reflows the tall
+// scroll track behind it (which is what made the toggle lag).
+.site-chrome-bar--floating {
 	position: fixed;
-	bottom: 0;
+	top: 0;
 	left: 0;
+	right: 0;
 	z-index: 40;
+	// Drop the links below the centred toggle that sits above them, so the ✕ and
+	// the summoned links stack cleanly down the middle instead of overlapping.
+	align-items: flex-start;
+	padding-top: 2.9rem;
+	will-change: transform;
+}
+
+@media (max-width: #{variables.$breakpoint-mobile}) {
+	.site-chrome-bar--floating {
+		padding-top: 2.4rem;
+	}
+}
+
+// Reveal it with a transform-only slide (GPU-composited, no opacity blend over
+// the gradient starfield) so the toggle stays smooth.
+.nav-slide-enter-active,
+.nav-slide-leave-active {
+	transition: transform 0.2s ease-out;
+	will-change: transform;
+}
+
+.nav-slide-enter-from,
+.nav-slide-leave-to {
+	transform: translateY(-100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.nav-slide-enter-active,
+	.nav-slide-leave-active {
+		transition: none;
+	}
 }
 
 .site-chrome-links {
@@ -140,9 +175,8 @@
 	transform: rotate(-45deg);
 }
 
-// Uses `translate` so it composes with the hover `transform` lift above instead
-// of fighting it. Scoped to the navbar so the footer's inline "Contact" link
-// stays put in its sentence.
+// Each link drifts on its own rhythm. Uses `translate` so it composes with the
+// hover `transform` lift above instead of fighting it.
 .site-chrome-links .site-chrome-link {
 	animation: chromeLinkFloat 4s ease-in-out infinite;
 }
@@ -184,16 +218,6 @@
 	}
 }
 
-.site-chrome-copyright {
-	color: rgba(255, 255, 255, 0.88);
-	font-size: clamp(0.52rem, 1.15vw, 0.64rem);
-	line-height: 1.2;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	white-space: nowrap;
-	padding: 0.35rem 0.2rem;
-}
-
 @media (max-width: #{variables.$breakpoint-mobile}) {
 	:root {
 		--site-header-height: clamp(58px, 18vw, 84px);
@@ -204,11 +228,6 @@
 	}
 
 	.site-chrome-link {
-		font-size: clamp(0.5rem, 2.4vw, 0.58rem);
-		padding: 0.3rem 0.12rem;
-	}
-
-	.site-chrome-copyright {
 		font-size: clamp(0.5rem, 2.4vw, 0.58rem);
 		padding: 0.3rem 0.12rem;
 	}
