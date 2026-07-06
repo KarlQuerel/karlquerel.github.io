@@ -18,10 +18,14 @@
 	import SiteNavbar from './components/SiteNavbar.vue'
 	import SiteFooter from './components/SiteFooter.vue'
 	import { useClickSpark } from './composables/useClickSpark'
+	import { useAmbientAudio } from './composables/useAmbientAudio'
 
 	const SCROLLABLE_PATHS = ['/', '/sport', '/about']
 
 	useClickSpark()
+
+	const { init: initAmbientAudio } = useAmbientAudio()
+	initAmbientAudio()
 
 	const route = useRoute()
 	const normalizedPath = () => route.path.replace(/\/$/, '') || '/'

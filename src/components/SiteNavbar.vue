@@ -9,6 +9,24 @@
 				>Under Construction</router-link
 			>
 			-->
+			<button
+				type="button"
+				class="site-chrome-audio"
+				:class="{ 'is-off': !enabled }"
+				:aria-pressed="enabled"
+				:aria-label="enabled ? 'Mute ambient music' : 'Play ambient music'"
+				:title="enabled ? 'Mute ambient music' : 'Play ambient music'"
+				data-no-spark
+				@click="toggle"
+			>
+				<span aria-hidden="true">♪</span>
+			</button>
 		</div>
 	</nav>
 </template>
+
+<script setup>
+	import { useAmbientAudio } from '../composables/useAmbientAudio'
+
+	const { enabled, toggle } = useAmbientAudio()
+</script>
