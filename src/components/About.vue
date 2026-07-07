@@ -76,13 +76,13 @@
 	@use '@/styles/mixins' as *;
 
 	// Backdrop (the drifting starfield) is the shared <SpaceBackground> layer.
-	// Fill the viewport below the top chrome (header + navbar) so .content's
-	// justify-content:center centres the panels vertically; taller tabs
-	// (WORK / LIFE) overflow this floor and scroll.
+	// Every page is immersive now — no in-flow header or navbar to subtract — so
+	// fill the whole viewport and let .content's justify-content:center centre the
+	// panels; taller tabs (WORK / LIFE) overflow this floor and scroll.
 	.about {
-		min-height: calc(100dvh - var(--site-header-height) - var(--site-chrome-bar-height));
+		min-height: 100dvh;
 		gap: 2rem;
-		padding: 2.5rem 1rem 4rem;
+		padding: 3.6rem 1rem 4rem;
 	}
 
 	// The greeting sits in the same "window onto the void" frame as the buttons —

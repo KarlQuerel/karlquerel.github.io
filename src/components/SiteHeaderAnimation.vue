@@ -1,3 +1,15 @@
+<!--
+	PRESERVED / NOT CURRENTLY MOUNTED.
+
+	The Yako "dog" header animation (a helmeted sprite that runs then walks back
+	across the top of the page). It used to sit above the navbar on every inner
+	page. The site is now fully immersive on every route (a summoned floating
+	navbar, no persistent header), so this is intentionally kept but unused.
+
+	To bring it back: import and render <SiteHeaderAnimation /> in App.vue, and
+	restore the --site-header-height offsets pages subtract for it. Kept here on
+	purpose — do not delete.
+-->
 <template>
 	<header class="site-header-animation">
 		<img

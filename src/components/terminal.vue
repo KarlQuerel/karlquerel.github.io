@@ -292,6 +292,16 @@
 		justify-content: center;
 		align-items: center;
 		box-sizing: border-box;
+		// Every page now carries the fixed star toggle over its top-centre; unlike
+		// the other pages the terminal window fills the viewport, so reserve a
+		// little headroom here or the toggle sits on the window's title bar.
+		padding-top: 1.6rem;
+	}
+
+	@media (max-width: #{$breakpoint-mobile}) {
+		.terminal-container {
+			padding-top: 2.6rem;
+		}
 	}
 
 	.terminal-window {

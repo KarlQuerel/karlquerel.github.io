@@ -1,8 +1,7 @@
 <template>
 	<nav
 		id="site-navbar"
-		class="site-chrome-bar"
-		:class="floating ? 'site-chrome-bar--floating' : 'site-chrome-bar--sticky-top'"
+		class="site-chrome-bar site-chrome-bar--floating"
 		aria-label="Main navigation"
 	>
 		<div class="site-chrome-links">
@@ -33,9 +32,7 @@
 	import { NAVBAR_LINKS } from '@/constants/navigation'
 	import { useAmbientAudio } from '../composables/useAmbientAudio'
 
-	// The homepage summons the bar as a fixed overlay (no reflow of the hero);
-	// every other page keeps it sticky in normal flow.
-	defineProps({ floating: { type: Boolean, default: false } })
-
+	// Summoned by <NavToggle> on every page as a fixed overlay (no reflow of the
+	// content behind it), so it always renders in its floating form.
 	const { enabled, toggle } = useAmbientAudio()
 </script>

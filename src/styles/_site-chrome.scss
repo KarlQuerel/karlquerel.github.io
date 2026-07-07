@@ -20,31 +20,26 @@
 	// glow rather than a scrim behind the bar.
 }
 
-.site-chrome-bar--sticky-top {
-	position: sticky;
-	top: 0;
-	z-index: 40;
-}
-
-// The summoned homepage nav is fixed, not sticky: it overlays the top of the
-// hero instead of joining the flow, so revealing it never reflows the tall
-// scroll track behind it (which is what made the toggle lag).
+// The summoned nav is fixed: it overlays the top of the page instead of joining
+// the flow, so revealing it never reflows the content behind it (which is what
+// made the toggle lag).
 .site-chrome-bar--floating {
 	position: fixed;
 	top: 0;
 	left: 0;
 	right: 0;
 	z-index: 40;
-	// Drop the links below the centred toggle that sits above them, so the ✕ and
-	// the summoned links stack cleanly down the middle instead of overlapping.
+	// Drop the links well below the centred toggle that sits above them, so the ✕
+	// and the summoned links stack cleanly down the middle with clear air between
+	// the toggle and the bar.
 	align-items: flex-start;
-	padding-top: 2.9rem;
+	padding-top: 4.4rem;
 	will-change: transform;
 }
 
 @media (max-width: #{variables.$breakpoint-mobile}) {
 	.site-chrome-bar--floating {
-		padding-top: 2.4rem;
+		padding-top: 3.8rem;
 	}
 }
 
