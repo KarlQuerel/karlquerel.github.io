@@ -19,7 +19,6 @@
 				:aria-pressed="enabled"
 				:aria-label="enabled ? 'Mute ambient music' : 'Play ambient music'"
 				:title="enabled ? 'Mute ambient music' : 'Play ambient music'"
-				data-no-spark
 				@click="toggle"
 			>
 				<span aria-hidden="true">♪</span>

@@ -40,15 +40,12 @@
 	import SpaceBackground from './components/SpaceBackground.vue'
 	import SiteNavbar from './components/SiteNavbar.vue'
 	import NavToggle from './components/NavToggle.vue'
-	import { useClickSpark } from './composables/useClickSpark'
 	import { useAmbientAudio } from './composables/useAmbientAudio'
 
 	const SCROLLABLE_PATHS = ['/', '/sport', '/about']
 
 	// Component names (see defineOptions) kept mounted across navigation.
 	const KEPT_ALIVE_VIEWS = ['HeroIntro']
-
-	useClickSpark()
 
 	const { init: initAmbientAudio } = useAmbientAudio()
 	initAmbientAudio()

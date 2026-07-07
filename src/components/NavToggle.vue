@@ -8,7 +8,6 @@
 		class="nav-toggle"
 		:class="{ 'is-open': open }"
 		type="button"
-		data-no-spark
 		:aria-expanded="open"
 		aria-controls="site-navbar"
 		:aria-label="open ? 'Hide navigation' : 'Show navigation'"
