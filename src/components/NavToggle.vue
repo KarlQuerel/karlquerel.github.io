@@ -1,8 +1,9 @@
 <template>
 	<!-- Homepage-only control: the persistent navbar is stripped on the landing
-	     (see App.vue) and this button reveals it on demand. A pixel arrow (the
-	     same motif as the hero's scroll cue) points down to summon the bar and
-	     flips up to hide it. -->
+	     (see App.vue) and this button reveals it on demand. A pixel star — one of
+	     the backdrop's own stars pulled forward — summons the bar; on open it
+	     flares 45° into a brighter, held star and throws a one-shot supernova ring,
+	     the flip doubling as a subtle "close" cue. -->
 	<button
 		class="nav-toggle"
 		:class="{ 'is-open': open }"
@@ -13,7 +14,7 @@
 		:aria-label="open ? 'Hide navigation' : 'Show navigation'"
 		@click="$emit('toggle')"
 	>
-		<span class="nav-toggle__arrow" aria-hidden="true" />
+		<span class="nav-toggle__star" aria-hidden="true" />
 	</button>
 </template>
 
@@ -23,7 +24,7 @@
 </script>
 
 <style scoped lang="scss">
-	// Centred at the top in both states — the arrow flips in place rather than
+	// Centred at the top in both states — the star flares in place rather than
 	// jumping to a corner. The revealed nav links drop in just below it (see
 	// .site-chrome-bar--floating) so they never collide.
 	.nav-toggle {
@@ -40,8 +41,15 @@
 		padding: 0;
 		background: none;
 		border: 0;
+		// Square off — and strip the frame from — the shared void-button base that
+		// every bare <button> inherits; this control is just the bare star.
+		border-radius: 0;
+		box-shadow: none;
 		cursor: pointer;
-		color: rgba(255, 255, 255, 0.6);
+		// Bright and faintly self-lit so it reads as an interactive star against
+		// the dark starfield instead of dissolving into it.
+		color: rgba(255, 255, 255, 0.92);
+		filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.35));
 		transition:
 			color 0.25s steps(3, end),
 			filter 0.25s steps(3, end);
@@ -50,50 +58,98 @@
 	.nav-toggle:hover,
 	.nav-toggle:focus-visible {
 		color: $yellow;
-		filter: drop-shadow(0 0 8px rgba($yellow, 0.6));
+		filter: drop-shadow(0 0 9px rgba($yellow, 0.7));
 	}
 
+	// No focus box in any state — keyboard focus is shown by the star lighting up
+	// (the yellow glow above) instead of a frame. `:focus` (not just
+	// `:focus-visible`) is targeted on purpose: a mouse click fires `:focus`
+	// without `:focus-visible`, and NES.css's global `button:focus` paints a
+	// rounded `-webkit-focus-ring-color` outline that would otherwise show.
+	.nav-toggle:focus,
 	.nav-toggle:focus-visible {
-		outline: 2px solid rgba(255, 255, 255, 0.75);
-		outline-offset: 3px;
+		outline: none;
 	}
 
-	// A downward pixel triangle (5-3-1 rows) built from box-shadow copies of this
-	// base pixel — the base sits at the triangle's centre so a 180° flip keeps it
-	// put and just points it up. `rotate`/`translate` are separate properties so
-	// the flip and the idle bob compose instead of fighting.
-	$p: 4px;
-	.nav-toggle__arrow {
+	// A 4-point pixel star: this base pixel is the core; the box-shadow copies are
+	// its four arms (single-pixel tips that widen to a 3-pixel band near the core)
+	// plus four diagonal shoulders. That concave "pinched" silhouette — narrow
+	// tips, wider middle — is what reads as a star instead of a plus. Colour is
+	// `currentColor`, so the whole star tints with the button on hover / open.
+	$p: 3px;
+	.nav-toggle__star {
+		position: relative;
 		width: $p;
 		height: $p;
 		background: currentColor;
 		box-shadow:
-			#{$p * -2} #{$p * -1},
-			#{$p * -1} #{$p * -1},
+			0 #{$p * -4},
+			0 #{$p * -3},
+			0 #{$p * -2},
 			0 #{$p * -1},
-			#{$p} #{$p * -1},
-			#{$p * 2} #{$p * -1},
+			0 #{$p * 1},
+			0 #{$p * 2},
+			0 #{$p * 3},
+			0 #{$p * 4},
+			#{$p * -4} 0,
+			#{$p * -3} 0,
+			#{$p * -2} 0,
 			#{$p * -1} 0,
-			#{$p} 0,
-			0 #{$p};
+			#{$p * 1} 0,
+			#{$p * 2} 0,
+			#{$p * 3} 0,
+			#{$p * 4} 0,
+			#{$p * -1} #{$p * -1},
+			#{$p * 1} #{$p * -1},
+			#{$p * -1} #{$p * 1},
+			#{$p * 1} #{$p * 1};
 		rotate: 0deg;
-		transition: rotate 0.25s steps(3, end);
-		animation: arrowBob 1.9s steps(3, end) infinite;
+		transition:
+			rotate 0.3s steps(3, end),
+			scale 0.3s steps(3, end);
 	}
 
-	// Flip to point up; the bob stops so the ✕-equivalent reads as settled.
-	.nav-toggle.is-open .nav-toggle__arrow {
-		rotate: 180deg;
-		animation: none;
+	// The supernova shockwave: a ring that bursts out of the core. The rule (and so
+	// the animation) exists only under .is-open, so it replays on every open and
+	// never fires on close or first paint.
+	.nav-toggle__star::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 8px;
+		height: 8px;
+		margin: -4px 0 0 -4px;
+		border: 2px solid currentColor;
+		border-radius: 50%;
+		opacity: 0;
+		pointer-events: none;
 	}
 
-	@keyframes arrowBob {
-		0%,
-		100% {
-			translate: 0 0;
+	// Flare open: rotate the star 45° into an ✕, brighten, and hold — the ✕ reads
+	// as a settled "close" cue.
+	.nav-toggle.is-open {
+		color: $yellow;
+		filter: drop-shadow(0 0 7px rgba($yellow, 0.7));
+	}
+
+	.nav-toggle.is-open .nav-toggle__star {
+		rotate: 45deg;
+		scale: 1.2;
+	}
+
+	.nav-toggle.is-open .nav-toggle__star::after {
+		animation: supernova 0.5s steps(4, end) 1;
+	}
+
+	@keyframes supernova {
+		from {
+			opacity: 0.9;
+			transform: scale(0.3);
 		}
-		50% {
-			translate: 0 2px;
+		to {
+			opacity: 0;
+			transform: scale(5);
 		}
 	}
 
@@ -103,8 +159,12 @@
 		}
 	}
 
+	// Kill the idle twinkle, the flip transition and the burst for anyone who asks
+	// for less motion; the static open/closed star states still read clearly.
 	@media (prefers-reduced-motion: reduce) {
-		.nav-toggle__arrow {
+		.nav-toggle__star,
+		.nav-toggle.is-open .nav-toggle__star,
+		.nav-toggle.is-open .nav-toggle__star::after {
 			animation: none;
 			transition: none;
 		}
