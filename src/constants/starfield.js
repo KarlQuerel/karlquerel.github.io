@@ -22,9 +22,15 @@ export const STAR_COLORS = [
 //   duration  seconds for one full drift loop — nearer reads faster
 //   depth     pixels the layer shifts under mouse parallax — nearer moves more
 //   dir       [x, y] drift direction signs, alternated for a livelier sky
+//
+// Three planes rather than four: every plane is a full-screen layer the
+// compositor re-composites each frame as it drifts, and that per-frame cost was
+// the homepage's remaining lag. The dropped plane's stars are redistributed
+// across the survivors, so total density is unchanged (~118) — just one fewer
+// animated layer.
 export const STAR_LAYERS = [
 	{
-		count: 40,
+		count: 52,
 		size: 1,
 		alpha: [0.2, 0.45],
 		tile: [680, 860],
@@ -33,31 +39,22 @@ export const STAR_LAYERS = [
 		dir: [-1, -1],
 	},
 	{
-		count: 32,
-		size: 1.5,
-		alpha: [0.35, 0.6],
-		tile: [620, 820],
-		duration: 720,
-		depth: 9,
-		dir: [1, -1],
-	},
-	{
-		count: 26,
+		count: 36,
 		size: 2,
 		alpha: [0.5, 0.78],
 		tile: [680, 620],
 		duration: 520,
 		depth: 16,
-		dir: [-1, -1],
+		dir: [1, -1],
 	},
 	{
-		count: 20,
+		count: 30,
 		size: 2.5,
 		alpha: [0.68, 0.95],
 		tile: [560, 720],
 		duration: 350,
 		depth: 26,
-		dir: [1, -1],
+		dir: [-1, -1],
 	},
 ]
 
