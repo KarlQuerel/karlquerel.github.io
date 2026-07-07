@@ -48,5 +48,7 @@ export function useScrollSections(wrapperRef) {
 		if (resizeObserver) resizeObserver.disconnect()
 	})
 
-	return { progress }
+	// `sync` is exposed so a kept-alive consumer can force a re-measure on
+	// re-activation (its scroll listener may have gone stale while cached).
+	return { progress, sync }
 }

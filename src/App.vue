@@ -21,7 +21,14 @@
 			<SiteNavbar v-if="navOpen" />
 		</transition>
 		<main class="app-main">
-			<router-view />
+			<!-- Keep only the heavy landing (HeroIntro) alive across navigation so its
+			     canvas + procedural planet build once and are reused, instead of
+			     re-initialising every time it's revisited. -->
+			<router-view v-slot="{ Component }">
+				<keep-alive :include="KEPT_ALIVE_VIEWS">
+					<component :is="Component" />
+				</keep-alive>
+			</router-view>
 		</main>
 		<NavToggle :open="navOpen" @toggle="navOpen = !navOpen" />
 	</div>
@@ -37,6 +44,9 @@
 	import { useAmbientAudio } from './composables/useAmbientAudio'
 
 	const SCROLLABLE_PATHS = ['/', '/sport', '/about']
+
+	// Component names (see defineOptions) kept mounted across navigation.
+	const KEPT_ALIVE_VIEWS = ['HeroIntro']
 
 	useClickSpark()
 

@@ -52,11 +52,16 @@
 </template>
 
 <script setup>
-	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+	import { computed, onActivated, onBeforeUnmount, onMounted, ref } from 'vue'
 	import { HERO_CRAWL } from '../data/heroLines.js'
 	import { useScrollSections } from '../composables/useScrollSections.js'
 	import HyperspaceWarp from './HyperspaceWarp.vue'
 	import PixelPlanet from './PixelPlanet.vue'
+
+	// Named so <KeepAlive :include="['HeroIntro']"> in App.vue can keep this heavy
+	// component mounted across navigation — its canvas/planet build once and are
+	// reused instead of re-initialising every time the landing is revisited.
+	defineOptions({ name: 'HeroIntro' })
 
 	// Scroll progress at which the scroll hint has fully faded out — it dissolves
 	// in step with the crawl rather than popping away.
@@ -80,7 +85,7 @@
 
 	const trackRef = ref(null)
 	const deckRef = ref(null)
-	const { progress } = useScrollSections(trackRef)
+	const { progress, sync } = useScrollSections(trackRef)
 
 	// Deck height as a fraction of the viewport, measured live (re-wraps on
 	// resize). Defaults to a sane value for the first paint before measurement.
@@ -155,6 +160,15 @@
 			resizeObserver.observe(deckRef.value)
 		}
 	})
+	// Re-revealed from the KeepAlive cache: jump back to the top of the crawl and
+	// re-measure. The scroll position and measured progress can be stale after the
+	// hero has been detached, so re-sync them before it paints.
+	onActivated(() => {
+		window.scrollTo(0, 0)
+		measureDeck()
+		sync()
+	})
+
 	onBeforeUnmount(() => {
 		window.removeEventListener('resize', measureDeck)
 		if (resizeObserver) resizeObserver.disconnect()
