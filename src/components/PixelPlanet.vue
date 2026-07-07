@@ -20,6 +20,10 @@
 	const planetStyle = computed(() => ({
 		opacity: Math.min(1, props.reveal * 4),
 		transform: `translate(-50%, calc(-50% + ${props.reveal * 6}vh)) scale(${0.05 + 0.95 * props.reveal})`,
+		// Hidden until arrival: drop the promoted canvas layer out of the compositor
+		// while it's the invisible vanishing-point dot instead of compositing it
+		// every frame throughout the crawl.
+		display: props.reveal > 0 ? null : 'none',
 	}))
 
 	// --- procedural surface helpers -------------------------------------------

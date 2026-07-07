@@ -330,14 +330,18 @@
 		background: radial-gradient(circle at 50% 50%, $white 0%, $white 45%, $light-blue 115%);
 	}
 
-	// CRT overlay: scanlines (matching the terminal window) + a soft tube vignette
-	// under a faint stepped flicker. Sits above everything, never intercepts input.
+	// CRT overlay: scanlines (matching the terminal window) + a soft tube vignette.
+	// Static now — the old opacity flicker was a barely-visible loop that only
+	// added a running animation. `translateZ` keeps the overlay on its own layer so
+	// the fine full-screen scanline gradient rasterises ONCE and is then composited
+	// cheaply, instead of re-painting whenever the flash/crawl below it change.
+	// Sits above everything, never intercepts input.
 	.hero-crt {
 		position: absolute;
 		inset: 0;
 		z-index: 3;
 		pointer-events: none;
-		animation: heroCrtFlicker 3.2s steps(8, end) infinite;
+		transform: translateZ(0);
 	}
 
 	.hero-crt::before {
@@ -360,16 +364,6 @@
 		background: radial-gradient(ellipse at center, transparent 55%, rgba($black, 0.45) 100%);
 	}
 
-	@keyframes heroCrtFlicker {
-		0%,
-		100% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0.92;
-		}
-	}
-
 	@media (max-width: $breakpoint-mobile) {
 		.hero-pin {
 			gap: 1.8rem;
@@ -381,8 +375,7 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.hero-hint__arrow,
-		.hero-crt {
+		.hero-hint__arrow {
 			animation: none;
 		}
 

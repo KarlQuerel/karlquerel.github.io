@@ -2,16 +2,11 @@
 	<!-- Scroll-driven lightspeed jump: a starfield warp whose speed, tail length
 	     and opacity all scale with `intensity` (0 → off, 1 → full lightspeed).
 	     Purely decorative. -->
-	<canvas
-		ref="canvasEl"
-		class="hyperspace"
-		:style="{ opacity: props.intensity }"
-		aria-hidden="true"
-	/>
+	<canvas ref="canvasEl" class="hyperspace" :style="canvasStyle" aria-hidden="true" />
 </template>
 
 <script setup>
-	import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+	import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { HYPERSPACE } from '@/constants/hyperspace'
 
@@ -19,6 +14,14 @@
 		// 0 → off, 1 → full lightspeed. Drives speed, tail length and opacity.
 		intensity: { type: Number, default: 0 },
 	})
+
+	// While the jump is disengaged (top of the page / during the crawl) the canvas
+	// is display:none — it drops out of the compositor entirely instead of sitting
+	// as an invisible full-screen layer that still composites every frame.
+	const canvasStyle = computed(() => ({
+		opacity: props.intensity,
+		display: props.intensity > 0 ? null : 'none',
+	}))
 
 	const lerp = (a, b, t) => a + (b - a) * t
 	const rand = (min, max) => min + Math.random() * (max - min)
@@ -98,9 +101,13 @@
 
 	// Run the loop only while the jump is engaged and motion is allowed.
 	function ensureRunning() {
-		if (!rafId && props.intensity > 0 && ctx && !prefersReducedMotion()) {
+		if (rafId || props.intensity <= 0 || !ctx || prefersReducedMotion()) return
+		// The canvas was display:none until now, so its measured size is stale;
+		// remeasure on the next frame (once it's laid out) before drawing.
+		rafId = requestAnimationFrame(() => {
+			resize()
 			rafId = requestAnimationFrame(frame)
-		}
+		})
 	}
 
 	watch(() => props.intensity, ensureRunning)
