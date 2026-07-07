@@ -9,9 +9,14 @@
 
 			<!-- Scroll-driven perspective crawl. --crawl-progress (0 -> 1) drives the
 			     deck's vertical travel and recession toward the vanishing point. -->
-			<div class="hero-crawl" :style="crawlStyle" aria-hidden="true">
+			<div
+				class="hero-crawl"
+				:class="{ 'hero-crawl--flat': !crawlActive }"
+				:style="crawlStyle"
+				aria-hidden="true"
+			>
 				<div class="hero-crawl__plane">
-					<div ref="deckRef" class="hero-crawl__deck">
+					<div ref="deckRef" class="hero-crawl__deck" :style="deckStyle">
 						<p class="hero-crawl__episode">{{ HERO_CRAWL.episode }}</p>
 						<h1 class="hero-crawl__title">{{ HERO_CRAWL.title }}</h1>
 						<p
@@ -106,6 +111,17 @@
 	}))
 	const hintStyle = computed(() => ({
 		'--hint-opacity': Math.max(0, 1 - progress.value / HINT_FADE_END),
+	}))
+
+	// The crawl only matters while it's moving. At the top it sits a screen-and-a-
+	// half below the fold, yet its 3D perspective/tilt plane and the deck's
+	// `will-change` keep it promoted to composited layers that the homepage
+	// re-composites every idle frame (its biggest render cost after the starfield).
+	// So at rest we flatten it and drop the promotion; both return the instant the
+	// visitor scrolls, long before the deck reaches the fold.
+	const crawlActive = computed(() => progress.value > 0)
+	const deckStyle = computed(() => ({
+		willChange: crawlActive.value ? 'transform' : 'auto',
 	}))
 
 	const clamp01 = v => Math.min(1, Math.max(0, v))
@@ -203,6 +219,17 @@
 		transform-origin: 50% 100%;
 	}
 
+	// Idle (unscrolled) state: the crawl is off-screen below the fold, so flatten
+	// it and drop the 3D layer the compositor would otherwise re-process every
+	// frame. `crawlActive` restores the tilt the instant the visitor scrolls.
+	.hero-crawl--flat {
+		perspective: none;
+	}
+
+	.hero-crawl--flat .hero-crawl__plane {
+		transform: none;
+	}
+
 	.hero-crawl__deck {
 		position: absolute;
 		left: 50%;
@@ -217,9 +244,9 @@
 						var(--crawl-travel, 250vh)
 				)
 			);
-		// Keep the deck on its own GPU layer so scroll-driven travel only
-		// recomposites instead of re-rasterizing the text every frame.
-		will-change: transform;
+		// Promotion to its own GPU layer (so scroll-driven travel recomposites
+		// instead of re-rasterizing the text) is applied dynamically via `deckStyle`
+		// only while the crawl moves — never while it idles off-screen at the top.
 		color: $yellow;
 		text-align: justify;
 		text-transform: uppercase;
