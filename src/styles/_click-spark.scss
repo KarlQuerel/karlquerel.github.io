@@ -4,16 +4,16 @@
 // eduardbodak.com. JS (useClickSpark.js) drops one `.spark` bar per fan angle
 // onto <body>; everything below is the look and motion.
 //
-// The bars are drawn in the page background colour with mix-blend-mode:
-// difference, so they invert against whatever is behind them and stay visible
-// over solid colours, text, and imagery alike.
+// The bars are solid white pixel sparks — bright against the dark starfield.
+// (Plain paint, deliberately NOT mix-blend-mode: difference: a blended element
+// forces the full-screen animated backdrop to re-composite for every click,
+// which showed up as click lag. Over a dark sky, white reads the same anyway.)
 
 .spark {
 	position: absolute;
 	width: variables.$spark-width;
 	height: variables.$spark-height;
 	background: variables.$white;
-	mix-blend-mode: difference;
 	pointer-events: none;
 	z-index: variables.$z-index-click;
 	animation: spark-burst variables.$spark-duration ease-out both;

@@ -9,8 +9,9 @@ export const CLICK_SPARK = {
 	ANGLE_STEP_DEG: -45,
 	// Ignore repeat clicks for this long after a burst, so rapid clicks don't spam.
 	COOLDOWN_MS: 120,
-	// Remove the bar from the DOM this long after it is created.
-	LIFETIME_MS: 800,
+	// Remove the bar from the DOM this long after it is created. Kept just past
+	// the 400ms CSS animation ($spark-duration) so nodes don't pile up.
+	LIFETIME_MS: 450,
 	// CSS class carrying the base style + animation.
 	CLASS_NAME: 'spark',
 	// Custom property each bar reads to know its fan angle.

@@ -11,6 +11,7 @@ const playing = ref(false)
 
 let audio = null
 let initialized = false
+let starting = false
 let fadeTimer = null
 let removeGestureListeners = null
 
@@ -50,11 +51,19 @@ function fadeTo(target, done) {
 }
 
 function start() {
-	if (!audio || !enabled.value) return
+	// `starting` collapses the burst of gesture events (a single click fires
+	// pointerdown, and scrolling fires scroll/wheel rapidly) into one in-flight
+	// play() attempt instead of stacking a fresh one per event.
+	if (!audio || !enabled.value || playing.value || starting) return
+	starting = true
 	const promise = audio.play()
-	if (promise === undefined) return
+	if (promise === undefined) {
+		starting = false
+		return
+	}
 	promise
 		.then(() => {
+			starting = false
 			playing.value = true
 			removeGestureListeners?.()
 			fadeTo(AMBIENT_AUDIO.VOLUME)
@@ -62,6 +71,7 @@ function start() {
 		.catch(() => {
 			// Autoplay still blocked (no qualifying gesture yet). Listeners stay
 			// armed so the next interaction retries.
+			starting = false
 			playing.value = false
 		})
 }
@@ -94,6 +104,10 @@ function init() {
 	// Don't fetch the file for visitors who never turn sound on.
 	audio.preload = 'none'
 	audio.volume = 0
+	// A missing or undecodable source will never play, so stop arming retries on
+	// it — otherwise every later gesture (each click, every scroll/wheel tick)
+	// fires another doomed play() and janks the page.
+	audio.addEventListener('error', () => removeGestureListeners?.())
 	enabled.value = readStoredIntent()
 	if (enabled.value) armFirstGesture()
 }

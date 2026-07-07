@@ -59,19 +59,27 @@
 				`radial-gradient(${size}px ${size}px at ${x}px ${y}px, ${color} 99%, transparent 100%)`
 			)
 		}
+		// The layer drifts one whole tile in a single direction, so it only needs
+		// the tile of bleed on its two *trailing* edges — the leading edges never
+		// uncover. Bleeding all four sides (the old approach) doubled the texture
+		// area for nothing; at 2560×1440 that is several megapixels of extra
+		// radial-gradient raster per layer. `pad` covers the small mouse-parallax
+		// translate (±depth). No visible change — just a smaller composited layer.
+		const [dirX, dirY] = layer.dir
+		const pad = layer.depth + 8
 		return {
 			id,
 			style: {
 				backgroundImage: dots.join(','),
 				backgroundSize: `${w}px ${h}px`,
-				// Inset one full tile so the element can translate a whole tile and
-				// still cover the viewport; the background stays seamless across it.
-				'--bleed-x': `${w}px`,
-				'--bleed-y': `${h}px`,
+				'--bleed-top': `${(dirY > 0 ? h : 0) + pad}px`,
+				'--bleed-right': `${(dirX < 0 ? w : 0) + pad}px`,
+				'--bleed-bottom': `${(dirY < 0 ? h : 0) + pad}px`,
+				'--bleed-left': `${(dirX > 0 ? w : 0) + pad}px`,
 				// Drift exactly one tile so the transform loop is seamless; sign sets
 				// direction.
-				'--drift-x': `${layer.dir[0] * w}px`,
-				'--drift-y': `${layer.dir[1] * h}px`,
+				'--drift-x': `${dirX * w}px`,
+				'--drift-y': `${dirY * h}px`,
 				'--dur': `${layer.duration}s`,
 				'--depth': layer.depth,
 			},
@@ -157,7 +165,8 @@
 	// container; `--depth` scales them per layer into a pixel offset.
 	.star-layer {
 		position: absolute;
-		inset: calc(var(--bleed-y) * -1) calc(var(--bleed-x) * -1);
+		inset: calc(var(--bleed-top) * -1) calc(var(--bleed-right) * -1)
+			calc(var(--bleed-bottom) * -1) calc(var(--bleed-left) * -1);
 		background-repeat: repeat;
 		translate: calc(var(--mx, 0) * var(--depth) * 1px) calc(var(--my, 0) * var(--depth) * 1px);
 		animation: starDrift var(--dur) linear infinite;
