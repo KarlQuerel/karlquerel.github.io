@@ -80,8 +80,6 @@
 	function surface(px, py, pz) {
 		const s = PLANET.noiseScale
 		const n = fbm(px * s, py * s, pz * s)
-		const lat = Math.abs(py)
-		if (lat > PLANET.iceLat + (n - 0.5) * 0.12) return PLANET.ice
 		if (n < PLANET.seaLevel - 0.08) return PLANET.ocean
 		if (n < PLANET.seaLevel) return PLANET.oceanShallow
 		if (n < PLANET.seaLevel + 0.12) return PLANET.land
@@ -93,6 +91,10 @@
 	let ctx = null
 	let rafId = 0
 	let lastDraw = -1
+	// Reused across frames: the disc/halo footprint never moves (it depends only
+	// on x/y, not the spin), so every pixel that needs a value is overwritten each
+	// frame and the rest stay transparent — no need to reallocate ~65KB per frame.
+	let imageData = null
 	const res = PLANET.resolution
 	const radius = res * PLANET.discRadius
 	const center = res / 2
@@ -101,9 +103,11 @@
 	const cosT = Math.cos(tilt)
 	const sinT = Math.sin(tilt)
 	const frameMs = 1000 / PLANET.fps
+	const haloReach = 1 + PLANET.haloWidth
 
 	function draw(spin) {
-		const img = ctx.createImageData(res, res)
+		if (!imageData) imageData = ctx.createImageData(res, res)
+		const img = imageData
 		const d = img.data
 		const cosS = Math.cos(spin)
 		const sinS = Math.sin(spin)
@@ -116,15 +120,15 @@
 				const dy = (y + 0.5 - center) / radius
 				const d2 = dx * dx + dy * dy
 
-				// Outside the disc: a cyan atmosphere halo fading into space.
+				// Outside the disc: a thin atmosphere halo fading into space.
 				if (d2 > 1) {
 					const dist = Math.sqrt(d2)
-					if (dist < 1.32) {
-						const t = 1 - (dist - 1) / 0.32
+					if (dist < haloReach) {
+						const t = 1 - (dist - 1) / PLANET.haloWidth
 						d[i] = ar
 						d[i + 1] = ag
 						d[i + 2] = ab
-						d[i + 3] = clampByte(t * t * 150)
+						d[i + 3] = clampByte(t * t * PLANET.haloAlpha)
 					}
 					continue
 				}
@@ -143,7 +147,7 @@
 				const col = surface(sx, ny, sz)
 
 				// Brighten the lit limb for an atmospheric rim glow.
-				const rim = d2 * d2 * diff * 0.7
+				const rim = d2 * d2 * diff * PLANET.rimStrength
 				d[i] = clampByte(col[0] * shade + ar * rim)
 				d[i + 1] = clampByte(col[1] * shade + ag * rim)
 				d[i + 2] = clampByte(col[2] * shade + ab * rim)

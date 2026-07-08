@@ -1,8 +1,9 @@
 // Tunables for the lightspeed-jump warp shown at the end of the hero crawl
 // (HyperspaceWarp.vue).
 export const HYPERSPACE = {
-	// More stars = denser tunnel, but heavier to draw.
-	starCount: 360,
+	// More stars = denser tunnel, but heavier to draw (one stroked streak each,
+	// every frame — the dominant per-frame cost on mobile).
+	starCount: 240,
 	// Backing-store downscale: the canvas renders at 1 / pixelScale resolution and
 	// is upscaled with image-rendering: pixelated, for chunky on-aesthetic streaks.
 	pixelScale: 2,
