@@ -17,8 +17,8 @@
 		     the component still lives at src/components/SiteHeaderAnimation.vue. To
 		     bring the header strip back, re-import it and drop <SiteHeaderAnimation />
 		     in here (and restore the --site-header-height offsets it needs). -->
-		<transition name="nav-slide">
-			<SiteNavbar v-if="navOpen" />
+		<transition name="nav-overlay">
+			<SiteNavbar v-if="navOpen" @close="navOpen = false" />
 		</transition>
 		<main class="app-main">
 			<!-- Keep only the heavy landing (HeroIntro) alive across navigation so its
@@ -54,10 +54,9 @@
 	const normalizedPath = () => route.path.replace(/\/$/, '') || '/'
 	const isPageScrollable = computed(() => SCROLLABLE_PATHS.includes(normalizedPath()))
 
-	// The nav is summoned by <NavToggle>, and its open/closed state persists across
-	// navigation (App.vue never unmounts): open it, click a link, and it stays open
-	// on the next page — now with that page's link highlighted. Not reset on route
-	// change, so the bar you left open follows you around the site.
+	// The nav is summoned by <NavToggle> as a modal overlay; picking a link emits
+	// `close`, so it never lands over the next page. Dismissed on backdrop click /
+	// Escape / the star toggle (see SiteNavbar.vue).
 	const navOpen = ref(false)
 
 	watch(

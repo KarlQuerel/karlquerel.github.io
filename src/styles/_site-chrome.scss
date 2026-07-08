@@ -1,77 +1,88 @@
 @use 'variables';
 
 :root {
-	--site-chrome-bar-height: 3rem;
-	// Height of the dog-animation header strip above the navbar. Shared so
-	// fixed overlays can clear the full top chrome (header + navbar)
-	// without hardcoding it.
+	// Height of the dog-animation header strip (preserved but unmounted; see
+	// SiteHeaderAnimation.vue). Kept here so that component still resolves it if
+	// re-mounted.
 	--site-header-height: clamp(72px, 10vw, 104px);
 }
 
-.site-chrome-bar {
-	width: 100%;
+// Summoned nav = a dismissible full-screen overlay. A dim, lightly blurred
+// backdrop covers the immersive page (which reserves no headroom for a top
+// strip), so the centred menu never collides with page content on any route or
+// width. Sits below the star toggle (z 50) so the lit -> flared star stays
+// above the dim and keeps working as the close control.
+.site-nav-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 40;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0.4rem 1rem 0.35rem;
-	min-height: var(--site-chrome-bar-height);
-	// No background: the links float directly over the shared starfield with
-	// nothing boxing them in. Legibility comes from each label's own text-shadow
-	// glow rather than a scrim behind the bar.
+	// Clear the top star, and scroll instead of clipping if the menu ever
+	// outgrows a short viewport.
+	padding: 5rem 1.5rem 2.5rem;
+	overflow-y: auto;
+	// Vignette, not a flat scrim: dim hard behind the centred menu for legibility,
+	// but fade to near-transparent at the edges so the starfield still reads
+	// around the menu (the site's whole backdrop shouldn't vanish when it opens).
+	background: radial-gradient(
+		135% 100% at 50% 42%,
+		rgba(3, 5, 16, 0.86) 0%,
+		rgba(3, 5, 16, 0.72) 48%,
+		rgba(3, 5, 16, 0.28) 100%
+	);
+	backdrop-filter: blur(2px);
+	-webkit-backdrop-filter: blur(2px);
 }
 
-// The summoned nav is fixed: it overlays the top of the page instead of joining
-// the flow, so revealing it never reflows the content behind it (which is what
-// made the toggle lag).
-.site-chrome-bar--floating {
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	z-index: 40;
-	// Drop the links well below the centred toggle that sits above them, so the ✕
-	// and the summoned links stack cleanly down the middle with clear air between
-	// the toggle and the bar.
-	align-items: flex-start;
-	padding-top: 4.4rem;
-	will-change: transform;
+.site-nav-overlay__panel {
+	display: flex;
+	justify-content: center;
+	// Shrink to the links so the whole surrounding dim stays a valid
+	// click-to-dismiss target, not just the strip beyond a full-width panel.
+	width: auto;
+	max-width: 32rem;
 }
 
-@media (max-width: #{variables.$breakpoint-mobile}) {
-	.site-chrome-bar--floating {
-		padding-top: 3.8rem;
-	}
+// Fade the dim backdrop; the menu drifts down into place behind that fade.
+.nav-overlay-enter-active,
+.nav-overlay-leave-active {
+	transition: opacity 0.2s ease;
+	will-change: opacity;
 }
 
-// Reveal it with a transform-only slide (GPU-composited, no opacity blend over
-// the gradient starfield) so the toggle stays smooth.
-.nav-slide-enter-active,
-.nav-slide-leave-active {
-	transition: transform 0.2s ease-out;
-	will-change: transform;
+.nav-overlay-enter-from,
+.nav-overlay-leave-to {
+	opacity: 0;
 }
 
-.nav-slide-enter-from,
-.nav-slide-leave-to {
-	transform: translateY(-100%);
+.nav-overlay-enter-active .site-nav-overlay__panel,
+.nav-overlay-leave-active .site-nav-overlay__panel {
+	transition: transform 0.25s ease-out;
+}
+
+.nav-overlay-enter-from .site-nav-overlay__panel,
+.nav-overlay-leave-to .site-nav-overlay__panel {
+	transform: translateY(-14px) scale(0.98);
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.nav-slide-enter-active,
-	.nav-slide-leave-active {
+	.nav-overlay-enter-active,
+	.nav-overlay-leave-active,
+	.nav-overlay-enter-active .site-nav-overlay__panel,
+	.nav-overlay-leave-active .site-nav-overlay__panel {
 		transition: none;
 	}
 }
 
 .site-chrome-links {
 	display: flex;
-	// Wrap whole links onto a second row on narrow screens rather than force a horizontal scroll.
-	flex-wrap: wrap;
-	width: 100%;
-	justify-content: center;
+	// Stacked, centred menu — the overlay owns the whole screen, so the links read
+	// as a deliberate menu rather than a cramped top strip.
+	flex-direction: column;
 	align-items: center;
-	column-gap: clamp(0.8rem, 2vw, 1.5rem);
-	row-gap: 0.35rem;
+	row-gap: clamp(1rem, 4.5vh, 2.25rem);
 	position: relative;
 	z-index: 3;
 }
@@ -84,12 +95,12 @@
 	// mid-word.
 	white-space: nowrap;
 	color: rgba(255, 255, 255, 0.88);
-	font-size: clamp(0.52rem, 1.15vw, 0.64rem);
+	font-size: clamp(0.95rem, 3.2vw, 1.5rem);
 	line-height: 1.2;
-	letter-spacing: 0.06em;
+	letter-spacing: 0.12em;
 	text-transform: uppercase;
 	text-decoration: none;
-	padding: 0.35rem 0.2rem;
+	padding: 0.5rem 1rem;
 	// Stepped (8-bit) transitions so the hover lift + glow snap rather than ease smoothly.
 	transition:
 		color 0.2s steps(4, end),
@@ -130,9 +141,10 @@
 	cursor: pointer;
 	color: rgba(255, 255, 255, 0.88);
 	font-family: inherit;
-	font-size: clamp(0.7rem, 1.4vw, 0.85rem);
+	font-size: clamp(1.3rem, 4.5vw, 2rem);
 	line-height: 1;
 	padding: 0.35rem 0.2rem;
+	margin-top: clamp(0.25rem, 1.5vh, 0.75rem);
 	text-shadow: 0 0 8px rgba(variables.$yellow, 0.35);
 	transition:
 		color 0.2s steps(4, end),
@@ -218,12 +230,11 @@
 		--site-header-height: clamp(58px, 18vw, 84px);
 	}
 
-	.site-chrome-links {
-		padding: 0.35rem 0.75rem;
+	.site-nav-overlay {
+		padding: 4.5rem 1.25rem 2rem;
 	}
 
 	.site-chrome-link {
-		font-size: clamp(0.5rem, 2.4vw, 0.58rem);
-		padding: 0.3rem 0.12rem;
+		font-size: clamp(1rem, 6vw, 1.35rem);
 	}
 }
