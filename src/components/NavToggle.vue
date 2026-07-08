@@ -1,9 +1,9 @@
 <template>
-	<!-- Homepage-only control: the persistent navbar is stripped on the landing
-	     (see App.vue) and this button reveals it on demand. A pixel star — one of
-	     the backdrop's own stars pulled forward — summons the bar; on open it
-	     flares 45° into a brighter, held star and throws a one-shot supernova ring,
-	     the flip doubling as a subtle "close" cue. -->
+	<!-- The only persistent chrome: a pixel star — one of the backdrop's own stars
+	     pulled forward — that summons the nav overlay (see SiteNavbar.vue). On open
+	     it flares 45° into a brighter, held star and throws a one-shot supernova
+	     ring; the flip doubles as the overlay's "close" (✕) cue. Stays above the
+	     dim backdrop (z 50 > 40) so it keeps working while the menu is open. -->
 	<button
 		class="nav-toggle"
 		:class="{ 'is-open': open }"
