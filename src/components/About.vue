@@ -85,22 +85,31 @@
 		padding: 3.6rem 1rem 4rem;
 	}
 
-	// The greeting sits in the same "window onto the void" frame as the buttons —
-	// a hairline edge and a translucent fill just dark enough to stay legible.
+	// No framed panel: instead of a hairline box, the greeting sits in a soft pool
+	// of void — a radial darkening that fades into the starfield at the edges — so
+	// there is no border, yet the copy still has enough backing to stay legible.
 	.about-head {
 		max-width: min(46rem, 94vw);
 		margin: 0 auto;
-		padding: 1.5rem 1.5rem 1.75rem;
-		@include void-panel(rgba(0, 0, 0, 0.55));
+		padding: 1.75rem 1.5rem 2rem;
+		background: radial-gradient(
+			120% 130% at 50% 50%,
+			rgba(0, 0, 0, 0.72) 0%,
+			rgba(0, 0, 0, 0.45) 55%,
+			rgba(0, 0, 0, 0) 100%
+		);
 	}
 
 	.about-intro {
 		max-width: 42ch;
 		margin: 0.5rem auto 0;
-		font-size: clamp(0.85rem, 2vw, 1rem);
-		line-height: 1.65;
+		font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+		line-height: 1.75;
 		text-align: center;
-		color: rgba(255, 255, 255, 0.9);
+		color: $white;
+		// The framed backing is gone, so lean on a soft shadow to lift the copy
+		// clear of the drifting stars behind it.
+		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
 	}
 
 	.about-intro:first-child {
@@ -134,9 +143,10 @@
 		padding: 0.5rem;
 	}
 
-	// A window onto the void: shared void-button chrome (hairline frame, warm
-	// yellow bloom + weightless lift on hover) over a centre that darkens for
-	// legibility then fades to nothing at the edges, letting the stars through.
+	// A window onto the void: shared void-button chrome (warm yellow bloom +
+	// weightless lift on hover) over a centre that darkens for legibility then
+	// fades to nothing at the edges, letting the stars through. The frame itself
+	// stays hidden until you reach for a portal — see below.
 	.portal {
 		display: flex;
 		flex-direction: column;
@@ -151,6 +161,14 @@
 					rgba(0, 0, 0, 0) 100%
 				)
 		);
+	}
+
+	// No border at rest: the hairline frame only materialises on hover / keyboard
+	// focus (where void-button flares it warm yellow), so the portals read as open
+	// void until you reach for one. Kept as 1px transparent so the reveal adds no
+	// layout shift.
+	.portal:not(:hover):not(:focus-visible) {
+		border-color: transparent;
 	}
 
 	.portal .nes-icon {
