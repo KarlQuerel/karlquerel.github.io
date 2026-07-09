@@ -5,6 +5,7 @@
 export const HERO_CRAWL = {
 	episode: 'EPISODE I',
 	title: 'UNDER CONSTRUCTION',
+	name: 'Karl Querel',
 	scrollHint: 'Scroll to begin',
 	paragraphs: ['This website is still under construction — but feel free to explore.'],
 }

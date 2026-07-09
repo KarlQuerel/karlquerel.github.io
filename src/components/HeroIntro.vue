@@ -38,6 +38,7 @@
 
 			<!-- Nudge to start scrolling; fades out in step with the crawl. -->
 			<div class="hero-hint" :style="hintStyle" aria-hidden="true">
+				<span class="hero-hint__name">{{ HERO_CRAWL.name }}</span>
 				<span class="hero-hint__label">{{ HERO_CRAWL.scrollHint }}</span>
 				<span class="hero-hint__arrow" />
 			</div>
@@ -319,6 +320,19 @@
 		// begins to move; purely decorative, so it never intercepts input.
 		opacity: var(--hint-opacity, 1);
 		pointer-events: none;
+	}
+
+	.hero-hint__name {
+		font-family: $font-pixel;
+		font-size: clamp(1.9rem, 7.5vw, 4rem);
+		line-height: 1.3;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		text-align: center;
+		color: $white;
+		text-shadow:
+			0 2px 12px rgba(0, 0, 0, 0.85),
+			0 0 28px rgba($yellow, 0.3);
 	}
 
 	.hero-hint__label {
