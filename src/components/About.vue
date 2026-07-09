@@ -15,8 +15,7 @@
 				@click="selectTab(tab.id)"
 			>
 				<span class="portal__icon">
-					<img v-if="tab.image" :src="tab.image" alt="" class="portal__img" />
-					<PixelIcon v-else :name="tab.icon" />
+					<img :src="tab.image" alt="" class="portal__img" />
 				</span>
 				<span class="portal__label">{{ tab.label }}</span>
 			</button>
@@ -49,14 +48,10 @@
 	import { ABOUT_INTRO } from '@/data/about'
 	import AboutWork from './AboutWork.vue'
 	import AboutLife from './AboutLife.vue'
-	import PixelIcon from './PixelIcon.vue'
 
-	// The active path lives in the URL (?tab=work | ?tab=life) so it is shareable
-	// and survives refresh / back-button. No tab param → the neutral landing hub.
-	// `icon` names resolve to pixel-art glyphs (constants/pixelIcons.js); `image`
-	// is a static asset path rendered as an <img> instead.
+	// Tab state lives in the URL (?tab=work|life) so it survives refresh and is shareable.
 	const TABS = [
-		{ id: 'work', label: 'WORK', icon: 'briefcase', component: AboutWork },
+		{ id: 'work', label: 'WORK', image: '/assets/about/briefcase.png', component: AboutWork },
 		{
 			id: 'life',
 			label: 'LIFE',
@@ -85,22 +80,14 @@
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
-	// Much rounder corners than the default 3px void chrome.
 	$portal-radius: 4rem;
 
-	// Backdrop (the drifting starfield) is the shared <SpaceBackground> layer.
-	// Every page is immersive now — no in-flow header or navbar to subtract — so
-	// fill the whole viewport and let .content's justify-content:center centre the
-	// panels; taller tabs (WORK / LIFE) overflow this floor and scroll.
 	.about {
 		min-height: 100dvh;
 		gap: 2rem;
 		padding: 3.6rem 1rem 4rem;
 	}
 
-	// No framed panel: instead of a hairline box, the greeting sits in a soft pool
-	// of void — a radial darkening that fades into the starfield at the edges — so
-	// there is no border, yet the copy still has enough backing to stay legible.
 	.about-head {
 		max-width: min(46rem, 94vw);
 		margin: 0 auto;
@@ -120,8 +107,6 @@
 		line-height: 1.75;
 		text-align: center;
 		color: $white;
-		// The framed backing is gone, so lean on a soft shadow to lift the copy
-		// clear of the drifting stars behind it.
 		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
 	}
 
@@ -129,8 +114,6 @@
 		margin-top: 0;
 	}
 
-	// Re-mounts on every path change (keyed) so the stepped 8-bit fade replays
-	// as the copy swaps hub → WORK → LIFE.
 	.about-lead {
 		color: $white;
 		animation: intro-swap 0.35s steps(4, end) both;
@@ -145,8 +128,6 @@
 		}
 	}
 
-	// Wide gutters between the portals so the starfield reads as open void
-	// rather than a packed grid — the emptiness is doing the work.
 	.about-hub {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -156,10 +137,6 @@
 		padding: 0.5rem;
 	}
 
-	// A window onto the void: shared void-button chrome (warm yellow bloom +
-	// weightless lift on hover) over a centre that darkens for legibility then
-	// fades to nothing at the edges, letting the stars through. The frame itself
-	// stays hidden until you reach for a portal — see below.
 	.portal {
 		display: flex;
 		flex-direction: column;
@@ -181,10 +158,7 @@
 		border-radius: $portal-radius;
 	}
 
-	// No border at rest: the hairline frame only materialises on hover / keyboard
-	// focus (where void-button flares it warm yellow), so the portals read as open
-	// void until you reach for one. Kept as 1px transparent so the reveal adds no
-	// layout shift.
+	// Transparent (not unset) so the hover/focus border reveal adds no layout shift.
 	.portal:not(:hover):not(:focus-visible) {
 		border-color: transparent;
 	}
@@ -198,8 +172,7 @@
 		transition: filter 0.4s ease;
 	}
 
-	// The PS1 controller is a landscape raster; let it run a touch wider than the
-	// square icon box so its visual mass matches the briefcase.
+	// Landscape rasters run wider than the square icon box.
 	.portal__img {
 		width: 5.5rem;
 		height: auto;
@@ -219,7 +192,6 @@
 		transition: text-shadow 0.4s ease;
 	}
 
-	// The label flares like a distant star as you approach.
 	.portal:hover .portal__label,
 	.portal:focus-visible .portal__label {
 		text-shadow: 0 0 12px rgba($yellow, 0.55);
@@ -231,8 +203,6 @@
 		gap: 0.75rem;
 	}
 
-	// Tabs echo the portals — near-invisible frames that only glow when active
-	// or hovered, so nothing weighs down the void.
 	.about-tab {
 		font-family: $font-pixel;
 		font-size: clamp(0.6rem, 1.8vw, 0.8rem);
@@ -257,8 +227,7 @@
 		}
 	}
 
-	// The void-button lift already respects reduced-motion (see the mixin); only
-	// the intro fade needs disabling here.
+	// The void-button lift's reduced-motion handling lives in the mixin.
 	@media (prefers-reduced-motion: reduce) {
 		.about-lead {
 			animation: none;
