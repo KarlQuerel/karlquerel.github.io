@@ -14,6 +14,7 @@
 		@click="$emit('toggle')"
 	>
 		<span class="nav-toggle__star" aria-hidden="true" />
+		<span class="nav-toggle__label" aria-hidden="true">Menu</span>
 	</button>
 </template>
 
@@ -35,8 +36,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 2.6rem;
-		height: 2.6rem;
+		width: 3rem;
+		height: 3rem;
 		padding: 0;
 		background: none;
 		border: 0;
@@ -47,8 +48,8 @@
 		cursor: pointer;
 		// Bright and faintly self-lit so it reads as an interactive star against
 		// the dark starfield instead of dissolving into it.
-		color: rgba(255, 255, 255, 0.92);
-		filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.35));
+		color: #fff3d6;
+		filter: drop-shadow(0 0 6px rgba($yellow, 0.55));
 		transition:
 			color 0.25s steps(3, end),
 			filter 0.25s steps(3, end);
@@ -57,7 +58,59 @@
 	.nav-toggle:hover,
 	.nav-toggle:focus-visible {
 		color: $yellow;
-		filter: drop-shadow(0 0 9px rgba($yellow, 0.7));
+		filter: drop-shadow(0 0 12px rgba($yellow, 0.85));
+	}
+
+	// Breathing halo — marks the star as interactive, not decoration.
+	.nav-toggle::before {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 46px;
+		height: 46px;
+		margin: -23px 0 0 -23px;
+		border-radius: 50%;
+		background: radial-gradient(circle, rgba($yellow, 0.5) 0%, rgba($yellow, 0) 68%);
+		opacity: 0.5;
+		pointer-events: none;
+		z-index: -1;
+		animation: nav-breathe 2.6s ease-in-out infinite;
+	}
+
+	@keyframes nav-breathe {
+		0%,
+		100% {
+			opacity: 0.3;
+			transform: scale(0.82);
+		}
+		50% {
+			opacity: 0.72;
+			transform: scale(1.15);
+		}
+	}
+
+	// "MENU" on hover / keyboard focus; hidden while open (the flipped star reads as close).
+	.nav-toggle__label {
+		position: absolute;
+		top: 100%;
+		left: 50%;
+		transform: translateX(-50%) translateY(0.3rem);
+		font-family: $font-pixel;
+		font-size: 0.6rem;
+		letter-spacing: 0.24em;
+		text-transform: uppercase;
+		color: $yellow;
+		white-space: nowrap;
+		opacity: 0;
+		pointer-events: none;
+		text-shadow: 0 0 8px rgba($yellow, 0.5);
+		transition: opacity 0.2s steps(3, end);
+	}
+
+	.nav-toggle:not(.is-open):hover .nav-toggle__label,
+	.nav-toggle:not(.is-open):focus-visible .nav-toggle__label {
+		opacity: 1;
 	}
 
 	// No focus box in any state — keyboard focus is shown by the star lighting up
@@ -103,6 +156,7 @@
 			#{$p * -1} #{$p * 1},
 			#{$p * 1} #{$p * 1};
 		rotate: 0deg;
+		scale: 1.1;
 		transition:
 			rotate 0.3s steps(3, end),
 			scale 0.3s steps(3, end);
@@ -134,7 +188,7 @@
 
 	.nav-toggle.is-open .nav-toggle__star {
 		rotate: 45deg;
-		scale: 1.2;
+		scale: 1.4;
 	}
 
 	.nav-toggle.is-open .nav-toggle__star::after {
@@ -166,6 +220,13 @@
 		.nav-toggle.is-open .nav-toggle__star::after {
 			animation: none;
 			transition: none;
+		}
+
+		// Freeze the halo into a steady glow so the star still stands out.
+		.nav-toggle::before {
+			animation: none;
+			opacity: 0.5;
+			transform: none;
 		}
 	}
 </style>
