@@ -17,7 +17,9 @@
 		     the component still lives at src/components/SiteHeaderAnimation.vue. To
 		     bring the header strip back, re-import it and drop <SiteHeaderAnimation />
 		     in here (and restore the --site-header-height offsets it needs). -->
-		<transition name="nav-overlay">
+		<!-- :duration is explicit because the reveal transition lives on a
+		     pseudo-element (.site-nav-overlay::before), which Vue can't auto-detect. -->
+		<transition name="nav-overlay" :duration="420">
 			<SiteNavbar v-if="navOpen" @close="navOpen = false" />
 		</transition>
 		<main class="app-main">

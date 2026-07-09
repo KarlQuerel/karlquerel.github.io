@@ -2,6 +2,12 @@
 
 html {
 	height: 100%;
+	// Always reserve the scrollbar gutter. Opening the nav overlay locks scroll
+	// (html { overflow: hidden } in SiteNavbar), which would otherwise remove the
+	// scrollbar on scrollable pages and shift every centred fixed element — the
+	// star toggle and the reveal's origin — sideways by half the scrollbar width,
+	// visibly jerking the open animation. A stable gutter keeps the width constant.
+	scrollbar-gutter: stable;
 }
 
 html:not(.page-scrollable) {
