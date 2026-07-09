@@ -14,9 +14,11 @@
 				type="button"
 				@click="selectTab(tab.id)"
 			>
-				<i class="nes-icon is-large" :class="ABOUT_HUB[tab.id].icon" aria-hidden="true" />
+				<span class="portal__icon">
+					<img v-if="tab.image" :src="tab.image" alt="" class="portal__img" />
+					<PixelIcon v-else :name="tab.icon" />
+				</span>
 				<span class="portal__label">{{ tab.label }}</span>
-				<span class="portal__blurb">{{ ABOUT_HUB[tab.id].blurb }}</span>
 			</button>
 		</div>
 
@@ -44,15 +46,23 @@
 <script setup>
 	import { computed } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
-	import { ABOUT_INTRO, ABOUT_HUB } from '@/data/about'
+	import { ABOUT_INTRO } from '@/data/about'
 	import AboutWork from './AboutWork.vue'
 	import AboutLife from './AboutLife.vue'
+	import PixelIcon from './PixelIcon.vue'
 
 	// The active path lives in the URL (?tab=work | ?tab=life) so it is shareable
 	// and survives refresh / back-button. No tab param → the neutral landing hub.
+	// `icon` names resolve to pixel-art glyphs (constants/pixelIcons.js); `image`
+	// is a static asset path rendered as an <img> instead.
 	const TABS = [
-		{ id: 'work', label: 'WORK', component: AboutWork },
-		{ id: 'life', label: 'LIFE', component: AboutLife },
+		{ id: 'work', label: 'WORK', icon: 'briefcase', component: AboutWork },
+		{
+			id: 'life',
+			label: 'LIFE',
+			image: '/assets/about/ps1-controller.png',
+			component: AboutLife,
+		},
 	]
 
 	const route = useRoute()
@@ -74,6 +84,9 @@
 
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
+
+	// Much rounder corners than the default 3px void chrome.
+	$portal-radius: 4rem;
 
 	// Backdrop (the drifting starfield) is the shared <SpaceBackground> layer.
 	// Every page is immersive now — no in-flow header or navbar to subtract — so
@@ -163,6 +176,11 @@
 		);
 	}
 
+	// Separate rule so it overrides the mixin's radius without trailing it.
+	.portal {
+		border-radius: $portal-radius;
+	}
+
 	// No border at rest: the hairline frame only materialises on hover / keyboard
 	// focus (where void-button flares it warm yellow), so the portals read as open
 	// void until you reach for one. Kept as 1px transparent so the reveal adds no
@@ -171,12 +189,25 @@
 		border-color: transparent;
 	}
 
-	.portal .nes-icon {
+	.portal__icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 4.5rem;
+		height: 4.5rem;
 		transition: filter 0.4s ease;
 	}
 
-	.portal:hover .nes-icon,
-	.portal:focus-visible .nes-icon {
+	// The PS1 controller is a landscape raster; let it run a touch wider than the
+	// square icon box so its visual mass matches the briefcase.
+	.portal__img {
+		width: 5.5rem;
+		height: auto;
+		display: block;
+	}
+
+	.portal:hover .portal__icon,
+	.portal:focus-visible .portal__icon {
 		filter: drop-shadow(0 0 8px rgba($yellow, 0.5));
 	}
 
@@ -192,14 +223,6 @@
 	.portal:hover .portal__label,
 	.portal:focus-visible .portal__label {
 		text-shadow: 0 0 12px rgba($yellow, 0.55);
-	}
-
-	.portal__blurb {
-		max-width: 22ch;
-		font-size: clamp(0.72rem, 1.7vw, 0.85rem);
-		line-height: 1.55;
-		text-align: center;
-		color: rgba(255, 255, 255, 0.8);
 	}
 
 	.about-tabs {

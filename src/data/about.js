@@ -8,13 +8,6 @@ export const ABOUT_INTRO = {
 	life: 'Off the clock, I swap the screen for the outdoors, usually with my dog Yako somewhere nearby.',
 }
 
-// Neutral landing hub: the two "portal" cards shown on /about before a path is
-// chosen. `icon` values are NES.css icon names; keys match tab ids.
-export const ABOUT_HUB = {
-	work: { icon: 'coin', blurb: 'Broker turned builder. The career path.' },
-	life: { icon: 'heart', blurb: 'Off the clock: Yako, home, the outdoors.' },
-}
-
 // Vertical career timeline — oldest first, newest last. Years are placeholders.
 // `current: true` flags the milestone you're living now (gets the blinking node).
 export const CAREER_TIMELINE = [
