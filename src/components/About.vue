@@ -132,6 +132,7 @@
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 2.25rem;
+		justify-items: center;
 		width: min(42rem, 94vw);
 		margin: 0 auto;
 		padding: 0.5rem;
@@ -142,7 +143,7 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 1.1rem;
-		padding: 2.75rem 1.5rem;
+		padding: 0.9rem 1.4rem;
 		@include void-button(
 			$bg: radial-gradient(
 					125% 125% at 50% 38%,
@@ -158,21 +159,27 @@
 		border-radius: $portal-radius;
 	}
 
-	// Transparent (not unset) so the hover/focus border reveal adds no layout shift.
-	.portal:not(:hover):not(:focus-visible) {
+	// Borderless: cancel the mixin's hover frame/lift so feedback lives on the icon + label.
+	.portal,
+	.portal:hover,
+	.portal:focus-visible,
+	.portal:active {
 		border-color: transparent;
+		box-shadow: none;
+		transform: none;
 	}
 
 	.portal__icon {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 4.5rem;
-		height: 4.5rem;
-		transition: filter 0.4s ease;
+		width: 5.5rem;
+		height: auto;
+		transition:
+			transform 0.35s ease,
+			filter 0.35s ease;
 	}
 
-	// Landscape rasters run wider than the square icon box.
 	.portal__img {
 		width: 5.5rem;
 		height: auto;
@@ -181,7 +188,21 @@
 
 	.portal:hover .portal__icon,
 	.portal:focus-visible .portal__icon {
-		filter: drop-shadow(0 0 8px rgba($yellow, 0.5));
+		transform: scale(1.09) translateY(-5px);
+		filter: drop-shadow(0 0 10px rgba($yellow, 0.8)) drop-shadow(0 0 24px rgba($yellow, 0.4));
+		animation: icon-bloom 1.8s ease-in-out infinite;
+	}
+
+	@keyframes icon-bloom {
+		0%,
+		100% {
+			filter: drop-shadow(0 0 8px rgba($yellow, 0.55))
+				drop-shadow(0 0 18px rgba($yellow, 0.28));
+		}
+		50% {
+			filter: drop-shadow(0 0 13px rgba($yellow, 0.9))
+				drop-shadow(0 0 30px rgba($yellow, 0.5));
+		}
 	}
 
 	.portal__label {
@@ -189,12 +210,15 @@
 		font-size: clamp(0.75rem, 2.4vw, 1rem);
 		letter-spacing: 1px;
 		color: $yellow;
-		transition: text-shadow 0.4s ease;
+		transition:
+			color 0.35s ease,
+			text-shadow 0.35s ease;
 	}
 
 	.portal:hover .portal__label,
 	.portal:focus-visible .portal__label {
-		text-shadow: 0 0 12px rgba($yellow, 0.55);
+		color: $white;
+		text-shadow: 0 0 12px rgba($yellow, 0.6);
 	}
 
 	.about-tabs {
@@ -227,9 +251,15 @@
 		}
 	}
 
-	// The void-button lift's reduced-motion handling lives in the mixin.
+	// Reduced-motion: drop the icon scale + pulse; the static glow + white label still read.
 	@media (prefers-reduced-motion: reduce) {
 		.about-lead {
+			animation: none;
+		}
+
+		.portal:hover .portal__icon,
+		.portal:focus-visible .portal__icon {
+			transform: none;
 			animation: none;
 		}
 	}
