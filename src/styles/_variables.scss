@@ -55,6 +55,11 @@ $void-border: 1px solid $void-border-color;
 // full pixel-square.
 $void-radius: 3px;
 
+// Interactive text convention: every button, link, and menu item rests at this
+// near-white and shifts to $yellow on hover / focus, so all hovers read as one
+// system. Change these two to restyle every hover at once.
+$text-interactive: rgba(255, 255, 255, 0.88);
+
 // Breakpoints
 $breakpoint-mobile: 640px;
 $breakpoint-tablet: 768px;

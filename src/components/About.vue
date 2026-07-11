@@ -209,7 +209,7 @@
 		font-family: $font-pixel;
 		font-size: clamp(0.75rem, 2.4vw, 1rem);
 		letter-spacing: 1px;
-		color: $yellow;
+		color: $text-interactive;
 		transition:
 			color 0.35s ease,
 			text-shadow 0.35s ease;
@@ -217,7 +217,7 @@
 
 	.portal:hover .portal__label,
 	.portal:focus-visible .portal__label {
-		color: $white;
+		color: $yellow;
 		text-shadow: 0 0 12px rgba($yellow, 0.6);
 	}
 
@@ -251,7 +251,7 @@
 		}
 	}
 
-	// Reduced-motion: drop the icon scale + pulse; the static glow + white label still read.
+	// Reduced-motion: drop the icon scale + pulse; the static glow + yellow hover label still read.
 	@media (prefers-reduced-motion: reduce) {
 		.about-lead {
 			animation: none;

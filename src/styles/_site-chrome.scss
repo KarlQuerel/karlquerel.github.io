@@ -126,7 +126,7 @@
 	// Keep each label intact (e.g. "for the nerds") so it wraps as a unit, never
 	// mid-word.
 	white-space: nowrap;
-	color: rgba(255, 255, 255, 0.88);
+	color: variables.$text-interactive;
 	font-size: clamp(0.95rem, 3.2vw, 1.5rem);
 	line-height: 1.2;
 	letter-spacing: 0.12em;
@@ -171,7 +171,7 @@
 	background: none;
 	border: none;
 	cursor: pointer;
-	color: rgba(255, 255, 255, 0.88);
+	color: variables.$text-interactive;
 	font-family: inherit;
 	font-size: clamp(1.3rem, 4.5vw, 2rem);
 	line-height: 1;

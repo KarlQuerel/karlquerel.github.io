@@ -10,13 +10,14 @@
 }
 
 // The interactive counterpart, used by every clickable button on the site so
-// they read as one system. Adds to the void-panel frame a warm yellow starlight
-// bloom + weightless lift on hover / focus. Pass a smaller $lift for compact
-// buttons, or a custom $bg (e.g. a radial fade) for the larger portals. Include
-// this LAST in a rule — it emits nested states, so trailing declarations warn.
+// they read as one system. Text rests near-white and shifts to $yellow on hover
+// / focus (the shared site-wide convention), over a warm yellow starlight bloom +
+// weightless lift. Pass a smaller $lift for compact buttons, or a custom $bg
+// (e.g. a radial fade) for the larger portals. Include this LAST in a rule — it
+// emits nested states, so trailing declarations warn.
 @mixin void-button($lift: -4px, $bg: rgba(0, 0, 0, 0.35)) {
 	@include void-panel($bg);
-	color: rgba(255, 255, 255, 0.85);
+	color: variables.$text-interactive;
 	cursor: pointer;
 	transition:
 		color 0.3s ease,
@@ -28,7 +29,7 @@
 	&:hover,
 	&:focus-visible {
 		outline: none;
-		color: variables.$white;
+		color: variables.$yellow;
 		border-color: rgba(variables.$yellow, 0.5);
 		box-shadow:
 			0 0 28px rgba(variables.$yellow, 0.18),
