@@ -285,6 +285,11 @@
 </script>
 
 <style lang="scss" scoped>
+	// Cap the console so the shared starfield shows around it — a CRT floating in
+	// space — instead of the window filling the whole viewport.
+	$console-max-width: 74rem;
+	$console-max-height: 47rem;
+
 	.terminal-container {
 		width: 100%;
 		height: 100%;
@@ -292,15 +297,19 @@
 		justify-content: center;
 		align-items: center;
 		box-sizing: border-box;
-		// Every page now carries the fixed star toggle over its top-centre; unlike
-		// the other pages the terminal window fills the viewport, so reserve a
-		// little headroom here or the toggle sits on the window's title bar.
+		// Every page carries the fixed star toggle over its top-centre; nudge the
+		// centred console down a touch so the toggle clears its title bar on short
+		// viewports (where the window grows to fill the height).
 		padding-top: 1.6rem;
 	}
 
 	@media (max-width: #{$breakpoint-mobile}) {
+		// Phones show the fixed star + "MENU" label (~4.5rem tall) at the top with
+		// no page scroll to fade it, so drop the console clear of that chrome and
+		// leave a little floor — a shorter window that never sits under the label.
 		.terminal-container {
-			padding-top: 2.6rem;
+			padding-top: 4.5rem;
+			padding-bottom: 1rem;
 		}
 	}
 
@@ -309,12 +318,18 @@
 		position: relative;
 		width: 100%;
 		height: 100%;
+		max-width: $console-max-width;
+		max-height: $console-max-height;
 		background: rgba(8, 12, 8, 0.92);
 		border: $void-border;
 		border-radius: $void-radius;
 		overflow: hidden;
 		font-family: $font-terminal;
 		font-size: 1.4rem;
+		// Lift the console off the starfield so it reads as floating in the void.
+		box-shadow:
+			0 1.5rem 4rem rgba(0, 0, 0, 0.55),
+			0 0 0 1px rgba(0, 0, 0, 0.45);
 	}
 
 	// Subtle CRT scanlines, fixed over the (non-scrolling) window.
@@ -509,6 +524,11 @@
 		// `help`) is reclaimed via padding, not by shrinking the font.
 		.terminal-window {
 			font-size: 1rem;
+			// Fill the width phones can spare, and let the container's padding (not
+			// the desktop cap) set the height, so the window shrinks to the space
+			// below the nav chrome.
+			max-width: none;
+			max-height: none;
 		}
 
 		.terminal-body {

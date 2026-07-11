@@ -2,13 +2,13 @@
 
 // The shell prompt, split into coloured segments: user@host:path$
 export const PROMPT = {
-	user: 'karl',
-	host: 'portfolio',
+	user: 'guest',
+	host: 'voyager',
 	path: '~',
 	symbol: '$',
 }
 
-export const WINDOW_TITLE = `${PROMPT.user}@${PROMPT.host}: ${PROMPT.path} — bash`
+export const WINDOW_TITLE = `${PROMPT.user}@${PROMPT.host}`
 
 // Phosphor themes the `theme` command can switch between. The key is what the
 // user types; `color` maps to the --phosphor CSS variable on the window.
@@ -33,7 +33,7 @@ export const SPINNER_FRAMES = ['|', '/', '-', '\\']
 
 // neofetch-style readout. Pure flavour; values are static on purpose.
 export const SYSTEM_INFO = [
-	['OS', 'PortfolioOS 4.2 (retro)'],
+	['OS', 'VoyagerOS 4.2 (retro)'],
 	['Host', 'karlquerel.github.io'],
 	['Kernel', 'vue-3.x'],
 	['Shell', 'bash (barely)'],
@@ -49,10 +49,10 @@ export const NEOFETCH_LOGO = ['  ___ ', ' (o o)', '(  V  )', '--m-m-']
 // Boot MOTD shown once at the top of the terminal, like a shell login banner.
 // The component appends a live "Last login" line below these.
 export const BANNER_MOTD = [
-	'Welcome to PortfolioOS 4.2 LTS (retro)',
+	'Welcome aboard VoyagerOS 4.2 LTS (retro)',
 	'',
-	' * Docs:    cat README.md',
-	' * Updates: 0 available, 0 security',
+	' * Manual:  cat README.md',
+	' * Systems: all nominal, 0 alerts',
 	'',
 ]
 
