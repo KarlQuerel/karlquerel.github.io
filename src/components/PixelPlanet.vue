@@ -76,14 +76,30 @@
 		return sum
 	}
 
-	// Classify a planet-space point into a surface colour.
+	// Colour bands keyed by their upper noise edge, low → high elevation.
+	const bands = [
+		[PLANET.ocean, PLANET.seaLevel - 0.08],
+		[PLANET.oceanShallow, PLANET.seaLevel],
+		[PLANET.land, PLANET.seaLevel + 0.12],
+		[PLANET.highland, Infinity],
+	]
+
+	// Classify a planet-space point into a surface colour, cross-fading across a
+	// narrow zone at each band edge so rotating coastlines don't shimmer.
 	function surface(px, py, pz) {
 		const s = PLANET.noiseScale
 		const n = fbm(px * s, py * s, pz * s)
-		if (n < PLANET.seaLevel - 0.08) return PLANET.ocean
-		if (n < PLANET.seaLevel) return PLANET.oceanShallow
-		if (n < PLANET.seaLevel + 0.12) return PLANET.land
-		return PLANET.highland
+		const bw = PLANET.bandBlend
+		for (let i = 0; i < bands.length - 1; i++) {
+			const edge = bands[i][1]
+			if (n < edge - bw) return bands[i][0]
+			if (n < edge + bw) {
+				const t = smoothstep((n - edge + bw) / (2 * bw))
+				const [a, b] = [bands[i][0], bands[i + 1][0]]
+				return [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)]
+			}
+		}
+		return bands[bands.length - 1][0]
 	}
 
 	// --- render ----------------------------------------------------------------
@@ -198,8 +214,8 @@
 		top: 50%;
 		left: 50%;
 		z-index: 2;
-		width: min(78vmin, 92vw);
-		height: min(78vmin, 92vw);
+		width: min(84vmin, 94vw);
+		height: min(84vmin, 94vw);
 		transform-origin: center;
 		pointer-events: none;
 		// Keep the upscaled sprite blocky rather than smoothly interpolated.

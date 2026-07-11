@@ -4,16 +4,16 @@
 // "sprite" space. Colours are [r, g, b] 0-255.
 export const PLANET = {
 	// Logical sprite resolution; each cell becomes one chunky on-screen pixel.
-	// Kept modest on purpose: the surface is a per-pixel noise shader, so cost
-	// scales with resolution² — this is the main lever on mobile render load.
-	resolution: 90,
+	// Higher = finer, more HD detail, but the surface is a per-pixel noise shader
+	// so cost scales with resolution² — this is the main lever on mobile render load.
+	resolution: 120,
 	// Disc radius as a fraction of the sprite — the margin leaves room for the
 	// atmosphere halo to bleed past the limb.
 	discRadius: 0.36,
-	// Stepped rotation: redraw the surface at this many frames per second for a
-	// retro, non-smooth spin, taking this many seconds per full turn. The spin is
-	// slow, so a low redraw rate stays smooth-looking while halving shader work.
-	fps: 15,
+	// Surface redraw rate. Kept an even divisor of a 60Hz refresh so frames pace
+	// evenly (no judder); higher = smoother spin but shader cost scales linearly
+	// with it. Drop to 20 for a choppier retro feel. spinSeconds = one full turn.
+	fps: 30,
 	spinSeconds: 64,
 	// Axial tilt of the spin (degrees), so continents drift across on a diagonal
 	// rather than straight sideways.
@@ -33,6 +33,12 @@ export const PLANET = {
 	noiseScale: 1.35,
 	// Noise value below which a cell is ocean (≈ land/sea ratio). Lower = more land.
 	seaLevel: 0.46,
+	// Half-width of the blend zone around each colour band edge — a thin
+	// anti-aliased coastline, not a gradient. Keep it small relative to the band
+	// gaps (0.08 / 0.12) or the surface goes low-contrast and mushy. Pixels within
+	// it fade between shades so rotating coastlines don't snap/blink. 0 = hard
+	// edges (crisp but aliased); larger = softer bands.
+	bandBlend: 0.012,
 	// Atmosphere rim colour — a thin, dusty red-grey haze.
 	atmosphere: [172, 120, 104],
 	// Atmosphere halo: how far past the limb it reaches (fraction of radius) and
