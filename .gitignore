@@ -8,6 +8,9 @@ pnpm-lock.yaml
 .vite/
 dist/
 
+# ESLint cache (incremental lint)
+.eslintcache
+
 # Editor-specific files
 .vscode/
 .idea/

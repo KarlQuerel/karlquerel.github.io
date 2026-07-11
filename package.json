@@ -11,14 +11,25 @@
     "deploy": "vite build && cp dist/index.html dist/404.html && gh-pages -d dist",
     "format": "prettier --write \"src/**/*.{js,vue,css,scss}\" --config .prettierrc && npm run lint:fix && npm run format:check && npm run lint:check",
     "format:check": "prettier --check \"src/**/*.{js,vue,css,scss}\" --config .prettierrc",
-    "lint": "eslint . --ext .js,.vue",
-    "lint:fix": "eslint . --ext .js,.vue --fix",
-    "lint:check": "eslint . --ext .js,.vue --max-warnings 0",
-    "clean": "npm run lint:fix && npm run format"
+    "lint": "eslint . --ext .js,.vue --cache",
+    "lint:fix": "eslint . --ext .js,.vue --cache --fix",
+    "lint:check": "eslint . --ext .js,.vue --cache --max-warnings 0",
+    "clean": "npm run lint:fix && npm run format",
+    "prepare": "simple-git-hooks"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "lint-staged": {
+    "*.{js,vue}": [
+      "eslint --cache --fix",
+      "prettier --write --config .prettierrc"
+    ],
+    "*.{css,scss}": "prettier --write --config .prettierrc"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
+  },
   "devDependencies": {
     "@babel/core": "^7.23.9",
     "@babel/eslint-parser": "^7.23.10",
@@ -28,8 +39,10 @@
     "eslint-plugin-unused-imports": "^4.1.4",
     "eslint-plugin-vue": "^9.33.0",
     "gh-pages": "^6.3.0",
+    "lint-staged": "^17.0.8",
     "prettier": "^3.6.2",
     "sass": "^1.85.0",
+    "simple-git-hooks": "^2.13.1",
     "terser": "^5.43.1",
     "vite": "^6.3.4"
   },
