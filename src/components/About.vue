@@ -1,8 +1,17 @@
 <template>
 	<div class="content about">
 		<header class="about-head">
-			<p :key="activeTab ?? 'hub'" class="about-intro about-lead">
-				{{ activeTab ? ABOUT_INTRO[activeTab] : ABOUT_INTRO.greeting }}
+			<p v-if="activeTab" :key="activeTab" class="about-intro about-lead">
+				{{ ABOUT_INTRO[activeTab] }}
+			</p>
+			<p v-else class="about-intro about-lead about-greeting">
+				<span class="about-greeting__line">
+					{{ ABOUT_INTRO.greetingLine1 }}<span class="about-earth"><PixelEarth /></span>
+				</span>
+				<span class="about-greeting__line">
+					{{ ABOUT_INTRO.greetingLead
+					}}<span class="about-name">{{ ABOUT_INTRO.greetingName }}</span>
+				</span>
 			</p>
 		</header>
 
@@ -22,20 +31,12 @@
 		</div>
 
 		<template v-else>
-			<nav class="about-tabs" role="tablist" aria-label="About sections">
-				<button
-					v-for="tab in TABS"
-					:key="tab.id"
-					class="about-tab"
-					:class="{ 'is-active': tab.id === activeTab }"
-					type="button"
-					role="tab"
-					:aria-selected="tab.id === activeTab"
-					@click="selectTab(tab.id)"
-				>
-					{{ tab.label }}
-				</button>
-			</nav>
+			<!-- Sits above the intro (order: -1) and sticks to the top while a long
+			     panel scrolls, so "back" stays reachable. -->
+			<button class="about-back" type="button" @click="goToHub">
+				<span class="about-back__icon" aria-hidden="true"><i /><i /></span>
+				Back
+			</button>
 
 			<component :is="activeComponent" :key="activeTab" class="about-panel" />
 		</template>
@@ -48,6 +49,7 @@
 	import { ABOUT_INTRO } from '@/data/about'
 	import AboutWork from './AboutWork.vue'
 	import AboutLife from './AboutLife.vue'
+	import PixelEarth from './PixelEarth.vue'
 
 	// Tab state lives in the URL (?tab=work|life) so it survives refresh and is shareable.
 	const TABS = [
@@ -75,12 +77,20 @@
 		if (id === activeTab.value) return
 		router.push({ query: { tab: id } })
 	}
+
+	// Clear the tab query to return to the hub (greeting + Work/Life portals).
+	function goToHub() {
+		router.push({ query: {} })
+	}
 </script>
 
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
 	$portal-radius: 4rem;
+	// WORK/LIFE labels sit a step below the greeting (which uses the shared
+	// $heading-pixel-size) so the heading stays dominant over the button labels.
+	$portal-label-size: clamp(0.85rem, 2.1vw, 1.1rem);
 
 	.about {
 		min-height: 100dvh;
@@ -114,6 +124,34 @@
 		margin-top: 0;
 	}
 
+	// The name pops in the site yellow against the white greeting.
+	.about-name {
+		color: $yellow;
+		text-shadow: 0 0 12px rgba($yellow, 0.45);
+	}
+
+	// Bigger two-line hub greeting; each line is a block so they stack without a <br>.
+	.about-greeting {
+		font-size: $heading-pixel-size;
+		line-height: 1.5;
+		text-transform: uppercase;
+	}
+
+	.about-greeting__line {
+		display: block;
+	}
+
+	// The pixel Earth sizes from its wrapper (~cap height) and, since Press Start 2P
+	// has tall caps and no descenders, middle-aligns then nudges up onto the caps'
+	// optical centre; tweak the size / translate if it sits high or low.
+	.about-earth {
+		display: inline-block;
+		width: 1.1em;
+		height: 1.1em;
+		vertical-align: middle;
+		transform: translateY(-0.12em);
+	}
+
 	.about-lead {
 		color: $white;
 		animation: intro-swap 0.35s steps(4, end) both;
@@ -134,7 +172,8 @@
 		gap: 2.25rem;
 		justify-items: center;
 		width: min(42rem, 94vw);
-		margin: 0 auto;
+		// Extra top margin (on top of the column gap) opens up the greeting → portals gap.
+		margin: 2.5rem auto 0;
 		padding: 0.5rem;
 	}
 
@@ -207,7 +246,7 @@
 
 	.portal__label {
 		font-family: $font-pixel;
-		font-size: clamp(0.75rem, 2.4vw, 1rem);
+		font-size: $portal-label-size;
 		letter-spacing: 1px;
 		color: $text-interactive;
 		transition:
@@ -221,28 +260,60 @@
 		text-shadow: 0 0 12px rgba($yellow, 0.6);
 	}
 
-	.about-tabs {
-		display: flex;
-		justify-content: center;
-		gap: 0.75rem;
-	}
-
-	.about-tab {
+	// Return-to-hub control: hoisted above the intro (order: -1), centred, and sticky
+	// so it stays reachable while a long panel scrolls. Pinned at 5.5rem — below the
+	// star toggle AND its "MENU" hint, which own top-centre — so they never overlap.
+	// z 30 keeps it under the nav overlay (40) and star (50) so opening the menu covers it.
+	.about-back {
+		order: -1;
+		align-self: center;
+		position: sticky;
+		top: 5.5rem;
+		z-index: 30;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
 		font-family: $font-pixel;
-		font-size: clamp(0.6rem, 1.8vw, 0.8rem);
+		font-size: clamp(0.7rem, 2.2vw, 1rem);
 		letter-spacing: 1px;
-		padding: 0.7rem 1.4rem;
+		text-transform: uppercase;
+		padding: 0.4rem 0.6rem;
+		// Keep it legible over whatever panel content scrolls behind it.
+		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 		@include void-button($lift: -2px);
 	}
 
-	.about-tab.is-active {
-		color: $yellow;
-		background: rgba($yellow, 0.06);
-		border-color: rgba($yellow, 0.5);
-		box-shadow:
-			0 0 20px rgba($yellow, 0.15),
-			0 0 0 1px rgba($yellow, 0.3) inset;
-		text-shadow: 0 0 10px rgba($yellow, 0.4);
+	// Borderless: strip the void frame + fill so it reads as a bare text/icon control
+	// (still white → yellow on hover, from the mixin) floating over the panel.
+	.about-back,
+	.about-back:hover,
+	.about-back:focus-visible,
+	.about-back:active {
+		background: none;
+		border-color: transparent;
+		box-shadow: none;
+	}
+
+	// Arcade "rewind": twin pixel triangles (sized in em so they scale with the label)
+	// that step left on hover.
+	.about-back__icon {
+		display: inline-flex;
+		gap: 0.15em;
+		flex: none;
+		transition: transform 0.2s steps(3, end);
+	}
+
+	.about-back__icon i {
+		width: 0;
+		height: 0;
+		border-top: 0.42em solid transparent;
+		border-bottom: 0.42em solid transparent;
+		border-right: 0.42em solid currentColor;
+	}
+
+	.about-back:hover .about-back__icon,
+	.about-back:focus-visible .about-back__icon {
+		transform: translateX(-3px);
 	}
 
 	@media (max-width: $breakpoint-mobile) {
