@@ -1,6 +1,9 @@
 <template>
 	<div class="content contact">
-		<h1 class="contact-name">CONTACT</h1>
+		<h1 class="contact-name">
+			{{ CONTACT_HEADING.lead
+			}}<span class="contact-accent">{{ CONTACT_HEADING.accent }}</span>
+		</h1>
 
 		<ul class="contact-list">
 			<li
@@ -24,7 +27,7 @@
 </template>
 
 <script setup>
-	import { CONTACT_CHANNELS } from '@/data/contact'
+	import { CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
 </script>
 
 <style scoped lang="scss">
@@ -38,14 +41,20 @@
 		padding: 2.5rem 1rem 4rem;
 	}
 
+	// Matches the About greeting: white pixel caps with the last word accented yellow.
 	.contact-name {
 		margin: 0;
 		font-family: $font-pixel;
-		font-size: clamp(1rem, 4vw, 1.8rem);
+		font-size: $heading-pixel-size;
 		line-height: 1.5;
-		letter-spacing: 2px;
+		text-transform: uppercase;
+		color: $white;
+		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+	}
+
+	.contact-accent {
 		color: $yellow;
-		text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+		text-shadow: 0 0 12px rgba($yellow, 0.45);
 	}
 
 	.contact-list {
