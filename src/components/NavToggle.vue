@@ -42,8 +42,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 3rem;
-		height: 3rem;
+		width: 3.75rem;
+		height: 3.75rem;
 		padding: 0;
 		background: none;
 		border: 0;
@@ -52,19 +52,16 @@
 		border-radius: 0;
 		box-shadow: none;
 		cursor: pointer;
-		// Bright and faintly self-lit so it reads as an interactive star against
-		// the dark starfield instead of dissolving into it.
+		// Resting cream; shifts to $yellow on hover / focus. The glow lives on the
+		// star itself (plus the halo) — never on the button box — so it hugs the star
+		// shape instead of tracing the black chip's rectangle.
 		color: #fff3d6;
-		filter: drop-shadow(0 0 9px rgba($yellow, 0.7));
-		transition:
-			color 0.25s steps(3, end),
-			filter 0.25s steps(3, end);
+		transition: color 0.25s steps(3, end);
 	}
 
 	.nav-toggle:hover,
 	.nav-toggle:focus-visible {
 		color: $yellow;
-		filter: drop-shadow(0 0 12px rgba($yellow, 0.85));
 	}
 
 	// Breathing halo — marks the star as interactive, not decoration.
@@ -73,9 +70,9 @@
 		position: absolute;
 		top: 50%;
 		left: 50%;
-		width: 58px;
-		height: 58px;
-		margin: -29px 0 0 -29px;
+		width: 78px;
+		height: 78px;
+		margin: -39px 0 0 -39px;
 		border-radius: 50%;
 		background: radial-gradient(circle, rgba($yellow, 0.55) 0%, rgba($yellow, 0) 68%);
 		opacity: 0.6;
@@ -94,6 +91,24 @@
 			opacity: 0.85;
 			transform: scale(1.18);
 		}
+	}
+
+	// Borderless black backing chip, built on the shared $void radius. Sits one layer
+	// below the halo (z -2 < the halo's z -1) so the yellow bloom glows *over* the
+	// black instead of being hidden behind it — the stack is chip → halo → star.
+	// Contrast over bright page content is handled separately.
+	.nav-toggle::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 60px;
+		height: 60px;
+		margin: -30px 0 0 -30px;
+		background: $black;
+		border-radius: $void-radius;
+		z-index: -2;
+		pointer-events: none;
 	}
 
 	// "MENU" sits under the star: legible (dim) at the top of a page so the
@@ -135,8 +150,8 @@
 			0 2px 4px rgba(0, 0, 0, 0.85);
 	}
 
-	// No focus box in any state — keyboard focus is shown by the star lighting up
-	// (the yellow glow above) instead of a frame. `:focus` (not just
+	// No focus box in any state — keyboard focus is shown by the star's glow
+	// brightening (see the star filter above) instead of a frame. `:focus` (not just
 	// `:focus-visible`) is targeted on purpose: a mouse click fires `:focus`
 	// without `:focus-visible`, and NES.css's global `button:focus` paints a
 	// rounded `-webkit-focus-ring-color` outline that would otherwise show.
@@ -150,7 +165,7 @@
 	// plus four diagonal shoulders. That concave "pinched" silhouette — narrow
 	// tips, wider middle — is what reads as a star instead of a plus. Colour is
 	// `currentColor`, so the whole star tints with the button on hover / open.
-	$p: 4px;
+	$p: 5px;
 	.nav-toggle__star {
 		position: relative;
 		width: $p;
@@ -179,9 +194,18 @@
 			#{$p * 1} #{$p * 1};
 		rotate: 0deg;
 		scale: 1.1;
+		// Glow lives here, not on the button: drop-shadow traces the star's own
+		// silhouette (box-shadow arms included), so it reads as the star lighting up.
+		filter: drop-shadow(0 0 6px rgba($yellow, 0.7));
 		transition:
 			rotate 0.3s steps(3, end),
-			scale 0.3s steps(3, end);
+			scale 0.3s steps(3, end),
+			filter 0.25s steps(3, end);
+	}
+
+	.nav-toggle:hover .nav-toggle__star,
+	.nav-toggle:focus-visible .nav-toggle__star {
+		filter: drop-shadow(0 0 9px rgba($yellow, 0.9));
 	}
 
 	// The supernova shockwave: a ring that bursts out of the core. The rule (and so
@@ -205,12 +229,12 @@
 	// as a settled "close" cue.
 	.nav-toggle.is-open {
 		color: $yellow;
-		filter: drop-shadow(0 0 7px rgba($yellow, 0.7));
 	}
 
 	.nav-toggle.is-open .nav-toggle__star {
 		rotate: 45deg;
 		scale: 1.4;
+		filter: drop-shadow(0 0 9px rgba($yellow, 0.85));
 	}
 
 	.nav-toggle.is-open .nav-toggle__star::after {
