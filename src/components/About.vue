@@ -5,9 +5,7 @@
 				{{ ABOUT_INTRO[activeTab] }}
 			</p>
 			<p v-else class="about-intro about-lead about-greeting">
-				<span class="about-greeting__line">
-					{{ ABOUT_INTRO.greetingLine1 }}<span class="about-earth"><PixelEarth /></span>
-				</span>
+				<span class="about-greeting__line">{{ ABOUT_INTRO.greetingLine1 }}</span>
 				<span class="about-greeting__line">
 					{{ ABOUT_INTRO.greetingLead
 					}}<span class="about-name">{{ ABOUT_INTRO.greetingName }}</span>
@@ -49,9 +47,10 @@
 	import { ABOUT_INTRO } from '@/data/about'
 	import AboutWork from './AboutWork.vue'
 	import AboutLife from './AboutLife.vue'
-	import PixelEarth from './PixelEarth.vue'
+	import AboutWorkTest from './AboutWorkTest.vue'
 
-	// Tab state lives in the URL (?tab=work|life) so it survives refresh and is shareable.
+	// Tab state lives in the URL (?tab=work|life|test-work) so it survives refresh
+	// and is shareable.
 	const TABS = [
 		{ id: 'work', label: 'WORK', image: '/assets/about/briefcase.png', component: AboutWork },
 		{
@@ -60,6 +59,13 @@
 			image: '/assets/about/ps1-controller.png',
 			component: AboutLife,
 		},
+		// Throwaway tab to preview the zigzag timeline layout against real data.
+		{
+			id: 'test-work',
+			label: 'TEST',
+			image: '/assets/about/briefcase.png',
+			component: AboutWorkTest,
+		},
 	]
 
 	const route = useRoute()
@@ -67,7 +73,7 @@
 
 	const activeTab = computed(() => {
 		const tab = route.query.tab
-		return tab === 'work' || tab === 'life' ? tab : null
+		return TABS.some(t => t.id === tab) ? tab : null
 	})
 	const activeComponent = computed(
 		() => TABS.find(tab => tab.id === activeTab.value)?.component ?? null
@@ -78,7 +84,7 @@
 		router.push({ query: { tab: id } })
 	}
 
-	// Clear the tab query to return to the hub (greeting + Work/Life portals).
+	// Clear the tab query to return to the hub (greeting + section portals).
 	function goToHub() {
 		router.push({ query: {} })
 	}
@@ -141,17 +147,6 @@
 		display: block;
 	}
 
-	// The pixel Earth sizes from its wrapper (~cap height) and, since Press Start 2P
-	// has tall caps and no descenders, middle-aligns then nudges up onto the caps'
-	// optical centre; tweak the size / translate if it sits high or low.
-	.about-earth {
-		display: inline-block;
-		width: 1.1em;
-		height: 1.1em;
-		vertical-align: middle;
-		transform: translateY(-0.12em);
-	}
-
 	.about-lead {
 		color: $white;
 		animation: intro-swap 0.35s steps(4, end) both;
@@ -167,12 +162,12 @@
 	}
 
 	.about-hub {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
 		gap: 2.25rem;
-		justify-items: center;
 		width: min(42rem, 94vw);
-		// Extra top margin (on top of the column gap) opens up the greeting → portals gap.
+		// Extra top margin (on top of the row gap) opens up the greeting → portals gap.
 		margin: 2.5rem auto 0;
 		padding: 0.5rem;
 	}
@@ -318,7 +313,8 @@
 
 	@media (max-width: $breakpoint-mobile) {
 		.about-hub {
-			grid-template-columns: 1fr;
+			flex-direction: column;
+			align-items: center;
 		}
 	}
 
