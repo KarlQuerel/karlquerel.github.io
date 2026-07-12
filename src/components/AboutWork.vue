@@ -7,9 +7,8 @@
 			class="timeline-item"
 			:class="{ 'is-current': item.current }"
 		>
-			<span class="timeline-node" aria-hidden="true" />
-			<div class="timeline-card">
-				<span class="timeline-year">{{ item.year }}</span>
+			<span class="timeline-year">{{ item.year }}</span>
+			<div class="timeline-body">
 				<h2 class="timeline-title">{{ item.title }}</h2>
 				<span class="timeline-place">{{ item.place }}</span>
 				<p class="timeline-summary">{{ item.summary }}</p>
@@ -24,12 +23,12 @@
 </script>
 
 <style scoped lang="scss">
-	@use '@/styles/mixins' as *;
-
-	// Geometry for the rail + node so everything lines up off one source.
-	$rail-x: 1.4rem; // horizontal centre of the star-trail
-	$node-size: 1rem; // square marker on the trail
-	$card-gap: 1.5rem; // breathing room between trail and card
+	// Editorial-ledger career timeline: a right-aligned year column, a hairline rule
+	// (the single rail) carrying a small dot per entry, then the content. Soft shadows,
+	// no blink; gold is reserved for the current milestone.
+	$year-w: 3.5rem;
+	$col-gap: 1.5rem;
+	$rule-x: $year-w + $col-gap * 0.5;
 
 	.timeline {
 		position: relative;
@@ -40,134 +39,106 @@
 		text-align: left;
 	}
 
-	// The rail: a glowing star-trail running down the spine of the page.
 	.timeline::before {
 		content: '';
 		position: absolute;
-		top: 0.6rem;
-		bottom: 0.6rem;
-		left: $rail-x;
-		width: 4px;
-		transform: translateX(-50%);
-		background: rgba($light-blue, 0.5);
-		box-shadow: 0 0 6px 1px rgba($light-blue, 0.45);
+		top: 0.4rem;
+		bottom: 0.4rem;
+		left: $rule-x;
+		width: 1px;
+		background: rgba(255, 255, 255, 0.18);
 	}
 
 	.timeline-item {
 		position: relative;
-		padding: 0 0 1.75rem ($rail-x + $card-gap);
+		display: grid;
+		grid-template-columns: $year-w 1fr;
+		column-gap: $col-gap;
+		padding-bottom: 1.9rem;
 		opacity: 0;
 		transform: translateX(-8px);
-	}
-
-	.timeline-item.is-visible {
-		animation: item-in 0.4s steps(4, end) forwards;
 	}
 
 	.timeline-item:last-child {
 		padding-bottom: 0;
 	}
 
-	.timeline-node {
-		position: absolute;
-		top: 0.75rem;
-		left: $rail-x;
-		width: $node-size;
-		height: $node-size;
-		transform: translateX(-50%);
-		background: $yellow;
-		box-shadow:
-			0 0 0 3px $black,
-			3px 3px 0 0 rgba(0, 0, 0, 0.5);
+	.timeline-item.is-visible {
+		animation: item-in 0.4s steps(4, end) forwards;
 	}
 
-	.timeline-card {
-		position: relative;
-		padding: 0.9rem 1rem 1rem;
-		@include void-panel(rgba(0, 0, 0, 0.7));
-		text-align: left;
-	}
-
-	// Short tick bridging the trail node to the card.
-	.timeline-card::before {
+	// Small refined dot on the rule, aligned with the title line.
+	.timeline-item::before {
 		content: '';
 		position: absolute;
-		top: 1rem;
-		left: -$card-gap;
-		width: $card-gap;
-		height: 4px;
-		background: $yellow;
+		top: 0.5rem;
+		left: $rule-x;
+		width: 5px;
+		height: 5px;
+		transform: translateX(-50%);
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.35);
 	}
 
 	.timeline-year {
-		display: inline-block;
-		margin-bottom: 0.55rem;
-		padding: 0.25rem 0.5rem;
+		grid-column: 1;
+		padding-top: 0.15rem;
+		text-align: right;
 		font-family: $font-pixel;
-		font-size: clamp(0.55rem, 1.6vw, 0.75rem);
-		color: $black;
-		background: $yellow;
-		box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.4);
+		font-size: clamp(0.5rem, 1.4vw, 0.65rem);
+		line-height: 1.5;
+		color: rgba(255, 255, 255, 0.5);
+		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+	}
+
+	.timeline-body {
+		grid-column: 2;
 	}
 
 	.timeline-title {
 		margin: 0;
 		font-family: $font-pixel;
-		font-size: clamp(0.6rem, 2vw, 0.85rem);
+		font-size: clamp(0.6rem, 1.9vw, 0.8rem);
 		line-height: 1.5;
-		color: $yellow;
+		color: $white;
+		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
 	}
 
 	.timeline-place {
 		display: block;
-		margin-top: 0.4rem;
+		margin-top: 0.35rem;
 		font-family: $font-pixel;
 		font-size: clamp(0.4rem, 1.2vw, 0.5rem);
-		color: rgba(255, 255, 255, 0.7);
+		color: rgba(255, 255, 255, 0.5);
+		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 	}
 
 	.timeline-summary {
-		margin: 0.6rem 0 0;
+		margin: 0.55rem 0 0;
 		font-size: clamp(0.8rem, 1.8vw, 0.95rem);
 		line-height: 1.6;
-		text-align: left;
-		color: rgba(255, 255, 255, 0.85);
+		color: rgba(255, 255, 255, 0.8);
+		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.95);
 	}
 
-	.is-current .timeline-node {
-		box-shadow:
-			0 0 0 3px $black,
-			0 0 12px 3px rgba($yellow, 0.85);
-		animation: node-blink 1.1s steps(2, jump-none) infinite;
+	.timeline-item.is-current .timeline-title {
+		color: $yellow;
 	}
 
-	.is-current .timeline-card {
-		box-shadow:
-			$panel-shadow,
-			0 0 0 2px $yellow inset;
+	.timeline-item.is-current .timeline-year {
+		color: rgba($yellow, 0.85);
+	}
+
+	.timeline-item.is-current::before {
+		background: $yellow;
+		box-shadow: 0 0 8px 1px rgba($yellow, 0.7);
 	}
 
 	// `item-in` keyframes are global (see _animations.scss).
-	@keyframes node-blink {
-		0% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0.3;
-		}
-		100% {
-			opacity: 1;
-		}
-	}
-
 	@media (prefers-reduced-motion: reduce) {
 		.timeline-item {
 			opacity: 1;
 			transform: none;
-			animation: none;
-		}
-
-		.is-current .timeline-node {
 			animation: none;
 		}
 	}
