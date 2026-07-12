@@ -41,6 +41,11 @@ $font-size-medium-min: 1rem;
 $font-size-medium-preferred: 2vw;
 $font-size-medium-max: 2rem;
 
+// Large pixel heading shared across the personal pages — the About greeting and the
+// Contact heading — so page-level headings read as one size site-wide. (The WORK/LIFE
+// hub labels sit a step below this; see $portal-label-size in About.vue.)
+$heading-pixel-size: clamp(1rem, 2.6vw, 1.35rem);
+
 // Z-Index
 $z-index-content: 1;
 
