@@ -7,6 +7,7 @@
 			class="ztl-item"
 			:class="[i % 2 === 0 ? 'is-left' : 'is-right', { 'is-current': item.current }]"
 		>
+			<p v-if="item.chapter" class="ztl-chapter">{{ item.chapter }}</p>
 			<div class="ztl-card">
 				<span class="ztl-year">{{ item.year }}</span>
 				<span class="ztl-kind" :class="`ztl-kind--${item.type}`">{{
@@ -49,6 +50,37 @@
 
 	.ztl-item:last-child {
 		padding-bottom: 0;
+	}
+
+	// chapter break: pixel-dash rule on the centerline marking the finance → software era split
+	.ztl-chapter {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		margin: 0 0 2.4rem;
+		font-family: $font-pixel;
+		font-size: clamp(0.44rem, 1.3vw, 0.56rem);
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: rgba($yellow, 0.72);
+		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+		opacity: 0;
+	}
+
+	.ztl-chapter::before,
+	.ztl-chapter::after {
+		content: '';
+		flex: 1;
+		height: 2px;
+		background: repeating-linear-gradient(
+			to right,
+			rgba(255, 255, 255, 0.28) 0 6px,
+			transparent 6px 12px
+		);
+	}
+
+	.ztl-item.is-visible .ztl-chapter {
+		animation: card-in 0.5s steps(6, end) forwards;
 	}
 
 	// one gap carries the rhythm; is-left / is-right set the alignment side + slide-in origin
@@ -183,7 +215,8 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.ztl-card {
+		.ztl-card,
+		.ztl-chapter {
 			opacity: 1;
 		}
 
@@ -193,7 +226,8 @@
 			transform: none;
 		}
 
-		.ztl-item.is-visible .ztl-card {
+		.ztl-item.is-visible .ztl-card,
+		.ztl-item.is-visible .ztl-chapter {
 			animation: none;
 		}
 	}

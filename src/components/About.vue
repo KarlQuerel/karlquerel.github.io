@@ -115,6 +115,8 @@
 		font-size: clamp(0.95rem, 2.2vw, 1.15rem);
 		line-height: 1.75;
 		text-align: center;
+		// even out the centered rag so the block reads as one deliberate shape
+		text-wrap: balance;
 		color: $white;
 		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
 	}

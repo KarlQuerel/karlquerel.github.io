@@ -25,6 +25,16 @@
 			<rect class="c-white" x="1" y="3" width="6" height="2" />
 		</svg>
 		<svg
+			v-else-if="country === 'spain'"
+			class="pixel-flag__svg"
+			viewBox="0 0 12 8"
+			shape-rendering="crispEdges"
+		>
+			<rect class="c-es-red" x="0" y="0" width="12" height="2" />
+			<rect class="c-es-yellow" x="0" y="2" width="12" height="4" />
+			<rect class="c-es-red" x="0" y="6" width="12" height="2" />
+		</svg>
+		<svg
 			v-else-if="country === 'lebanon'"
 			class="pixel-flag__svg"
 			viewBox="0 0 12 8"
@@ -82,5 +92,11 @@
 	}
 	.c-lb-green {
 		fill: $flag-lb-green;
+	}
+	.c-es-red {
+		fill: $flag-es-red;
+	}
+	.c-es-yellow {
+		fill: $flag-es-yellow;
 	}
 </style>

@@ -10,29 +10,32 @@ export const ABOUT_INTRO = {
 	greetingLead: "I'm ",
 	greetingName: 'Karl',
 	work: [
-		{ text: 'After five years as a ' },
-		{ text: 'commodity trader', hl: true },
-		{ text: ', I made a sharp turn into ' },
-		{ text: 'software', hl: true },
-		{ text: " and enrolled at 42. Starting over wasn't easy, but it was the right call." },
+		{ text: 'After five rewarding years ' },
+		{ text: 'trading commodities', hl: true },
+		{ text: ', I took a sharp turn into ' },
+		{ text: 'software engineering', hl: true },
+		{ text: '. Now I build tech for ' },
+		{ text: 'renewable energy', hl: true },
+		{ text: '.' },
 	],
 	life: [
 		{
-			text: 'Off the clock, I swap the screen for the outdoors, usually with my dog Yako somewhere nearby.',
+			text: 'PLACEHOLDER',
 		},
 	],
 }
 
-// Vertical career timeline — oldest first, newest last. `type` ('job' | 'study')
-// drives the coloured category tag. `current: true` flags the one you're living now
-// (blinks). `summary` is optional — reserved for standout milestones (e.g. the 42
-// pivot), not routine entries, so cards stay scannable. Currently education only; jobs
-// (type: 'job') interleave by date once added, with the latest role flagged current.
+// Vertical career timeline — oldest first (by start date), newest last. `type`
+// ('job' | 'study') drives the coloured category tag. `current: true` flags the one
+// you're living now. `summary` is optional — reserved for standout milestones, not
+// routine entries, so cards stay scannable. `chapter` renders a centered divider
+// above that card (the finance → software era break) without disturbing the zigzag.
+// Jobs are deliberately curated: career-defining roles only, no student-era internships.
 export const CAREER_TIMELINE = [
 	{
 		type: 'study',
 		year: '2003 – 2010',
-		title: 'French Baccalauréat — Economics',
+		title: 'French Baccalauréat in Economics',
 		place: 'Grand Lycée Franco-Libanais',
 		location: 'Beirut, Lebanon',
 		flag: 'lebanon',
@@ -56,9 +59,25 @@ export const CAREER_TIMELINE = [
 	{
 		type: 'study',
 		year: '2015 – 2017',
-		title: 'MSc, Finance',
+		title: 'MSc Finance',
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
+		flag: 'france',
+	},
+	{
+		type: 'job',
+		year: '2017 – 2018',
+		title: 'Sales Associate',
+		place: 'Cedar Europe',
+		location: 'Madrid, Spain',
+		flag: 'spain',
+	},
+	{
+		type: 'job',
+		year: '2018 – 2022',
+		title: 'Commodity Broker',
+		place: 'Cedar Europe',
+		location: 'Paris, France',
 		flag: 'france',
 	},
 	{
@@ -68,8 +87,16 @@ export const CAREER_TIMELINE = [
 		place: '42 Paris',
 		location: 'Paris, France',
 		flag: 'france',
-		summary:
-			'Peer-to-peer, project-based software engineering — my pivot from finance into code.',
+		chapter: 'Career pivot',
+	},
+	{
+		type: 'job',
+		year: '2025 – Present',
+		title: 'Software Engineer',
+		place: 'Zetra',
+		location: 'Paris, France',
+		flag: 'france',
+		current: true,
 	},
 ]
 
