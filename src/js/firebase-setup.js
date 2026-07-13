@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app'
-import { getFirestore, doc, getDoc, updateDoc, increment, setDoc } from 'firebase/firestore'
+// lite SDK: REST-only, no realtime listeners — a fraction of the full Firestore bundle
+import { getFirestore, doc, getDoc, updateDoc, increment, setDoc } from 'firebase/firestore/lite'
 
 // Firebase config — public web client identifiers, injected from .env at build
 // time (see .env.example) so they stay out of source per project convention.
