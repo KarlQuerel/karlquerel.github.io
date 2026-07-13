@@ -61,6 +61,11 @@ export const STAR_LAYERS = [
 // Per-dot size multiplier so dots vary instead of reading as one stamped disc.
 export const STAR_SIZE_JITTER = [0.75, 1.25]
 
+// Seconds between drift steps. Stepped (not linear) drift lets the compositor
+// skip the ~59 identical frames between ~1px hops — the drift was forcing
+// full-screen recomposites every vsync, the main scroll-lag cost on phones.
+export const DRIFT_STEP_SECONDS = 1
+
 // Sparse comet streaks. Tints echo the starfield, weighted toward plain white.
 // Each entry is a [min, max] range fed straight to rand(), except `tints`.
 export const SHOOTING_STAR = {

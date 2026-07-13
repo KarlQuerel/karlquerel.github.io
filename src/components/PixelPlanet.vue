@@ -4,7 +4,15 @@
 </template>
 
 <script setup>
-	import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+	import {
+		ref,
+		computed,
+		watch,
+		onActivated,
+		onDeactivated,
+		onMounted,
+		onBeforeUnmount,
+	} from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { PLANET } from '@/constants/planet'
 	import { MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
@@ -181,6 +189,11 @@
 		}
 	}
 
+	function stopLoop() {
+		if (rafId) cancelAnimationFrame(rafId)
+		rafId = 0
+	}
+
 	watch(() => props.reveal, ensureRunning)
 
 	onMounted(() => {
@@ -193,9 +206,12 @@
 		ensureRunning()
 	})
 
-	onBeforeUnmount(() => {
-		if (rafId) cancelAnimationFrame(rafId)
-	})
+	// kept alive under HeroIntro: onBeforeUnmount never fires on navigation, so the
+	// shader loop would keep burning the main thread behind every other page
+	onDeactivated(stopLoop)
+	onActivated(ensureRunning)
+
+	onBeforeUnmount(stopLoop)
 </script>
 
 <style scoped lang="scss">

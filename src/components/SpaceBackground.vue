@@ -26,8 +26,9 @@
 		STAR_LAYERS,
 		STAR_SIZE_JITTER,
 		SHOOTING_STAR,
+		DRIFT_STEP_SECONDS,
 	} from '@/constants/starfield'
-	import { MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
+	import { FINE_POINTER_QUERY, MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
 
 	function rand(min, max) {
 		return min + Math.random() * (max - min)
@@ -76,6 +77,7 @@
 				'--drift-x': `${dirX * w}px`,
 				'--drift-y': `${dirY * h}px`,
 				'--dur': `${layer.duration}s`,
+				'--drift-steps': Math.max(1, Math.round(layer.duration / DRIFT_STEP_SECONDS)),
 				'--depth': layer.depth,
 			},
 		}
@@ -140,7 +142,11 @@
 	onMounted(() => {
 		if (prefersReducedMotion()) return
 		document.addEventListener('visibilitychange', onVisibility)
-		window.addEventListener('pointermove', onPointerMove, { passive: true })
+		// no cursor on touch devices — and their drag-scrolls fire pointermove,
+		// which would restyle every huge star layer mid-scroll
+		if (window.matchMedia(FINE_POINTER_QUERY).matches) {
+			window.addEventListener('pointermove', onPointerMove, { passive: true })
+		}
 		scheduleNext()
 	})
 
@@ -169,6 +175,8 @@
 		background-repeat: repeat;
 		translate: calc(var(--mx, 0) * var(--depth) * 1px) calc(var(--my, 0) * var(--depth) * 1px);
 		animation: starDrift var(--dur) linear infinite;
+		// stepped ~1px hops: identical frames between steps cost the compositor nothing
+		animation-timing-function: steps(var(--drift-steps, 60), end);
 		will-change: transform;
 	}
 
