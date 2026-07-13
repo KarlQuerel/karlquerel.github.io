@@ -4,7 +4,8 @@
 // yellow. Swaps to the matching tab text once a path (work | life) is chosen. The
 // trailing space on `greetingLead` is intentional — it separates the lead from the
 // name that follows. Tab intros are segmented so key words can pop in yellow
-// (`hl: true`) without needing v-html; segments carry their own spacing.
+// (`hl: true`) without needing v-html; segments carry their own spacing, and a
+// `{ br: true }` segment forces a line break between sentences.
 export const ABOUT_INTRO = {
 	greetingLine1: 'Hello there!',
 	greetingLead: "I'm ",
@@ -14,7 +15,9 @@ export const ABOUT_INTRO = {
 		{ text: 'trading commodities', hl: true },
 		{ text: ', I took a sharp turn into ' },
 		{ text: 'software engineering', hl: true },
-		{ text: '. Now I build tech for ' },
+		{ text: '.' },
+		{ br: true },
+		{ text: 'Now I build tech for ' },
 		{ text: 'renewable energy', hl: true },
 		{ text: '.' },
 	],

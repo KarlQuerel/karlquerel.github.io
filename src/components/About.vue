@@ -4,7 +4,9 @@
 			<p v-if="activeTab" :key="activeTab" class="about-intro about-lead">
 				<!-- segments carry their own spacing — between-tag whitespace is stripped -->
 				<template v-for="(seg, i) in ABOUT_INTRO[activeTab]" :key="i"
-					><span v-if="seg.hl" class="about-intro__hl">{{ seg.text }}</span
+					><br v-if="seg.br" /><span v-else-if="seg.hl" class="about-intro__hl">{{
+						seg.text
+					}}</span
 					><template v-else>{{ seg.text }}</template></template
 				>
 			</p>
@@ -112,7 +114,7 @@
 	.about-intro {
 		max-width: 42ch;
 		margin: 0.5rem auto 0;
-		font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+		font-size: clamp(0.8rem, 1.8vw, 0.95rem);
 		line-height: 1.75;
 		text-align: center;
 		// even out the centered rag so the block reads as one deliberate shape
