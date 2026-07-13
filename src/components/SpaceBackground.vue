@@ -1,9 +1,11 @@
 <template>
-	<!-- Shared fixed backdrop behind every page: several
-	     randomly generated pixel-star layers that drift diagonally at different
-	     speeds and shift under the cursor for parallax depth, plus the occasional
-	     pixel shooting star streaking across. Purely decorative. -->
-	<div class="space-bg" :style="parallaxStyle" aria-hidden="true">
+	<!-- fixed backdrop: drifting parallax pixel-star layers + occasional shooting star. Decorative -->
+	<div
+		class="space-bg"
+		:class="{ 'is-paused': paused }"
+		:style="parallaxStyle"
+		aria-hidden="true"
+	>
 		<div v-for="layer in starLayers" :key="layer.id" class="star-layer" :style="layer.style" />
 		<div
 			v-for="star in shootingStars"
@@ -25,6 +27,7 @@
 		STAR_SIZE_JITTER,
 		SHOOTING_STAR,
 	} from '@/constants/starfield'
+	import { MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
 
 	function rand(min, max) {
 		return min + Math.random() * (max - min)
@@ -34,8 +37,7 @@
 		return arr[Math.floor(Math.random() * arr.length)]
 	}
 
-	// hex (#rrggbb) + 0..1 alpha → #rrggbbaa, so each generated dot can carry its
-	// own opacity without a separate rgba() parse step.
+	// #rrggbb + 0..1 alpha → #rrggbbaa so each dot carries its own opacity
 	function withAlpha(hex, alpha) {
 		return (
 			hex +
@@ -45,8 +47,7 @@
 		)
 	}
 
-	// Build one parallax plane: a tile of randomly placed, randomly tinted dots
-	// rendered as stacked radial-gradients, plus the CSS vars its drift needs.
+	// one parallax plane: a tile of random dots as stacked radial-gradients + its drift vars
 	function buildLayer(layer, id) {
 		const [w, h] = layer.tile
 		const dots = []
@@ -59,12 +60,7 @@
 				`radial-gradient(${size}px ${size}px at ${x}px ${y}px, ${color} 99%, transparent 100%)`
 			)
 		}
-		// The layer drifts one whole tile in a single direction, so it only needs
-		// the tile of bleed on its two *trailing* edges — the leading edges never
-		// uncover. Bleeding all four sides (the old approach) doubled the texture
-		// area for nothing; at 2560×1440 that is several megapixels of extra
-		// radial-gradient raster per layer. `pad` covers the small mouse-parallax
-		// translate (±depth). No visible change — just a smaller composited layer.
+		// bleed only the two trailing edges (leading never uncovers); pad covers the mouse parallax
 		const [dirX, dirY] = layer.dir
 		const pad = layer.depth + 8
 		return {
@@ -76,8 +72,7 @@
 				'--bleed-right': `${(dirX < 0 ? w : 0) + pad}px`,
 				'--bleed-bottom': `${(dirY < 0 ? h : 0) + pad}px`,
 				'--bleed-left': `${(dirX > 0 ? w : 0) + pad}px`,
-				// Drift exactly one tile so the transform loop is seamless; sign sets
-				// direction.
+				// drift exactly one tile so the loop is seamless; sign sets direction
 				'--drift-x': `${dirX * w}px`,
 				'--drift-y': `${dirY * h}px`,
 				'--dur': `${layer.duration}s`,
@@ -86,13 +81,14 @@
 		}
 	}
 
+	// phones skip the faintest far plane — one fewer full-screen composited layer
+	const layerSpecs = window.matchMedia(MOBILE_VIEWPORT_QUERY).matches
+		? STAR_LAYERS.slice(1)
+		: STAR_LAYERS
 	// Generated once per visit → no two loads share the same sky.
-	const starLayers = STAR_LAYERS.map((layer, i) => buildLayer(layer, i))
+	const starLayers = layerSpecs.map((layer, i) => buildLayer(layer, i))
 
-	// Pointer parallax: each axis normalised to -1..1 and negated so the layers
-	// drift against the cursor (the classic look-around-the-scene illusion). Read
-	// by the layers via `--depth` in a CSS calc, so moving the mouse only patches
-	// the container's two vars — the layers themselves never re-render.
+	// axes normalised to -1..1 and negated so layers drift against the cursor via --depth
 	const pointer = ref({ x: 0, y: 0 })
 	const parallaxStyle = computed(() => ({ '--mx': pointer.value.x, '--my': pointer.value.y }))
 
@@ -103,13 +99,18 @@
 		}
 	})
 
+	// halt the drift loops whenever the page isn't visible
+	const paused = ref(false)
+	const onVisibility = () => {
+		paused.value = document.visibilityState !== 'visible'
+	}
+
 	const shootingStars = ref([])
 	let nextId = 0
 	let timer = 0
 
 	function spawnStar() {
-		// Skip while the tab is hidden — paused CSS animations never fire
-		// `animationend`, so the elements would otherwise pile up off-screen.
+		// skip while hidden — paused animations never fire animationend, so comets pile up
 		if (document.visibilityState === 'visible') {
 			shootingStars.value.push({
 				id: nextId++,
@@ -138,19 +139,20 @@
 
 	onMounted(() => {
 		if (prefersReducedMotion()) return
+		document.addEventListener('visibilitychange', onVisibility)
 		window.addEventListener('pointermove', onPointerMove, { passive: true })
 		scheduleNext()
 	})
 
 	onBeforeUnmount(() => {
 		window.clearTimeout(timer)
+		document.removeEventListener('visibilitychange', onVisibility)
 		window.removeEventListener('pointermove', onPointerMove)
 	})
 </script>
 
 <style scoped lang="scss">
-	// Full-viewport layer pinned behind all content (negative z-index keeps it
-	// under the navbar/footer/main without needing a per-page wrapper).
+	// pinned behind all content via negative z-index — no per-page wrapper needed
 	.space-bg {
 		position: fixed;
 		inset: 0;
@@ -159,10 +161,7 @@
 		pointer-events: none;
 	}
 
-	// One generated parallax plane. Drift runs on `transform` (GPU-composited, no
-	// per-frame repaint) while mouse parallax uses the independent `translate`
-	// property so the two never collide. `--mx`/`--my` (-1..1) come from the
-	// container; `--depth` scales them per layer into a pixel offset.
+	// drift runs on transform, mouse parallax on the separate translate, so they never collide
 	.star-layer {
 		position: absolute;
 		inset: calc(var(--bleed-top) * -1) calc(var(--bleed-right) * -1)
@@ -171,6 +170,10 @@
 		translate: calc(var(--mx, 0) * var(--depth) * 1px) calc(var(--my, 0) * var(--depth) * 1px);
 		animation: starDrift var(--dur) linear infinite;
 		will-change: transform;
+	}
+
+	.is-paused .star-layer {
+		animation-play-state: paused;
 	}
 
 	@keyframes starDrift {
@@ -182,8 +185,7 @@
 		}
 	}
 
-	// A comet: a crisp pixel head (::after) trailing a fading streak (background
-	// gradient), rotated to its travel angle and flung across the viewport once.
+	// comet: pixel head (::after) + fading streak, rotated to its travel angle
 	.shooting-star {
 		position: absolute;
 		top: var(--y);

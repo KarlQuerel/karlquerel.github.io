@@ -12,8 +12,10 @@ export const PLANET = {
 	discRadius: 0.36,
 	// Surface redraw rate. Kept an even divisor of a 60Hz refresh so frames pace
 	// evenly (no judder); higher = smoother spin but shader cost scales linearly
-	// with it. Drop to 20 for a choppier retro feel. spinSeconds = one full turn.
+	// with it. spinSeconds = one full turn.
 	fps: 30,
+	// phone viewports redraw slower — imperceptible at this pixel scale, cheaper on battery
+	fpsMobile: 20,
 	spinSeconds: 64,
 	// Axial tilt of the spin (degrees), so continents drift across on a diagonal
 	// rather than straight sideways.

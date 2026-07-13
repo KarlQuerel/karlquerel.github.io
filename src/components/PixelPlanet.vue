@@ -1,7 +1,5 @@
 <template>
-	<!-- The world you drop out of hyperspace in front of. Drawn procedurally on a
-	     low-res canvas and upscaled with image-rendering: pixelated; `reveal`
-	     (0 → 1) grows it from a distant dot to its landed size. Decorative. -->
+	<!-- procedural low-res planet, upscaled pixelated; reveal (0 → 1) grows it in. Decorative -->
 	<canvas ref="canvasEl" class="planet" :style="planetStyle" aria-hidden="true" />
 </template>
 
@@ -9,24 +7,21 @@
 	import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { PLANET } from '@/constants/planet'
+	import { MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
 
 	const props = defineProps({
 		// 0 → far-off dot, 1 → arrived and full size. Drives scale and opacity.
 		reveal: { type: Number, default: 0 },
 	})
 
-	// Grow from a vanishing-point dot to full size, fading in quickly, settling a
-	// touch lower as it "lands".
+	// grow from a vanishing-point dot to full size, settling slightly lower as it "lands"
 	const planetStyle = computed(() => ({
 		opacity: Math.min(1, props.reveal * 4),
 		transform: `translate(-50%, calc(-50% + ${props.reveal * 6}vh)) scale(${0.05 + 0.95 * props.reveal})`,
-		// Hidden until arrival: drop the promoted canvas layer out of the compositor
-		// while it's the invisible vanishing-point dot instead of compositing it
-		// every frame throughout the crawl.
+		// hidden until arrival — drop the promoted canvas out of the compositor during the crawl
 		display: props.reveal > 0 ? null : 'none',
 	}))
 
-	// --- procedural surface helpers -------------------------------------------
 	const clampByte = v => (v < 0 ? 0 : v > 255 ? 255 : v | 0)
 	const smoothstep = t => t * t * (3 - 2 * t)
 	const mix = (a, b, t) => a + (b - a) * t
@@ -36,8 +31,7 @@
 		return [v[0] / m, v[1] / m, v[2] / m]
 	}
 
-	// Cheap, dependency-free 3D value noise: hash 8 lattice corners, trilinearly
-	// interpolate. Seeded per visit so no two planets are alike.
+	// dependency-free 3D value noise, seeded per visit so no two planets are alike
 	let seed = 1
 	function hash3(ix, iy, iz) {
 		let n = Math.imul(ix, 374761393)
@@ -84,8 +78,7 @@
 		[PLANET.highland, Infinity],
 	]
 
-	// Classify a planet-space point into a surface colour, cross-fading across a
-	// narrow zone at each band edge so rotating coastlines don't shimmer.
+	// map a point to a surface colour, cross-fading band edges so coastlines don't shimmer
 	function surface(px, py, pz) {
 		const s = PLANET.noiseScale
 		const n = fbm(px * s, py * s, pz * s)
@@ -102,14 +95,11 @@
 		return bands[bands.length - 1][0]
 	}
 
-	// --- render ----------------------------------------------------------------
 	const canvasEl = ref(null)
 	let ctx = null
 	let rafId = 0
 	let lastDraw = -1
-	// Reused across frames: the disc/halo footprint never moves (it depends only
-	// on x/y, not the spin), so every pixel that needs a value is overwritten each
-	// frame and the rest stay transparent — no need to reallocate ~65KB per frame.
+	// the footprint never moves, so pixels are overwritten in place — no ~65KB realloc per frame
 	let imageData = null
 	const res = PLANET.resolution
 	const radius = res * PLANET.discRadius
@@ -118,7 +108,8 @@
 	const tilt = (PLANET.tiltDeg * Math.PI) / 180
 	const cosT = Math.cos(tilt)
 	const sinT = Math.sin(tilt)
-	const frameMs = 1000 / PLANET.fps
+	const frameMs =
+		1000 / (window.matchMedia(MOBILE_VIEWPORT_QUERY).matches ? PLANET.fpsMobile : PLANET.fps)
 	const haloReach = 1 + PLANET.haloWidth
 
 	function draw(spin) {
@@ -154,8 +145,7 @@
 				const diff = Math.max(0, dx * light[0] + dy * light[1] + dz * light[2])
 				const shade = PLANET.ambient + (1 - PLANET.ambient) * diff
 
-				// Rotate the normal into planet space (tilt, then spin) so the
-				// surface turns under the static lighting.
+				// rotate the normal into planet space so the surface turns under static lighting
 				const ny = dy * cosT - dz * sinT
 				const nz = dy * sinT + dz * cosT
 				const sx = dx * cosS + nz * sinS
