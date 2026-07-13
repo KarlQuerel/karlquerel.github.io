@@ -2,7 +2,12 @@
 	<div class="content about">
 		<header class="about-head">
 			<p v-if="activeTab" :key="activeTab" class="about-intro about-lead">
-				{{ ABOUT_INTRO[activeTab] }}
+				<!-- Segmented so key words render in yellow; between-tag whitespace is
+				     stripped, so each segment carries its own spacing. -->
+				<template v-for="(seg, i) in ABOUT_INTRO[activeTab]" :key="i"
+					><span v-if="seg.hl" class="about-intro__hl">{{ seg.text }}</span
+					><template v-else>{{ seg.text }}</template></template
+				>
 			</p>
 			<p v-else class="about-intro about-lead about-greeting">
 				<span class="about-greeting__line">{{ ABOUT_INTRO.greetingLine1 }}</span>
@@ -47,10 +52,9 @@
 	import { ABOUT_INTRO } from '@/data/about'
 	import AboutWork from './AboutWork.vue'
 	import AboutLife from './AboutLife.vue'
-	import AboutWorkTest from './AboutWorkTest.vue'
 
-	// Tab state lives in the URL (?tab=work|life|test-work) so it survives refresh
-	// and is shareable.
+	// Tab state lives in the URL (?tab=work|life) so it survives refresh and is
+	// shareable.
 	const TABS = [
 		{ id: 'work', label: 'WORK', image: '/assets/about/briefcase.png', component: AboutWork },
 		{
@@ -58,13 +62,6 @@
 			label: 'LIFE',
 			image: '/assets/about/ps1-controller.png',
 			component: AboutLife,
-		},
-		// Throwaway tab to preview the zigzag timeline layout against real data.
-		{
-			id: 'test-work',
-			label: 'TEST',
-			image: '/assets/about/briefcase.png',
-			component: AboutWorkTest,
 		},
 	]
 
@@ -130,8 +127,10 @@
 		margin-top: 0;
 	}
 
-	// The name pops in the site yellow against the white greeting.
-	.about-name {
+	// The greeting name and key words in the tab intros pop in the site yellow against
+	// the white text.
+	.about-name,
+	.about-intro__hl {
 		color: $yellow;
 		text-shadow: 0 0 12px rgba($yellow, 0.45);
 	}
@@ -256,14 +255,15 @@
 	}
 
 	// Return-to-hub control: hoisted above the intro (order: -1), centred, and sticky
-	// so it stays reachable while a long panel scrolls. Pinned at 5.5rem — below the
-	// star toggle AND its "MENU" hint, which own top-centre — so they never overlap.
+	// so it stays reachable while a long panel scrolls. Pinned at 7rem — clear below the
+	// star toggle AND its "MENU" hint, which own top-centre — so they keep a comfortable
+	// gap and never crowd on hover.
 	// z 30 keeps it under the nav overlay (40) and star (50) so opening the menu covers it.
 	.about-back {
 		order: -1;
 		align-self: center;
 		position: sticky;
-		top: 5.5rem;
+		top: 7rem;
 		z-index: 30;
 		display: inline-flex;
 		align-items: center;

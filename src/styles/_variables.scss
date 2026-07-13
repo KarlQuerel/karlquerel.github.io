@@ -8,13 +8,9 @@ $light-blue: #00ccff;
 $light-red: #ff5f56;
 $light-gray: #d3d3d3;
 
-$primary-color: #ff5733;
-$secondary-color: #c0392b;
-
 // Additional Colors
 $mint: #3eb489;
 $azure: #007fff;
-$cream: #fffdd0;
 
 // Fonts
 $font-pixel: 'Press Start 2P', ui-monospace, monospace;
@@ -24,6 +20,20 @@ $font-terminal: 'VT323', ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', mono
 // Terminal phosphor default. The alternate tints the in-terminal `theme`
 // command switches to (amber/blue/paper) live in constants/terminal.js.
 $phosphor-green: #33ff66;
+
+// About career-timeline type tags — cool phosphor hues, deliberately kept clear of
+// the reserved gold ($yellow = year accent + current milestone) so a category label
+// never reads as "current".
+$tag-education: $light-blue;
+$tag-experience: $purple;
+
+// Flag colours — factual national-flag imagery for the About timeline, not theme
+// tokens. Whites reuse $white.
+$flag-fr-blue: #0055a4;
+$flag-fr-red: #ef4135;
+$flag-ch-red: #d52b1e;
+$flag-lb-red: #ed1c24;
+$flag-lb-green: #007a3d;
 
 // Terminal window chrome
 $terminal-chrome-border: #444;
