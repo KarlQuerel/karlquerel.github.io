@@ -31,14 +31,9 @@
 </script>
 
 <style scoped lang="scss">
-	// Zigzag career timeline: full-width borderless cards stacked down the page, their
-	// content alternating left / right so the titles zigzag. No rail — the alternating
-	// alignment carries the rhythm. Each card is "borderless" (a soft dark glow anchored
-	// to its side, never a frame) and slides in from that side on scroll. Gold is
-	// reserved for the current milestone.
+	// zigzag timeline: borderless cards alternating left/right, gold reserved for the current milestone
 	$slide: 28px;
-	// Single vertical rhythm for every line in a card — change here to retune spacing
-	// everywhere at once.
+	// single vertical rhythm for every line in a card
 	$row-gap: 0.35rem;
 
 	.ztl {
@@ -56,16 +51,13 @@
 		padding-bottom: 0;
 	}
 
-	// One flex column with a single gap so every line shares the same vertical rhythm —
-	// no per-element margins to drift out of sync. is-left / is-right set the side each
-	// row aligns to (and the slide-in origin).
+	// one gap carries the rhythm; is-left / is-right set the alignment side + slide-in origin
 	.ztl-card {
 		display: flex;
 		flex-direction: column;
 		gap: $row-gap;
 		padding: 0.9rem 1.2rem;
-		// Hidden until scrolled into view; the per-side offset lives on is-left /
-		// is-right so each card slides in from its own side.
+		// hidden until v-reveal marks it visible
 		opacity: 0;
 	}
 
@@ -93,9 +85,7 @@
 		transform: translateX($slide);
 	}
 
-	// Revealed on scroll (v-reveal adds is-visible): slide home from the side.
-	// `overflow-x` is clipped page-wide (see _layout.scss) so the offset never
-	// spawns a horizontal scrollbar.
+	// slide home on reveal; the page-wide overflow-x clip (_layout.scss) absorbs the offset
 	.ztl-item.is-visible .ztl-card {
 		animation: card-in 0.5s steps(6, end) forwards;
 	}
@@ -107,9 +97,7 @@
 		}
 	}
 
-	// Muted gold accent on every card — a consistent "beat" down the zigzag that
-	// reinforces the timeline without competing with the white title. The current
-	// milestone brightens to full gold (see .is-current below).
+	// muted gold beat down the zigzag; the current milestone brightens to full gold
 	.ztl-year {
 		font-family: $font-pixel;
 		font-size: clamp(0.5rem, 1.4vw, 0.65rem);
@@ -119,9 +107,7 @@
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 	}
 
-	// Category kicker — small caps, coloured per milestone type. Cool phosphor hues
-	// (kept clear of the gold accent) so the category reads as a quiet tag, subordinate
-	// to the gold "current" signal.
+	// per-type kicker in cool phosphor hues, kept clear of the gold "current" signal
 	.ztl-kind {
 		font-family: $font-pixel;
 		font-size: clamp(0.4rem, 1.2vw, 0.5rem);
@@ -148,8 +134,7 @@
 		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
 	}
 
-	// School — stepped down from full white so the degree title stays the single
-	// headline; it's a strong subhead, not a co-equal white line.
+	// stepped down from full white so the title stays the single headline
 	.ztl-school {
 		font-family: $font-pixel;
 		font-size: clamp(0.52rem, 1.5vw, 0.64rem);
@@ -176,13 +161,10 @@
 		flex-direction: row-reverse;
 	}
 
-	// Reserved for standout milestones only (e.g. the 42 pivot). Set in the readable
-	// VT323 console font — not the blocky pixel face — so a full sentence reads as a
-	// soft caption instead of a wall, and dimmed so it never rivals the title.
+	// standout milestones only; readable VT323 so a full sentence reads as a caption, not a wall
 	.ztl-summary {
 		margin: 0;
-		// Follow the card's side alignment — the global `p { text-align: center }`
-		// (see _layout.scss) would otherwise centre every summary.
+		// the global `p { text-align: center }` (_layout.scss) would otherwise centre it
 		text-align: inherit;
 		font-family: $font-terminal;
 		font-size: clamp(1rem, 2.2vw, 1.2rem);
@@ -205,8 +187,7 @@
 			opacity: 1;
 		}
 
-		// Match the is-left / is-right specificity so the per-side slide offset is
-		// actually cleared (a bare `.ztl-card` rule would lose to it).
+		// match is-left / is-right specificity or the side offset never clears
 		.is-left .ztl-card,
 		.is-right .ztl-card {
 			transform: none;

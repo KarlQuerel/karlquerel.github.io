@@ -121,7 +121,6 @@ export function useTerminalCommands({
 		return outputs
 	}
 
-	// --- Loading spinner ---------------------------------------------------
 	// One owner for the spinner lifecycle: hides the input prompt and ticks the
 	// loader frames. `startSpinner` returns a stop() that restores the prompt;
 	// it backs both the fixed-duration runner (scripts / secret_game) and the
@@ -613,7 +612,6 @@ export function useTerminalCommands({
 			},
 		})
 
-	// --- Pipes -------------------------------------------------------------
 	// Convert a command's line objects into the plain text the next pipe segment
 	// reads: drop image lines, take link text, strip generated <tags> and reverse
 	// escapeHtml's three entities so a value round-trips cleanly through a chain.

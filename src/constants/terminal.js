@@ -101,7 +101,6 @@ export const MAN_PAGES = {
 	exit: 'exit - leave the terminal.',
 }
 
-// --- Fake filesystem ------------------------------------------------------
 // A tiny in-memory tree the navigation commands (ls/cd/cat/tree/grep/wc/head)
 // walk. The root node is home (~). Directories hold `children`; files hold
 // `content`. `exec: true` marks a runnable script (see executableScripts).
@@ -155,7 +154,6 @@ export const FILESYSTEM = {
 	},
 }
 
-// --- Toys -----------------------------------------------------------------
 // `cowsay` speaker — reuses the neofetch mascot below the speech bubble.
 export const COWSAY_MASCOT = [
 	'   \\',

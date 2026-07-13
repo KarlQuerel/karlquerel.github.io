@@ -50,7 +50,6 @@ export function useTerminalInput({
 		}
 	}
 
-	// --- readline-style line editing ---------------------------------------
 	const caretOf = el => el?.selectionStart ?? currentInput.value.length
 
 	// Replace the line and place the caret; the value-change watcher would snap
@@ -76,7 +75,6 @@ export function useTerminalInput({
 		setLine(el, currentInput.value.slice(0, caret), caret)
 	}
 
-	// --- tab completion ----------------------------------------------------
 	const longestCommonPrefix = items => {
 		if (items.length === 0) return ''
 		let prefix = items[0]
@@ -139,7 +137,6 @@ export function useTerminalInput({
 		}
 	}
 
-	// --- autosuggestion (fish-style ghost text) ----------------------------
 	// The best continuation of what's typed: most-recent matching history entry
 	// first, then a command name. Only when the caret sits at the very end — a
 	// suggestion trailing a mid-line caret would just be noise.
@@ -173,7 +170,6 @@ export function useTerminalInput({
 		return true
 	}
 
-	// --- submit / history --------------------------------------------------
 	const submit = async () => {
 		const value = currentInput.value
 		await executeCommand(value)

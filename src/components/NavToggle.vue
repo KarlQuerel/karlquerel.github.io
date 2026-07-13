@@ -1,9 +1,5 @@
 <template>
-	<!-- The only persistent chrome: a pixel star — one of the backdrop's own stars
-	     pulled forward — that summons the nav overlay (see SiteNavbar.vue). On open
-	     it flares 45° into a brighter, held star and throws a one-shot supernova
-	     ring; the flip doubles as the overlay's "close" (✕) cue. Stays above the
-	     dim backdrop (z 50 > 40) so it keeps working while the menu is open. -->
+	<!-- the only persistent chrome: a pixel star summoning the nav overlay; it flips into the close cue and stays above the dim (z 50 > 40) -->
 	<button
 		class="nav-toggle"
 		:class="{ 'is-open': open, 'is-scrolled': hidden }"
@@ -24,15 +20,12 @@
 	defineProps({ open: { type: Boolean, default: false } })
 	defineEmits(['toggle'])
 
-	// Show the "MENU" label only at the top of a page; it fades away once you scroll
-	// down and stays gone until you return to the top. The star itself stays put.
+	// "MENU" shows only at the top of the page and fades once you scroll
 	const { hidden } = useHideOnScroll()
 </script>
 
 <style scoped lang="scss">
-	// Centred at the top in both states — the star flares in place rather than
-	// jumping to a corner. The revealed nav links drop in just below it (see
-	// .site-chrome-bar--floating) so they never collide.
+	// centred in both states — the star flares in place; the nav links drop in below it
 	.nav-toggle {
 		position: fixed;
 		top: 0.8rem;
@@ -47,14 +40,11 @@
 		padding: 0;
 		background: none;
 		border: 0;
-		// Square off — and strip the frame from — the shared void-button base that
-		// every bare <button> inherits; this control is just the bare star.
+		// strip the shared void-button frame; this control is just the bare star
 		border-radius: 0;
 		box-shadow: none;
 		cursor: pointer;
-		// Resting cream; shifts to $yellow on hover / focus. The glow lives on the
-		// star itself (plus the halo) — never on the button box — so it hugs the star
-		// shape instead of tracing the black chip's rectangle.
+		// resting cream, $yellow on hover; the glow lives on the star + halo, never the button box
 		color: #fff3d6;
 		transition: color 0.25s steps(3, end);
 	}
@@ -93,10 +83,7 @@
 		}
 	}
 
-	// Borderless black backing chip, built on the shared $void radius. Sits one layer
-	// below the halo (z -2 < the halo's z -1) so the yellow bloom glows *over* the
-	// black instead of being hidden behind it — the stack is chip → halo → star.
-	// Contrast over bright page content is handled separately.
+	// backing chip sits below the halo (z -2 < -1) so the bloom glows over the black
 	.nav-toggle::after {
 		content: '';
 		position: absolute;
@@ -111,10 +98,7 @@
 		pointer-events: none;
 	}
 
-	// "MENU" sits under the star: legible (dim) only at the top of a page so the
-	// affordance is announced, full-bright on hover / focus, faded out once you
-	// scroll away from the top (.is-scrolled) so it doesn't trail over content, and
-	// gone while open (the flipped star reads as close).
+	// dim at page top, bright on hover, faded once scrolled (.is-scrolled), gone while open
 	.nav-toggle__label {
 		position: absolute;
 		top: 100%;
@@ -128,8 +112,7 @@
 		white-space: nowrap;
 		opacity: 0;
 		pointer-events: none;
-		// Yellow bloom for the glow + a tight dark shadow so the text keeps its
-		// contrast over bright starfield patches, not just the void.
+		// yellow bloom + tight dark shadow keeps contrast over bright starfield patches
 		text-shadow:
 			0 0 10px rgba($yellow, 0.7),
 			0 2px 4px rgba(0, 0, 0, 0.85);
@@ -150,21 +133,13 @@
 			0 2px 4px rgba(0, 0, 0, 0.85);
 	}
 
-	// No focus box in any state — keyboard focus is shown by the star's glow
-	// brightening (see the star filter above) instead of a frame. `:focus` (not just
-	// `:focus-visible`) is targeted on purpose: a mouse click fires `:focus`
-	// without `:focus-visible`, and NES.css's global `button:focus` paints a
-	// rounded `-webkit-focus-ring-color` outline that would otherwise show.
+	// no focus ring in any state — the star's glow marks focus instead
 	.nav-toggle:focus,
 	.nav-toggle:focus-visible {
 		outline: none;
 	}
 
-	// A 4-point pixel star: this base pixel is the core; the box-shadow copies are
-	// its four arms (single-pixel tips that widen to a 3-pixel band near the core)
-	// plus four diagonal shoulders. That concave "pinched" silhouette — narrow
-	// tips, wider middle — is what reads as a star instead of a plus. Colour is
-	// `currentColor`, so the whole star tints with the button on hover / open.
+	// 4-point star: box-shadow copies form the arms + shoulders; currentColor tints with the button
 	$p: 5px;
 	.nav-toggle__star {
 		position: relative;
@@ -194,8 +169,7 @@
 			#{$p * 1} #{$p * 1};
 		rotate: 0deg;
 		scale: 1.1;
-		// Glow lives here, not on the button: drop-shadow traces the star's own
-		// silhouette (box-shadow arms included), so it reads as the star lighting up.
+		// drop-shadow traces the star's own silhouette (box-shadow arms included), not the button
 		filter: drop-shadow(0 0 6px rgba($yellow, 0.7));
 		transition:
 			rotate 0.3s steps(3, end),
@@ -208,9 +182,7 @@
 		filter: drop-shadow(0 0 9px rgba($yellow, 0.9));
 	}
 
-	// The supernova shockwave: a ring that bursts out of the core. The rule (and so
-	// the animation) exists only under .is-open, so it replays on every open and
-	// never fires on close or first paint.
+	// ring exists only under .is-open so the burst replays each open and never fires on close
 	.nav-toggle__star::after {
 		content: '';
 		position: absolute;
@@ -225,8 +197,7 @@
 		pointer-events: none;
 	}
 
-	// Flare open: rotate the star 45° into an ✕, brighten, and hold — the ✕ reads
-	// as a settled "close" cue.
+	// rotate 45° into an ✕, brighten, and hold — reads as a settled close cue
 	.nav-toggle.is-open {
 		color: $yellow;
 	}
@@ -258,8 +229,7 @@
 		}
 	}
 
-	// Kill the idle twinkle, the flip transition and the burst for anyone who asks
-	// for less motion; the static open/closed star states still read clearly.
+	// reduced motion: kill twinkle/flip/burst; the static open/closed states still read
 	@media (prefers-reduced-motion: reduce) {
 		.nav-toggle__star,
 		.nav-toggle.is-open .nav-toggle__star,

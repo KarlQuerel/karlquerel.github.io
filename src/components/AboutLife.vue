@@ -1,13 +1,11 @@
 <template>
 	<div class="life">
-		<!-- Lead intro — no accent dot, so it reads as the header above the themed
-		     section cards that follow. -->
+		<!-- no accent dot — reads as the header above the themed cards -->
 		<section v-reveal class="life-card reveal-block">
 			<h2 class="life-card__title">ABOUT ME</h2>
 			<p v-for="(line, i) in ABOUT_ME" :key="i" class="life-card__line">{{ line }}</p>
 		</section>
 
-		<!-- Dogs — one photo frame per dog. -->
 		<section v-reveal class="life-card reveal-block" data-section="dogs">
 			<h2 class="life-card__title"><span class="life-card__dot" aria-hidden="true" />DOGS</h2>
 			<div class="dogs">
@@ -27,7 +25,6 @@
 			</div>
 		</section>
 
-		<!-- Sports / Music / Video games — text, optional pixel tags, optional link. -->
 		<section
 			v-for="section in LIFE_SECTIONS"
 			:key="section.id"
@@ -109,8 +106,7 @@
 		margin-bottom: 0;
 	}
 
-	// Accent per section (id set via data-section). Colours reuse the shared palette
-	// so the LIFE cards stay in the site's system.
+	// per-section accents from the shared palette so LIFE stays in the site's system
 	[data-section='dogs'] .life-card__dot {
 		background: $light-red;
 		box-shadow: 0 0 8px 1px rgba($light-red, 0.55);
@@ -131,7 +127,6 @@
 		box-shadow: 0 0 8px 1px rgba($light-blue, 0.55);
 	}
 
-	// Dogs — two square frames, side by side, stacking on narrow screens.
 	.dogs {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -160,7 +155,7 @@
 		display: block;
 	}
 
-	// Placeholder sprites are tiny — contain + upscale crisply instead of stretching.
+	// placeholder sprites are tiny — contain + pixelate instead of stretching
 	.dog__photo--pixel {
 		object-fit: contain;
 		padding: 0.6rem;
@@ -176,7 +171,6 @@
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 	}
 
-	// Pixel chips for music genres / game types.
 	.tags {
 		display: flex;
 		flex-wrap: wrap;
@@ -197,7 +191,6 @@
 		border-radius: $void-radius;
 	}
 
-	// Router link styled as a compact void-button (matches every button site-wide).
 	.life-link {
 		display: inline-flex;
 		align-items: center;
@@ -211,7 +204,7 @@
 		@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.5));
 	}
 
-	// Twin pixel triangles pointing right; step right on hover (mirror of the "back" cue).
+	// mirror of the "back" cue — twin triangles stepping right on hover
 	.life-link__arrow {
 		display: inline-flex;
 		gap: 0.15em;

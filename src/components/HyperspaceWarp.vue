@@ -1,7 +1,5 @@
 <template>
-	<!-- Scroll-driven lightspeed jump: a starfield warp whose speed, tail length
-	     and opacity all scale with `intensity` (0 → off, 1 → full lightspeed).
-	     Purely decorative. -->
+	<!-- scroll-driven lightspeed jump; speed, tails and opacity scale with intensity. Decorative -->
 	<canvas ref="canvasEl" class="hyperspace" :style="canvasStyle" aria-hidden="true" />
 </template>
 
@@ -15,9 +13,7 @@
 		intensity: { type: Number, default: 0 },
 	})
 
-	// While the jump is disengaged (top of the page / during the crawl) the canvas
-	// is display:none — it drops out of the compositor entirely instead of sitting
-	// as an invisible full-screen layer that still composites every frame.
+	// display:none while disengaged so the canvas drops out of the compositor entirely
 	const canvasStyle = computed(() => ({
 		opacity: props.intensity,
 		display: props.intensity > 0 ? null : 'none',
@@ -36,8 +32,7 @@
 	let cx = 0
 	let cy = 0
 
-	// Drop a star at a random depth down the tunnel; pz tracks its previous depth
-	// so each frame can draw the streak between the two projected positions.
+	// pz keeps the previous depth so each frame draws the streak between the two projections
 	function spawn(star) {
 		star.x = rand(-cx, cx)
 		star.y = rand(-cy, cy)
@@ -102,8 +97,7 @@
 	// Run the loop only while the jump is engaged and motion is allowed.
 	function ensureRunning() {
 		if (rafId || props.intensity <= 0 || !ctx || prefersReducedMotion()) return
-		// The canvas was display:none until now, so its measured size is stale;
-		// remeasure on the next frame (once it's laid out) before drawing.
+		// size is stale after display:none — remeasure next frame before drawing
 		rafId = requestAnimationFrame(() => {
 			resize()
 			rafId = requestAnimationFrame(frame)
@@ -134,8 +128,7 @@
 		height: 100%;
 		display: block;
 		pointer-events: none;
-		// Chunky upscaling of the half-res backing store keeps the streaks crisp
-		// and pixel-flavoured rather than smoothly anti-aliased.
+		// chunky upscale of the half-res store keeps streaks crisp, not anti-aliased
 		image-rendering: pixelated;
 	}
 </style>

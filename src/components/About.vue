@@ -2,8 +2,7 @@
 	<div class="content about">
 		<header class="about-head">
 			<p v-if="activeTab" :key="activeTab" class="about-intro about-lead">
-				<!-- Segmented so key words render in yellow; between-tag whitespace is
-				     stripped, so each segment carries its own spacing. -->
+				<!-- segments carry their own spacing — between-tag whitespace is stripped -->
 				<template v-for="(seg, i) in ABOUT_INTRO[activeTab]" :key="i"
 					><span v-if="seg.hl" class="about-intro__hl">{{ seg.text }}</span
 					><template v-else>{{ seg.text }}</template></template
@@ -34,8 +33,7 @@
 		</div>
 
 		<template v-else>
-			<!-- Sits above the intro (order: -1) and sticks to the top while a long
-			     panel scrolls, so "back" stays reachable. -->
+			<!-- order: -1 hoists it above the intro; sticky keeps "back" reachable while a panel scrolls -->
 			<button class="about-back" type="button" @click="goToHub">
 				<span class="about-back__icon" aria-hidden="true"><i /><i /></span>
 				Back
@@ -53,8 +51,7 @@
 	import AboutWork from './AboutWork.vue'
 	import AboutLife from './AboutLife.vue'
 
-	// Tab state lives in the URL (?tab=work|life) so it survives refresh and is
-	// shareable.
+	// tab state lives in the URL (?tab=work|life) so it survives refresh and is shareable
 	const TABS = [
 		{ id: 'work', label: 'WORK', image: '/assets/about/briefcase.png', component: AboutWork },
 		{
@@ -91,8 +88,7 @@
 	@use '@/styles/mixins' as *;
 
 	$portal-radius: 4rem;
-	// WORK/LIFE labels sit a step below the greeting (which uses the shared
-	// $heading-pixel-size) so the heading stays dominant over the button labels.
+	// a step below the greeting's $heading-pixel-size so the heading stays dominant
 	$portal-label-size: clamp(0.85rem, 2.1vw, 1.1rem);
 
 	.about {
@@ -127,8 +123,6 @@
 		margin-top: 0;
 	}
 
-	// The greeting name and key words in the tab intros pop in the site yellow against
-	// the white text.
 	.about-name,
 	.about-intro__hl {
 		color: $yellow;
@@ -254,11 +248,7 @@
 		text-shadow: 0 0 12px rgba($yellow, 0.6);
 	}
 
-	// Return-to-hub control: hoisted above the intro (order: -1), centred, and sticky
-	// so it stays reachable while a long panel scrolls. Pinned at 7rem — clear below the
-	// star toggle AND its "MENU" hint, which own top-centre — so they keep a comfortable
-	// gap and never crowd on hover.
-	// z 30 keeps it under the nav overlay (40) and star (50) so opening the menu covers it.
+	// top 7rem clears the star toggle + MENU hint; z 30 stays under the nav overlay (40) and star (50)
 	.about-back {
 		order: -1;
 		align-self: center;
@@ -275,13 +265,11 @@
 		padding: 0.5rem 0.9rem;
 		// Keep it legible over whatever panel content scrolls behind it.
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
-		// Framed chip: the shared void frame over a slightly more solid dark fill, so
-		// it reads as a distinct, tappable control against the scrolling panel.
+		// void frame over a more solid fill so it reads as a tappable chip against the panel
 		@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.55));
 	}
 
-	// Arcade "rewind": twin pixel triangles (sized in em so they scale with the label)
-	// that step left on hover.
+	// twin "rewind" triangles, em-sized so they scale with the label
 	.about-back__icon {
 		display: inline-flex;
 		gap: 0.15em;
