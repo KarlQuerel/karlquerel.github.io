@@ -1,6 +1,6 @@
 # CLAUDE.md — karlquerel.github.io
 
-Personal portfolio website. Vue 3 + Vite + Vue Router + Firebase + NES.css (retro pixel aesthetic) + SCSS.
+Personal portfolio website. Vue 3 + Vite + Vue Router + Firebase + custom "void" SCSS design system (retro pixel aesthetic).
 Deployed to GitHub Pages via gh-pages.
 
 ---
@@ -33,7 +33,7 @@ Non-negotiables:
 | Build | Vite 6 |
 | Routing | Vue Router 4 |
 | Backend/DB | Firebase 11 |
-| CSS | NES.css + SCSS (pixel / retro aesthetic) |
+| CSS | SCSS — custom "void" system: tokens in `_variables.scss`, `void-panel`/`void-button` mixins (pixel / retro aesthetic) |
 | Linting | ESLint 8 (babel-parser, vue plugin, unused-imports) |
 | Formatting | Prettier 3 |
 | Deploy | gh-pages → GitHub Pages |
@@ -63,16 +63,15 @@ The `postbuild` step copies `dist/index.html` → `dist/404.html` automatically 
 
 ```
 src/
-  assets/
-    styles/       # global SCSS variables, mixins, resets
-  components/     # reusable Vue components
+  components/     # all Vue components, route-level and reusable (PascalCase)
   composables/    # shared logic (useX.js naming)
-  constants/      # all hardcoded values (routes, labels, config keys)
-  views/          # route-level page components
-  router/         # Vue Router config (index.js)
-  firebase/       # Firebase init + data composables
+  constants/      # hardcoded values (labels, config keys, animation tuning)
+  data/           # page content as plain JS exports (about, sport, contact)
+  directives/     # custom directives (e.g. v-reveal)
+  js/             # Firebase init + Firestore helpers (firebase-setup.js)
+  styles/         # global SCSS: _variables, _mixins, partials, main.scss
   App.vue
-  main.js
+  main.js         # app entry + the Vue Router route table (no src/router/)
 ```
 
 ---
@@ -83,8 +82,8 @@ src/
 - Props: `defineProps`, emits: `defineEmits`. Always typed.
 - Composables in `src/composables/`, prefixed with `use` (e.g. `useFirestore.js`).
 - Constants in `src/constants/` — no magic strings or numbers anywhere else.
-- SCSS: scoped per component (`<style scoped lang="scss">`). Global tokens in `src/assets/styles/_variables.scss`.
-- NES.css classes used directly in templates — do not wrap in custom classes without good reason.
+- SCSS: scoped per component (`<style scoped lang="scss">`). Global tokens in `src/styles/_variables.scss` (auto-injected into every component style block via Vite `additionalData` — no import needed).
+- Panels and buttons use the shared `void-panel` / `void-button` mixins from `src/styles/_mixins.scss` — never hand-roll borders or button chrome.
 - No inline styles. Ever.
 - File names: `PascalCase` for components, `camelCase` for composables and utilities.
 - Remove all unused imports, variables, props, and components — ESLint's unused-imports plugin enforces this.
@@ -104,9 +103,9 @@ When touching existing code, always:
 
 ## Design constraints
 
-- **Retro pixel aesthetic is non-negotiable.** NES.css is the design system. Do not introduce Tailwind, Bootstrap, Material, or any other CSS framework.
+- **Retro pixel aesthetic is non-negotiable.** The custom void SCSS system is the design system. Do not introduce Tailwind, Bootstrap, Material, NES.css, or any other CSS framework.
 - Animations must feel 8-bit — stepped, not smooth easing.
-- Font choices must remain pixel-compatible (no system-ui or sans-serif as primary).
+- Font choices must remain pixel-compatible (no system-ui or sans-serif as primary). Fonts are self-hosted woff2 in `public/assets/fonts/` + `src/styles/_fonts.scss` — never re-add render-blocking font CDNs.
 - Firebase: prefer Firestore, keep API keys in `.env` — never hardcode, never commit.
 
 ---
@@ -125,7 +124,7 @@ When touching existing code, always:
 - Do not add a test framework unless explicitly asked — the test script is a placeholder.
 - Do not switch from Composition API to Options API.
 - Do not install new npm dependencies without asking — keep the bundle lean.
-- Do not modify `vite.config.js`, `router/index.js`, or Firebase config without good reason — these are load-bearing.
+- Do not modify `vite.config.js`, the route table in `src/main.js`, or Firebase config without good reason — these are load-bearing.
 - Do not break the `dist/404.html` copy step — it's how GitHub Pages handles SPA routing.
 - Do not leave TODO comments — either fix it now or open an issue.
 - Do not leave console.log statements in committed code.
