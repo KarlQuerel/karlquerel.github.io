@@ -15,7 +15,6 @@
 							:src="dog.photo"
 							:alt="`Photo of ${dog.name}`"
 							class="dog__photo"
-							:class="{ 'dog__photo--pixel': dog.placeholder }"
 							loading="lazy"
 							decoding="async"
 						/>
@@ -148,18 +147,13 @@
 		border-radius: $void-radius;
 	}
 
+	// cutout photos (transparent bg): contain shows the whole dog on the dark frame
 	.dog__photo {
 		width: 100%;
 		height: 100%;
-		object-fit: cover;
-		display: block;
-	}
-
-	// placeholder sprites are tiny — contain + pixelate instead of stretching
-	.dog__photo--pixel {
 		object-fit: contain;
 		padding: 0.6rem;
-		image-rendering: pixelated;
+		display: block;
 	}
 
 	.dog__name {
