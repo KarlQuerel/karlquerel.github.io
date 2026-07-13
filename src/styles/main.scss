@@ -1,4 +1,4 @@
-@use 'nes.css/css/nes.min.css';
+@use 'fonts';
 @use 'variables';
 @use 'layout';
 @use 'site-chrome';
@@ -7,16 +7,50 @@
 @use 'sport';
 @use 'terminal';
 
-* {
+// Base layer NES.css used to provide before it was dropped: the site-wide
+// pixel font, retro cursor, and normalize bits everything else inherits.
+*,
+*::before,
+*::after {
 	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
 }
 
+html {
+	line-height: 1.15;
+	cursor: url('/assets/img/custom-cursor.png'), auto;
+	-webkit-text-size-adjust: 100%;
+	-webkit-tap-highlight-color: transparent;
+}
+
+body {
+	font-family: $font-pixel;
+	-webkit-font-smoothing: antialiased;
+}
+
+// form controls don't inherit fonts by default
+button,
+input,
+optgroup,
+select,
+textarea {
+	font-family: inherit;
+	font-size: inherit;
+	line-height: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	margin-bottom: 0.5rem;
+}
+
 a,
 button,
-.nes-btn,
-.nes-icon,
 input[type='button'],
 input[type='submit'],
 [role='button'],
@@ -27,7 +61,6 @@ input[type='submit'],
 	cursor: url('/assets/img/custom-cursor.png'), auto !important;
 }
 
-/* Keep default cursor for text inputs and textareas */
 input[type='text'],
 input[type='email'],
 input[type='password'],

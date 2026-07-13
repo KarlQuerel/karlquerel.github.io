@@ -15,16 +15,9 @@
 	<link rel="icon" href="/favicon.png" type="image/png" sizes="192x192">
 	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
 
-	<!-- Fonts -->
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-
-	<!-- *** SCRIPTS *** -->
-
-	<!-- TypeIt — only used on /terminal (lazy route). `defer` keeps it off the
-	     render-blocking path; it's still ready long before that route mounts. -->
-	<script defer src="https://unpkg.com/typeit@8.7.1/dist/index.umd.js"></script>
+	<!-- Fonts — self-hosted latin subsets (see src/styles/_fonts.scss), preloaded off the render-blocking path -->
+	<link rel="preload" href="/assets/fonts/press-start-2p-latin.woff2" as="font" type="font/woff2" crossorigin>
+	<link rel="preload" href="/assets/fonts/vt323-latin.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 
 <body>

@@ -1,0 +1,17 @@
+// Self-hosted pixel fonts (latin subsets, ~30 kB total) so first paint never
+// waits on the render-blocking Google Fonts CSS + a second font origin.
+@font-face {
+	font-family: 'Press Start 2P';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/assets/fonts/press-start-2p-latin.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'VT323';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/assets/fonts/vt323-latin.woff2') format('woff2');
+}

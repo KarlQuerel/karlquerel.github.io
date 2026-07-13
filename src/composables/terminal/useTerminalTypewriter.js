@@ -1,3 +1,4 @@
+import TypeIt from 'typeit'
 import { ref, nextTick } from 'vue'
 import { prefersReducedMotion } from '../usePrefersReducedMotion.js'
 
@@ -27,8 +28,8 @@ export function useTerminalTypewriter() {
 			}
 
 			const initTypeIt = () => {
-				if (welcomeTextRef.value && window.TypeIt) {
-					new window.TypeIt(welcomeTextRef.value, {
+				if (welcomeTextRef.value) {
+					new TypeIt(welcomeTextRef.value, {
 						strings: [welcomeMessage],
 						...typewriterSpeed,
 						html: true,
@@ -54,7 +55,7 @@ export function useTerminalTypewriter() {
 				if (element && prefersReducedMotion()) {
 					element.innerHTML = content
 					resolve()
-				} else if (element && window.TypeIt) {
+				} else if (element) {
 					const defaultOptions = {
 						...typewriterSpeed,
 						html: true,
@@ -65,7 +66,7 @@ export function useTerminalTypewriter() {
 						},
 					}
 
-					new window.TypeIt(element, {
+					new TypeIt(element, {
 						...defaultOptions,
 						...options,
 						strings: [content],
