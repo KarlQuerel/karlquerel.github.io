@@ -2,18 +2,16 @@
 	<div>
 		<p v-if="loading">Loading...</p>
 
-		<div v-else>
-			<div class="nes-container is-dark with-title is-centered is-rounded">
-				<p class="title">Waste your time</p>
+		<div v-else class="counter-panel">
+			<p class="counter-panel__title">Waste your time</p>
 
-				<button id="clicker" type="button" @click="incrementCounter">
-					ONE CLICK AT A TIME
-				</button>
+			<button id="clicker" type="button" @click="incrementCounter">
+				ONE CLICK AT A TIME
+			</button>
 
-				<p>
-					<span>{{ counter }}</span>
-				</p>
-			</div>
+			<p>
+				<span>{{ counter }}</span>
+			</p>
 		</div>
 	</div>
 </template>
@@ -29,8 +27,7 @@
 		try {
 			counter.value = await loadClicks()
 		} catch {
-			// Firebase unavailable (offline, blocked, misconfigured) — show 0
-			// rather than hanging on "Loading..." forever.
+			// Firebase unavailable — show 0 rather than hanging on "Loading..." forever
 			counter.value = 0
 		} finally {
 			loading.value = false
@@ -67,10 +64,20 @@
 		}
 	}
 
-	.nes-container.is-dark {
-		background-color: rgba(0, 0, 0, 0.5) !important;
-		border: $void-border !important;
-		border-radius: $void-radius !important;
-		text-transform: uppercase !important;
+	.counter-panel {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.2rem;
+		padding: 1.6rem 1.4rem;
+		text-align: center;
+		text-transform: uppercase;
+		@include void-panel;
+	}
+
+	.counter-panel__title {
+		font-family: $font-pixel;
+		font-size: clamp(0.6rem, 1.8vw, 0.8rem);
+		color: $yellow;
 	}
 </style>

@@ -11,8 +11,7 @@
 			</div>
 
 			<div class="terminal-body" ref="terminalBody" @click="focusInput(terminalInput)">
-				<!-- Boot MOTD: static so it shows instantly (and under reduced motion)
-			     and scrolls away with the scrollback like a real shell. -->
+				<!-- static boot MOTD: instant, reduced-motion safe, scrolls away like a real shell -->
 				<div class="terminal-banner" aria-hidden="true">{{ motd }}</div>
 
 				<div class="terminal-line">
@@ -29,8 +28,7 @@
 					@unregister="unregisterLine"
 				/>
 
-				<!-- Transient spinner while a ./script "runs" (replaces the input
-			     prompt, so the line below looks like a shell still working). -->
+				<!-- transient spinner replacing the prompt while a ./script "runs" -->
 				<div v-if="isExecutingScript" class="terminal-line">
 					<span class="text-green" aria-hidden="true">{{ spinnerFrame }}</span>
 				</div>
@@ -41,9 +39,7 @@
 				>
 					<TerminalPrompt />
 					<div class="input-container">
-						<!-- Visible layer: the typed text with an inline block cursor that
-					     wraps along with the text (the textarea above is transparent and
-					     only captures keystrokes / caret position). -->
+						<!-- visible layer: typed text + inline block cursor; the textarea above only captures keys -->
 						<div class="input-mirror" aria-hidden="true">
 							<span>{{ inputBeforeCursor }}</span
 							><span class="custom-cursor">{{ cursorChar }}</span
@@ -98,8 +94,7 @@
 	const { phosphor, themeNames, themeName, setTheme } = useTerminalTheme()
 	const { trackCommand, trackVisit, getVisitStats, loadVisitData } = useVisitTracker()
 
-	// The `history` command needs the recall list, but that ref is created later
-	// by useTerminalInput; this holder is filled in once it exists.
+	// holder for the recall list — useTerminalInput creates the ref later
 	let commandHistoryRef = null
 
 	const {
@@ -175,14 +170,11 @@
 
 	commandHistoryRef = commandHistory
 
-	// Split the input around the caret so the block cursor can be rendered
-	// inline (and wrap with the text) instead of positioned by a fixed offset.
+	// split around the caret so the block cursor renders inline and wraps with the text
 	const inputBeforeCursor = computed(() => currentInput.value.slice(0, cursorPosition.value))
 	const inputAfterCursor = computed(() => currentInput.value.slice(cursorPosition.value + 1))
 
-	// At the end of the line with a live suggestion, the block cursor sits on the
-	// first ghost char (fish-style) and the rest trails greyed-out; otherwise the
-	// cursor falls on the real char under the caret (or a trailing space).
+	// fish-style: at end-of-line the cursor sits on the first ghost char, the rest trails grey
 	const caretAtEnd = computed(() => cursorPosition.value >= currentInput.value.length)
 	const cursorChar = computed(() =>
 		caretAtEnd.value && suggestionTail.value
@@ -206,10 +198,7 @@
 		})
 	}
 
-	// --- Typewriter orchestration ------------------------------------------
-	// TerminalLine registers the DOM target of each typed line here, keyed by
-	// its history index. The orchestrator animates them strictly in order, one
-	// at a time, marking each line `animated` once typed.
+	// TerminalLine registers each typed line's DOM target; the orchestrator animates them in order
 	const lineTargets = new Map()
 	const isProcessingTypewriter = ref(false)
 
@@ -283,256 +272,3 @@
 		})
 	})
 </script>
-
-<style lang="scss" scoped>
-	// Cap the console so the shared starfield shows around it — a CRT floating in
-	// space — instead of the window filling the whole viewport.
-	$console-max-width: 74rem;
-	$console-max-height: 47rem;
-
-	.terminal-container {
-		width: 100%;
-		height: 100%;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		box-sizing: border-box;
-		// Every page carries the fixed star toggle over its top-centre; nudge the
-		// centred console down a touch so the toggle clears its title bar on short
-		// viewports (where the window grows to fill the height).
-		padding-top: 1.6rem;
-	}
-
-	@media (max-width: #{$breakpoint-mobile}) {
-		// Phones show the fixed star + "MENU" label (~4.5rem tall) at the top with
-		// no page scroll to fade it, so drop the console clear of that chrome and
-		// leave a little floor — a shorter window that never sits under the label.
-		.terminal-container {
-			padding-top: 4.5rem;
-			padding-bottom: 1rem;
-		}
-	}
-
-	.terminal-window {
-		--phosphor: #{$phosphor-green};
-		position: relative;
-		width: 100%;
-		height: 100%;
-		max-width: $console-max-width;
-		max-height: $console-max-height;
-		background: rgba(8, 12, 8, 0.92);
-		border: $void-border;
-		border-radius: $void-radius;
-		overflow: hidden;
-		font-family: $font-terminal;
-		font-size: 1.4rem;
-		// Lift the console off the starfield so it reads as floating in the void.
-		box-shadow:
-			0 1.5rem 4rem rgba(0, 0, 0, 0.55),
-			0 0 0 1px rgba(0, 0, 0, 0.45);
-	}
-
-	// Subtle CRT scanlines, fixed over the (non-scrolling) window.
-	.terminal-window::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		z-index: 5;
-		background: repeating-linear-gradient(
-			to bottom,
-			rgba(0, 0, 0, 0.18) 0,
-			rgba(0, 0, 0, 0.18) 1px,
-			transparent 1px,
-			transparent 3px
-		);
-	}
-
-	.terminal-header {
-		background: rgba(100, 100, 100, 0.5);
-		border-bottom: $void-border;
-		padding: 0.5rem 1rem;
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-	}
-
-	.terminal-buttons {
-		display: flex;
-		gap: 0.5rem;
-
-		.btn {
-			width: 12px;
-			height: 12px;
-			border-radius: 50%;
-			border: 1px solid $terminal-chrome-border;
-
-			&.red {
-				background: $light-red;
-			}
-			&.yellow {
-				background: $yellow;
-			}
-			&.green {
-				background: $terminal-dot-green;
-			}
-		}
-	}
-
-	.terminal-title {
-		color: $light-gray;
-		font-size: 0.95rem;
-		letter-spacing: 0.5px;
-		opacity: 0.85;
-	}
-
-	.terminal-body {
-		height: calc(100% - 60px);
-		padding: 1rem;
-		overflow-y: auto;
-		// Long lines wrap (like a real terminal) — never scroll sideways.
-		overflow-x: hidden;
-		// Subtle phosphor glow on every glyph.
-		text-shadow: 0 0 2px currentColor;
-
-		&::-webkit-scrollbar {
-			width: 8px;
-		}
-
-		&::-webkit-scrollbar-track {
-			background: $terminal-scrollbar-track;
-		}
-
-		&::-webkit-scrollbar-thumb {
-			background: $light-gray;
-			border-radius: 4px;
-		}
-	}
-
-	// Base .terminal-line geometry is global (see _terminal.scss).
-	.terminal-line.current-line {
-		margin-bottom: 0;
-	}
-
-	.terminal-banner {
-		// Dim, system-text login MOTD. `pre-wrap` keeps the spacing but lets long
-		// lines fold on narrow screens instead of getting clipped.
-		color: $light-gray;
-		opacity: 0.75;
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
-		line-height: 1.2;
-		margin: 0 0 0.8rem;
-		// Shell MOTD reads left-aligned like real output, not centered (the banner
-		// would otherwise inherit #app's centered text, most visible once it wraps
-		// on mobile).
-		text-align: start;
-	}
-
-	.welcome-text {
-		color: $light-blue;
-		min-width: 0;
-		overflow-wrap: anywhere;
-	}
-
-	.input-container {
-		position: relative;
-		flex: 1;
-		min-width: 0;
-	}
-
-	// Visible text layer the user actually reads; wraps on long input.
-	.input-mirror {
-		color: $white;
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
-	}
-
-	// Transparent capture layer stacked over the mirror, sized to it so it
-	// wraps identically. Auto-grows in height since the mirror sets the box.
-	.terminal-input {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		margin: 0;
-		padding: 0;
-		background: transparent;
-		border: none;
-		outline: none;
-		resize: none;
-		overflow: hidden;
-		color: transparent;
-		caret-color: transparent;
-		font-family: inherit;
-		font-size: inherit;
-		line-height: inherit;
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
-		z-index: 1;
-	}
-
-	// Inline block cursor: inverts the glyph it sits on and flows with the text.
-	.custom-cursor {
-		background: var(--phosphor);
-		color: $black;
-		animation: blink 1.1s steps(1) infinite;
-	}
-
-	// fish-style autosuggestion: dim, glow-less ghost trailing the caret. Lives
-	// only in the mirror (the textarea is empty past the input), so it never
-	// shifts the real caret. Press → / End to accept.
-	.input-ghost {
-		color: rgba(255, 255, 255, 0.32);
-		text-shadow: none;
-	}
-
-	@keyframes blink {
-		0%,
-		50% {
-			opacity: 1;
-		}
-		51%,
-		100% {
-			opacity: 0;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.custom-cursor {
-			animation: none;
-		}
-	}
-
-	@media (max-width: #{$breakpoint-desktop}) {
-		.terminal-window {
-			font-size: 1.05rem;
-		}
-
-		.terminal-body {
-			padding: 0.5rem;
-		}
-
-		.terminal-title {
-			font-size: 0.75rem;
-		}
-	}
-
-	@media (max-width: #{$breakpoint-mobile}) {
-		// Hold the type at exactly 1rem (16px): big enough to read and to keep the
-		// hidden input from triggering iOS focus-zoom. Width for long output (e.g.
-		// `help`) is reclaimed via padding, not by shrinking the font.
-		.terminal-window {
-			font-size: 1rem;
-			// Fill the width phones can spare, and let the container's padding (not
-			// the desktop cap) set the height, so the window shrinks to the space
-			// below the nav chrome.
-			max-width: none;
-			max-height: none;
-		}
-
-		.terminal-body {
-			padding: 0.5rem 0.6rem;
-		}
-	}
-</style>

@@ -12,9 +12,7 @@
 	import { onMounted, onBeforeUnmount, ref } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 
-	// Zero-gravity float + cursor-fleeing physics. The title wanders along a
-	// slowly turning drift vector and is shoved away whenever the pointer comes
-	// near, always easing back toward its layout home so it never escapes view.
+	// zero-g float + cursor-fleeing physics, always easing back toward its layout home
 	const REPEL_RADIUS = 220 // px — how close the cursor must get to push the title
 	const REPEL_STRENGTH = 2.6 // px/frame² peak shove right at the cursor
 	const WANDER_STRENGTH = 0.12 // px/frame² idle drift force

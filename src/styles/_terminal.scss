@@ -1,67 +1,66 @@
-// These helper classes are injected as raw HTML by the typewriter (TypeIt
-// writes innerHTML), so component-scoped styles can't reach them. They live
-// here, globally, and are only ever used inside the /terminal page.
-@use 'variables';
+// Terminal page styles. Global rather than component-scoped because the
+// typewriter injects raw HTML (TypeIt writes innerHTML) that scoped styles
+// can't reach; every class here is only ever used on /terminal.
+@use 'variables' as *;
 
 %phosphor-glow {
 	text-shadow: 0 0 3px currentColor;
 }
 
 .text-green {
-	color: variables.$retro-green;
+	color: $retro-green;
 	@extend %phosphor-glow;
 }
 .text-blue {
-	color: variables.$light-blue;
+	color: $light-blue;
 	@extend %phosphor-glow;
 }
 .text-azure {
-	color: variables.$azure;
+	color: $azure;
 	@extend %phosphor-glow;
 }
 .text-yellow {
-	color: variables.$yellow;
+	color: $yellow;
 	@extend %phosphor-glow;
 }
 .text-red {
-	color: variables.$light-red;
+	color: $light-red;
 	@extend %phosphor-glow;
 }
 .text-purple {
-	color: variables.$purple;
+	color: $purple;
 	@extend %phosphor-glow;
 }
 .text-mint {
-	color: variables.$mint;
+	color: $mint;
 	@extend %phosphor-glow;
 }
 
 .terminal-link {
-	color: variables.$retro-green;
+	color: $retro-green;
 	text-decoration: none;
-	border-bottom: 1px dotted variables.$retro-green;
+	border-bottom: 1px dotted $retro-green;
 	transition:
 		color 0.2s ease,
 		border-color 0.2s ease;
 
 	&:hover {
-		color: variables.$light-blue;
-		border-bottom-color: variables.$light-blue;
+		color: $light-blue;
+		border-bottom-color: $light-blue;
 		text-shadow: 0 0 5px currentColor;
 	}
 
 	&:focus-visible {
-		outline: 2px solid variables.$light-blue;
+		outline: 2px solid $light-blue;
 		outline-offset: 2px;
 	}
 
 	&:active {
-		color: variables.$light-red;
+		color: $light-red;
 	}
 }
 
-// Base geometry for every scrollback line. Shared by terminal.vue and
-// TerminalLine.vue, so it lives here instead of duplicated in both scopes.
+// Base geometry for every scrollback line, shared with TerminalLine.vue.
 .terminal-line {
 	display: flex;
 	align-items: baseline;
@@ -70,9 +69,239 @@
 	text-align: start;
 }
 
-@media (max-width: #{variables.$breakpoint-desktop}) {
+.terminal-line.current-line {
+	margin-bottom: 0;
+}
+
+// cap the console so the starfield shows around it — a CRT floating in space
+$console-max-width: 74rem;
+$console-max-height: 47rem;
+
+.terminal-container {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	box-sizing: border-box;
+	// nudge down so the fixed star toggle clears the title bar on short viewports
+	padding-top: 1.6rem;
+}
+
+.terminal-window {
+	--phosphor: #{$phosphor-green};
+	position: relative;
+	width: 100%;
+	height: 100%;
+	max-width: $console-max-width;
+	max-height: $console-max-height;
+	background: rgba(8, 12, 8, 0.92);
+	border: $void-border;
+	border-radius: $void-radius;
+	overflow: hidden;
+	font-family: $font-terminal;
+	font-size: 1.4rem;
+	// Lift the console off the starfield so it reads as floating in the void.
+	box-shadow:
+		0 1.5rem 4rem rgba(0, 0, 0, 0.55),
+		0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+
+// Subtle CRT scanlines, fixed over the (non-scrolling) window.
+.terminal-window::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 5;
+	background: repeating-linear-gradient(
+		to bottom,
+		rgba(0, 0, 0, 0.18) 0,
+		rgba(0, 0, 0, 0.18) 1px,
+		transparent 1px,
+		transparent 3px
+	);
+}
+
+.terminal-header {
+	background: rgba(100, 100, 100, 0.5);
+	border-bottom: $void-border;
+	padding: 0.5rem 1rem;
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+
+.terminal-buttons {
+	display: flex;
+	gap: 0.5rem;
+
+	.btn {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		border: 1px solid $terminal-chrome-border;
+
+		&.red {
+			background: $light-red;
+		}
+		&.yellow {
+			background: $yellow;
+		}
+		&.green {
+			background: $terminal-dot-green;
+		}
+	}
+}
+
+.terminal-title {
+	color: $light-gray;
+	font-size: 0.95rem;
+	letter-spacing: 0.5px;
+	opacity: 0.85;
+}
+
+.terminal-body {
+	height: calc(100% - 60px);
+	padding: 1rem;
+	overflow-y: auto;
+	// Long lines wrap (like a real terminal) — never scroll sideways.
+	overflow-x: hidden;
+	// Subtle phosphor glow on every glyph.
+	text-shadow: 0 0 2px currentColor;
+
+	&::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	&::-webkit-scrollbar-track {
+		background: $terminal-scrollbar-track;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background: $light-gray;
+		border-radius: 4px;
+	}
+}
+
+.terminal-banner {
+	// pre-wrap keeps the spacing but folds long lines on narrow screens
+	color: $light-gray;
+	opacity: 0.75;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	line-height: 1.2;
+	margin: 0 0 0.8rem;
+	// left-aligned like real output — it would otherwise inherit #app's centred text
+	text-align: start;
+}
+
+.welcome-text {
+	color: $light-blue;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.input-container {
+	position: relative;
+	flex: 1;
+	min-width: 0;
+}
+
+// Visible text layer the user actually reads; wraps on long input.
+.input-mirror {
+	color: $white;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+// transparent capture layer sized to the mirror so wrapping matches; auto-grows
+.terminal-input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	background: transparent;
+	border: none;
+	outline: none;
+	resize: none;
+	overflow: hidden;
+	color: transparent;
+	caret-color: transparent;
+	font-family: inherit;
+	font-size: inherit;
+	line-height: inherit;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	z-index: 1;
+}
+
+// Inline block cursor: inverts the glyph it sits on and flows with the text.
+.custom-cursor {
+	background: var(--phosphor);
+	color: $black;
+	animation: terminal-blink 1.1s steps(1) infinite;
+}
+
+// ghost lives only in the mirror so it never shifts the real caret; → / End accepts
+.input-ghost {
+	color: rgba(255, 255, 255, 0.32);
+	text-shadow: none;
+}
+
+@keyframes terminal-blink {
+	0%,
+	50% {
+		opacity: 1;
+	}
+	51%,
+	100% {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.custom-cursor {
+		animation: none;
+	}
+}
+
+@media (max-width: #{$breakpoint-desktop}) {
 	.terminal-line {
 		margin-bottom: 0.2rem;
 		line-height: 1.15;
+	}
+
+	.terminal-window {
+		font-size: 1.05rem;
+	}
+
+	.terminal-body {
+		padding: 0.5rem;
+	}
+
+	.terminal-title {
+		font-size: 0.75rem;
+	}
+}
+
+@media (max-width: #{$breakpoint-mobile}) {
+	.terminal-container {
+		padding-top: 4.5rem;
+		padding-bottom: 1rem;
+	}
+
+	// hold 1rem — readable and avoids iOS focus-zoom; width is reclaimed via padding
+	.terminal-window {
+		font-size: 1rem;
+		// fill phone width; container padding (not the desktop cap) sets the height
+		max-width: none;
+		max-height: none;
+	}
+
+	.terminal-body {
+		padding: 0.5rem 0.6rem;
 	}
 }
