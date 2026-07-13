@@ -19,7 +19,6 @@ const routes = [
 		component: () => import('./components/About.vue'),
 		meta: { prefetch: true },
 	},
-	{ path: '/under_construction', component: () => import('./components/UnderConstruction.vue') },
 	{ path: '/secret_link', component: () => import('./components/SecretRedirect.vue') },
 	{
 		path: '/contact',

@@ -364,10 +364,6 @@ export function useTerminalCommands({
 			return []
 		},
 
-		game: () => {
-			router.push('/under_construction')
-		},
-
 		whoami: () => [
 			{
 				type: 'typewriter',

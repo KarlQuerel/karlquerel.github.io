@@ -16,17 +16,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 const db = getFirestore(app)
-const clickRef = doc(db, 'clicks', 'counter')
 const terminalStatsRef = doc(db, 'terminal', 'stats')
-
-export async function updateClicks() {
-	await updateDoc(clickRef, { count: increment(1) })
-}
-
-export async function loadClicks() {
-	const docSnap = await getDoc(clickRef)
-	return docSnap.exists() ? docSnap.data().count : 0
-}
 
 export async function trackTerminalVisit() {
 	try {
