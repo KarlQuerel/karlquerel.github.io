@@ -272,21 +272,12 @@
 		font-size: clamp(0.7rem, 2.2vw, 1rem);
 		letter-spacing: 1px;
 		text-transform: uppercase;
-		padding: 0.4rem 0.6rem;
+		padding: 0.5rem 0.9rem;
 		// Keep it legible over whatever panel content scrolls behind it.
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
-		@include void-button($lift: -2px);
-	}
-
-	// Borderless: strip the void frame + fill so it reads as a bare text/icon control
-	// (still white → yellow on hover, from the mixin) floating over the panel.
-	.about-back,
-	.about-back:hover,
-	.about-back:focus-visible,
-	.about-back:active {
-		background: none;
-		border-color: transparent;
-		box-shadow: none;
+		// Framed chip: the shared void frame over a slightly more solid dark fill, so
+		// it reads as a distinct, tappable control against the scrolling panel.
+		@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.55));
 	}
 
 	// Arcade "rewind": twin pixel triangles (sized in em so they scale with the label)
