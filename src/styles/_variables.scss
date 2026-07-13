@@ -59,9 +59,6 @@ $heading-pixel-size: clamp(1rem, 2.6vw, 1.35rem);
 // Z-Index
 $z-index-content: 1;
 
-// Shared shadows
-$panel-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.5);
-
 // Unified "void" frame — the single source of truth for every panel, card, and
 // button border on the site. Change these to re-skin all chrome at once.
 $void-border-color: rgba(255, 255, 255, 0.1);

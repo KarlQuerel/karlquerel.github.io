@@ -1,20 +1,8 @@
 @use 'variables';
 
-:root {
-	// Height of the dog-animation header strip (preserved but unmounted; see
-	// SiteHeaderAnimation.vue). Kept here so that component still resolves it if
-	// re-mounted.
-	--site-header-height: clamp(72px, 10vw, 104px);
-}
-
-// Summoned nav = a dismissible full-screen overlay. A dim, lightly blurred
-// backdrop covers the immersive page (which reserves no headroom for a top
-// strip), so the centred menu never collides with page content on any route or
-// width. Sits below the star toggle (z 50) so the lit -> flared star stays
-// above the dim and keeps working as the close control.
+// summoned nav: dim blurred overlay below the star toggle (z 50), which stays the close control
 .site-nav-overlay {
-	// Origin of the circular reveal: the star toggle's centre (top 0.8rem +
-	// half its 2.6rem height). The overlay irises open from here.
+	// reveal origin: the star toggle's centre
 	--nav-origin-y: 2.1rem;
 	position: fixed;
 	inset: 0;
@@ -22,27 +10,19 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	// Clear the top star, and scroll instead of clipping if the menu ever
-	// outgrows a short viewport.
+	// clear the top star; scroll rather than clip on short viewports
 	padding: 5rem 1.5rem 2.5rem;
 	overflow-y: auto;
-	// The dim lives on ::before (a scaling disc), so this box stays transparent
-	// and the reveal is a pure composited transform rather than a paint here.
+	// the dim lives on ::before so the reveal is a pure composited transform
 }
 
-// The reveal disc: a solid, fully opaque black circle centred on the star that
-// scales up to cover the viewport. Driven by `transform`, so it animates on the
-// COMPOSITOR thread and keeps playing even when opening the menu stalls the main
-// thread — on home, re-rasterising the heavy hero froze the old clip-path iris
-// for ~0.4s. Solid black (not a translucent scrim) so the page never reads
-// through, even faintly.
+// disc scales on the compositor so it survives main-thread stalls (the old clip-path iris froze ~0.4s on home); solid black so the page never reads through
 .site-nav-overlay::before {
 	content: '';
 	position: fixed;
 	top: var(--nav-origin-y);
 	left: 50%;
-	// 150vmax radius covers any viewport (corners sit at ~112vmax) with margin;
-	// the negative margins re-centre the 300vmax box on the star.
+	// 150vmax radius covers any viewport; negative margins re-centre the box on the star
 	width: 300vmax;
 	height: 300vmax;
 	margin: -150vmax 0 0 -150vmax;
@@ -57,16 +37,12 @@
 .site-nav-overlay__panel {
 	display: flex;
 	justify-content: center;
-	// Shrink to the links so the whole surrounding dim stays a valid
-	// click-to-dismiss target, not just the strip beyond a full-width panel.
+	// shrink to the links so the surrounding dim stays a click-to-dismiss target
 	width: auto;
 	max-width: 32rem;
 }
 
-// The disc irises open from the star and collapses back into it on close. The
-// scale runs on the compositor, so it survives the main-thread stall on home.
-// Vue can't read a transition off a pseudo-element, so <transition :duration>
-// (App.vue) tells it how long to keep these classes applied.
+// iris runs on composited scale; <transition :duration> (App.vue) times the pseudo-element
 .nav-overlay-enter-active::before,
 .nav-overlay-leave-active::before {
 	transition: transform 0.42s ease-out;
@@ -78,9 +54,7 @@
 	transform: scale(0);
 }
 
-// Fade the menu in (composited opacity) so it doesn't sit fully lit over the
-// page while the disc is still catching up to cover it. The small delay keeps it
-// near-invisible until the black has bloomed past the centre.
+// fade with a small delay so the menu stays dim until the disc covers the centre
 .nav-overlay-enter-active .site-nav-overlay__panel,
 .nav-overlay-leave-active .site-nav-overlay__panel {
 	transition:
@@ -110,8 +84,7 @@
 
 .site-chrome-links {
 	display: flex;
-	// Stacked, centred menu — the overlay owns the whole screen, so the links read
-	// as a deliberate menu rather than a cramped top strip.
+	// stacked, centred menu — reads deliberate, not a cramped top strip
 	flex-direction: column;
 	align-items: center;
 	row-gap: clamp(1rem, 4.5vh, 2.25rem);
@@ -123,8 +96,7 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	// Keep each label intact (e.g. "for the nerds") so it wraps as a unit, never
-	// mid-word.
+	// keep each label wrapping as a unit, never mid-word
 	white-space: nowrap;
 	color: variables.$text-interactive;
 	font-size: clamp(0.95rem, 3.2vw, 1.5rem);
@@ -146,12 +118,9 @@
 	text-shadow: 0 0 8px rgba(variables.$yellow, 0.55);
 }
 
-// `text-decoration` is repeated here to out-specify NES.css's `a:hover`
-// underline, which would otherwise reintroduce a stray line on hover.
 .site-chrome-link:hover,
 .site-chrome-link:focus-visible {
 	color: variables.$yellow;
-	text-decoration: none;
 	transform: translateY(-3px);
 	text-shadow: 0 0 10px rgba(variables.$yellow, 0.8);
 }
@@ -161,8 +130,7 @@
 	outline-offset: 2px;
 }
 
-// Ambient-music toggle. Styled as a chrome-link sibling — same pixel glyph,
-// yellow hover glow — but as a real <button> for keyboard/AT support.
+// chrome-link styling on a real <button> for keyboard/AT support
 .site-chrome-audio {
 	display: inline-flex;
 	align-items: center;
@@ -214,8 +182,7 @@
 	transform: rotate(-45deg);
 }
 
-// Each link drifts on its own rhythm. Uses `translate` so it composes with the
-// hover `transform` lift above instead of fighting it.
+// translate composes with the hover transform lift instead of fighting it
 .site-chrome-links .site-chrome-link {
 	animation: chromeLinkFloat 4s ease-in-out infinite;
 }
@@ -258,10 +225,6 @@
 }
 
 @media (max-width: #{variables.$breakpoint-mobile}) {
-	:root {
-		--site-header-height: clamp(58px, 18vw, 84px);
-	}
-
 	.site-nav-overlay {
 		// Star sits a touch higher on mobile (NavToggle top: 0.55rem).
 		--nav-origin-y: 1.85rem;
