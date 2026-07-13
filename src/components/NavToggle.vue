@@ -24,8 +24,8 @@
 	defineProps({ open: { type: Boolean, default: false } })
 	defineEmits(['toggle'])
 
-	// Fade the "MENU" label away as you scroll down a page (back on scroll up / at
-	// the top); the star itself stays put.
+	// Show the "MENU" label only at the top of a page; it fades away once you scroll
+	// down and stays gone until you return to the top. The star itself stays put.
 	const { hidden } = useHideOnScroll()
 </script>
 
@@ -111,10 +111,10 @@
 		pointer-events: none;
 	}
 
-	// "MENU" sits under the star: legible (dim) at the top of a page so the
+	// "MENU" sits under the star: legible (dim) only at the top of a page so the
 	// affordance is announced, full-bright on hover / focus, faded out once you
-	// scroll down (.is-scrolled) so it doesn't trail over content, and gone while
-	// open (the flipped star reads as close).
+	// scroll away from the top (.is-scrolled) so it doesn't trail over content, and
+	// gone while open (the flipped star reads as close).
 	.nav-toggle__label {
 		position: absolute;
 		top: 100%;

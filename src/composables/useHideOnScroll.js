@@ -1,31 +1,20 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRafThrottle } from './useRafThrottle.js'
 
-// Reactive scroll-direction flag: `hidden` is true while the reader scrolls DOWN
-// into a page, false on any upward scroll or near the top. Consumers use it to
-// tuck a transient hint away mid-scroll (e.g. the nav star's "MENU" label) so it
-// doesn't trail over content. `hidden` is always false within `topZone` px of the
-// top; `delta` ignores sub-pixel scroll jitter.
-export function useHideOnScroll({ topZone = 32, delta = 6 } = {}) {
+// Reactive "scrolled away from the top" flag: `hidden` is true whenever the page
+// is scrolled more than `topZone` px down, and false only near the top — direction
+// doesn't matter, so a hint tied to it (e.g. the nav star's "MENU" label) shows
+// only at the top of the page, not on every upward scroll.
+export function useHideOnScroll({ topZone = 32 } = {}) {
 	const hidden = ref(false)
-	let lastY = 0
 
 	function sync() {
-		const y = window.scrollY
-		if (y <= topZone) {
-			hidden.value = false
-			lastY = y
-			return
-		}
-		if (Math.abs(y - lastY) < delta) return
-		hidden.value = y > lastY
-		lastY = y
+		hidden.value = window.scrollY > topZone
 	}
 
 	const onScroll = useRafThrottle(sync)
 
 	onMounted(() => {
-		lastY = window.scrollY
 		window.addEventListener('scroll', onScroll, { passive: true })
 		sync()
 	})
