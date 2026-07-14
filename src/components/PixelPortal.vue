@@ -29,6 +29,10 @@
 	@use '@/styles/mixins' as *;
 
 	$portal-radius: 4rem;
+	// Icon column width — also the label's box width, so long labels overflow
+	// (centered) instead of widening the tile. Keeps icon spacing identical
+	// across the About hub and Contact regardless of label length.
+	$portal-icon-size: 5.5rem;
 	// a step below $heading-pixel-size so page headings stay dominant
 	$portal-label-size: clamp(0.85rem, 2.1vw, 1.1rem);
 
@@ -68,7 +72,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 5.5rem;
+		width: $portal-icon-size;
 		height: auto;
 		transition:
 			transform 0.35s ease,
@@ -76,7 +80,7 @@
 	}
 
 	.portal__img {
-		width: 5.5rem;
+		width: $portal-icon-size;
 		height: auto;
 		display: block;
 	}
@@ -101,6 +105,10 @@
 	}
 
 	.portal__label {
+		// Constrained to the icon width so a long label overflows (centered)
+		// rather than stretching the tile and spreading the icons apart.
+		width: $portal-icon-size;
+		text-align: center;
 		font-family: $font-pixel;
 		font-size: $portal-label-size;
 		letter-spacing: 1px;
