@@ -29,10 +29,13 @@
 	@use '@/styles/mixins' as *;
 
 	$portal-radius: 4rem;
-	// Icon column width — also the label's box width, so long labels overflow
-	// (centered) instead of widening the tile. Keeps icon spacing identical
-	// across the About hub and Contact regardless of label length.
 	$portal-icon-size: 5.5rem;
+	$portal-pad-x: 1.4rem;
+	$portal-pad-y: 0.9rem;
+	// Fixed tile width (icon + horizontal padding) so every tile is the same size
+	// regardless of label length — keeps icon spacing identical across the About
+	// hub and Contact, and lets a long label overflow the tile symmetrically.
+	$portal-tile-width: $portal-icon-size + $portal-pad-x * 2;
 	// a step below $heading-pixel-size so page headings stay dominant
 	$portal-label-size: clamp(0.85rem, 2.1vw, 1.1rem);
 
@@ -41,7 +44,8 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 1.1rem;
-		padding: 0.9rem 1.4rem;
+		width: $portal-tile-width;
+		padding: $portal-pad-y $portal-pad-x;
 		text-decoration: none;
 		@include void-button(
 			$bg: radial-gradient(
@@ -105,10 +109,9 @@
 	}
 
 	.portal__label {
-		// Constrained to the icon width so a long label overflows (centered)
-		// rather than stretching the tile and spreading the icons apart.
-		width: $portal-icon-size;
-		text-align: center;
+		// Natural width, kept on one line: the fixed-width tile lets a long label
+		// overflow symmetrically (centered over the icon) without widening the tile.
+		white-space: nowrap;
 		font-family: $font-pixel;
 		font-size: $portal-label-size;
 		letter-spacing: 1px;
