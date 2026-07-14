@@ -55,8 +55,13 @@ $font-size-medium-max: 2rem;
 
 // Large pixel heading shared across the personal pages — the About greeting and the
 // Contact heading — so page-level headings read as one size site-wide. (The WORK/LIFE
-// hub labels sit a step below this; see $portal-label-size in About.vue.)
+// hub labels sit a step below this; see $portal-label-size in PixelPortal.vue.)
 $heading-pixel-size: clamp(1rem, 2.6vw, 1.35rem);
+
+// Gap between PixelPortal tiles in the shared portal row (About hub + Contact).
+// One token so both pages stay identically spaced; wide enough that the longest
+// overflowing label (LINKEDIN) keeps clear air from its neighbours.
+$portal-row-gap: 3.5rem;
 
 // Z-Index
 $z-index-content: 1;

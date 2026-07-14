@@ -29,6 +29,8 @@
 </script>
 
 <style scoped lang="scss">
+	@use '@/styles/mixins' as *;
+
 	// Per-item entrance stagger: each card animates in after the previous.
 	$contact-stagger: 90ms;
 
@@ -58,16 +60,8 @@
 
 	// Same portal row as the About hub: icon tiles wrapping around the centre.
 	.contact-list {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: 2.25rem;
-		// 100% (not 94vw): vw ignores the page padding and pins the overflowing row
-		// to the left edge, nudging every tile off-centre on phones
-		width: min(42rem, 100%);
-		margin: 2.5rem auto 0;
-		padding: 0.5rem;
 		list-style: none;
+		@include portal-row;
 	}
 
 	.contact-item {
@@ -75,13 +69,6 @@
 		transform: translateX(-8px);
 		animation: item-in 0.4s steps(4, end) forwards;
 		animation-delay: calc(var(--contact-i, 0) * #{$contact-stagger});
-	}
-
-	@media (max-width: $breakpoint-mobile) {
-		.contact-list {
-			flex-direction: column;
-			align-items: center;
-		}
 	}
 
 	// `item-in` keyframes are global (see _animations.scss).

@@ -151,16 +151,7 @@
 	}
 
 	.about-hub {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: 2.25rem;
-		// 100% (not 94vw): vw ignores the page padding and pins the overflowing row
-		// to the left edge, nudging every tile off-centre on phones
-		width: min(42rem, 100%);
-		// Extra top margin (on top of the row gap) opens up the greeting → portals gap.
-		margin: 2.5rem auto 0;
-		padding: 0.5rem;
+		@include portal-row;
 	}
 
 	// top 7rem clears the star toggle + MENU hint; z 30 stays under the nav overlay (40) and star (50)
@@ -203,13 +194,6 @@
 	.about-back:hover .about-back__icon,
 	.about-back:focus-visible .about-back__icon {
 		transform: translateX(-3px);
-	}
-
-	@media (max-width: $breakpoint-mobile) {
-		.about-hub {
-			flex-direction: column;
-			align-items: center;
-		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {

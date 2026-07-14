@@ -9,6 +9,27 @@
 	border-radius: variables.$void-radius;
 }
 
+// A centered, wrapping row of PixelPortal tiles — shared by the About hub and the
+// Contact links so their icon spacing stays identical. Collapses to a centered
+// column at the mobile breakpoint.
+@mixin portal-row {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: variables.$portal-row-gap;
+	// 100% (not 94vw): vw ignores the page padding and pins the overflowing row
+	// to the left edge, nudging every tile off-centre on phones
+	width: min(42rem, 100%);
+	// Extra top margin (beyond the row gap) opens up the heading → portals gap.
+	margin: 2.5rem auto 0;
+	padding: 0.5rem;
+
+	@media (max-width: variables.$breakpoint-mobile) {
+		flex-direction: column;
+		align-items: center;
+	}
+}
+
 // The interactive counterpart, used by every clickable button on the site so
 // they read as one system. Text rests near-white and shifts to $yellow on hover
 // / focus (the shared site-wide convention), over a warm yellow starlight bloom +
