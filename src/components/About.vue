@@ -20,18 +20,13 @@
 		</header>
 
 		<div v-if="!activeTab" class="about-hub" role="group" aria-label="Choose a section">
-			<button
+			<PixelPortal
 				v-for="tab in TABS"
 				:key="tab.id"
-				class="portal"
-				type="button"
+				:label="tab.label"
+				:image="tab.image"
 				@click="selectTab(tab.id)"
-			>
-				<span class="portal__icon">
-					<img :src="tab.image" alt="" class="portal__img" />
-				</span>
-				<span class="portal__label">{{ tab.label }}</span>
-			</button>
+			/>
 		</div>
 
 		<template v-else>
@@ -52,6 +47,7 @@
 	import { ABOUT_INTRO } from '@/data/about'
 	import AboutWork from './AboutWork.vue'
 	import AboutLife from './AboutLife.vue'
+	import PixelPortal from './PixelPortal.vue'
 
 	// tab state lives in the URL (?tab=work|life) so it survives refresh and is shareable
 	const TABS = [
@@ -88,10 +84,6 @@
 
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
-
-	$portal-radius: 4rem;
-	// a step below the greeting's $heading-pixel-size so the heading stays dominant
-	$portal-label-size: clamp(0.85rem, 2.1vw, 1.1rem);
 
 	.about {
 		min-height: 100dvh;
@@ -163,93 +155,12 @@
 		flex-wrap: wrap;
 		justify-content: center;
 		gap: 2.25rem;
-		width: min(42rem, 94vw);
+		// 100% (not 94vw): vw ignores the page padding and pins the overflowing row
+		// to the left edge, nudging every tile off-centre on phones
+		width: min(42rem, 100%);
 		// Extra top margin (on top of the row gap) opens up the greeting → portals gap.
 		margin: 2.5rem auto 0;
 		padding: 0.5rem;
-	}
-
-	.portal {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1.1rem;
-		padding: 0.9rem 1.4rem;
-		@include void-button(
-			$bg: radial-gradient(
-					125% 125% at 50% 38%,
-					rgba(0, 0, 0, 0.55) 0%,
-					rgba(0, 0, 0, 0.18) 68%,
-					rgba(0, 0, 0, 0) 100%
-				)
-		);
-	}
-
-	// Separate rule so it overrides the mixin's radius without trailing it.
-	.portal {
-		border-radius: $portal-radius;
-	}
-
-	// Borderless: cancel the mixin's hover frame/lift so feedback lives on the icon + label.
-	.portal,
-	.portal:hover,
-	.portal:focus-visible,
-	.portal:active {
-		border-color: transparent;
-		box-shadow: none;
-		transform: none;
-	}
-
-	.portal__icon {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 5.5rem;
-		height: auto;
-		transition:
-			transform 0.35s ease,
-			filter 0.35s ease;
-	}
-
-	.portal__img {
-		width: 5.5rem;
-		height: auto;
-		display: block;
-	}
-
-	.portal:hover .portal__icon,
-	.portal:focus-visible .portal__icon {
-		transform: scale(1.09) translateY(-5px);
-		filter: drop-shadow(0 0 10px rgba($yellow, 0.8)) drop-shadow(0 0 24px rgba($yellow, 0.4));
-		animation: icon-bloom 1.8s ease-in-out infinite;
-	}
-
-	@keyframes icon-bloom {
-		0%,
-		100% {
-			filter: drop-shadow(0 0 8px rgba($yellow, 0.55))
-				drop-shadow(0 0 18px rgba($yellow, 0.28));
-		}
-		50% {
-			filter: drop-shadow(0 0 13px rgba($yellow, 0.9))
-				drop-shadow(0 0 30px rgba($yellow, 0.5));
-		}
-	}
-
-	.portal__label {
-		font-family: $font-pixel;
-		font-size: $portal-label-size;
-		letter-spacing: 1px;
-		color: $text-interactive;
-		transition:
-			color 0.35s ease,
-			text-shadow 0.35s ease;
-	}
-
-	.portal:hover .portal__label,
-	.portal:focus-visible .portal__label {
-		color: $yellow;
-		text-shadow: 0 0 12px rgba($yellow, 0.6);
 	}
 
 	// top 7rem clears the star toggle + MENU hint; z 30 stays under the nav overlay (40) and star (50)
@@ -301,15 +212,8 @@
 		}
 	}
 
-	// Reduced-motion: drop the icon scale + pulse; the static glow + yellow hover label still read.
 	@media (prefers-reduced-motion: reduce) {
 		.about-lead {
-			animation: none;
-		}
-
-		.portal:hover .portal__icon,
-		.portal:focus-visible .portal__icon {
-			transform: none;
 			animation: none;
 		}
 	}

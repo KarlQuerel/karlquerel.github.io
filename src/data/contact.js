@@ -7,27 +7,28 @@ export const CONTACT_HEADING = {
 	accent: 'signal',
 }
 
-// Each channel renders as a card. `blank: true` opens the link in a new tab.
+// Each channel renders as an icon portal (PixelPortal), like the About hub.
+// `blank: true` opens the link in a new tab.
 export const CONTACT_CHANNELS = [
 	{
 		key: 'email',
-		channel: 'Email',
-		value: 'karlquerel@gmail.com',
+		label: 'EMAIL',
+		icon: '/assets/contact/email.png',
 		href: 'mailto:karlquerel@gmail.com',
 		blank: false,
 	},
 	{
-		key: 'github',
-		channel: 'GitHub',
-		value: 'github.com/KarlQuerel',
-		href: 'https://github.com/KarlQuerel',
+		key: 'linkedin',
+		label: 'LINKEDIN',
+		icon: '/assets/contact/linkedin.png',
+		href: 'https://www.linkedin.com/in/karlquerel',
 		blank: true,
 	},
 	{
-		key: 'linkedin',
-		channel: 'LinkedIn',
-		value: 'linkedin.com/in/karlquerel',
-		href: 'https://www.linkedin.com/in/karlquerel',
+		key: 'github',
+		label: 'GITHUB',
+		icon: '/assets/contact/github.png',
+		href: 'https://github.com/KarlQuerel',
 		blank: true,
 	},
 ]

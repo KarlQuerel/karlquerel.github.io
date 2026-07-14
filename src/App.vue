@@ -29,7 +29,7 @@
 	import NavToggle from './components/NavToggle.vue'
 	import { useAmbientAudio } from './composables/useAmbientAudio'
 
-	const SCROLLABLE_PATHS = ['/', '/sport', '/about']
+	const SCROLLABLE_PATHS = ['/', '/sport', '/about', '/contact']
 
 	// Component names (see defineOptions) kept mounted across navigation.
 	const KEPT_ALIVE_VIEWS = ['HeroIntro']

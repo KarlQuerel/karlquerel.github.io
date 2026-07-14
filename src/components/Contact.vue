@@ -12,15 +12,12 @@
 				class="contact-item"
 				:style="{ '--contact-i': i }"
 			>
-				<a
-					class="contact-card"
+				<PixelPortal
+					:label="channel.label"
+					:image="channel.icon"
 					:href="channel.href"
-					:target="channel.blank ? '_blank' : undefined"
-					:rel="channel.blank ? 'noopener noreferrer' : undefined"
-				>
-					<span class="contact-channel">{{ channel.channel }}</span>
-					<span class="contact-value">{{ channel.value }}</span>
-				</a>
+					:blank="channel.blank"
+				/>
 			</li>
 		</ul>
 	</div>
@@ -28,22 +25,24 @@
 
 <script setup>
 	import { CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
+	import PixelPortal from './PixelPortal.vue'
 </script>
 
 <style scoped lang="scss">
-	@use '@/styles/mixins' as *;
-
 	// Per-item entrance stagger: each card animates in after the previous.
 	$contact-stagger: 90ms;
 
+	// Same shell as .about: scrollable, min full height, top padding clears the star toggle.
 	.contact {
-		gap: 2.5rem;
-		padding: 2.5rem 1rem 4rem;
+		min-height: 100dvh;
+		gap: 2rem;
+		padding: 3.6rem 1rem 4rem;
 	}
 
 	// Matches the About greeting: white pixel caps with the last word accented yellow.
 	.contact-name {
-		margin: 0;
+		// mirrors .about-head's inner top padding so the heading sits clear of the MENU hint
+		margin: 1.75rem 0 0;
 		font-family: $font-pixel;
 		font-size: $heading-pixel-size;
 		line-height: 1.5;
@@ -57,15 +56,18 @@
 		text-shadow: 0 0 12px rgba($yellow, 0.45);
 	}
 
+	// Same portal row as the About hub: icon tiles wrapping around the centre.
 	.contact-list {
-		width: min(40rem, 94vw);
-		margin: 0 auto;
-		padding: 0;
-		list-style: none;
 		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-		text-align: center;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 2.25rem;
+		// 100% (not 94vw): vw ignores the page padding and pins the overflowing row
+		// to the left edge, nudging every tile off-centre on phones
+		width: min(42rem, 100%);
+		margin: 2.5rem auto 0;
+		padding: 0.5rem;
+		list-style: none;
 	}
 
 	.contact-item {
@@ -75,31 +77,11 @@
 		animation-delay: calc(var(--contact-i, 0) * #{$contact-stagger});
 	}
 
-	// Same "window onto the void" language as every other button on the site:
-	// a hairline frame that kindles a warm yellow bloom and lifts on hover. A
-	// touch darker than the default fill so the two-line text stays legible.
-	.contact-card {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 1.1rem 1.2rem 1.2rem;
-		text-decoration: none;
-		@include void-button($lift: -3px, $bg: rgba(0, 0, 0, 0.5));
-	}
-
-	.contact-channel {
-		font-family: $font-pixel;
-		font-size: clamp(0.6rem, 2vw, 0.85rem);
-		line-height: 1.5;
-		color: $yellow;
-	}
-
-	.contact-value {
-		font-size: clamp(0.8rem, 1.8vw, 0.95rem);
-		line-height: 1.6;
-		color: rgba(255, 255, 255, 0.85);
-		word-break: break-word;
+	@media (max-width: $breakpoint-mobile) {
+		.contact-list {
+			flex-direction: column;
+			align-items: center;
+		}
 	}
 
 	// `item-in` keyframes are global (see _animations.scss).
