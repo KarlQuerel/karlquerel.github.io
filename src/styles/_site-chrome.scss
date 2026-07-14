@@ -130,58 +130,6 @@
 	outline-offset: 2px;
 }
 
-// chrome-link styling on a real <button> for keyboard/AT support
-.site-chrome-audio {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	position: relative;
-	background: none;
-	border: none;
-	cursor: pointer;
-	color: variables.$text-interactive;
-	font-family: inherit;
-	font-size: clamp(1.3rem, 4.5vw, 2rem);
-	line-height: 1;
-	padding: 0.35rem 0.2rem;
-	margin-top: clamp(0.25rem, 1.5vh, 0.75rem);
-	text-shadow: 0 0 8px rgba(variables.$yellow, 0.35);
-	transition:
-		color 0.2s steps(4, end),
-		transform 0.2s steps(4, end),
-		text-shadow 0.2s steps(4, end),
-		opacity 0.2s steps(4, end);
-}
-
-.site-chrome-audio:hover,
-.site-chrome-audio:focus-visible {
-	color: variables.$yellow;
-	transform: translateY(-3px);
-	text-shadow: 0 0 10px rgba(variables.$yellow, 0.8);
-}
-
-.site-chrome-audio:focus-visible {
-	outline: 2px solid rgba(255, 255, 255, 0.8);
-	outline-offset: 2px;
-}
-
-// Muted: dim the note and strike it through with a stepped diagonal bar.
-.site-chrome-audio.is-off {
-	opacity: 0.45;
-	text-shadow: none;
-}
-
-.site-chrome-audio.is-off::after {
-	content: '';
-	position: absolute;
-	left: 12%;
-	right: 12%;
-	top: 50%;
-	height: 2px;
-	background: currentColor;
-	transform: rotate(-45deg);
-}
-
 // translate composes with the hover transform lift instead of fighting it
 .site-chrome-links .site-chrome-link {
 	animation: chromeLinkFloat 4s ease-in-out infinite;

@@ -27,15 +27,11 @@
 	import SpaceBackground from './components/SpaceBackground.vue'
 	import SiteNavbar from './components/SiteNavbar.vue'
 	import NavToggle from './components/NavToggle.vue'
-	import { useAmbientAudio } from './composables/useAmbientAudio'
 
 	const SCROLLABLE_PATHS = ['/', '/sport', '/about', '/contact']
 
 	// Component names (see defineOptions) kept mounted across navigation.
 	const KEPT_ALIVE_VIEWS = ['HeroIntro']
-
-	const { init: initAmbientAudio } = useAmbientAudio()
-	initAmbientAudio()
 
 	const route = useRoute()
 	const normalizedPath = () => route.path.replace(/\/$/, '') || '/'

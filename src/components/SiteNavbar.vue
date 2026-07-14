@@ -22,17 +22,6 @@
 					@click="emitClose"
 					>{{ link.label }}</router-link
 				>
-				<button
-					type="button"
-					class="site-chrome-audio"
-					:class="{ 'is-off': !enabled }"
-					:aria-pressed="enabled"
-					:aria-label="enabled ? 'Mute ambient music' : 'Play ambient music'"
-					:title="enabled ? 'Mute ambient music' : 'Play ambient music'"
-					@click="toggle"
-				>
-					<span aria-hidden="true">♪</span>
-				</button>
 			</div>
 		</nav>
 	</div>
@@ -41,10 +30,8 @@
 <script setup>
 	import { onBeforeUnmount, onMounted, ref } from 'vue'
 	import { NAVBAR_LINKS } from '@/constants/navigation'
-	import { useAmbientAudio } from '../composables/useAmbientAudio'
 
 	const emit = defineEmits(['close'])
-	const { enabled, toggle } = useAmbientAudio()
 
 	const overlay = ref(null)
 	let previouslyFocused = null
