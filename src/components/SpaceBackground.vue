@@ -175,9 +175,18 @@
 		background-repeat: repeat;
 		translate: calc(var(--mx, 0) * var(--depth) * 1px) calc(var(--my, 0) * var(--depth) * 1px);
 		animation: starDrift var(--dur) linear infinite;
-		// stepped ~1px hops: identical frames between steps cost the compositor nothing
+		// Default (touch / phones): stepped ~1px hops. The ~59 identical frames
+		// between steps cost the compositor nothing — this is the scroll-lag fix.
 		animation-timing-function: steps(var(--drift-steps, 60), end);
 		will-change: transform;
+	}
+
+	// Desktop / trackpad can afford a full-rate composited transform, so drift
+	// smoothly there; phones keep the stepped hops above. Mirrors FINE_POINTER_QUERY.
+	@media (hover: hover) and (pointer: fine) {
+		.star-layer {
+			animation-timing-function: linear;
+		}
 	}
 
 	.is-paused .star-layer {
