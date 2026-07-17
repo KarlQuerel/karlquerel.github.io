@@ -8,16 +8,49 @@
 
 		<section v-reveal class="life-card reveal-block" data-section="dogs">
 			<h2 class="life-card__title"><span class="life-card__dot" aria-hidden="true" />DOGS</h2>
+			<p v-for="(line, i) in DOG_LINES" :key="i" class="life-card__line">{{ line }}</p>
 			<div class="dogs">
-				<figure v-for="dog in DOGS" :key="dog.name" class="dog">
+				<figure
+					v-for="dog in DOGS"
+					:key="dog.name"
+					class="dog"
+					@mouseenter="startSlideshow(dog)"
+					@mouseleave="stopSlideshow(dog)"
+				>
 					<div class="dog__frame">
-						<img
-							:src="dog.photo"
-							:alt="`Photo of ${dog.name}`"
-							class="dog__photo"
-							loading="lazy"
-							decoding="async"
-						/>
+						<!-- pixelate: chunky low-res at rest, crisp photo resolves in on hover -->
+						<template v-if="dog.effect === 'pixelate'">
+							<img
+								:src="dog.photoLo"
+								alt=""
+								aria-hidden="true"
+								class="dog__photo dog__photo--lo"
+								loading="lazy"
+								decoding="async"
+							/>
+							<img
+								:src="dog.photo"
+								:alt="`Photo of ${dog.name}`"
+								class="dog__photo dog__photo--hi"
+								loading="lazy"
+								decoding="async"
+							/>
+						</template>
+
+						<!-- slideshow: frames cycle while hovered; slide 0 is the resting frame -->
+						<template v-else-if="dog.effect === 'slideshow'">
+							<img
+								v-for="(slide, i) in dog.slides"
+								:key="slide"
+								:src="slide"
+								:alt="i === 0 ? `Photo of ${dog.name}` : ''"
+								:aria-hidden="i === 0 ? null : 'true'"
+								class="dog__photo dog__slide"
+								:class="{ 'is-active': i === activeSlide(dog) }"
+								loading="lazy"
+								decoding="async"
+							/>
+						</template>
 					</div>
 					<figcaption class="dog__name">{{ dog.name }}</figcaption>
 				</figure>
@@ -38,10 +71,6 @@
 				{{ line }}
 			</p>
 
-			<ul v-if="section.tags" class="tags">
-				<li v-for="tag in section.tags" :key="tag" class="tags__item">{{ tag }}</li>
-			</ul>
-
 			<router-link v-if="section.link" :to="section.link.to" class="life-link">
 				{{ section.link.label }}
 				<span class="life-link__arrow" aria-hidden="true"><i /><i /></span>
@@ -51,8 +80,43 @@
 </template>
 
 <script setup>
-	import { ABOUT_ME, DOGS, LIFE_SECTIONS } from '@/data/aboutLife'
+	import { ref, onBeforeUnmount } from 'vue'
+	import { ABOUT_ME, DOG_LINES, DOGS, LIFE_SECTIONS, SLIDE_INTERVAL_MS } from '@/data/aboutLife'
 	import { reveal as vReveal } from '@/directives/reveal'
+	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
+	import { FINE_POINTER_QUERY } from '@/constants/viewport'
+
+	// Yako-style hover slideshow: advance the visible frame on a timer while hovered.
+	// Pointer devices only, never under reduced motion (mirrors the pixelate reveal) —
+	// touch / reduced-motion just keep the resting frame 0.
+	const slideAnimatable =
+		typeof window !== 'undefined' &&
+		window.matchMedia(FINE_POINTER_QUERY).matches &&
+		!prefersReducedMotion()
+
+	const activeSlides = ref({})
+	let slideTimer = 0
+
+	const activeSlide = dog => activeSlides.value[dog.name] ?? 0
+
+	function startSlideshow(dog) {
+		if (!slideAnimatable || dog.effect !== 'slideshow') return
+		window.clearInterval(slideTimer)
+		slideTimer = window.setInterval(() => {
+			activeSlides.value = {
+				...activeSlides.value,
+				[dog.name]: (activeSlide(dog) + 1) % dog.slides.length,
+			}
+		}, SLIDE_INTERVAL_MS)
+	}
+
+	function stopSlideshow(dog) {
+		if (dog.effect !== 'slideshow') return
+		window.clearInterval(slideTimer)
+		activeSlides.value = { ...activeSlides.value, [dog.name]: 0 }
+	}
+
+	onBeforeUnmount(() => window.clearInterval(slideTimer))
 </script>
 
 <style scoped lang="scss">
@@ -116,6 +180,11 @@
 		box-shadow: 0 0 8px 1px rgba($phosphor-green, 0.55);
 	}
 
+	[data-section='finance'] .life-card__dot {
+		background: $mint;
+		box-shadow: 0 0 8px 1px rgba($mint, 0.55);
+	}
+
 	[data-section='music'] .life-card__dot {
 		background: $purple;
 		box-shadow: 0 0 8px 1px rgba($purple, 0.6);
@@ -137,9 +206,7 @@
 	}
 
 	.dog__frame {
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		position: relative;
 		aspect-ratio: 1;
 		overflow: hidden;
 		background: rgba(0, 0, 0, 0.45);
@@ -147,13 +214,31 @@
 		border-radius: $void-radius;
 	}
 
-	// cutout photos (transparent bg): contain shows the whole dog on the dark frame
+	// cutout photos (transparent bg): contain shows the whole dog on the dark frame.
+	// two layers stacked: crisp `--hi` under the low-res `--lo` that pixelates at rest.
 	.dog__photo {
+		position: absolute;
+		inset: 0;
 		width: 100%;
 		height: 100%;
+		box-sizing: border-box;
 		object-fit: contain;
 		padding: 0.6rem;
-		display: block;
+	}
+
+	.dog__photo--lo {
+		opacity: 0;
+		image-rendering: pixelated;
+	}
+
+	// slideshow frames stack like the pixelate layers; only the active frame shows.
+	// the shared `.dog__photo` transition (hover block) crossfades each swap.
+	.dog__slide {
+		opacity: 0;
+	}
+
+	.dog__slide.is-active {
+		opacity: 1;
 	}
 
 	.dog__name {
@@ -165,24 +250,42 @@
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 	}
 
-	.tags {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		margin: 0.9rem 0 0;
-		padding: 0;
-		list-style: none;
-	}
+	// De-pixelate reveal — pointer devices only, and never when reduced motion is asked.
+	// Touch / reduced-motion keep the always-crisp base state (photo + name visible).
+	@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+		.dog__photo {
+			transition: opacity 0.35s steps(5, end);
+		}
 
-	.tags__item {
-		padding: 0.32rem 0.6rem;
-		font-family: $font-pixel;
-		font-size: clamp(0.42rem, 1.2vw, 0.55rem);
-		letter-spacing: 0.5px;
-		color: rgba(255, 255, 255, 0.8);
-		background: rgba(0, 0, 0, 0.4);
-		border: $void-border;
-		border-radius: $void-radius;
+		// rest: pixelated on top, crisp hidden, name hidden
+		.dog__photo--lo {
+			opacity: 1;
+		}
+
+		.dog__photo--hi {
+			opacity: 0;
+		}
+
+		.dog__name {
+			opacity: 0;
+			transition: opacity 0.35s steps(5, end);
+		}
+
+		// hover / keyboard focus: crisp photo and name resolve in
+		.dog:hover .dog__photo--hi,
+		.dog:focus-within .dog__photo--hi {
+			opacity: 1;
+		}
+
+		.dog:hover .dog__photo--lo,
+		.dog:focus-within .dog__photo--lo {
+			opacity: 0;
+		}
+
+		.dog:hover .dog__name,
+		.dog:focus-within .dog__name {
+			opacity: 1;
+		}
 	}
 
 	.life-link {
