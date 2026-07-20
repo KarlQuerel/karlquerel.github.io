@@ -11,6 +11,10 @@ dist/
 # ESLint cache (incremental lint)
 .eslintcache
 
+# Playwright artifacts
+test-results/
+playwright-report/
+
 # Editor-specific files
 .vscode/
 .idea/
