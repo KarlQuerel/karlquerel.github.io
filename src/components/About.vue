@@ -171,8 +171,21 @@
 		padding: 0.5rem 0.9rem;
 		// Keep it legible over whatever panel content scrolls behind it.
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
-		// void frame over a more solid fill so it reads as a tappable chip against the panel
 		@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.55));
+
+		// borderless chip: drop the void frame and its hover/active inset ring, keep the glow
+		& {
+			border: 0;
+		}
+
+		&:hover,
+		&:focus-visible {
+			box-shadow: 0 0 28px rgba($yellow, 0.18);
+		}
+
+		&:active {
+			box-shadow: 0 0 16px rgba($yellow, 0.12);
+		}
 	}
 
 	// twin "rewind" triangles, em-sized so they scale with the label
