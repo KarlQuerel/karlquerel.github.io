@@ -13,29 +13,40 @@ const routes = [
 	{
 		path: '/terminal',
 		component: () => import('./components/Terminal.vue'),
+		meta: { title: 'Terminal' },
 	},
 	{
 		path: '/about',
 		component: () => import('./components/About.vue'),
-		meta: { prefetch: true },
+		meta: { prefetch: true, title: 'About' },
 	},
 	{ path: '/secret_link', component: () => import('./components/SecretRedirect.vue') },
 	{
 		path: '/contact',
 		component: () => import('./components/Contact.vue'),
-		meta: { prefetch: true },
+		meta: { prefetch: true, title: 'Contact' },
 	},
 	{
 		path: '/sport',
 		component: () => import('./components/sport/SportPage.vue'),
-		meta: { prefetch: true },
+		meta: { prefetch: true, title: 'Sport' },
 	},
-	{ path: '/:pathMatch(.*)*', component: () => import('./components/NotFound.vue') },
+	{
+		path: '/:pathMatch(.*)*',
+		component: () => import('./components/NotFound.vue'),
+		meta: { title: '404' },
+	},
 ]
 
 const router = createRouter({
 	history: createWebHistory('/'),
 	routes,
+})
+
+// per-route titles so tabs and history entries are distinguishable
+const DEFAULT_TITLE = 'Karl Querel • Software Engineer'
+router.afterEach(to => {
+	document.title = to.meta.title ? `${to.meta.title} • Karl Querel` : DEFAULT_TITLE
 })
 
 createApp(App).use(router).mount('#app')
