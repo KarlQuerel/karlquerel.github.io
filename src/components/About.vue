@@ -91,6 +91,14 @@
 		padding: 3.6rem 1rem 4rem;
 	}
 
+	// On short mobile viewports the column overflows and starts at the padding, so the
+	// greeting must clear the star + MENU hint on its own (the 7rem line, cf. .about-back).
+	@media (max-width: $breakpoint-mobile) {
+		.about {
+			padding-top: 5.25rem;
+		}
+	}
+
 	.about-head {
 		max-width: min(46rem, 94vw);
 		margin: 0 auto;

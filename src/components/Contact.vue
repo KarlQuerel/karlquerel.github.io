@@ -51,6 +51,13 @@
 		padding: 3.6rem 1rem 4rem;
 	}
 
+	// Mirrors .about's mobile bump: the heading must clear the star + MENU hint (7rem line).
+	@media (max-width: $breakpoint-mobile) {
+		.contact {
+			padding-top: 5.25rem;
+		}
+	}
+
 	// Matches the About greeting: white pixel caps with the last word accented yellow.
 	.contact-name {
 		// mirrors .about-head's inner top padding so the heading sits clear of the MENU hint
