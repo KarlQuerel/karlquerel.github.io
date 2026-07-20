@@ -3,6 +3,7 @@
 	<component
 		:is="href ? 'a' : 'button'"
 		class="portal"
+		:class="{ 'portal--compact': compact }"
 		:type="href ? undefined : 'button'"
 		:href="href || undefined"
 		:target="href && blank ? '_blank' : undefined"
@@ -22,6 +23,8 @@
 		// present → renders as a link; absent → a button (parent handles @click)
 		href: { type: String, default: '' },
 		blank: { type: Boolean, default: false },
+		// scaled-down tile, for one standing apart from a row it must not compete with
+		compact: { type: Boolean, default: false },
 	})
 </script>
 
@@ -32,20 +35,27 @@
 	$portal-icon-size: 5.5rem;
 	$portal-pad-x: 1.4rem;
 	$portal-pad-y: 0.9rem;
-	// Fixed tile width (icon + horizontal padding) so every tile is the same size
-	// regardless of label length — keeps icon spacing identical across the About
-	// hub and Contact, and lets a long label overflow the tile symmetrically.
-	$portal-tile-width: $portal-icon-size + $portal-pad-x * 2;
 	// a step below $heading-pixel-size so page headings stay dominant
 	$portal-label-size: clamp(0.85rem, 2.1vw, 1.1rem);
 
+	// Sizes travel as custom properties so a variant can rescale the whole tile
+	// from one place; the defaults below are the full-size row tile.
 	.portal {
+		--portal-icon: #{$portal-icon-size};
+		--portal-pad-x: #{$portal-pad-x};
+		--portal-pad-y: #{$portal-pad-y};
+		--portal-label: #{$portal-label-size};
+		--portal-gap: 1.1rem;
+
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 1.1rem;
-		width: $portal-tile-width;
-		padding: $portal-pad-y $portal-pad-x;
+		gap: var(--portal-gap);
+		// Fixed tile width (icon + horizontal padding) so every tile in a row is the
+		// same size regardless of label length — keeps icon spacing identical across
+		// the About hub and Contact, and lets a long label overflow symmetrically.
+		width: calc(var(--portal-icon) + var(--portal-pad-x) * 2);
+		padding: var(--portal-pad-y) var(--portal-pad-x);
 		text-decoration: none;
 		@include void-button(
 			$bg: radial-gradient(
@@ -62,6 +72,14 @@
 		border-radius: $portal-radius;
 	}
 
+	.portal--compact {
+		--portal-icon: 3.4rem;
+		--portal-pad-x: 1rem;
+		--portal-pad-y: 0.7rem;
+		--portal-label: clamp(0.6rem, 1.5vw, 0.75rem);
+		--portal-gap: 0.8rem;
+	}
+
 	// Borderless: cancel the mixin's hover frame/lift so feedback lives on the icon + label.
 	.portal,
 	.portal:hover,
@@ -76,7 +94,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: $portal-icon-size;
+		width: var(--portal-icon);
 		height: auto;
 		transition:
 			transform 0.35s ease,
@@ -84,7 +102,7 @@
 	}
 
 	.portal__img {
-		width: $portal-icon-size;
+		width: var(--portal-icon);
 		height: auto;
 		display: block;
 	}
@@ -113,7 +131,7 @@
 		// overflow symmetrically (centered over the icon) without widening the tile.
 		white-space: nowrap;
 		font-family: $font-pixel;
-		font-size: $portal-label-size;
+		font-size: var(--portal-label);
 		letter-spacing: 1px;
 		color: $text-interactive;
 		transition:

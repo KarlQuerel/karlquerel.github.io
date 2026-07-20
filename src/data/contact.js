@@ -32,3 +32,15 @@ export const CONTACT_CHANNELS = [
 		blank: true,
 	},
 ]
+
+// The bug-report button at the foot of the page: opens a prefilled GitHub issue.
+const ISSUE_BODY = ['### What happened?', '', '### Where?', '', '### Browser', ''].join('\n')
+
+export const BUG_REPORT = {
+	label: 'REPORT A BUG',
+	// placeholder art — swap for the hand-drawn pixel bug when it exists
+	icon: '/assets/contact/bug.png',
+	issueUrl: `https://github.com/KarlQuerel/karlquerel.github.io/issues/new?labels=bug&title=${encodeURIComponent(
+		'Bug report'
+	)}&body=${encodeURIComponent(ISSUE_BODY)}`,
+}

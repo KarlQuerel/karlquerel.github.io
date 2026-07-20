@@ -20,11 +20,21 @@
 				/>
 			</li>
 		</ul>
+
+		<div class="contact-report">
+			<PixelPortal
+				compact
+				:label="BUG_REPORT.label"
+				:image="BUG_REPORT.icon"
+				:href="BUG_REPORT.issueUrl"
+				blank
+			/>
+		</div>
 	</div>
 </template>
 
 <script setup>
-	import { CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
+	import { BUG_REPORT, CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
 	import PixelPortal from './PixelPortal.vue'
 </script>
 
@@ -62,6 +72,11 @@
 	.contact-list {
 		list-style: none;
 		@include portal-row;
+	}
+
+	// Set apart from the channel row: a secondary action, not a fourth way to reach me.
+	.contact-report {
+		margin-top: 2.5rem;
 	}
 
 	.contact-item {
