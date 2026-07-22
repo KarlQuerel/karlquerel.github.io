@@ -83,17 +83,21 @@
 		}
 	}
 
-	// backing chip sits below the halo (z -2 < -1) so the bloom glows over the black
+	// edge-free radial scrim below the halo (z -2 < -1): dims text scrolling under the star
 	.nav-toggle::after {
 		content: '';
 		position: absolute;
 		top: 50%;
 		left: 50%;
-		width: 60px;
-		height: 60px;
-		margin: -30px 0 0 -30px;
-		background: $black;
-		border-radius: $void-radius;
+		width: 90px;
+		height: 90px;
+		margin: -45px 0 0 -45px;
+		background: radial-gradient(
+			circle,
+			rgba($black, 0.9) 0%,
+			rgba($black, 0.55) 45%,
+			rgba($black, 0) 72%
+		);
 		z-index: -2;
 		pointer-events: none;
 	}
@@ -141,6 +145,9 @@
 
 	// 4-point star: box-shadow copies form the arms + shoulders; currentColor tints with the button
 	$p: 5px;
+	// black pixel outline (favicon-style) keeps the star legible over text without a backing chip
+	$star-outline: drop-shadow(2px 0 0 $black) drop-shadow(-2px 0 0 $black)
+		drop-shadow(0 2px 0 $black) drop-shadow(0 -2px 0 $black);
 	.nav-toggle__star {
 		position: relative;
 		width: $p;
@@ -170,7 +177,7 @@
 		rotate: 0deg;
 		scale: 1.1;
 		// drop-shadow traces the star's own silhouette (box-shadow arms included), not the button
-		filter: drop-shadow(0 0 6px rgba($yellow, 0.7));
+		filter: $star-outline drop-shadow(0 0 6px rgba($yellow, 0.7));
 		transition:
 			rotate 0.3s steps(3, end),
 			scale 0.3s steps(3, end),
@@ -179,7 +186,7 @@
 
 	.nav-toggle:hover .nav-toggle__star,
 	.nav-toggle:focus-visible .nav-toggle__star {
-		filter: drop-shadow(0 0 9px rgba($yellow, 0.9));
+		filter: $star-outline drop-shadow(0 0 9px rgba($yellow, 0.9));
 	}
 
 	// ring exists only under .is-open so the burst replays each open and never fires on close
@@ -205,7 +212,7 @@
 	.nav-toggle.is-open .nav-toggle__star {
 		rotate: 45deg;
 		scale: 1.4;
-		filter: drop-shadow(0 0 9px rgba($yellow, 0.85));
+		filter: $star-outline drop-shadow(0 0 9px rgba($yellow, 0.85));
 	}
 
 	.nav-toggle.is-open .nav-toggle__star::after {
