@@ -1,7 +1,7 @@
 {
   "name": "karlquerel.github.io",
   "version": "1.0.0",
-  "description": "You can access the website [here](karlquerel.github.io)",
+  "description": "Personal portfolio website - retro pixel aesthetic (Vue 3 + Vite)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -17,9 +17,8 @@
     "clean": "npm run lint:fix && npm run format",
     "prepare": "simple-git-hooks"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Karl Querel",
+  "license": "SEE LICENSE IN LICENSE",
   "lint-staged": {
     "*.{js,vue}": [
       "eslint --cache --fix",
