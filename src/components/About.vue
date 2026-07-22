@@ -102,16 +102,19 @@
 	@use '@/styles/mixins' as *;
 
 	.about {
+		// --back-top clears the star toggle + MENU hint (cf. .about-back)
+		--pad-top: 3.6rem;
+		--back-top: 7rem;
 		min-height: 100dvh;
 		gap: 2rem;
-		padding: 3.6rem 1rem 4rem;
+		padding: var(--pad-top) 1rem 4rem;
 	}
 
 	// On short mobile viewports the column overflows and starts at the padding, so the
-	// greeting must clear the star + MENU hint on its own (the 7rem line, cf. .about-back).
+	// greeting must clear the star + MENU hint on its own (cf. --back-top).
 	@media (max-width: $breakpoint-mobile) {
 		.about {
-			padding-top: 5.25rem;
+			--pad-top: 5.25rem;
 		}
 	}
 
@@ -223,12 +226,14 @@
 		@include portal-row;
 	}
 
-	// top 7rem clears the star toggle + MENU hint; z 30 stays under the nav overlay (40) and star (50)
+	// z 30 stays under the nav overlay (40) and star (50)
 	.about-back {
 		order: -1;
 		align-self: center;
 		position: sticky;
-		top: 7rem;
+		top: var(--back-top);
+		// rest exactly at the sticky offset, else sticky shoves the button down into the intro
+		margin-top: calc(var(--back-top) - var(--pad-top));
 		z-index: 30;
 		display: inline-flex;
 		align-items: center;
