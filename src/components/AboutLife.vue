@@ -1,12 +1,12 @@
 <template>
 	<div class="life">
 		<!-- no accent dot — reads as the header above the themed cards -->
-		<section v-reveal class="life-card reveal-block">
+		<section v-reveal class="life-card reveal-block is-left">
 			<h2 class="life-card__title">ABOUT ME</h2>
 			<p v-for="(line, i) in ABOUT_ME" :key="i" class="life-card__line">{{ line }}</p>
 		</section>
 
-		<section v-reveal class="life-card reveal-block" data-section="dogs">
+		<section v-reveal class="life-card reveal-block is-right" data-section="dogs">
 			<h2 class="life-card__title"><span class="life-card__dot" aria-hidden="true" />DOGS</h2>
 			<p v-for="(line, i) in DOG_LINES" :key="i" class="life-card__line">{{ line }}</p>
 			<div class="dogs">
@@ -58,10 +58,11 @@
 		</section>
 
 		<section
-			v-for="section in LIFE_SECTIONS"
+			v-for="(section, i) in LIFE_SECTIONS"
 			:key="section.id"
 			v-reveal
 			class="life-card reveal-block"
+			:class="i % 2 === 0 ? 'is-left' : 'is-right'"
 			:data-section="section.id"
 		>
 			<h2 class="life-card__title">
@@ -122,18 +123,37 @@
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
+	// zigzag rhythm borrowed from the work timeline (AboutWork.vue)
+	$slide: 28px;
+
 	.life {
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
-		width: min(40rem, 94vw);
+		width: min(52rem, 94vw);
 		margin: 0 auto;
 		text-align: left;
 	}
 
 	.life-card {
+		width: min(34rem, 100%);
 		padding: 1rem 1.1rem 1.2rem;
 		@include void-panel(rgba(0, 0, 0, 0.7));
+	}
+
+	// cards alternate sides down the column; right cards mirror their text
+	.is-left {
+		align-self: flex-start;
+	}
+
+	.is-right {
+		align-self: flex-end;
+		text-align: right;
+	}
+
+	// accent dot rides the outer edge on mirrored cards (like the work flag)
+	.is-right .life-card__title {
+		flex-direction: row-reverse;
 	}
 
 	.life-card__title {
@@ -161,7 +181,8 @@
 		margin: 0 0 0.6rem;
 		font-size: clamp(0.8rem, 1.8vw, 0.95rem);
 		line-height: 1.6;
-		text-align: left;
+		// the global `p { text-align: center }` would otherwise centre it
+		text-align: inherit;
 		color: rgba(255, 255, 255, 0.88);
 	}
 
@@ -322,9 +343,17 @@
 		transform: translateX(3px);
 	}
 
+	// slide in from the card's own side, like the work timeline
 	.reveal-block {
 		opacity: 0;
-		transform: translateY(12px);
+	}
+
+	.is-left.reveal-block {
+		transform: translateX(-$slide);
+	}
+
+	.is-right.reveal-block {
+		transform: translateX($slide);
 	}
 
 	.reveal-block.is-visible {
@@ -334,7 +363,7 @@
 	@keyframes life-in {
 		to {
 			opacity: 1;
-			transform: translateY(0);
+			transform: none;
 		}
 	}
 
@@ -346,7 +375,10 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.reveal-block {
+		// match is-left / is-right specificity or the side offset never clears
+		.reveal-block,
+		.is-left.reveal-block,
+		.is-right.reveal-block {
 			opacity: 1;
 			transform: none;
 			animation: none;
