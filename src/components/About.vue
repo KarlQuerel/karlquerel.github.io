@@ -1,16 +1,21 @@
 <template>
 	<div class="content about">
-		<header class="about-head">
-			<p v-if="activeTab" :key="activeTab" class="about-intro about-lead">
+		<header class="about-head" :class="{ 'about-head--tab': activeTab }">
+			<!-- staggered pivot: each sentence block alternates sides, echoing the zigzag below -->
+			<p
+				v-for="(group, gi) in introGroups"
+				:key="`${activeTab}-${gi}`"
+				class="intro-step about-lead"
+				:class="gi % 2 === 0 ? 'is-left' : 'is-right'"
+				:style="{ animationDelay: gi ? `${gi * 0.15}s` : null }"
+			>
 				<!-- segments carry their own spacing — between-tag whitespace is stripped -->
-				<template v-for="(seg, i) in ABOUT_INTRO[activeTab]" :key="i"
-					><br v-if="seg.br" /><span v-else-if="seg.hl" class="about-intro__hl">{{
-						seg.text
-					}}</span
+				<template v-for="(seg, i) in group" :key="i"
+					><span v-if="seg.hl" class="about-intro__hl">{{ seg.text }}</span
 					><template v-else>{{ seg.text }}</template></template
 				>
 			</p>
-			<p v-else class="about-intro about-lead about-greeting">
+			<p v-if="!activeTab" class="about-intro about-lead about-greeting">
 				<span class="about-greeting__line">{{ ABOUT_INTRO.greetingLine1 }}</span>
 				<span class="about-greeting__line">
 					{{ ABOUT_INTRO.greetingLead
@@ -71,6 +76,17 @@
 		() => TABS.find(tab => tab.id === activeTab.value)?.component ?? null
 	)
 
+	// intro segments split into sentence blocks at {br} markers, one block per zigzag step
+	const introGroups = computed(() => {
+		if (!activeTab.value) return []
+		const groups = [[]]
+		for (const seg of ABOUT_INTRO[activeTab.value]) {
+			if (seg.br) groups.push([])
+			else groups.at(-1).push(seg)
+		}
+		return groups.filter(group => group.length)
+	})
+
 	function selectTab(id) {
 		if (id === activeTab.value) return
 		router.push({ query: { tab: id } })
@@ -107,6 +123,51 @@
 			120% 130% at 50% 50%,
 			rgba(0, 0, 0, 0.72) 0%,
 			rgba(0, 0, 0, 0.45) 55%,
+			rgba(0, 0, 0, 0) 100%
+		);
+	}
+
+	// tab mode: the centered glow gives way to per-sentence side glows (cf. .intro-step)
+	.about-head--tab {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		width: min(52rem, 94vw);
+		max-width: none;
+		padding: 0;
+		background: none;
+	}
+
+	// one sentence per step; side-anchored glow borrowed from the timeline cards
+	.intro-step {
+		max-width: 42ch;
+		margin: 0;
+		padding: 0.9rem 1.2rem;
+		font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+		line-height: 1.75;
+		text-wrap: balance;
+		color: $white;
+		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+	}
+
+	.intro-step.is-left {
+		align-self: flex-start;
+		text-align: left;
+		background: radial-gradient(
+			80% 130% at 6% 50%,
+			rgba(0, 0, 0, 0.68) 0%,
+			rgba(0, 0, 0, 0.4) 52%,
+			rgba(0, 0, 0, 0) 100%
+		);
+	}
+
+	.intro-step.is-right {
+		align-self: flex-end;
+		text-align: right;
+		background: radial-gradient(
+			80% 130% at 94% 50%,
+			rgba(0, 0, 0, 0.68) 0%,
+			rgba(0, 0, 0, 0.4) 52%,
 			rgba(0, 0, 0, 0) 100%
 		);
 	}
