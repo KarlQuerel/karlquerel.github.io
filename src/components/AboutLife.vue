@@ -138,7 +138,8 @@
 	.life-card {
 		width: min(34rem, 100%);
 		padding: 1rem 1.1rem 1.2rem;
-		@include void-panel(rgba(0, 0, 0, 0.7));
+		// borderless: just the dark wash, no void frame (matches the work timeline)
+		background: rgba(0, 0, 0, 0.7);
 	}
 
 	// cards alternate sides down the column; right cards mirror their text

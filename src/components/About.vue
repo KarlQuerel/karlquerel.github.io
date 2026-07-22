@@ -143,7 +143,6 @@
 
 	// one sentence per step; side-anchored glow borrowed from the timeline cards
 	.intro-step {
-		max-width: 42ch;
 		margin: 0;
 		padding: 0.9rem 1.2rem;
 		font-size: clamp(0.8rem, 1.8vw, 0.95rem);
