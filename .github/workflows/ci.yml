@@ -37,8 +37,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chrome
-
+      # No browser install: channel 'chrome' uses the runner's preinstalled Chrome.
       - name: Smoke test
         run: npm test
