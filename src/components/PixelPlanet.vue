@@ -20,7 +20,20 @@
 	const props = defineProps({
 		// 0 → far-off dot, 1 → arrived and full size. Drives scale and opacity.
 		reveal: { type: Number, default: 0 },
+		// Optional band-colour override ({ ocean, oceanShallow, land, highland,
+		// atmosphere }) — e.g. EARTH_PALETTE. Fixed at mount.
+		palette: { type: Object, default: null },
 	})
+
+	// surface + halo colours resolved once, since the palette never changes live
+	const colors = {
+		ocean: PLANET.ocean,
+		oceanShallow: PLANET.oceanShallow,
+		land: PLANET.land,
+		highland: PLANET.highland,
+		atmosphere: PLANET.atmosphere,
+		...props.palette,
+	}
 
 	// grow from a vanishing-point dot to full size, settling slightly lower as it "lands"
 	const planetStyle = computed(() => ({
@@ -80,10 +93,10 @@
 
 	// Colour bands keyed by their upper noise edge, low → high elevation.
 	const bands = [
-		[PLANET.ocean, PLANET.seaLevel - 0.08],
-		[PLANET.oceanShallow, PLANET.seaLevel],
-		[PLANET.land, PLANET.seaLevel + 0.12],
-		[PLANET.highland, Infinity],
+		[colors.ocean, PLANET.seaLevel - 0.08],
+		[colors.oceanShallow, PLANET.seaLevel],
+		[colors.land, PLANET.seaLevel + 0.12],
+		[colors.highland, Infinity],
 	]
 
 	// map a point to a surface colour, cross-fading band edges so coastlines don't shimmer
@@ -126,7 +139,7 @@
 		const d = img.data
 		const cosS = Math.cos(spin)
 		const sinS = Math.sin(spin)
-		const [ar, ag, ab] = PLANET.atmosphere
+		const [ar, ag, ab] = colors.atmosphere
 
 		for (let y = 0; y < res; y++) {
 			for (let x = 0; x < res; x++) {

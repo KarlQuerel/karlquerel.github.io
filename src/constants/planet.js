@@ -50,3 +50,13 @@ export const PLANET = {
 	// Strength of the lit-limb rim glow (0 = none).
 	rimStrength: 0.35,
 }
+
+// Band override for the launch beat's dying Earth (PixelPlanet `palette` prop):
+// steel seas, sickly olive land, ashen peaks under a pale fading atmosphere.
+export const EARTH_PALETTE = {
+	ocean: [22, 42, 74],
+	oceanShallow: [44, 84, 118],
+	land: [88, 104, 66],
+	highland: [148, 148, 136],
+	atmosphere: [150, 176, 200],
+}
