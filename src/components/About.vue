@@ -1,13 +1,13 @@
 <template>
 	<div class="content about">
 		<header class="about-head" :class="{ 'about-head--tab': activeTab }">
-			<!-- staggered pivot: each sentence block alternates sides, echoing the zigzag below -->
+			<!-- each sentence block alternates sides and reveals on scroll, echoing the zigzag below -->
 			<p
 				v-for="(group, gi) in introGroups"
 				:key="`${activeTab}-${gi}`"
+				v-reveal
 				class="intro-step about-lead"
 				:class="gi % 2 === 0 ? 'is-left' : 'is-right'"
-				:style="{ animationDelay: gi ? `${gi * 0.15}s` : null }"
 			>
 				<!-- segments carry their own spacing — between-tag whitespace is stripped -->
 				<template v-for="(seg, i) in group" :key="i"
@@ -50,6 +50,7 @@
 	import { computed } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 	import { ABOUT_INTRO } from '@/data/about'
+	import { reveal as vReveal } from '@/directives/reveal'
 	import AboutWork from './AboutWork.vue'
 	import AboutLife from './AboutLife.vue'
 	import PixelPortal from './PixelPortal.vue'
@@ -78,9 +79,10 @@
 
 	// intro segments split into sentence blocks at {br} markers, one block per zigzag step
 	const introGroups = computed(() => {
-		if (!activeTab.value) return []
+		const segments = ABOUT_INTRO[activeTab.value]
+		if (!segments) return []
 		const groups = [[]]
-		for (const seg of ABOUT_INTRO[activeTab.value]) {
+		for (const seg of segments) {
 			if (seg.br) groups.push([])
 			else groups.at(-1).push(seg)
 		}
@@ -100,6 +102,9 @@
 
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
+
+	// slide-in offset shared with the timeline cards (cf. AboutWork.vue $slide)
+	$intro-slide: 28px;
 
 	.about {
 		// --back-top clears the star toggle + MENU hint (cf. .about-back)
@@ -134,22 +139,27 @@
 	.about-head--tab {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		// wide beat-to-beat gap: keeps late beats below the fold so they reveal on scroll
+		gap: 3.5rem;
 		width: min(52rem, 94vw);
 		max-width: none;
 		padding: 0;
 		background: none;
 	}
 
-	// one sentence per step; side-anchored glow borrowed from the timeline cards
+	// one narrative beat per step; side glow + scroll reveal borrowed from the timeline cards
 	.intro-step {
 		margin: 0;
+		// beats wrap into 2-3 balanced lines so each reads like a card, not a banner
+		max-width: 46ch;
 		padding: 0.9rem 1.2rem;
 		font-size: clamp(0.8rem, 1.8vw, 0.95rem);
 		line-height: 1.75;
 		text-wrap: balance;
 		color: $white;
 		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+		// hidden until v-reveal marks it visible
+		opacity: 0;
 	}
 
 	.intro-step.is-left {
@@ -161,6 +171,7 @@
 			rgba(0, 0, 0, 0.4) 52%,
 			rgba(0, 0, 0, 0) 100%
 		);
+		transform: translateX(-$intro-slide);
 	}
 
 	.intro-step.is-right {
@@ -172,6 +183,18 @@
 			rgba(0, 0, 0, 0.4) 52%,
 			rgba(0, 0, 0, 0) 100%
 		);
+		transform: translateX($intro-slide);
+	}
+
+	.intro-step.is-visible {
+		animation: step-in 0.5s steps(6, end) forwards;
+	}
+
+	@keyframes step-in {
+		to {
+			opacity: 1;
+			transform: none;
+		}
 	}
 
 	.about-intro {
@@ -197,10 +220,12 @@
 	}
 
 	// Bigger two-line hub greeting; each line is a block so they stack without a <br>.
+	// Fades in at mount — the intro-steps reveal on scroll instead.
 	.about-greeting {
 		font-size: $heading-pixel-size;
 		line-height: 1.5;
 		text-transform: uppercase;
+		animation: intro-swap 0.35s steps(4, end) both;
 	}
 
 	.about-greeting__line {
@@ -209,7 +234,6 @@
 
 	.about-lead {
 		color: $white;
-		animation: intro-swap 0.35s steps(4, end) both;
 	}
 
 	@keyframes intro-swap {
@@ -283,7 +307,21 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.about-lead {
+		.about-greeting {
+			animation: none;
+		}
+
+		.intro-step {
+			opacity: 1;
+		}
+
+		// match is-left / is-right specificity or the side offset never clears
+		.intro-step.is-left,
+		.intro-step.is-right {
+			transform: none;
+		}
+
+		.intro-step.is-visible {
 			animation: none;
 		}
 	}

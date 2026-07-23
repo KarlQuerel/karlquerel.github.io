@@ -11,23 +11,27 @@ export const ABOUT_INTRO = {
 	greetingLead: "I'm ",
 	greetingName: 'Karl',
 	work: [
-		{ text: 'Throughout five incredible and rewarding years ' },
-		{ text: 'trading commodities', hl: true },
-		{ text: ' across Europe, ' },
+		{ text: 'For five years, I traded ' },
+		{ text: 'commodities', hl: true },
+		{ text: ' across Europe. Fast markets. High stakes. No two days alike. I loved the pace.' },
+		{ br: true },
+		{ text: 'But ' },
 		{ text: 'technology', hl: true },
-		{ text: ' was always calling in the background.' },
+		{
+			text: ' was always calling in the background. Every year, the pull grew stronger. Until ignoring it was no longer an option.',
+		},
 		{ br: true },
-		{ text: 'I reached a point where I knew I had to make it my daily reality.' },
-		{ br: true },
-		{ text: 'I took a sharp turn into ' },
+		{ text: 'I had to make it my daily reality. So I took a sharp turn into ' },
 		{ text: 'software engineering', hl: true },
-		{ text: ' and rebooted at ' },
-		{ text: '42 Paris', hl: true },
 		{ text: '.' },
 		{ br: true },
-		{ text: 'Now I build tech for ' },
+		{ text: 'And rebooted from scratch at ' },
+		{ text: '42 Paris', hl: true },
+		{ text: '. No classes. No teachers. Just code and peers.' },
+		{ br: true },
+		{ text: 'Today I build tech for ' },
 		{ text: 'renewable energy', hl: true },
-		{ text: '.' },
+		{ text: '. Charging software for electric fleets. Best turn I ever took.' },
 	],
 	life: [
 		{
@@ -50,6 +54,7 @@ export const CAREER_TIMELINE = [
 		place: 'Grand Lycée Franco-Libanais',
 		location: 'Beirut, Lebanon',
 		flag: 'lebanon',
+		emblem: 'diploma',
 	},
 	{
 		type: 'study',
@@ -58,6 +63,7 @@ export const CAREER_TIMELINE = [
 		place: 'University of Geneva (HEC)',
 		location: 'Geneva, Switzerland',
 		flag: 'switzerland',
+		emblem: 'book',
 	},
 	{
 		type: 'study',
@@ -66,6 +72,7 @@ export const CAREER_TIMELINE = [
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
 		flag: 'france',
+		emblem: 'globe',
 	},
 	{
 		type: 'study',
@@ -74,6 +81,7 @@ export const CAREER_TIMELINE = [
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
 		flag: 'france',
+		emblem: 'chart',
 	},
 	{
 		type: 'job',
@@ -82,6 +90,7 @@ export const CAREER_TIMELINE = [
 		place: 'Cedar Europe',
 		location: 'Madrid, Spain',
 		flag: 'spain',
+		emblem: 'phone',
 	},
 	{
 		type: 'job',
@@ -90,6 +99,7 @@ export const CAREER_TIMELINE = [
 		place: 'Cedar Europe',
 		location: 'Paris, France',
 		flag: 'france',
+		emblem: 'gold-bars',
 	},
 	{
 		type: 'study',
@@ -99,6 +109,7 @@ export const CAREER_TIMELINE = [
 		location: 'Paris, France',
 		flag: 'france',
 		chapter: 'Career pivot',
+		emblem: 'terminal-42',
 	},
 	{
 		type: 'job',
@@ -108,6 +119,7 @@ export const CAREER_TIMELINE = [
 		location: 'Paris, France',
 		flag: 'france',
 		current: true,
+		emblem: 'charger',
 	},
 ]
 
