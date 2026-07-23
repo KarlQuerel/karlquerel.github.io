@@ -9,6 +9,7 @@
 		>
 			<p v-if="item.chapter" class="ztl-chapter">{{ item.chapter }}</p>
 			<div class="ztl-card">
+				<PixelEmblem v-if="item.emblem" :emblem="item.emblem" class="ztl-emblem" />
 				<span class="ztl-year">{{ item.year }}</span>
 				<span class="ztl-kind" :class="`ztl-kind--${item.type}`">{{
 					CAREER_TYPE_LABELS[item.type]
@@ -29,6 +30,7 @@
 	import { CAREER_TIMELINE, CAREER_TYPE_LABELS } from '@/data/about'
 	import { reveal as vReveal } from '@/directives/reveal'
 	import PixelFlag from '@/components/PixelFlag.vue'
+	import PixelEmblem from '@/components/PixelEmblem.vue'
 </script>
 
 <style scoped lang="scss">
@@ -52,18 +54,21 @@
 		padding-bottom: 0;
 	}
 
-	// chapter break: pixel-dash rule on the centerline marking the finance → software era split
+	// chapter break: pixel-dash rule on the centerline marking the finance → software era split.
+	// Full gold + glow + extra air: it's the story's turning point, so it reads as a headline.
 	.ztl-chapter {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
-		margin: 0 0 2.4rem;
+		gap: 1.2rem;
+		margin: 0.8rem 0 3.2rem;
 		font-family: $font-pixel;
-		font-size: clamp(0.44rem, 1.3vw, 0.56rem);
+		font-size: clamp(0.6rem, 1.9vw, 0.8rem);
 		letter-spacing: 0.18em;
 		text-transform: uppercase;
-		color: rgba($yellow, 0.72);
-		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+		color: $yellow;
+		text-shadow:
+			0 1px 4px rgba(0, 0, 0, 0.95),
+			0 0 14px rgba($yellow, 0.45);
 		opacity: 0;
 	}
 
@@ -71,10 +76,10 @@
 	.ztl-chapter::after {
 		content: '';
 		flex: 1;
-		height: 2px;
+		height: 3px;
 		background: repeating-linear-gradient(
 			to right,
-			rgba(255, 255, 255, 0.28) 0 6px,
+			rgba($yellow, 0.5) 0 6px,
 			transparent 6px 12px
 		);
 	}
@@ -85,12 +90,52 @@
 
 	// one gap carries the rhythm; is-left / is-right set the alignment side + slide-in origin
 	.ztl-card {
+		// anchor for the ghosted emblem on the empty side
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		gap: $row-gap;
 		padding: 0.9rem 1.2rem;
 		// hidden until v-reveal marks it visible
 		opacity: 0;
+	}
+
+	// ghosted story emblem floating opposite the card text; slides in a beat after it
+	$emblem-ghost: 0.65;
+
+	.ztl-emblem {
+		position: absolute;
+		top: 50%;
+		width: clamp(3.4rem, 7.5vw, 5.2rem);
+		opacity: 0;
+	}
+
+	.is-left .ztl-emblem {
+		right: 7%;
+		transform: translateY(-50%) translateX($slide);
+	}
+
+	.is-right .ztl-emblem {
+		left: 7%;
+		transform: translateY(-50%) translateX(-$slide);
+	}
+
+	.ztl-item.is-visible .ztl-emblem {
+		animation: emblem-in 0.5s steps(6, end) 0.12s forwards;
+	}
+
+	@keyframes emblem-in {
+		to {
+			opacity: $emblem-ghost;
+			transform: translateY(-50%);
+		}
+	}
+
+	// no empty side to float in on narrow screens
+	@media (max-width: $breakpoint-mobile) {
+		.ztl-emblem {
+			display: none;
+		}
 	}
 
 	.is-left .ztl-card {
@@ -220,14 +265,24 @@
 			opacity: 1;
 		}
 
+		.ztl-emblem {
+			opacity: $emblem-ghost;
+		}
+
 		// match is-left / is-right specificity or the side offset never clears
 		.is-left .ztl-card,
 		.is-right .ztl-card {
 			transform: none;
 		}
 
+		.is-left .ztl-emblem,
+		.is-right .ztl-emblem {
+			transform: translateY(-50%);
+		}
+
 		.ztl-item.is-visible .ztl-card,
-		.ztl-item.is-visible .ztl-chapter {
+		.ztl-item.is-visible .ztl-chapter,
+		.ztl-item.is-visible .ztl-emblem {
 			animation: none;
 		}
 	}
