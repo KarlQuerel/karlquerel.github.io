@@ -9,6 +9,7 @@ const ROUTES = [
 	{ path: '/contact', title: 'Contact • Karl Querel', sees: /send me a/i },
 	{ path: '/sport', title: 'Sport • Karl Querel', sees: /weekly split/i },
 	{ path: '/terminal', title: 'Terminal • Karl Querel', sees: null },
+	{ path: '/game', title: 'Signal Lost • Karl Querel', sees: null },
 	{ path: '/definitely-not-a-page', title: '404 • Karl Querel', sees: null },
 ]
 

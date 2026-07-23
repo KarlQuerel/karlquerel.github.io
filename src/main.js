@@ -32,6 +32,12 @@ const routes = [
 		meta: { prefetch: true, title: 'Sport' },
 	},
 	{
+		// no prefetch flag — HeroIntro warms this chunk contextually as the story nears the HUD
+		path: '/game',
+		component: () => import('./components/game/GamePage.vue'),
+		meta: { title: 'Signal Lost' },
+	},
+	{
 		path: '/:pathMatch(.*)*',
 		component: () => import('./components/NotFound.vue'),
 		meta: { title: '404' },
