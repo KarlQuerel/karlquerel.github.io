@@ -9,7 +9,12 @@
 		>
 			<p v-if="item.chapter" class="ztl-chapter">{{ item.chapter }}</p>
 			<div class="ztl-card">
-				<PixelEmblem v-if="item.emblem" :emblem="item.emblem" class="ztl-emblem" />
+				<PixelEmblem
+					v-if="item.emblem"
+					:emblem="item.emblem"
+					class="ztl-emblem"
+					:class="`ztl-emblem--${item.emblem}`"
+				/>
 				<span class="ztl-year">{{ item.year }}</span>
 				<span class="ztl-kind" :class="`ztl-kind--${item.type}`">{{
 					CAREER_TYPE_LABELS[item.type]
@@ -108,6 +113,15 @@
 		top: 50%;
 		width: clamp(3.4rem, 7.5vw, 5.2rem);
 		opacity: 0;
+	}
+
+	// optical size corrections: the tall barrel reads oversized, the CRT small
+	.ztl-emblem--oil-barrel {
+		width: clamp(3rem, 6.6vw, 4.6rem);
+	}
+
+	.ztl-emblem--terminal-42 {
+		width: clamp(3.9rem, 8.6vw, 6rem);
 	}
 
 	.is-left .ztl-emblem {
