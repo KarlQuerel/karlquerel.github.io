@@ -52,7 +52,6 @@ export const CAREER_TIMELINE = [
 		place: 'Grand Lycée Franco-Libanais',
 		location: 'Beirut, Lebanon',
 		flag: 'lebanon',
-		emblem: 'diploma',
 	},
 	{
 		type: 'study',
@@ -61,7 +60,6 @@ export const CAREER_TIMELINE = [
 		place: 'University of Geneva (HEC)',
 		location: 'Geneva, Switzerland',
 		flag: 'switzerland',
-		emblem: 'book',
 	},
 	{
 		type: 'study',
@@ -70,7 +68,6 @@ export const CAREER_TIMELINE = [
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
 		flag: 'france',
-		emblem: 'globe',
 	},
 	{
 		type: 'study',
@@ -88,7 +85,6 @@ export const CAREER_TIMELINE = [
 		place: 'Cedar Europe',
 		location: 'Madrid, Spain',
 		flag: 'spain',
-		emblem: 'phone',
 	},
 	{
 		type: 'job',
@@ -97,7 +93,7 @@ export const CAREER_TIMELINE = [
 		place: 'Cedar Europe',
 		location: 'Paris, France',
 		flag: 'france',
-		emblem: 'gold-bars',
+		emblem: 'oil-barrel',
 	},
 	{
 		type: 'study',
