@@ -2,32 +2,12 @@
 
 // Hub header + per-tab intros. Trailing space on `greetingLead` is intentional. Tab
 // intros are segmented so key words can pop in yellow (`hl: true`) without v-html;
-// `{ br: true }` forces a line break.
+// `{ br: true }` forces a line break. The Work story now lives woven into the timeline
+// (see `narration` on CAREER_TIMELINE), so Work has no separate intro block.
 export const ABOUT_INTRO = {
 	greetingLine1: 'Hello there!',
 	greetingLead: "I'm ",
 	greetingName: 'Karl',
-	work: [
-		{ text: 'For five incredible years, I traded ' },
-		{ text: 'commodities', hl: true },
-		{ text: ' across Europe. An environment as challenging as it was rewarding.' },
-		{ br: true },
-		{ text: 'Over time, the line between finance and ' },
-		{ text: 'technology', hl: true },
-		{ text: ' blurred, and I spent more and more nights tinkering with ' },
-		{ text: 'algorithms', hl: true },
-		{ text: '.' },
-		{ br: true },
-		{ text: 'The spark grew impossible to ignore, so I rebooted from scratch at ' },
-		{ text: '42 Paris', hl: true },
-		{ text: ' and dove into ' },
-		{ text: 'software engineering', hl: true },
-		{ text: '.' },
-		{ br: true },
-		{ text: 'Today, I build tech for ' },
-		{ text: 'renewable energy', hl: true },
-		{ text: " and I'm loving every second of it." },
-	],
 	life: [
 		{
 			text: 'PLACEHOLDER',
@@ -37,7 +17,8 @@ export const ABOUT_INTRO = {
 
 // Career timeline, oldest first. `type` ('job' | 'study') tints the badge; `current`
 // flags the present role (gold); `emblem` is the sprite on the rail; `chapter` adds a
-// divider above the card. Jobs: career-defining roles only.
+// divider above the card; `narration` threads the first-person story above a milestone.
+// Jobs: career-defining roles only.
 export const CAREER_TIMELINE = [
 	{
 		type: 'study',
@@ -83,6 +64,8 @@ export const CAREER_TIMELINE = [
 		location: 'Madrid, Spain',
 		flag: 'spain',
 		emblem: 'gold-bars',
+		narration:
+			'For five incredible years, I traded commodities across Europe. An environment as challenging as it was rewarding.',
 	},
 	{
 		type: 'job',
@@ -92,6 +75,8 @@ export const CAREER_TIMELINE = [
 		location: 'Paris, France',
 		flag: 'france',
 		emblem: 'oil-barrel',
+		narration:
+			'Over time, the line between finance and technology blurred, and I spent more and more nights tinkering with algorithms.',
 	},
 	{
 		type: 'study',
@@ -102,6 +87,8 @@ export const CAREER_TIMELINE = [
 		flag: 'france',
 		chapter: 'Career pivot',
 		emblem: 'terminal-42',
+		narration:
+			'The spark grew impossible to ignore, so I rebooted from scratch at 42 Paris and dove into software engineering.',
 	},
 	{
 		type: 'job',
@@ -112,6 +99,7 @@ export const CAREER_TIMELINE = [
 		flag: 'france',
 		current: true,
 		emblem: 'charger',
+		narration: 'Today, I build tech for renewable energy, and I love every second of it.',
 	},
 ]
 

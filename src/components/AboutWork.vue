@@ -8,6 +8,7 @@
 			:class="{ 'is-current': item.current }"
 		>
 			<p v-if="item.chapter" class="ztl-chapter">{{ item.chapter }}</p>
+			<p v-if="item.narration" class="ztl-narration">{{ item.narration }}</p>
 			<div class="ztl-row">
 				<!-- emblem = the timeline node -->
 				<div class="ztl-art">
@@ -109,6 +110,21 @@
 			rgba($yellow, 0.5) 0 6px,
 			transparent 6px 12px
 		);
+	}
+
+	// first-person story threaded above a milestone; VT323 prose, distinct from the
+	// pixel-font data below it
+	.ztl-narration {
+		margin: 0 0 1rem;
+		padding-left: var(--about-gutter);
+		font-family: $font-terminal;
+		font-size: clamp(1rem, 2.4vw, 1.3rem);
+		line-height: 1.45;
+		text-align: left;
+		text-wrap: pretty;
+		color: rgba(255, 255, 255, 0.82);
+		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+		opacity: 0;
 	}
 
 	.ztl-row {
@@ -248,7 +264,8 @@
 	}
 
 	.ztl-item.is-visible .ztl-row,
-	.ztl-item.is-visible .ztl-chapter {
+	.ztl-item.is-visible .ztl-chapter,
+	.ztl-item.is-visible .ztl-narration {
 		animation: card-in 0.5s steps(6, end) forwards;
 	}
 
@@ -276,13 +293,15 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.ztl-row,
-		.ztl-chapter {
+		.ztl-chapter,
+		.ztl-narration {
 			opacity: 1;
 			transform: none;
 		}
 
 		.ztl-item.is-visible .ztl-row,
-		.ztl-item.is-visible .ztl-chapter {
+		.ztl-item.is-visible .ztl-chapter,
+		.ztl-item.is-visible .ztl-narration {
 			animation: none;
 		}
 	}

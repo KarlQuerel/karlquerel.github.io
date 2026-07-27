@@ -1,6 +1,10 @@
 <template>
 	<div class="content about">
-		<header class="about-head" :class="{ 'about-head--tab': activeTab }">
+		<header
+			v-if="!activeTab || introGroups.length"
+			class="about-head"
+			:class="{ 'about-head--tab': activeTab }"
+		>
 			<!-- one narrative beat per block, stacked in a single reading column, revealing on scroll -->
 			<p
 				v-for="(group, gi) in introGroups"
