@@ -3,18 +3,33 @@
 // Keep `paragraphs` sentences short so each line stays legible while tilted away.
 
 export const HERO_CRAWL = {
-	episode: 'YEAR 3812',
-	title: 'THE LAST ENVOY',
+	episode: 'TRANSMISSION 001',
+	title: 'UNDER CONSTRUCTION',
 	name: 'Karl Querel',
 	scrollHint: 'Scroll to begin',
 	paragraphs: [
-		'Earth is dying. The sun that fed it for five billion years now gutters like a failing lamp.',
-		'The harvests were the first to go. Then the oceans began to freeze.',
-		'One ship was built from what remained. One envoy was chosen to cross the void.',
-		'A distant world may hold the answer. You were sent to find it.',
-		'You have been asleep for a very long time.',
-		'Something is wrong.',
+		'This corner of the galaxy is still being built.',
+		'New systems are coming online, one by one.',
+		'Feel free to explore what is already here.',
+		'The rest is not far behind.',
 	],
+}
+
+// The teaser's closing beat: the scroll jumps to lightspeed and lands on COMING SOON.
+export const HERO_TEASER = {
+	comingSoon: 'COMING SOON',
+	sub: 'Transmission incoming',
+	skip: 'SKIP >>',
+}
+
+// The live homepage while the site is built — name, status line, and a nudge toward
+// the menu star. `hintBefore`/`hintAfter` wrap the inline star glyph in the template.
+export const HOME_LANDING = {
+	name: 'Karl Querel',
+	label: 'Under construction',
+	hintBefore: 'Tap the',
+	hintAfter: 'to explore',
+	hintSr: 'Use the menu star at the top of the page to explore the site.',
 }
 
 // Copy for the wake-up beat that follows the crawl: the ship HUD the envoy's

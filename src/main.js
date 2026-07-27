@@ -6,9 +6,9 @@ import App from './App.vue'
 // every route is lazy so the Firebase-carrying pages stay out of the entry chunk
 const routes = [
 	{
+		// simple under-construction landing; HeroIntro is kept for when the site relaunches
 		path: '/',
-		component: () => import('./components/HeroIntro.vue'),
-		meta: { prefetch: true },
+		component: () => import('./components/UnderConstruction.vue'),
 	},
 	{
 		path: '/terminal',
@@ -32,7 +32,7 @@ const routes = [
 		meta: { prefetch: true, title: 'Sport' },
 	},
 	{
-		// no prefetch flag — HeroIntro warms this chunk contextually as the story nears the HUD
+		// unlinked while the teaser homepage is up; reachable by URL for dev
 		path: '/game',
 		component: () => import('./components/game/GamePage.vue'),
 		meta: { title: 'Signal Lost' },
