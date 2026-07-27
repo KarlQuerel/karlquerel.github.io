@@ -11,6 +11,13 @@ const routes = [
 		component: () => import('./components/UnderConstruction.vue'),
 	},
 	{
+		// hidden dev route: the full hero cinematic that transitions into /game.
+		// Develop here while `/` stays under construction; swap `/` to it to go live.
+		path: '/preview',
+		component: () => import('./components/HeroIntro.vue'),
+		meta: { title: 'Preview' },
+	},
+	{
 		path: '/terminal',
 		component: () => import('./components/Terminal.vue'),
 		meta: { title: 'Terminal' },
