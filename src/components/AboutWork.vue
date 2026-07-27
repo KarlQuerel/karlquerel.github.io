@@ -1,31 +1,32 @@
 <template>
 	<ol class="ztl">
 		<li
-			v-for="(item, i) in CAREER_TIMELINE"
+			v-for="item in CAREER_TIMELINE"
 			:key="item.year + item.title"
 			v-reveal
 			class="ztl-item"
-			:class="[i % 2 === 0 ? 'is-left' : 'is-right', { 'is-current': item.current }]"
+			:class="{ 'is-current': item.current }"
 		>
 			<p v-if="item.chapter" class="ztl-chapter">{{ item.chapter }}</p>
-			<div class="ztl-card">
-				<PixelEmblem
-					v-if="item.emblem"
-					:emblem="item.emblem"
-					class="ztl-emblem"
-					:class="`ztl-emblem--${item.emblem}`"
-				/>
-				<span class="ztl-year">{{ item.year }}</span>
-				<span class="ztl-kind" :class="`ztl-kind--${item.type}`">{{
-					CAREER_TYPE_LABELS[item.type]
-				}}</span>
-				<h2 class="ztl-title">{{ item.title }}</h2>
-				<span class="ztl-school">{{ item.place }}</span>
-				<span class="ztl-location">
-					<PixelFlag :country="item.flag" />
-					{{ item.location }}
-				</span>
-				<p v-if="item.summary" class="ztl-summary">{{ item.summary }}</p>
+			<div class="ztl-row">
+				<!-- emblem = the timeline node -->
+				<div class="ztl-art">
+					<span class="ztl-badge" :class="`ztl-badge--${item.type}`">
+						<PixelEmblem :emblem="item.emblem" class="ztl-emblem" />
+					</span>
+				</div>
+				<div class="ztl-card">
+					<span class="ztl-year">{{ item.year }}</span>
+					<span class="ztl-kind" :class="`ztl-kind--${item.type}`">{{
+						CAREER_TYPE_LABELS[item.type]
+					}}</span>
+					<h2 class="ztl-title">{{ item.title }}</h2>
+					<span class="ztl-school">{{ item.place }}</span>
+					<span class="ztl-location">
+						<PixelFlag :country="item.flag" />
+						{{ item.location }}
+					</span>
+				</div>
 			</div>
 		</li>
 	</ol>
@@ -39,19 +40,41 @@
 </script>
 
 <style scoped lang="scss">
-	// zigzag timeline: borderless cards alternating left/right, gold reserved for the current milestone
-	$slide: 28px;
-	// single vertical rhythm for every line in a card
-	$row-gap: 0.35rem;
+	@use '@/styles/mixins' as *;
+
+	$row-gap: 0.3rem;
+	$rail-w: 3px;
+	$badge: clamp(2.6rem, 6.5vw, 3.4rem);
+	$emblem-ghost: 0.88;
 
 	.ztl {
-		width: min(52rem, 94vw);
+		// column + text gutter come from the shared About tokens, set on `.about`
+		--rail-center: 2rem;
+		position: relative;
+		width: var(--about-column);
 		margin: 0 auto;
 		padding: 0;
 		list-style: none;
 	}
 
+	// dashed gold spine threading every node
+	.ztl::before {
+		content: '';
+		position: absolute;
+		left: var(--rail-center);
+		transform: translateX(-50%);
+		top: 1.5rem;
+		bottom: 1.5rem;
+		width: $rail-w;
+		background: repeating-linear-gradient(
+			to bottom,
+			rgba($yellow, 0.45) 0 6px,
+			transparent 6px 12px
+		);
+	}
+
 	.ztl-item {
+		position: relative;
 		padding-bottom: 2.4rem;
 	}
 
@@ -59,13 +82,13 @@
 		padding-bottom: 0;
 	}
 
-	// chapter break: pixel-dash rule on the centerline marking the finance → software era split.
-	// Full gold + glow + extra air: it's the story's turning point, so it reads as a headline.
+	// finance → software break, aligned with the text
 	.ztl-chapter {
 		display: flex;
 		align-items: center;
 		gap: 1.2rem;
-		margin: 0.8rem 0 3.2rem;
+		margin: 0.4rem 0 2rem;
+		padding-left: var(--about-gutter);
 		font-family: $font-pixel;
 		font-size: clamp(0.6rem, 1.9vw, 0.8rem);
 		letter-spacing: 0.18em;
@@ -77,7 +100,6 @@
 		opacity: 0;
 	}
 
-	.ztl-chapter::before,
 	.ztl-chapter::after {
 		content: '';
 		flex: 1;
@@ -89,106 +111,71 @@
 		);
 	}
 
-	.ztl-item.is-visible .ztl-chapter {
-		animation: card-in 0.5s steps(6, end) forwards;
+	.ztl-row {
+		position: relative;
+		min-height: 4.6rem;
+		padding: 0.4rem 0 0.4rem var(--about-gutter);
+		background: radial-gradient(
+			85% 130% at 34% 50%,
+			rgba(0, 0, 0, 0.72) 0%,
+			rgba(0, 0, 0, 0.42) 55%,
+			rgba(0, 0, 0, 0) 100%
+		);
+		opacity: 0;
 	}
 
-	// one gap carries the rhythm; is-left / is-right set the alignment side + slide-in origin
+	// badge rides the rail, centred against the text block
+	.ztl-art {
+		position: absolute;
+		left: var(--rail-center);
+		top: 50%;
+		transform: translate(-50%, -50%);
+	}
+
+	.ztl-badge {
+		@include void-panel(rgba(0, 0, 0, 0.55));
+		display: block;
+		width: $badge;
+		height: $badge;
+		// tight padding lets the sprite fill the frame
+		padding: 0.16rem;
+	}
+
+	// type-tinted frame doubles as the education / experience signal
+	.ztl-badge--study {
+		border: 2px solid rgba($tag-education, 0.6);
+		background:
+			linear-gradient(0deg, rgba($tag-education, 0.16), rgba($tag-education, 0.16)),
+			rgba(0, 0, 0, 0.6);
+	}
+
+	.ztl-badge--job {
+		border: 2px solid rgba($tag-experience, 0.6);
+		background:
+			linear-gradient(0deg, rgba($tag-experience, 0.16), rgba($tag-experience, 0.16)),
+			rgba(0, 0, 0, 0.6);
+	}
+
+	// contain via SVG preserveAspectRatio so every sprite fits the same square
+	.ztl-emblem {
+		display: block;
+		width: 100%;
+		height: 100%;
+		opacity: $emblem-ghost;
+	}
+
+	.ztl-badge :deep(.pixel-emblem__svg) {
+		height: 100%;
+	}
+
 	.ztl-card {
-		// anchor for the ghosted emblem on the empty side
-		position: relative;
 		display: flex;
 		flex-direction: column;
-		gap: $row-gap;
-		padding: 0.9rem 1.2rem;
-		// hidden until v-reveal marks it visible
-		opacity: 0;
-	}
-
-	// ghosted story emblem floating opposite the card text; slides in a beat after it
-	$emblem-ghost: 0.65;
-
-	.ztl-emblem {
-		position: absolute;
-		top: 50%;
-		width: clamp(3.4rem, 7.5vw, 5.2rem);
-		opacity: 0;
-	}
-
-	// optical size corrections: the tall barrel reads oversized, the CRT small
-	.ztl-emblem--oil-barrel {
-		width: clamp(3rem, 6.6vw, 4.6rem);
-	}
-
-	.ztl-emblem--terminal-42 {
-		width: clamp(3.9rem, 8.6vw, 6rem);
-	}
-
-	.is-left .ztl-emblem {
-		right: 7%;
-		transform: translateY(-50%) translateX($slide);
-	}
-
-	.is-right .ztl-emblem {
-		left: 7%;
-		transform: translateY(-50%) translateX(-$slide);
-	}
-
-	.ztl-item.is-visible .ztl-emblem {
-		animation: emblem-in 0.5s steps(6, end) 0.12s forwards;
-	}
-
-	@keyframes emblem-in {
-		to {
-			opacity: $emblem-ghost;
-			transform: translateY(-50%);
-		}
-	}
-
-	// no empty side to float in on narrow screens
-	@media (max-width: $breakpoint-mobile) {
-		.ztl-emblem {
-			display: none;
-		}
-	}
-
-	.is-left .ztl-card {
 		align-items: flex-start;
+		gap: $row-gap;
 		text-align: left;
-		background: radial-gradient(
-			80% 130% at 6% 50%,
-			rgba(0, 0, 0, 0.68) 0%,
-			rgba(0, 0, 0, 0.4) 52%,
-			rgba(0, 0, 0, 0) 100%
-		);
-		transform: translateX(-$slide);
 	}
 
-	.is-right .ztl-card {
-		align-items: flex-end;
-		text-align: right;
-		background: radial-gradient(
-			80% 130% at 94% 50%,
-			rgba(0, 0, 0, 0.68) 0%,
-			rgba(0, 0, 0, 0.4) 52%,
-			rgba(0, 0, 0, 0) 100%
-		);
-		transform: translateX($slide);
-	}
-
-	// slide home on reveal; the page-wide overflow-x clip (_layout.scss) absorbs the offset
-	.ztl-item.is-visible .ztl-card {
-		animation: card-in 0.5s steps(6, end) forwards;
-	}
-
-	@keyframes card-in {
-		to {
-			opacity: 1;
-			transform: none;
-		}
-	}
-
-	// muted gold beat down the zigzag; the current milestone brightens to full gold
 	.ztl-year {
 		font-family: $font-pixel;
 		font-size: clamp(0.5rem, 1.4vw, 0.65rem);
@@ -198,7 +185,6 @@
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 	}
 
-	// per-type kicker in cool phosphor hues, kept clear of the gold "current" signal
 	.ztl-kind {
 		font-family: $font-pixel;
 		font-size: clamp(0.4rem, 1.2vw, 0.5rem);
@@ -225,7 +211,6 @@
 		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
 	}
 
-	// stepped down from full white so the title stays the single headline
 	.ztl-school {
 		font-family: $font-pixel;
 		font-size: clamp(0.52rem, 1.5vw, 0.64rem);
@@ -234,7 +219,6 @@
 		text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
 	}
 
-	// Pixel flag + city on one row; is-right puts the flag on the outer edge.
 	.ztl-location {
 		display: flex;
 		align-items: center;
@@ -248,23 +232,13 @@
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 	}
 
-	.is-right .ztl-location {
-		flex-direction: row-reverse;
+	.is-current .ztl-badge {
+		border: 2px solid rgba($yellow, 0.7);
+		background:
+			linear-gradient(0deg, rgba($yellow, 0.16), rgba($yellow, 0.16)), rgba(0, 0, 0, 0.6);
+		box-shadow: 0 0 12px rgba($yellow, 0.35);
 	}
 
-	// standout milestones only; readable VT323 so a full sentence reads as a caption, not a wall
-	.ztl-summary {
-		margin: 0;
-		// the global `p { text-align: center }` (_layout.scss) would otherwise centre it
-		text-align: inherit;
-		font-family: $font-terminal;
-		font-size: clamp(1rem, 2.2vw, 1.2rem);
-		line-height: 1.3;
-		color: rgba(255, 255, 255, 0.7);
-		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.95);
-	}
-
-	// Current milestone: gold title + year.
 	.is-current .ztl-title {
 		color: $yellow;
 	}
@@ -273,30 +247,42 @@
 		color: $yellow;
 	}
 
+	.ztl-item.is-visible .ztl-row,
+	.ztl-item.is-visible .ztl-chapter {
+		animation: card-in 0.5s steps(6, end) forwards;
+	}
+
+	@keyframes card-in {
+		from {
+			opacity: 0;
+			transform: translateY(16px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	@media (max-width: $breakpoint-mobile) {
+		.ztl {
+			--rail-center: 1.6rem;
+		}
+
+		.ztl-badge {
+			width: 2.6rem;
+			height: 2.6rem;
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
-		.ztl-card,
+		.ztl-row,
 		.ztl-chapter {
 			opacity: 1;
-		}
-
-		.ztl-emblem {
-			opacity: $emblem-ghost;
-		}
-
-		// match is-left / is-right specificity or the side offset never clears
-		.is-left .ztl-card,
-		.is-right .ztl-card {
 			transform: none;
 		}
 
-		.is-left .ztl-emblem,
-		.is-right .ztl-emblem {
-			transform: translateY(-50%);
-		}
-
-		.ztl-item.is-visible .ztl-card,
-		.ztl-item.is-visible .ztl-chapter,
-		.ztl-item.is-visible .ztl-emblem {
+		.ztl-item.is-visible .ztl-row,
+		.ztl-item.is-visible .ztl-chapter {
 			animation: none;
 		}
 	}

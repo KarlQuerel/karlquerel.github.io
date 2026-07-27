@@ -1,13 +1,12 @@
 <template>
 	<div class="content about">
 		<header class="about-head" :class="{ 'about-head--tab': activeTab }">
-			<!-- each sentence block alternates sides and reveals on scroll, echoing the zigzag below -->
+			<!-- one narrative beat per block, stacked in a single reading column, revealing on scroll -->
 			<p
 				v-for="(group, gi) in introGroups"
 				:key="`${activeTab}-${gi}`"
 				v-reveal
 				class="intro-step about-lead"
-				:class="gi % 2 === 0 ? 'is-left' : 'is-right'"
 			>
 				<!-- segments carry their own spacing — between-tag whitespace is stripped -->
 				<template v-for="(seg, i) in group" :key="i"
@@ -103,13 +102,13 @@
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
-	// slide-in offset shared with the timeline cards (cf. AboutWork.vue $slide)
-	$intro-slide: 28px;
-
 	.about {
 		// --back-top clears the star toggle + MENU hint (cf. .about-back)
 		--pad-top: 3.6rem;
 		--back-top: 7rem;
+		// shared reading column for the intro + timeline (AboutWork reads these too)
+		--about-column: #{$about-column};
+		--about-gutter: #{$about-gutter};
 		min-height: 100dvh;
 		gap: 2rem;
 		padding: var(--pad-top) 1rem 4rem;
@@ -120,6 +119,8 @@
 	@media (max-width: $breakpoint-mobile) {
 		.about {
 			--pad-top: 5.25rem;
+			// tighter gutter for the smaller mobile badge
+			--about-gutter: #{$about-gutter-mobile};
 		}
 	}
 
@@ -135,62 +136,53 @@
 		);
 	}
 
-	// tab mode: the centered glow gives way to per-sentence side glows (cf. .intro-step)
+	// tab mode: shares the timeline's column + gutter so both align on one left edge
 	.about-head--tab {
 		display: flex;
 		flex-direction: column;
-		// wide beat-to-beat gap: keeps late beats below the fold so they reveal on scroll
-		gap: 3.5rem;
-		width: min(52rem, 94vw);
+		align-items: flex-start;
+		gap: 2.4rem;
+		width: var(--about-column);
 		max-width: none;
-		padding: 0;
+		padding: 0 0 0 var(--about-gutter);
 		background: none;
 	}
 
-	// one narrative beat per step; side glow + scroll reveal borrowed from the timeline cards
+	// one narrative beat per block, left-aligned in a fixed reading measure
 	.intro-step {
 		margin: 0;
-		// beats wrap into 2-3 balanced lines so each reads like a card, not a banner
-		max-width: 46ch;
-		padding: 0.9rem 1.2rem;
-		font-size: clamp(0.8rem, 1.8vw, 0.95rem);
-		line-height: 1.75;
-		text-wrap: balance;
+		width: 100%;
+		max-width: 54ch;
+		// parent gutter sets the left edge
+		padding: 1rem 1.4rem 1rem 0;
+		font-family: $font-terminal;
+		font-size: clamp(1.05rem, 2.6vw, 1.4rem);
+		line-height: 1.5;
+		text-align: left;
+		text-wrap: pretty;
 		color: $white;
 		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+		// one consistent left-anchored glow so the stack reads as a single column
+		background: radial-gradient(
+			90% 130% at 12% 50%,
+			rgba(0, 0, 0, 0.68) 0%,
+			rgba(0, 0, 0, 0.4) 55%,
+			rgba(0, 0, 0, 0) 100%
+		);
 		// hidden until v-reveal marks it visible
 		opacity: 0;
-	}
-
-	.intro-step.is-left {
-		align-self: flex-start;
-		text-align: left;
-		background: radial-gradient(
-			80% 130% at 6% 50%,
-			rgba(0, 0, 0, 0.68) 0%,
-			rgba(0, 0, 0, 0.4) 52%,
-			rgba(0, 0, 0, 0) 100%
-		);
-		transform: translateX(-$intro-slide);
-	}
-
-	.intro-step.is-right {
-		align-self: flex-end;
-		text-align: right;
-		background: radial-gradient(
-			80% 130% at 94% 50%,
-			rgba(0, 0, 0, 0.68) 0%,
-			rgba(0, 0, 0, 0.4) 52%,
-			rgba(0, 0, 0, 0) 100%
-		);
-		transform: translateX($intro-slide);
 	}
 
 	.intro-step.is-visible {
 		animation: step-in 0.5s steps(6, end) forwards;
 	}
 
+	// gentle rise instead of a sideways slide — no more dispersion across the page
 	@keyframes step-in {
+		from {
+			opacity: 0;
+			transform: translateY(18px);
+		}
 		to {
 			opacity: 1;
 			transform: none;
@@ -313,12 +305,6 @@
 
 		.intro-step {
 			opacity: 1;
-		}
-
-		// match is-left / is-right specificity or the side offset never clears
-		.intro-step.is-left,
-		.intro-step.is-right {
-			transform: none;
 		}
 
 		.intro-step.is-visible {

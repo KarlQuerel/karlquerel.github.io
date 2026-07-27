@@ -1,11 +1,8 @@
 // Drives the /about page.
 
-// Two-line hub header — line 1 "Hello there!", line 2 "I'm Karl" with the name in
-// yellow. Swaps to the matching tab text once a path (work | life) is chosen. The
-// trailing space on `greetingLead` is intentional — it separates the lead from the
-// name that follows. Tab intros are segmented so key words can pop in yellow
-// (`hl: true`) without needing v-html; segments carry their own spacing, and a
-// `{ br: true }` segment forces a line break between sentences.
+// Hub header + per-tab intros. Trailing space on `greetingLead` is intentional. Tab
+// intros are segmented so key words can pop in yellow (`hl: true`) without v-html;
+// `{ br: true }` forces a line break.
 export const ABOUT_INTRO = {
 	greetingLine1: 'Hello there!',
 	greetingLead: "I'm ",
@@ -38,12 +35,9 @@ export const ABOUT_INTRO = {
 	],
 }
 
-// Vertical career timeline — oldest first (by start date), newest last. `type`
-// ('job' | 'study') drives the coloured category tag. `current: true` flags the one
-// you're living now. `summary` is optional — reserved for standout milestones, not
-// routine entries, so cards stay scannable. `chapter` renders a centered divider
-// above that card (the finance → software era break) without disturbing the zigzag.
-// Jobs are deliberately curated: career-defining roles only, no student-era internships.
+// Career timeline, oldest first. `type` ('job' | 'study') tints the badge; `current`
+// flags the present role (gold); `emblem` is the sprite on the rail; `chapter` adds a
+// divider above the card. Jobs: career-defining roles only.
 export const CAREER_TIMELINE = [
 	{
 		type: 'study',
@@ -52,6 +46,7 @@ export const CAREER_TIMELINE = [
 		place: 'Grand Lycée Franco-Libanais',
 		location: 'Beirut, Lebanon',
 		flag: 'lebanon',
+		emblem: 'diploma',
 	},
 	{
 		type: 'study',
@@ -60,6 +55,7 @@ export const CAREER_TIMELINE = [
 		place: 'University of Geneva (HEC)',
 		location: 'Geneva, Switzerland',
 		flag: 'switzerland',
+		emblem: 'book',
 	},
 	{
 		type: 'study',
@@ -68,6 +64,7 @@ export const CAREER_TIMELINE = [
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
 		flag: 'france',
+		emblem: 'globe',
 	},
 	{
 		type: 'study',
@@ -85,6 +82,7 @@ export const CAREER_TIMELINE = [
 		place: 'Cedar Europe',
 		location: 'Madrid, Spain',
 		flag: 'spain',
+		emblem: 'gold-bars',
 	},
 	{
 		type: 'job',
@@ -117,8 +115,7 @@ export const CAREER_TIMELINE = [
 	},
 ]
 
-// Human label for each milestone `type`, kept out of the template so all About copy
-// lives together. Drives the coloured category tag on the timeline cards.
+// Kicker label per milestone type, shown above the title.
 export const CAREER_TYPE_LABELS = {
 	study: 'Education',
 	job: 'Experience',

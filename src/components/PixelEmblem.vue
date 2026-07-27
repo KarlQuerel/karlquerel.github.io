@@ -1,9 +1,6 @@
 <template>
-	<!-- Large ghosted pixel-art emblem floating on the empty side of a timeline
-	     card — the milestone's story as an item sprite. Decorative: the card text
-	     tells the story, so it's aria-hidden. Sprites live as char grids in
-	     constants/emblems.js and render as run-length rects; fills are classes
-	     derived from theme tokens, so no hex lives in the markup. -->
+	<!-- Pixel-art emblem framed as a timeline node. Decorative, so aria-hidden. Sprites
+	     are char grids in constants/emblems.js, rendered as run-length rects. -->
 	<span class="pixel-emblem" aria-hidden="true">
 		<svg
 			class="pixel-emblem__svg"

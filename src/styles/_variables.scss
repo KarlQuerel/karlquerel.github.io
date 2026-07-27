@@ -27,6 +27,12 @@ $phosphor-green: #33ff66;
 $tag-education: $light-blue;
 $tag-experience: $purple;
 
+// Shared About column: intro + timeline align to one centred column with a left gutter
+// for the rail/badges. Exposed as CSS vars on `.about`.
+$about-column: min(37rem, 94vw);
+$about-gutter: 4.6rem; // text inset; clears the emblem badge on the rail
+$about-gutter-mobile: 3.6rem;
+
 // Flag colours — factual national-flag imagery for the About timeline, not theme
 // tokens. Whites reuse $white.
 $flag-fr-blue: #0055a4;
