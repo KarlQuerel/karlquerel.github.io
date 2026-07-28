@@ -1,7 +1,7 @@
 // Drives the /contact page.
 
-// The page heading — styled like the About greeting (white pixel caps with the last
-// word accented in yellow). Trailing space on `lead` separates it from the accent.
+// The page heading, rendered by PageTitle like every other page. Trailing space on
+// `lead` is intentional — it separates the lead from the accented word.
 export const CONTACT_HEADING = {
 	lead: 'Send me a ',
 	accent: 'signal',

@@ -1,30 +1,18 @@
 <template>
 	<div class="content about">
-		<header
-			v-if="!activeTab || introGroups.length"
-			class="about-head"
-			:class="{ 'about-head--tab': activeTab }"
-		>
-			<!-- one narrative beat per block, stacked in a single reading column, revealing on scroll -->
-			<p
-				v-for="(group, gi) in introGroups"
-				:key="`${activeTab}-${gi}`"
-				v-reveal
-				class="intro-step about-lead"
-			>
-				<!-- segments carry their own spacing — between-tag whitespace is stripped -->
-				<template v-for="(seg, i) in group" :key="i"
-					><span v-if="seg.hl" class="about-intro__hl">{{ seg.text }}</span
-					><template v-else>{{ seg.text }}</template></template
-				>
-			</p>
-			<p v-if="!activeTab" class="about-intro about-lead about-greeting">
-				<span class="about-greeting__line">{{ ABOUT_INTRO.greetingLine1 }}</span>
-				<span class="about-greeting__line">
-					{{ ABOUT_INTRO.greetingLead
-					}}<span class="about-name">{{ ABOUT_INTRO.greetingName }}</span>
-				</span>
-			</p>
+		<header class="about-head" :class="{ 'about-head--tab': activeTab }">
+			<!-- breadcrumb, not chrome: it scrolls away with the header, and the fixed
+			     star menu stays as the persistent way back out -->
+			<button v-if="activeTab" class="about-back" type="button" @click="goToHub">
+				<span class="about-back__icon" aria-hidden="true"><i /><i /></span>
+				Back
+			</button>
+			<PageTitle
+				:key="activeTab ?? 'hub'"
+				:line1="heading.line1"
+				:lead="heading.lead"
+				:accent="heading.accent"
+			/>
 		</header>
 
 		<div v-if="!activeTab" class="about-hub" role="group" aria-label="Choose a section">
@@ -37,25 +25,17 @@
 			/>
 		</div>
 
-		<template v-else>
-			<!-- order: -1 hoists it above the intro; sticky keeps "back" reachable while a panel scrolls -->
-			<button class="about-back" type="button" @click="goToHub">
-				<span class="about-back__icon" aria-hidden="true"><i /><i /></span>
-				Back
-			</button>
-
-			<component :is="activeComponent" :key="activeTab" class="about-panel" />
-		</template>
+		<component :is="activeComponent" v-else :key="activeTab" class="about-panel" />
 	</div>
 </template>
 
 <script setup>
 	import { computed } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
-	import { ABOUT_INTRO } from '@/data/about'
-	import { reveal as vReveal } from '@/directives/reveal'
+	import { ABOUT_HEADINGS } from '@/data/about'
 	import AboutWork from './AboutWork.vue'
 	import AboutLife from './AboutLife.vue'
+	import PageTitle from './PageTitle.vue'
 	import PixelPortal from './PixelPortal.vue'
 
 	// tab state lives in the URL (?tab=work|life) so it survives refresh and is shareable
@@ -80,17 +60,8 @@
 		() => TABS.find(tab => tab.id === activeTab.value)?.component ?? null
 	)
 
-	// intro segments split into sentence blocks at {br} markers, one block per zigzag step
-	const introGroups = computed(() => {
-		const segments = ABOUT_INTRO[activeTab.value]
-		if (!segments) return []
-		const groups = [[]]
-		for (const seg of segments) {
-			if (seg.br) groups.push([])
-			else groups.at(-1).push(seg)
-		}
-		return groups.filter(group => group.length)
-	})
+	// hub greeting, or the active tab's heading
+	const heading = computed(() => ABOUT_HEADINGS[activeTab.value ?? 'hub'])
 
 	function selectTab(id) {
 		if (id === activeTab.value) return
@@ -107,9 +78,8 @@
 	@use '@/styles/mixins' as *;
 
 	.about {
-		// --back-top clears the star toggle + MENU hint (cf. .about-back)
+		// clears the fixed star toggle + MENU hint
 		--pad-top: 3.6rem;
-		--back-top: 7rem;
 		// shared reading column for the intro + timeline (AboutWork reads these too)
 		--about-column: #{$about-column};
 		--about-gutter: #{$about-gutter};
@@ -119,141 +89,42 @@
 	}
 
 	// On short mobile viewports the column overflows and starts at the padding, so the
-	// greeting must clear the star + MENU hint on its own (cf. --back-top).
+	// greeting must clear the star + MENU hint on its own.
 	@media (max-width: $breakpoint-mobile) {
 		.about {
-			--pad-top: 5.25rem;
+			--pad-top: #{$chrome-clearance-mobile};
 			// tighter gutter for the smaller mobile badge
 			--about-gutter: #{$about-gutter-mobile};
 		}
 	}
 
 	.about-head {
+		@include void-scrim($size: 120% 130%);
 		max-width: min(46rem, 94vw);
 		margin: 0 auto;
 		padding: 1.75rem 1.5rem 2rem;
-		background: radial-gradient(
-			120% 130% at 50% 50%,
-			rgba(0, 0, 0, 0.72) 0%,
-			rgba(0, 0, 0, 0.45) 55%,
-			rgba(0, 0, 0, 0) 100%
-		);
 	}
 
-	// tab mode: shares the timeline's column + gutter so both align on one left edge
+	// tab mode: the panel below carries its own framing, so the header is bare. Column
+	// layout lets Back hang left while the title stays centred.
 	.about-head--tab {
 		display: flex;
 		flex-direction: column;
-		align-items: flex-start;
-		gap: 2.4rem;
-		width: var(--about-column);
-		max-width: none;
-		padding: 0 0 0 var(--about-gutter);
-		background: none;
-	}
-
-	// one narrative beat per block, left-aligned in a fixed reading measure
-	.intro-step {
-		margin: 0;
+		align-items: center;
+		// full measure, else the header shrinks to the title and Back lands next to the star
 		width: 100%;
-		max-width: 54ch;
-		// parent gutter sets the left edge
-		padding: 1rem 1.4rem 1rem 0;
-		font-family: $font-terminal;
-		font-size: clamp(1.05rem, 2.6vw, 1.4rem);
-		line-height: 1.5;
-		text-align: left;
-		text-wrap: pretty;
-		color: $white;
-		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
-		// one consistent left-anchored glow so the stack reads as a single column
-		background: radial-gradient(
-			90% 130% at 12% 50%,
-			rgba(0, 0, 0, 0.68) 0%,
-			rgba(0, 0, 0, 0.4) 55%,
-			rgba(0, 0, 0, 0) 100%
-		);
-		// hidden until v-reveal marks it visible
-		opacity: 0;
-	}
-
-	.intro-step.is-visible {
-		animation: step-in 0.5s steps(6, end) forwards;
-	}
-
-	// gentle rise instead of a sideways slide — no more dispersion across the page
-	@keyframes step-in {
-		from {
-			opacity: 0;
-			transform: translateY(18px);
-		}
-		to {
-			opacity: 1;
-			transform: none;
-		}
-	}
-
-	.about-intro {
-		max-width: 42ch;
-		margin: 0.5rem auto 0;
-		font-size: clamp(0.8rem, 1.8vw, 0.95rem);
-		line-height: 1.75;
-		text-align: center;
-		// even out the centered rag so the block reads as one deliberate shape
-		text-wrap: balance;
-		color: $white;
-		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
-	}
-
-	.about-intro:first-child {
-		margin-top: 0;
-	}
-
-	.about-name,
-	.about-intro__hl {
-		color: $yellow;
-		text-shadow: 0 0 12px rgba($yellow, 0.45);
-	}
-
-	// Bigger two-line hub greeting; each line is a block so they stack without a <br>.
-	// Fades in at mount — the intro-steps reveal on scroll instead.
-	.about-greeting {
-		font-size: $heading-pixel-size;
-		line-height: 1.5;
-		text-transform: uppercase;
-		animation: intro-swap 0.35s steps(4, end) both;
-	}
-
-	.about-greeting__line {
-		display: block;
-	}
-
-	.about-lead {
-		color: $white;
-	}
-
-	@keyframes intro-swap {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
+		padding: 0 1.5rem 2rem;
+		background: none;
 	}
 
 	.about-hub {
 		@include portal-row;
 	}
 
-	// z 30 stays under the nav overlay (40) and star (50)
+	// hangs off the header's left edge, above the centred title
 	.about-back {
-		order: -1;
-		align-self: center;
-		position: sticky;
-		top: var(--back-top);
-		// rest exactly at the sticky offset, else sticky shoves the button down into the intro
-		margin-top: calc(var(--back-top) - var(--pad-top));
-		z-index: 30;
+		align-self: flex-start;
+		margin-bottom: 1.25rem;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.6rem;
@@ -262,7 +133,6 @@
 		letter-spacing: 1px;
 		text-transform: uppercase;
 		padding: 0.5rem 0.9rem;
-		// Keep it legible over whatever panel content scrolls behind it.
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 		@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.55));
 
@@ -300,19 +170,5 @@
 	.about-back:hover .about-back__icon,
 	.about-back:focus-visible .about-back__icon {
 		transform: translateX(-3px);
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.about-greeting {
-			animation: none;
-		}
-
-		.intro-step {
-			opacity: 1;
-		}
-
-		.intro-step.is-visible {
-			animation: none;
-		}
 	}
 </style>

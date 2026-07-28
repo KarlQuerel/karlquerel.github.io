@@ -1,9 +1,6 @@
 <template>
 	<div class="content contact">
-		<h1 class="contact-name">
-			{{ CONTACT_HEADING.lead
-			}}<span class="contact-accent">{{ CONTACT_HEADING.accent }}</span>
-		</h1>
+		<PageTitle :lead="CONTACT_HEADING.lead" :accent="CONTACT_HEADING.accent" />
 
 		<ul class="contact-list">
 			<li
@@ -35,6 +32,7 @@
 
 <script setup>
 	import { BUG_REPORT, CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
+	import PageTitle from './PageTitle.vue'
 	import PixelPortal from './PixelPortal.vue'
 </script>
 
@@ -51,28 +49,10 @@
 		padding: 3.6rem 1rem 4rem;
 	}
 
-	// Mirrors .about's mobile bump: the heading must clear the star + MENU hint (7rem line).
 	@media (max-width: $breakpoint-mobile) {
 		.contact {
-			padding-top: 5.25rem;
+			padding-top: $chrome-clearance-mobile;
 		}
-	}
-
-	// Matches the About greeting: white pixel caps with the last word accented yellow.
-	.contact-name {
-		// mirrors .about-head's inner top padding so the heading sits clear of the MENU hint
-		margin: 1.75rem 0 0;
-		font-family: $font-pixel;
-		font-size: $heading-pixel-size;
-		line-height: 1.5;
-		text-transform: uppercase;
-		color: $white;
-		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
-	}
-
-	.contact-accent {
-		color: $yellow;
-		text-shadow: 0 0 12px rgba($yellow, 0.45);
 	}
 
 	// Same portal row as the About hub: icon tiles wrapping around the centre.

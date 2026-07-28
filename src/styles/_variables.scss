@@ -27,6 +27,10 @@ $phosphor-green: #33ff66;
 $tag-education: $light-blue;
 $tag-experience: $purple;
 
+// Mobile top padding that clears the fixed star toggle + MENU hint, so a page
+// heading never slides under the chrome. Used by every route-level page.
+$chrome-clearance-mobile: 5.25rem;
+
 // Shared About column: intro + timeline align to one centred column with a left gutter
 // for the rail/badges. Exposed as CSS vars on `.about`.
 $about-column: min(37rem, 94vw);

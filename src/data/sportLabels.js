@@ -1,3 +1,10 @@
+// Page heading, rendered by PageTitle like every other page. Trailing space on
+// `lead` is intentional — it separates the lead from the accented word.
+export const SPORT_HEADING = {
+	lead: 'Weekly ',
+	accent: 'split',
+}
+
 const MUSCLE_LABELS = {
 	chest: 'Chest',
 	back: 'Back',

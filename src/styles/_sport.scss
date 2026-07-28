@@ -74,38 +74,31 @@
 		outline-offset: 2px;
 	}
 
+	// PageTitle supplies the flanked grid and the shared heading type; sport only
+	// sizes and cants the dumbbell sprites either side of it.
 	.page-title {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-		align-items: center;
-		column-gap: clamp(0.5rem, 1.5vw, 1rem);
 		margin-bottom: 1.75rem;
 	}
 
-	.page-title__icon-slot {
-		display: flex;
-		align-items: center;
-		justify-content: center;
+	.page-heading__slot {
 		width: clamp(5.75rem, 16vw, 9.5rem);
 		height: clamp(4rem, 12vw, 6.75rem);
 	}
 
-	.page-title__icon-slot--left {
-		justify-self: center;
+	.page-heading__slot--left {
 		transform: translateX(clamp(-0.35rem, -1.2vw, -0.15rem));
 	}
 
-	.page-title__icon-slot--left .page-title__icon {
+	.page-heading__slot--left .page-title__icon {
 		transform: rotate(-8deg) rotateY(14deg);
 		transform-origin: center;
 	}
 
-	.page-title__icon-slot--right {
-		justify-self: center;
+	.page-heading__slot--right {
 		transform: translateX(clamp(0.15rem, 1.2vw, 0.35rem));
 	}
 
-	.page-title__icon-slot--right .page-title__icon {
+	.page-heading__slot--right .page-title__icon {
 		transform: rotate(16deg) rotateY(-28deg);
 		transform-origin: center;
 	}
@@ -125,13 +118,10 @@
 		height: auto;
 	}
 
-	.page-title h1 {
+	.page-title .page-heading__text {
 		grid-column: 2;
 		justify-self: center;
-		font-size: clamp(0.72rem, 2.4vw, 1.1rem);
-		line-height: 1.6;
 		text-align: center;
-		text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
 	}
 
 	.page-footer {
@@ -561,7 +551,7 @@
 
 @media (max-width: #{variables.$breakpoint-mobile}) {
 	.sport-page {
-		padding: 1.25rem 0.85rem 4.5rem;
+		padding: variables.$chrome-clearance-mobile 0.85rem 4.5rem;
 		font-size: clamp(0.5rem, 1.9vw, 0.56rem);
 	}
 
@@ -583,14 +573,11 @@
 		column-gap: 0.4rem;
 	}
 
-	.sport-page .page-title__icon-slot--left,
-	.sport-page .page-title__icon-slot--right {
-		width: clamp(4.75rem, 30vw, 7.5rem);
-		height: clamp(3.35rem, 20vw, 5.5rem);
-	}
-
-	.sport-page .page-title h1 {
-		font-size: clamp(0.58rem, 3.2vw, 0.72rem);
+	// the shared heading holds the centre column, so the sprites take what is left
+	.sport-page .page-heading__slot--left,
+	.sport-page .page-heading__slot--right {
+		width: clamp(3rem, 19vw, 5rem);
+		height: clamp(2.25rem, 13vw, 3.75rem);
 	}
 
 	.sport-page .page-footer__icon {

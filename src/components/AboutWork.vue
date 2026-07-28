@@ -22,7 +22,9 @@
 						CAREER_TYPE_LABELS[item.type]
 					}}</span>
 					<h2 class="ztl-title">{{ item.title }}</h2>
-					<span class="ztl-school">{{ item.place }}</span>
+					<span class="ztl-school" :class="`ztl-school--${item.type}`">{{
+						item.place
+					}}</span>
 					<span class="ztl-location">
 						<PixelFlag :country="item.flag" />
 						{{ item.location }}
@@ -41,6 +43,7 @@
 </script>
 
 <style scoped lang="scss">
+	@use 'sass:color';
 	@use '@/styles/mixins' as *;
 
 	$row-gap: 0.3rem;
@@ -115,28 +118,26 @@
 	// first-person story threaded above a milestone; VT323 prose, distinct from the
 	// pixel-font data below it
 	.ztl-narration {
+		@include void-scrim($at: 45% 50%);
 		margin: 0 0 1rem;
-		padding-left: var(--about-gutter);
+		// the scrim needs room to fade out past the text on both sides
+		padding: 0.6rem 1.2rem 0.6rem var(--about-gutter);
 		font-family: $font-terminal;
 		font-size: clamp(1rem, 2.4vw, 1.3rem);
-		line-height: 1.45;
+		// VT323 has a low x-height and wants air between lines
+		line-height: 1.55;
 		text-align: left;
 		text-wrap: pretty;
-		color: rgba(255, 255, 255, 0.82);
+		color: rgba(255, 255, 255, 0.92);
 		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
 		opacity: 0;
 	}
 
 	.ztl-row {
+		@include void-scrim($at: 34% 50%);
 		position: relative;
 		min-height: 4.6rem;
 		padding: 0.4rem 0 0.4rem var(--about-gutter);
-		background: radial-gradient(
-			85% 130% at 34% 50%,
-			rgba(0, 0, 0, 0.72) 0%,
-			rgba(0, 0, 0, 0.42) 55%,
-			rgba(0, 0, 0, 0) 100%
-		);
 		opacity: 0;
 	}
 
@@ -227,12 +228,22 @@
 		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
 	}
 
+	// school / employer — type-tinted so the institution reads as its own beat instead
+	// of trailing off under the white title
 	.ztl-school {
 		font-family: $font-pixel;
-		font-size: clamp(0.52rem, 1.5vw, 0.64rem);
-		line-height: 1.4;
-		color: rgba(255, 255, 255, 0.72);
+		font-size: clamp(0.56rem, 1.7vw, 0.7rem);
+		line-height: 1.5;
 		text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
+	}
+
+	.ztl-school--study {
+		color: $tag-education;
+	}
+
+	.ztl-school--job {
+		// lifted off $tag-experience: the raw purple is too dark for a whole line of type
+		color: color.scale($tag-experience, $lightness: 38%);
 	}
 
 	.ztl-location {

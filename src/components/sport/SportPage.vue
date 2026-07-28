@@ -1,7 +1,7 @@
 <template>
 	<div class="sport-page">
-		<div class="page-title">
-			<span class="page-title__icon-slot page-title__icon-slot--left">
+		<PageTitle class="page-title" :lead="SPORT_HEADING.lead" :accent="SPORT_HEADING.accent">
+			<template #left>
 				<img
 					class="page-title__icon"
 					src="/assets/img/dumbbell.png"
@@ -10,9 +10,8 @@
 					height="246"
 					decoding="async"
 				/>
-			</span>
-			<h1>WEEKLY SPLIT</h1>
-			<span class="page-title__icon-slot page-title__icon-slot--right">
+			</template>
+			<template #right>
 				<img
 					class="page-title__icon"
 					src="/assets/img/dumbbell.png"
@@ -21,8 +20,8 @@
 					height="246"
 					decoding="async"
 				/>
-			</span>
-		</div>
+			</template>
+		</PageTitle>
 
 		<div class="legend">
 			<span v-for="muscle in MUSCLE_LEGEND" :key="muscle">
@@ -55,8 +54,9 @@
 <script setup>
 	import { provide } from 'vue'
 	import { MUSCLE_LEGEND, WEEKLY_SPLIT } from '@/data/weeklySplit'
-	import { muscleLabel } from '@/data/sportLabels'
+	import { muscleLabel, SPORT_HEADING } from '@/data/sportLabels'
 	import { useSportAccordion } from '@/composables/sport/useSportAccordion'
+	import PageTitle from '@/components/PageTitle.vue'
 	import SportDayCard from './SportDayCard.vue'
 
 	const accordion = useSportAccordion()

@@ -30,6 +30,17 @@
 	}
 }
 
+// Dark radial wash that lifts text off the starfield without drawing a panel edge.
+// Move $at to wherever the text actually sits so the densest part sits under it.
+@mixin void-scrim($size: 85% 130%, $at: 50% 50%) {
+	background: radial-gradient(
+		$size at $at,
+		rgba(0, 0, 0, 0.72) 0%,
+		rgba(0, 0, 0, 0.42) 55%,
+		rgba(0, 0, 0, 0) 100%
+	);
+}
+
 // The interactive counterpart, used by every clickable button on the site so
 // they read as one system. Text rests near-white and shifts to $yellow on hover
 // / focus (the shared site-wide convention), over a warm yellow starlight bloom +

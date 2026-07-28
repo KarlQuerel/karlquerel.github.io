@@ -1,18 +1,12 @@
 // Drives the /about page.
 
-// Hub header + per-tab intros. Trailing space on `greetingLead` is intentional. Tab
-// intros are segmented so key words can pop in yellow (`hl: true`) without v-html;
-// `{ br: true }` forces a line break. The Work story now lives woven into the timeline
-// (see `narration` on CAREER_TIMELINE), so Work has no separate intro block.
-export const ABOUT_INTRO = {
-	greetingLine1: 'Hello there!',
-	greetingLead: "I'm ",
-	greetingName: 'Karl',
-	life: [
-		{
-			text: 'PLACEHOLDER',
-		},
-	],
+// Page headings for the hub and each tab, rendered by PageTitle (see also
+// CONTACT_HEADING / SPORT_HEADING — one heading shape across the whole site).
+// Trailing space on `lead` is intentional: it separates the lead from the accent.
+export const ABOUT_HEADINGS = {
+	hub: { line1: 'Hello there!', lead: "I'm ", accent: 'Karl' },
+	work: { lead: 'How I got ', accent: 'here' },
+	life: { lead: 'Off the ', accent: 'clock' },
 }
 
 // Career timeline, oldest first. `type` ('job' | 'study') tints the badge; `current`
@@ -27,7 +21,7 @@ export const CAREER_TIMELINE = [
 		place: 'Grand Lycée Franco-Libanais',
 		location: 'Beirut, Lebanon',
 		flag: 'lebanon',
-		emblem: 'diploma',
+		emblem: 'mortarboard',
 	},
 	{
 		type: 'study',
@@ -36,7 +30,7 @@ export const CAREER_TIMELINE = [
 		place: 'University of Geneva (HEC)',
 		location: 'Geneva, Switzerland',
 		flag: 'switzerland',
-		emblem: 'book',
+		emblem: 'calculator',
 	},
 	{
 		type: 'study',
@@ -45,7 +39,7 @@ export const CAREER_TIMELINE = [
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
 		flag: 'france',
-		emblem: 'globe',
+		emblem: 'passport',
 	},
 	{
 		type: 'study',
@@ -63,7 +57,7 @@ export const CAREER_TIMELINE = [
 		place: 'Cedar Europe',
 		location: 'Madrid, Spain',
 		flag: 'spain',
-		emblem: 'gold-bars',
+		emblem: 'desk-phone',
 		narration:
 			'For five incredible years, I traded commodities across Europe. An environment as challenging as it was rewarding.',
 	},
