@@ -1,0 +1,1 @@
+import{l as e,c as t,o as r}from"./vendor-VRqkAZiW.js";const i={__name:"SecretRedirect",setup:i=>(e(()=>{window.location.href="https://shattereddisk.github.io/rickroll/rickroll.mp4"}),(e,i)=>(r(),t("div",null,"Redirecting...")))};export{i as default};
