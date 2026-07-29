@@ -6,9 +6,9 @@ import App from './App.vue'
 // every route is lazy so the Firebase-carrying pages stay out of the entry chunk
 const routes = [
 	{
-		// simple under-construction landing; HeroIntro is kept for when the site relaunches
+		// simple text landing; HeroIntro is kept for when the site relaunches
 		path: '/',
-		component: () => import('./components/UnderConstruction.vue'),
+		component: () => import('./components/HomeLanding.vue'),
 	},
 	{
 		// hidden dev route: the full hero cinematic that transitions into /game.

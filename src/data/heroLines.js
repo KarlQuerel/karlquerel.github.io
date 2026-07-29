@@ -17,11 +17,12 @@ export const HERO_CRAWL = {
 	],
 }
 
-// The live homepage while the site is built — name, status line, and a nudge toward
-// the menu star. `hintBefore`/`hintAfter` wrap the inline star glyph in the template.
+// The live homepage — name, role, what I build, and a nudge toward the menu star.
+// `hintBefore`/`hintAfter` wrap the inline star glyph in the template.
 export const HOME_LANDING = {
 	name: 'Karl Querel',
-	label: 'Under construction',
+	label: 'Software Engineer',
+	blurb: 'I build software for EV charging and renewable energy.',
 	hintBefore: 'Tap the',
 	hintAfter: 'to explore',
 	hintSr: 'Use the menu star at the top of the page to explore the site.',
