@@ -55,7 +55,10 @@ npm run deploy       # build + copy 404.html + push to gh-pages
 
 **Always run `npm run clean` before finishing any task.** Never leave lint or format errors.
 
-The `postbuild` step copies `dist/index.html` → `dist/404.html` automatically — do not touch this manually.
+`npm run build` runs `scripts/prerender.mjs` after Vite. It snapshots each route to a real file
+(`dist/about/index.html`, …) so GitHub Pages answers 200 instead of 404, writes `dist/404.html` from
+the pristine shell, and generates `dist/sitemap.xml`. Add a route to the site → add it to `ROUTES`
+there. Never prerender `/terminal`: it writes a Firebase visit on mount.
 
 ---
 
@@ -125,6 +128,6 @@ When touching existing code, always:
 - Do not switch from Composition API to Options API.
 - Do not install new npm dependencies without asking — keep the bundle lean.
 - Do not modify `vite.config.js`, the route table in `src/main.js`, or Firebase config without good reason — these are load-bearing.
-- Do not break the `dist/404.html` copy step — it's how GitHub Pages handles SPA routing.
+- Do not break `scripts/prerender.mjs` — it's what makes routes return 200 and keeps `dist/404.html` as the SPA fallback.
 - Do not leave TODO comments — either fix it now or open an issue.
 - Do not leave console.log statements in committed code.
