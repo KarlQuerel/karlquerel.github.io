@@ -2,7 +2,6 @@
 	<section class="home">
 		<h1 class="home__name">{{ HOME_LANDING.name }}</h1>
 		<p class="home__label">{{ HOME_LANDING.label }}</p>
-		<p class="home__blurb">{{ HOME_LANDING.blurb }}</p>
 		<p class="home__hint">
 			<span aria-hidden="true">
 				{{ HOME_LANDING.hintBefore }} <i class="home__star" /> {{ HOME_LANDING.hintAfter }}
@@ -51,19 +50,6 @@
 		text-transform: uppercase;
 		color: $yellow;
 		text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85);
-	}
-
-	// VT323 rather than the pixel face — the one line meant to be read, not scanned
-	.home__blurb {
-		margin: 0;
-		max-width: 68ch;
-		text-wrap: balance;
-		font-family: $font-terminal;
-		font-size: clamp(1.15rem, 3.4vw, 1.7rem);
-		line-height: 1.4;
-		letter-spacing: 0.04em;
-		color: rgba(255, 255, 255, 0.88);
-		text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
 	}
 
 	// subordinate nudge toward the menu star
