@@ -72,7 +72,16 @@
 		margin: 0 0.85em;
 		color: $yellow;
 		background: currentColor;
+		// `middle` centres on the x-height; the label is all-caps, so lift the star
+		// by half the cap/x-height gap to sit on the optical centre
 		vertical-align: middle;
+		transform: translateY(-0.26em);
+
+		// below 520px the font clamp bottoms out at 8.8px, where the pixel face
+		// rasterises with a smaller cap/x gap — less lift needed
+		@media (max-width: 520px) {
+			transform: translateY(-0.13em);
+		}
 		box-shadow:
 			0 #{$sp * -4},
 			0 #{$sp * -3},
