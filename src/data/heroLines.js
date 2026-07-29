@@ -22,7 +22,7 @@ export const HERO_CRAWL = {
 export const HOME_LANDING = {
 	name: 'Karl Querel',
 	label: 'Software Engineer',
-	hintBefore: 'Tap the',
+	hintBefore: 'Tap',
 	hintAfter: 'to explore',
 	hintSr: 'Use the menu star at the top of the page to explore the site.',
 }
