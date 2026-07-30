@@ -86,13 +86,13 @@
 		padding-bottom: 0;
 	}
 
-	// finance → software break, aligned with the text
+	// chapter break: dashed rules flank the label and cut across the rail. Both flanks
+	// take flex: 1, so the label centres on the column on its own.
 	.ztl-chapter {
 		display: flex;
 		align-items: center;
-		gap: 1.2rem;
+		gap: 1rem;
 		margin: 0.4rem 0 2rem;
-		padding-left: var(--about-gutter);
 		font-family: $font-pixel;
 		font-size: clamp(0.6rem, 1.9vw, 0.8rem);
 		letter-spacing: 0.18em;
@@ -104,6 +104,7 @@
 		opacity: 0;
 	}
 
+	.ztl-chapter::before,
 	.ztl-chapter::after {
 		content: '';
 		flex: 1;
