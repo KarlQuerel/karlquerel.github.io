@@ -1,8 +1,8 @@
 <template>
 	<div class="content about">
 		<header class="about-head" :class="{ 'about-head--tab': activeTab }">
-			<!-- breadcrumb, not chrome: it scrolls away with the header, and the fixed
-			     star menu stays as the persistent way back out -->
+			<!-- pinned chrome rather than a breadcrumb: the star menu only reaches global
+			     nav, never the hub, so Back has to survive the header scrolling off -->
 			<button v-if="activeTab" class="about-back" type="button" @click="goToHub">
 				<span class="about-back__icon" aria-hidden="true"><i /><i /></span>
 				Back
@@ -85,7 +85,8 @@
 		--about-gutter: #{$about-gutter};
 		min-height: 100dvh;
 		gap: 2rem;
-		padding: var(--pad-top) 1rem 4rem;
+		// bottom clears the pinned Back button
+		padding: var(--pad-top) 1rem 5rem;
 	}
 
 	// On short mobile viewports the column overflows and starts at the padding, so the
@@ -105,26 +106,32 @@
 		padding: 1.75rem 1.5rem 2rem;
 	}
 
-	// tab mode: the panel below carries its own framing, so the header is bare. Column
-	// layout lets Back hang left while the title stays centred.
+	// tab mode: the panel below carries its own framing, so the header is bare. Back is
+	// pinned chrome, so the title is the only thing left in here.
 	.about-head--tab {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		// full measure, else the header shrinks to the title and Back lands next to the star
 		width: 100%;
-		padding: 0 1.5rem 2rem;
+		// same measure as the timeline panel
+		max-width: var(--about-column);
+		padding: 5.1rem 0 2rem;
 		background: none;
+
+		> * {
+			margin-top: 0;
+		}
 	}
 
 	.about-hub {
 		@include portal-row;
 	}
 
-	// hangs off the header's left edge, above the centred title
+	// pinned chrome, not a breadcrumb: it stays reachable once the header scrolls off, since
+	// the star menu only reaches global nav and never the hub
 	.about-back {
-		align-self: flex-start;
-		margin-bottom: 1.25rem;
+		position: fixed;
+		bottom: 1rem;
+		right: 1rem;
+		// under the star toggle (50) and the nav overlay
+		z-index: 20;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.6rem;
@@ -165,6 +172,14 @@
 		border-top: 0.42em solid transparent;
 		border-bottom: 0.42em solid transparent;
 		border-right: 0.42em solid currentColor;
+	}
+
+	// mobile carries the star clearance on --pad-top instead, but the header still needs
+	// enough of its own to keep the title off the MENU hint
+	@media (max-width: $breakpoint-mobile) {
+		.about-head--tab {
+			padding-top: 3rem;
+		}
 	}
 
 	.about-back:hover .about-back__icon,
