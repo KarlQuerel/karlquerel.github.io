@@ -30,7 +30,7 @@ export const CAREER_TIMELINE = [
 		place: 'University of Geneva (HEC)',
 		location: 'Geneva, Switzerland',
 		flag: 'switzerland',
-		emblem: 'calculator',
+		emblem: 'chart',
 	},
 	{
 		type: 'study',
@@ -39,7 +39,7 @@ export const CAREER_TIMELINE = [
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
 		flag: 'france',
-		emblem: 'passport',
+		emblem: 'globe',
 	},
 	{
 		type: 'study',
@@ -48,7 +48,7 @@ export const CAREER_TIMELINE = [
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
 		flag: 'france',
-		emblem: 'chart',
+		emblem: 'euro-coin',
 	},
 	{
 		type: 'job',
