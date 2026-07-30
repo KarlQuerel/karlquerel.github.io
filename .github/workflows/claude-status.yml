@@ -1,0 +1,41 @@
+name: Claude status
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: alerted.txt
+          key: claude-alerted-${{ github.run_id }}
+          restore-keys: claude-alerted-
+
+      - id: scan
+        run: python3 .github/scripts/check-claude-status.py
+
+      - name: Send alert
+        if: steps.scan.outputs.new != '0'
+        env:
+          ADDR: karlquerel@gmail.com
+          PASS: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          {
+            printf 'From: %s\nTo: %s\nSubject: %s\n\n' "$ADDR" "$ADDR" "$(cat subject.txt)"
+            cat body.txt
+          } > mail.txt
+          curl -sS --ssl-reqd smtp://smtp.gmail.com:587 \
+            --mail-from "$ADDR" --mail-rcpt "$ADDR" \
+            --upload-file mail.txt --user "$ADDR:$PASS"
+
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: alerted.txt
+          key: claude-alerted-${{ github.run_id }}
