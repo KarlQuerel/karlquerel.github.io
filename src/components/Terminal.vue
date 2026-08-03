@@ -272,3 +272,9 @@
 		})
 	})
 </script>
+
+<!-- unscoped on purpose: the typewriter injects raw HTML that scoped styles
+     can't reach; bundled here so the CSS ships with this route's chunk only -->
+<style lang="scss">
+	@use '@/styles/terminal';
+</style>

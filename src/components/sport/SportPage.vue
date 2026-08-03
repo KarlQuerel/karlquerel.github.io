@@ -63,3 +63,9 @@
 	const { toggleShowAll, showAllLabel } = accordion
 	provide('sportAccordion', accordion)
 </script>
+
+<!-- unscoped on purpose: page styles shared by the sport child components,
+     bundled here so the CSS ships with this route's chunk only -->
+<style lang="scss">
+	@use '@/styles/sport';
+</style>
