@@ -73,11 +73,18 @@
 	}
 
 	.portal--compact {
-		--portal-icon: 3.4rem;
+		--portal-icon: 4.5rem;
 		--portal-pad-x: 1rem;
 		--portal-pad-y: 0.7rem;
 		--portal-label: clamp(0.6rem, 1.5vw, 0.75rem);
 		--portal-gap: 0.8rem;
+	}
+
+	// compact labels are long enough to need a break; `\n` in the label drives it
+	.portal--compact .portal__label {
+		white-space: pre-line;
+		text-align: center;
+		line-height: 1.5;
 	}
 
 	// Borderless: cancel the mixin's hover frame/lift so feedback lives on the icon + label.

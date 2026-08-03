@@ -37,7 +37,7 @@ export const CONTACT_CHANNELS = [
 const ISSUE_BODY = ['### What happened?', '', '### Where?', '', '### Browser', ''].join('\n')
 
 export const BUG_REPORT = {
-	label: 'REPORT A BUG',
+	label: 'REPORT\nA BUG',
 	icon: '/assets/contact/bug.png',
 	issueUrl: `https://github.com/KarlQuerel/karlquerel.github.io/issues/new?labels=bug&title=${encodeURIComponent(
 		'Bug report'
