@@ -64,14 +64,18 @@ router.afterEach(to => {
 
 createApp(App).use(router).mount('#app')
 
-// warm prefetch-flagged chunks at idle; Firebase-carrying routes stay on-demand
+// warm prefetch-flagged chunks at idle; Firebase-carrying routes stay on-demand.
+// Skipped under automation: the prerender snapshot would otherwise capture every
+// prefetched route's CSS as render-blocking <link> tags in the static HTML.
 function prefetchRouteChunks() {
 	for (const route of routes) {
 		if (route.meta?.prefetch && typeof route.component === 'function') route.component()
 	}
 }
-if ('requestIdleCallback' in window) {
-	window.requestIdleCallback(prefetchRouteChunks, { timeout: 3000 })
-} else {
-	window.setTimeout(prefetchRouteChunks, 2000)
+if (!navigator.webdriver) {
+	if ('requestIdleCallback' in window) {
+		window.requestIdleCallback(prefetchRouteChunks, { timeout: 3000 })
+	} else {
+		window.setTimeout(prefetchRouteChunks, 2000)
+	}
 }
