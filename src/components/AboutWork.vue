@@ -8,7 +8,6 @@
 			:class="{ 'is-current': item.current }"
 		>
 			<p v-if="item.chapter" class="ztl-chapter">{{ item.chapter }}</p>
-			<p v-if="item.narration" class="ztl-narration">{{ item.narration }}</p>
 			<div class="ztl-row">
 				<!-- emblem = the timeline node -->
 				<div class="ztl-art">
@@ -78,9 +77,10 @@
 		);
 	}
 
+	// all of this lands under the caption, so it reads as the caption's own padding
 	.ztl-item {
 		position: relative;
-		padding-bottom: 2.4rem;
+		padding-bottom: 1.5rem;
 	}
 
 	.ztl-item:last-child {
@@ -115,24 +115,6 @@
 			rgba($yellow, 0.5) 0 6px,
 			transparent 6px 12px
 		);
-	}
-
-	// first-person story threaded above a milestone; VT323 prose, distinct from the
-	// pixel-font data below it
-	.ztl-narration {
-		@include void-scrim($at: 45% 50%);
-		margin: 0 0 1rem;
-		// the scrim needs room to fade out past the text on both sides
-		padding: 0.6rem 1.2rem 0.6rem var(--about-gutter);
-		font-family: $font-terminal;
-		font-size: clamp(1rem, 2.4vw, 1.3rem);
-		// VT323 has a low x-height and wants air between lines
-		line-height: 1.55;
-		text-align: left;
-		text-wrap: pretty;
-		color: rgba(255, 255, 255, 0.92);
-		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
-		opacity: 0;
 	}
 
 	.ztl-row {
@@ -261,25 +243,29 @@
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 	}
 
-	// one-line caption closing the card. VT323 prose keeps it subordinate to the pixel
-	// type above it, and the chevron echoes the terminal voice used across the site.
+	// caption closing the card. The VT323 face keeps it subordinate to the pixel type
+	// above it, and the chevron echoes the terminal voice used across the site.
 	.ztl-detail {
-		max-width: 44ch;
+		// the About column caps this well before it bites on narrow screens
+		max-width: 64ch;
 		// the card's flex gap is tuned for pixel type; VT323 wants a touch more air
-		margin: 0.2rem 0 0;
+		margin: 0.35rem 0 0;
 		font-family: $font-terminal;
-		font-size: clamp(0.95rem, 2.2vw, 1.1rem);
-		line-height: 1.35;
+		font-size: clamp(1.05rem, 2.4vw, 1.25rem);
+		line-height: 1.45;
 		// global `p` is centred (_layout.scss) — the card reads as a left-aligned stack
 		text-align: left;
-		text-wrap: pretty;
-		color: rgba(255, 255, 255, 0.58);
+		// a `\n` in the caption forces a break; the rest still soft-wraps
+		white-space: pre-line;
+		// captions run to two lines; balance splits them evenly instead of leaving an orphan tail
+		text-wrap: balance;
+		color: $text-caption;
 		text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
 	}
 
 	.ztl-detail::before {
 		content: '> ';
-		color: rgba($yellow, 0.55);
+		color: rgba($yellow, 0.7);
 	}
 
 	.is-current .ztl-badge {
@@ -298,8 +284,7 @@
 	}
 
 	.ztl-item.is-visible .ztl-row,
-	.ztl-item.is-visible .ztl-chapter,
-	.ztl-item.is-visible .ztl-narration {
+	.ztl-item.is-visible .ztl-chapter {
 		animation: card-in 0.5s steps(6, end) forwards;
 	}
 
@@ -327,15 +312,13 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.ztl-row,
-		.ztl-chapter,
-		.ztl-narration {
+		.ztl-chapter {
 			opacity: 1;
 			transform: none;
 		}
 
 		.ztl-item.is-visible .ztl-row,
-		.ztl-item.is-visible .ztl-chapter,
-		.ztl-item.is-visible .ztl-narration {
+		.ztl-item.is-visible .ztl-chapter {
 			animation: none;
 		}
 	}
