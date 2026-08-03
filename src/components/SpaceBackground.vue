@@ -48,26 +48,41 @@
 		)
 	}
 
-	// one parallax plane: a tile of random dots as stacked radial-gradients + its drift vars
+	// paint the tile's dots once into a bitmap: re-rasterizing after GPU eviction then
+	// costs one texture blit instead of repainting dozens of stacked radial-gradients
+	function rasterizeTile(layer) {
+		const [w, h] = layer.tile
+		const dpr = Math.min(window.devicePixelRatio || 1, 2)
+		const canvas = document.createElement('canvas')
+		canvas.width = w * dpr
+		canvas.height = h * dpr
+		const ctx = canvas.getContext('2d')
+		ctx.scale(dpr, dpr)
+		for (let i = 0; i < layer.count; i++) {
+			ctx.fillStyle = withAlpha(pick(STAR_COLORS), rand(...layer.alpha))
+			ctx.beginPath()
+			ctx.arc(
+				rand(0, w),
+				rand(0, h),
+				(layer.size * rand(...STAR_SIZE_JITTER)) / 2,
+				0,
+				Math.PI * 2
+			)
+			ctx.fill()
+		}
+		return canvas.toDataURL()
+	}
+
+	// one parallax plane: its pre-rendered dot tile + drift vars
 	function buildLayer(layer, id) {
 		const [w, h] = layer.tile
-		const dots = []
-		for (let i = 0; i < layer.count; i++) {
-			const x = rand(0, w).toFixed(1)
-			const y = rand(0, h).toFixed(1)
-			const size = (layer.size * rand(...STAR_SIZE_JITTER)).toFixed(2)
-			const color = withAlpha(pick(STAR_COLORS), rand(...layer.alpha))
-			dots.push(
-				`radial-gradient(${size}px ${size}px at ${x}px ${y}px, ${color} 99%, transparent 100%)`
-			)
-		}
 		// bleed only the two trailing edges (leading never uncovers); pad covers the mouse parallax
 		const [dirX, dirY] = layer.dir
 		const pad = layer.depth + 8
 		return {
 			id,
 			style: {
-				backgroundImage: dots.join(','),
+				backgroundImage: `url(${rasterizeTile(layer)})`,
 				backgroundSize: `${w}px ${h}px`,
 				'--bleed-top': `${(dirY > 0 ? h : 0) + pad}px`,
 				'--bleed-right': `${(dirX < 0 ? w : 0) + pad}px`,
@@ -174,11 +189,12 @@
 			calc(var(--bleed-bottom) * -1) calc(var(--bleed-left) * -1);
 		background-repeat: repeat;
 		translate: calc(var(--mx, 0) * var(--depth) * 1px) calc(var(--my, 0) * var(--depth) * 1px);
+		// no will-change: the animation promotes the layer while it runs; a permanent
+		// hint would keep the ~full-screen textures resident even while paused
 		animation: starDrift var(--dur) linear infinite;
 		// Default (touch / phones): stepped ~1px hops. The ~59 identical frames
 		// between steps cost the compositor nothing — this is the scroll-lag fix.
 		animation-timing-function: steps(var(--drift-steps, 60), end);
-		will-change: transform;
 	}
 
 	// Desktop / trackpad can afford a full-rate composited transform, so drift

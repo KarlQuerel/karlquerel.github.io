@@ -13,8 +13,6 @@ export const STAR_COLORS = [
 
 // Parallax depth planes, far → near. Each is one repeating, GPU-drifted <div>
 // layer, inset by one tile so it can translate a full tile and loop seamlessly.
-// Tiles are larger than the viewport and densely filled so the repeat isn't
-// noticeable on screen.
 //   count     stars placed in the tile
 //   size      base dot diameter (px) — nearer reads bigger; jittered per dot
 //   alpha     [min, max] opacity range
@@ -25,34 +23,37 @@ export const STAR_COLORS = [
 //
 // Three planes rather than four: every plane is a full-screen layer the
 // compositor re-composites each frame as it drifts, and that per-frame cost was
-// the homepage's remaining lag. The dropped plane's stars are redistributed
-// across the survivors, so total density is unchanged (~118) — just one fewer
-// animated layer.
+// the homepage's remaining lag.
+//
+// Tile size is a memory/repeat trade-off: each layer's GPU surface is viewport
+// + one tile of bleed, so big tiles cost real texture memory on every route.
+// These are the smallest tiles whose repeat still doesn't read on screen.
+// Density (count/area), drift speed (px/s) and aspect match the old sky.
 export const STAR_LAYERS = [
 	{
-		count: 52,
+		count: 18,
 		size: 1,
 		alpha: [0.2, 0.45],
-		tile: [680, 860],
-		duration: 860,
+		tile: [400, 520],
+		duration: 515,
 		depth: 4,
 		dir: [-1, -1],
 	},
 	{
-		count: 36,
+		count: 13,
 		size: 2,
 		alpha: [0.5, 0.78],
-		tile: [680, 620],
-		duration: 520,
+		tile: [400, 380],
+		duration: 310,
 		depth: 16,
 		dir: [1, -1],
 	},
 	{
-		count: 30,
+		count: 11,
 		size: 2.5,
 		alpha: [0.68, 0.95],
-		tile: [560, 720],
-		duration: 350,
+		tile: [340, 440],
+		duration: 215,
 		depth: 26,
 		dir: [-1, -1],
 	},
