@@ -17,14 +17,11 @@ export const HERO_CRAWL = {
 	],
 }
 
-// The live homepage — name, role, and a nudge toward the menu star.
-// `hintBefore`/`hintAfter` wrap the inline star glyph in the template.
+// The live homepage — name, role, and a build-status notice.
 export const HOME_LANDING = {
 	name: 'Karl Querel',
 	label: 'Software Engineer',
-	hintBefore: 'Tap',
-	hintAfter: 'to explore',
-	hintSr: 'Use the menu star at the top of the page to explore the site.',
+	notice: 'Under construction',
 }
 
 // Copy for the wake-up beat that follows the crawl: the ship HUD the envoy's
