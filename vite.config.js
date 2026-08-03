@@ -18,10 +18,11 @@ export default defineConfig({
 		},
 		rollupOptions: {
 			output: {
+				// no sport/styles entries: forcing SportPage into a named chunk dragged the
+				// shared _export_sfc helper with it, making EVERY route statically load the
+				// sport chunk + its render-blocking CSS. Vite's route-based splitting is enough.
 				manualChunks: {
 					vendor: ['vue', 'vue-router'],
-					sport: ['./src/components/sport/SportPage.vue'],
-					styles: ['./src/styles/main.scss'],
 				},
 				chunkFileNames: 'assets/[name]-[hash].js',
 				entryFileNames: 'assets/[name]-[hash].js',
