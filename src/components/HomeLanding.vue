@@ -8,8 +8,6 @@
 
 <script setup>
 	import { HOME_LANDING } from '../data/heroLines.js'
-
-	defineOptions({ name: 'HomeLanding' })
 </script>
 
 <style scoped lang="scss">

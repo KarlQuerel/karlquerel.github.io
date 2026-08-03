@@ -62,8 +62,7 @@ export function useSportAccordion() {
 		if (block.type === 'superset') {
 			const keys = block.exercises.map((_, exIndex) => `${dayId}-${blockIndex}-${exIndex}`)
 			const allOpen = keys.every(key => openExerciseKeys.value.has(key))
-			const shouldOpen = keys.length > 1 ? !allOpen : !openExerciseKeys.value.has(keys[0])
-			openExerciseKeys.value = shouldOpen ? new Set(keys) : new Set()
+			openExerciseKeys.value = allOpen ? new Set() : new Set(keys)
 			return
 		}
 

@@ -25,7 +25,7 @@
 			/>
 		</div>
 
-		<component :is="activeComponent" v-else :key="activeTab" class="about-panel" />
+		<component :is="activeComponent" v-else :key="activeTab" />
 	</div>
 </template>
 

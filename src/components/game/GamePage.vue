@@ -14,8 +14,6 @@
 	import CrashIntro from './CrashIntro.vue'
 	import GameScene from './GameScene.vue'
 
-	defineOptions({ name: 'GamePage' })
-
 	// motion-sensitive visitors skip the cinematic and wake straight in the wreck
 	const introDone = ref(prefersReducedMotion())
 	const router = useRouter()

@@ -38,7 +38,8 @@ export const SYSTEM_INFO = [
 	['Kernel', 'vue-3.x'],
 	['Shell', 'bash (barely)'],
 	['Resolution', 'looks-good-on-your-screen'],
-	['Theme', 'Phosphor Green'],
+	// value filled at render with the active theme's label
+	['Theme', ''],
 	['CPU', 'Intel Core i7 (8) @ 2.6GHz'],
 	['Memory', '8192MiB / 16384MiB'],
 ]
