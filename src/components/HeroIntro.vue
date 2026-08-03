@@ -209,8 +209,10 @@
 	// Mount the HUD only once the lid is fully shut, so it never pops in raw.
 	const hudVisible = computed(() => progress.value >= phase(POD_END))
 	const hudStyle = computed(() => ({
-		// waking focus: blur and slight zoom resolve as the aperture opens
-		'--hud-blur': `${((1 - eyeAperture.value) * 8).toFixed(2)}px`,
+		// waking focus: blur and slight zoom resolve as the aperture opens.
+		// Whole-px blur steps: each distinct radius re-renders the whole filtered
+		// subtree, so 9 cacheable values beat a per-scroll-frame continuum
+		'--hud-blur': `${Math.round((1 - eyeAperture.value) * 8)}px`,
 		'--hud-scale': (1.06 - 0.06 * eyeAperture.value).toFixed(4),
 	}))
 
