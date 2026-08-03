@@ -89,6 +89,10 @@ $void-radius: 3px;
 // system. Change these two to restyle every hover at once.
 $text-interactive: rgba(255, 255, 255, 0.88);
 
+// Secondary prose (timeline captions): warm off-white biased toward $yellow, so it
+// reads as chosen rather than dimmed without spending one of the type-coded hues.
+$text-caption: #e9e1cf;
+
 // Breakpoints
 $breakpoint-mobile: 640px;
 $breakpoint-desktop: 1024px;
