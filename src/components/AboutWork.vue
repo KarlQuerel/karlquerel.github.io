@@ -29,6 +29,7 @@
 						<PixelFlag :country="item.flag" />
 						{{ item.location }}
 					</span>
+					<p v-if="item.detail" class="ztl-detail">{{ item.detail }}</p>
 				</div>
 			</div>
 		</li>
@@ -258,6 +259,27 @@
 		text-transform: uppercase;
 		color: $light-gray;
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+	}
+
+	// one-line caption closing the card. VT323 prose keeps it subordinate to the pixel
+	// type above it, and the chevron echoes the terminal voice used across the site.
+	.ztl-detail {
+		max-width: 44ch;
+		// the card's flex gap is tuned for pixel type; VT323 wants a touch more air
+		margin: 0.2rem 0 0;
+		font-family: $font-terminal;
+		font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+		line-height: 1.35;
+		// global `p` is centred (_layout.scss) — the card reads as a left-aligned stack
+		text-align: left;
+		text-wrap: pretty;
+		color: rgba(255, 255, 255, 0.58);
+		text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
+	}
+
+	.ztl-detail::before {
+		content: '> ';
+		color: rgba($yellow, 0.55);
 	}
 
 	.is-current .ztl-badge {

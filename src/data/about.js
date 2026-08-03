@@ -11,7 +11,8 @@ export const ABOUT_HEADINGS = {
 
 // Career timeline, oldest first. `type` ('job' | 'study') tints the badge; `current`
 // flags the present role (gold); `emblem` is the sprite on the rail; `chapter` adds a
-// divider above the card; `narration` threads the first-person story above a milestone.
+// divider above the card; `narration` threads the first-person story above a milestone;
+// `detail` is a one-line caption on the card — keep it under ~10 words.
 // Jobs: career-defining roles only.
 export const CAREER_TIMELINE = [
 	{
@@ -22,6 +23,7 @@ export const CAREER_TIMELINE = [
 		location: 'Beirut, Lebanon',
 		flag: 'lebanon',
 		emblem: 'mortarboard',
+		detail: 'Economics stream, French system.',
 	},
 	{
 		type: 'study',
@@ -31,6 +33,7 @@ export const CAREER_TIMELINE = [
 		location: 'Geneva, Switzerland',
 		flag: 'switzerland',
 		emblem: 'chart',
+		detail: 'Accounting, markets, statistics.',
 	},
 	{
 		type: 'study',
@@ -40,6 +43,7 @@ export const CAREER_TIMELINE = [
 		location: 'Grenoble, France',
 		flag: 'france',
 		emblem: 'globe',
+		detail: 'Trade, negotiation, third country.',
 	},
 	{
 		type: 'study',
@@ -49,6 +53,7 @@ export const CAREER_TIMELINE = [
 		location: 'Grenoble, France',
 		flag: 'france',
 		emblem: 'euro-coin',
+		detail: 'Corporate finance and derivatives.',
 	},
 	{
 		type: 'job',
@@ -58,6 +63,7 @@ export const CAREER_TIMELINE = [
 		location: 'Madrid, Spain',
 		flag: 'spain',
 		emblem: 'desk-phone',
+		detail: 'First desk. Cold calls, contracts.',
 		narration:
 			'For five incredible years, I traded commodities across Europe. An environment as challenging as it was rewarding.',
 	},
@@ -69,6 +75,7 @@ export const CAREER_TIMELINE = [
 		location: 'Paris, France',
 		flag: 'france',
 		emblem: 'oil-barrel',
+		detail: 'Physical cargoes, EMEA desk.',
 		narration:
 			'Over time, the line between finance and technology blurred, and I spent more and more nights tinkering with algorithms.',
 	},
@@ -81,6 +88,7 @@ export const CAREER_TIMELINE = [
 		flag: 'france',
 		chapter: 'Career pivot',
 		emblem: 'terminal-42',
+		detail: 'No teachers, no grades. C and Unix.',
 		narration:
 			'The spark grew impossible to ignore, so I rebooted from scratch at 42 Paris and dove into software engineering.',
 	},
@@ -93,6 +101,7 @@ export const CAREER_TIMELINE = [
 		flag: 'france',
 		current: true,
 		emblem: 'charger',
+		detail: 'Web platforms for energy systems.',
 		narration: 'Today, I build tech for renewable energy, and I love every second of it.',
 	},
 ]
