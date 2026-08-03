@@ -123,6 +123,12 @@ for (const route of ROUTES) {
 	}
 	await page.goto(`http://localhost:${PORT}${route.path}`, { waitUntil: 'networkidle' })
 	await page.waitForSelector('#app *')
+	// Teleport output lands outside #app, which mount() never replaces: snapshotting it duplicates it.
+	await page.evaluate(() => {
+		for (const node of [...document.body.children]) {
+			if (node.id !== 'app' && node.tagName !== 'SCRIPT') node.remove()
+		}
+	})
 	pages.push([
 		route,
 		`<!DOCTYPE html>\n${await page.evaluate(() => document.documentElement.outerHTML)}`,
