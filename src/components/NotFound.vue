@@ -11,6 +11,7 @@
 <script setup>
 	import { onMounted, onBeforeUnmount, ref } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
+	import { useRafThrottle } from '@/composables/useRafThrottle'
 
 	// zero-g float + cursor-fleeing physics, always easing back toward its layout home
 	const REPEL_RADIUS = 220 // px — how close the cursor must get to push the title
@@ -82,18 +83,20 @@
 		rafId = requestAnimationFrame(step)
 	}
 
+	const onResize = useRafThrottle(measureHome)
+
 	onMounted(() => {
 		if (prefersReducedMotion()) return
 		measureHome()
 		window.addEventListener('pointermove', onPointerMove, { passive: true })
-		window.addEventListener('resize', measureHome)
+		window.addEventListener('resize', onResize)
 		rafId = requestAnimationFrame(step)
 	})
 
 	onBeforeUnmount(() => {
 		if (rafId) cancelAnimationFrame(rafId)
 		window.removeEventListener('pointermove', onPointerMove)
-		window.removeEventListener('resize', measureHome)
+		window.removeEventListener('resize', onResize)
 	})
 </script>
 

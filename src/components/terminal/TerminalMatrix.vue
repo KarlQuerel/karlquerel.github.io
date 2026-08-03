@@ -8,6 +8,7 @@
 <script setup>
 	import { ref, onMounted, onBeforeUnmount } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
+	import { useRafThrottle } from '@/composables/useRafThrottle'
 
 	// Phosphor digital-rain overlay summoned by the `matrix` command. Self
 	// contained: draws to a canvas filling the terminal window and closes on the
@@ -62,6 +63,10 @@
 		close()
 	}
 
+	// setup reallocates the whole drops array and clears the canvas — coalesce
+	// desktop drag-resize storms into one rebuild per frame
+	const onResize = useRafThrottle(setup)
+
 	onMounted(() => {
 		setup()
 		if (prefersReducedMotion()) {
@@ -70,13 +75,13 @@
 			draw()
 		}
 		window.addEventListener('keydown', onKey, true)
-		window.addEventListener('resize', setup)
+		window.addEventListener('resize', onResize)
 	})
 
 	onBeforeUnmount(() => {
 		if (rafId) cancelAnimationFrame(rafId)
 		window.removeEventListener('keydown', onKey, true)
-		window.removeEventListener('resize', setup)
+		window.removeEventListener('resize', onResize)
 	})
 </script>
 
