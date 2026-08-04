@@ -50,7 +50,7 @@ npm run clean        # lint:fix + format (run before every commit)
 npm run format       # prettier + eslint fix + checks
 npm run lint         # check only, no fix
 npm run lint:check   # strict check — fails on any warning (the real gate)
-npm run deploy       # build + copy 404.html + push to gh-pages
+npm run deploy       # manual fallback — CI deploys every push to master
 ```
 
 **Always run `npm run clean` before finishing any task.** Never leave lint or format errors.
@@ -118,7 +118,7 @@ When touching existing code, always:
 - **Never create a new branch on this repo. Always make changes directly on the main branch (`master`).** This applies to everything — features, visual iterations, refactors, and risky changes alike. No feature branches, no worktree branches.
 - **Never use git worktrees.** Edit the checkout directly on `master`. If a worktree exists, remove it (`git worktree remove` / `git worktree prune`). Karl is the only dev here, so isolation only adds friction.
 - Commit messages: conventional commits (`feat:`, `fix:`, `refactor:`, `chore:`).
-- `npm run deploy` is the only way to publish.
+- Publishing is automatic: every push to `master` runs CI (`.github/workflows/ci.yml`) and, if format/lint/build/tests pass, deploys the built `dist/` to the `gh-pages` branch. `npm run deploy` is only a manual fallback.
 
 ---
 
