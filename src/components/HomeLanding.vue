@@ -12,11 +12,9 @@
 
 <style scoped lang="scss">
 	.home {
-		min-height: 100vh;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		justify-content: center;
 		gap: 1.3rem;
 		padding: 1.5rem;
 		text-align: center;

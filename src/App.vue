@@ -28,7 +28,7 @@
 	import SiteNavbar from './components/SiteNavbar.vue'
 	import NavToggle from './components/NavToggle.vue'
 
-	const SCROLLABLE_PATHS = ['/', '/preview', '/sport', '/about', '/contact']
+	const SCROLLABLE_PATHS = ['/preview', '/sport', '/about', '/contact']
 
 	// Component names (see defineOptions) kept mounted across navigation.
 	const KEPT_ALIVE_VIEWS = ['HeroIntro']
