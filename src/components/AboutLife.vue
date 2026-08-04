@@ -10,48 +10,27 @@
 			<h2 class="life-card__title"><span class="life-card__dot" aria-hidden="true" />DOGS</h2>
 			<p v-for="(line, i) in DOG_LINES" :key="i" class="life-card__line">{{ line }}</p>
 			<div class="dogs">
-				<figure
-					v-for="dog in DOGS"
-					:key="dog.name"
-					class="dog"
-					@mouseenter="startSlideshow(dog)"
-					@mouseleave="stopSlideshow(dog)"
-				>
-					<div class="dog__frame">
-						<!-- pixelate: chunky low-res at rest, crisp photo resolves in on hover -->
-						<template v-if="dog.effect === 'pixelate'">
-							<img
-								:src="dog.photoLo"
-								alt=""
-								aria-hidden="true"
-								class="dog__photo dog__photo--lo"
-								loading="lazy"
-								decoding="async"
-							/>
-							<img
-								:src="dog.photo"
-								:alt="`Photo of ${dog.name}`"
-								class="dog__photo dog__photo--hi"
-								loading="lazy"
-								decoding="async"
-							/>
-						</template>
-
-						<!-- slideshow: frames cycle while hovered; slide 0 is the resting frame -->
-						<template v-else-if="dog.effect === 'slideshow'">
-							<img
-								v-for="(slide, i) in dog.slides"
-								:key="slide"
-								:src="slide"
-								:alt="i === 0 ? `Photo of ${dog.name}` : ''"
-								:aria-hidden="i === 0 ? null : 'true'"
-								class="dog__photo dog__slide"
-								:class="{ 'is-active': i === activeSlide(dog) }"
-								loading="lazy"
-								decoding="async"
-							/>
-						</template>
-					</div>
+				<!-- photo deck: offset cards peek out behind the frame to hint there's more;
+				     click / tap shuffles to the next photo (works on touch, unlike hover) -->
+				<figure v-for="dog in DOGS" :key="dog.name" class="dog">
+					<button
+						type="button"
+						class="dog__stack"
+						:aria-label="`Next photo of ${dog.name}`"
+						@click="advance(dog)"
+					>
+						<img
+							v-for="(photo, i) in dog.photos"
+							:key="photo"
+							:src="photo"
+							:alt="i === activeIndex(dog) ? `Photo of ${dog.name}` : ''"
+							:aria-hidden="i === activeIndex(dog) ? null : 'true'"
+							class="dog__photo"
+							:class="{ 'is-active': i === activeIndex(dog) }"
+							loading="lazy"
+							decoding="async"
+						/>
+					</button>
 					<figcaption class="dog__name">{{ dog.name }}</figcaption>
 				</figure>
 			</div>
@@ -68,56 +47,27 @@
 			<h2 class="life-card__title">
 				<span class="life-card__dot" aria-hidden="true" />{{ section.title }}
 			</h2>
-			<p v-for="(line, i) in section.lines" :key="i" class="life-card__line">
-				{{ line }}
-			</p>
-
-			<router-link v-if="section.link" :to="section.link.to" class="life-link">
-				{{ section.link.label }}
-				<span class="life-link__arrow" aria-hidden="true"><i /><i /></span>
-			</router-link>
+			<p v-for="(line, i) in section.lines" :key="i" class="life-card__line">{{ line }}</p>
 		</section>
 	</div>
 </template>
 
 <script setup>
-	import { ref, onBeforeUnmount } from 'vue'
-	import { ABOUT_ME, DOG_LINES, DOGS, LIFE_SECTIONS, SLIDE_INTERVAL_MS } from '@/data/aboutLife'
+	import { ref } from 'vue'
+	import { ABOUT_ME, DOG_LINES, DOGS, LIFE_SECTIONS } from '@/data/aboutLife'
 	import { reveal as vReveal } from '@/directives/reveal'
-	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
-	import { FINE_POINTER_QUERY } from '@/constants/viewport'
 
-	// Yako-style hover slideshow: advance the visible frame on a timer while hovered.
-	// Pointer devices only, never under reduced motion (mirrors the pixelate reveal) —
-	// touch / reduced-motion just keep the resting frame 0.
-	const slideAnimatable =
-		typeof window !== 'undefined' &&
-		window.matchMedia(FINE_POINTER_QUERY).matches &&
-		!prefersReducedMotion()
+	// One deck per dog: clicking the stack shows the next photo, looping.
+	const activeIndexes = ref({})
 
-	const activeSlides = ref({})
-	let slideTimer = 0
+	const activeIndex = dog => activeIndexes.value[dog.name] ?? 0
 
-	const activeSlide = dog => activeSlides.value[dog.name] ?? 0
-
-	function startSlideshow(dog) {
-		if (!slideAnimatable || dog.effect !== 'slideshow') return
-		window.clearInterval(slideTimer)
-		slideTimer = window.setInterval(() => {
-			activeSlides.value = {
-				...activeSlides.value,
-				[dog.name]: (activeSlide(dog) + 1) % dog.slides.length,
-			}
-		}, SLIDE_INTERVAL_MS)
+	function advance(dog) {
+		activeIndexes.value = {
+			...activeIndexes.value,
+			[dog.name]: (activeIndex(dog) + 1) % dog.photos.length,
+		}
 	}
-
-	function stopSlideshow(dog) {
-		if (dog.effect !== 'slideshow') return
-		window.clearInterval(slideTimer)
-		activeSlides.value = { ...activeSlides.value, [dog.name]: 0 }
-	}
-
-	onBeforeUnmount(() => window.clearInterval(slideTimer))
 </script>
 
 <style scoped lang="scss">
@@ -125,6 +75,8 @@
 
 	// zigzag rhythm borrowed from the work timeline (AboutWork.vue)
 	$slide: 28px;
+	// offset between the photo-deck cards peeking out behind each dog's frame
+	$stack-step: 6px;
 
 	.life {
 		display: flex;
@@ -180,8 +132,12 @@
 
 	.life-card__line {
 		margin: 0 0 0.6rem;
-		font-size: clamp(0.8rem, 1.8vw, 0.95rem);
-		line-height: 1.6;
+		// terminal font for prose: Press Start 2P stays on titles, VT323 (narrow,
+		// so a size up) carries the reading text
+		font-family: $font-terminal;
+		font-size: clamp(1.1rem, 2.2vw, 1.25rem);
+		line-height: 1.35;
+		letter-spacing: 0.02em;
 		// the global `p { text-align: center }` would otherwise centre it
 		text-align: inherit;
 		color: rgba(255, 255, 255, 0.88);
@@ -224,20 +180,48 @@
 	}
 
 	.dog {
+		position: relative;
 		margin: 0;
 	}
 
-	.dog__frame {
-		position: relative;
+	// two offset cards peek out under the frame — the "there's more photos" cue
+	.dog::before,
+	.dog::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
 		aspect-ratio: 1;
-		overflow: hidden;
+		box-sizing: border-box;
 		background: rgba(0, 0, 0, 0.45);
 		border: $void-border;
 		border-radius: $void-radius;
 	}
 
-	// cutout photos (transparent bg): contain shows the whole dog on the dark frame.
-	// two layers stacked: crisp `--hi` under the low-res `--lo` that pixelates at rest.
+	.dog::before {
+		transform: translate($stack-step, $stack-step);
+	}
+
+	.dog::after {
+		transform: translate($stack-step * 2, $stack-step * 2);
+	}
+
+	// the deck's top card: a void button so it reads as clickable, lifting off the
+	// stack on hover like every other button on the site
+	.dog__stack {
+		position: relative;
+		z-index: 1;
+		display: block;
+		width: 100%;
+		aspect-ratio: 1;
+		box-sizing: border-box;
+		padding: 0;
+		@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.45));
+	}
+
+	// cutout photos (transparent bg): contain shows the whole dog on the dark frame;
+	// only the active frame shows, swapped with a stepped crossfade on each click
 	.dog__photo {
 		position: absolute;
 		inset: 0;
@@ -246,102 +230,22 @@
 		box-sizing: border-box;
 		object-fit: contain;
 		padding: 0.6rem;
-	}
-
-	.dog__photo--lo {
 		opacity: 0;
-		image-rendering: pixelated;
+		transition: opacity 0.35s steps(5, end);
 	}
 
-	// slideshow frames stack like the pixelate layers; only the active frame shows.
-	// the shared `.dog__photo` transition (hover block) crossfades each swap.
-	.dog__slide {
-		opacity: 0;
-	}
-
-	.dog__slide.is-active {
+	.dog__photo.is-active {
 		opacity: 1;
 	}
 
 	.dog__name {
-		margin-top: 0.55rem;
+		// extra top room clears the deck cards sticking out below the frame
+		margin-top: calc(0.55rem + #{$stack-step * 2});
 		font-family: $font-pixel;
 		font-size: clamp(0.55rem, 1.6vw, 0.72rem);
 		text-align: center;
 		color: rgba(255, 255, 255, 0.85);
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
-	}
-
-	// De-pixelate reveal — pointer devices only, and never when reduced motion is asked.
-	// Touch / reduced-motion keep the always-crisp base state (photo + name visible).
-	@media (hover: hover) and (prefers-reduced-motion: no-preference) {
-		.dog__photo {
-			transition: opacity 0.35s steps(5, end);
-		}
-
-		// rest: pixelated on top, crisp hidden, name hidden
-		.dog__photo--lo {
-			opacity: 1;
-		}
-
-		.dog__photo--hi {
-			opacity: 0;
-		}
-
-		.dog__name {
-			opacity: 0;
-			transition: opacity 0.35s steps(5, end);
-		}
-
-		// hover / keyboard focus: crisp photo and name resolve in
-		.dog:hover .dog__photo--hi,
-		.dog:focus-within .dog__photo--hi {
-			opacity: 1;
-		}
-
-		.dog:hover .dog__photo--lo,
-		.dog:focus-within .dog__photo--lo {
-			opacity: 0;
-		}
-
-		.dog:hover .dog__name,
-		.dog:focus-within .dog__name {
-			opacity: 1;
-		}
-	}
-
-	.life-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.55rem;
-		margin-top: 1rem;
-		padding: 0.5rem 0.9rem;
-		font-family: $font-pixel;
-		font-size: clamp(0.5rem, 1.5vw, 0.62rem);
-		letter-spacing: 1px;
-		text-decoration: none;
-		@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.5));
-	}
-
-	// mirror of the "back" cue — twin triangles stepping right on hover
-	.life-link__arrow {
-		display: inline-flex;
-		gap: 0.15em;
-		flex: none;
-		transition: transform 0.2s steps(3, end);
-	}
-
-	.life-link__arrow i {
-		width: 0;
-		height: 0;
-		border-top: 0.42em solid transparent;
-		border-bottom: 0.42em solid transparent;
-		border-left: 0.42em solid currentColor;
-	}
-
-	.life-link:hover .life-link__arrow,
-	.life-link:focus-visible .life-link__arrow {
-		transform: translateX(3px);
 	}
 
 	// slide in from the card's own side, like the work timeline
@@ -383,6 +287,11 @@
 			opacity: 1;
 			transform: none;
 			animation: none;
+		}
+
+		// photo swaps become instant cuts
+		.dog__photo {
+			transition: none;
 		}
 	}
 </style>
