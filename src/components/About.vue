@@ -78,32 +78,22 @@
 	@use '@/styles/mixins' as *;
 
 	.about {
-		// clears the fixed star toggle + MENU hint
-		--pad-top: 3.6rem;
 		// shared reading column for the intro + timeline (AboutWork reads these too)
 		--about-column: #{$about-column};
 		--about-gutter: #{$about-gutter};
-		min-height: 100dvh;
-		gap: 2rem;
 		// bottom clears the pinned Back button
-		padding: var(--pad-top) 1rem 5rem;
+		@include page-shell($pad-bottom: 5rem);
 	}
 
-	// On short mobile viewports the column overflows and starts at the padding, so the
-	// greeting must clear the star + MENU hint on its own.
 	@media (max-width: $breakpoint-mobile) {
 		.about {
-			--pad-top: #{$chrome-clearance-mobile};
 			// tighter gutter for the smaller mobile badge
 			--about-gutter: #{$about-gutter-mobile};
 		}
 	}
 
 	.about-head {
-		@include void-scrim($size: 120% 130%);
-		max-width: min(46rem, 94vw);
-		margin: 0 auto;
-		padding: 1.75rem 1.5rem 2rem;
+		@include page-head;
 	}
 
 	// tab mode: the panel below carries its own framing, so the header is bare. Back is
@@ -112,7 +102,8 @@
 		width: 100%;
 		// same measure as the timeline panel
 		max-width: var(--about-column);
-		padding: 5.1rem 0 2rem;
+		// same title y as the hub/contact heads (their margin is zeroed below)
+		padding: $page-head-title-offset 0 2rem;
 		background: none;
 
 		> * {
@@ -122,6 +113,11 @@
 
 	.about-hub {
 		@include portal-row;
+
+		// centre in the space left under the pinned heading
+		& {
+			margin-block: auto;
+		}
 	}
 
 	// pinned chrome, not a breadcrumb: it stays reachable once the header scrolls off, since
@@ -172,14 +168,6 @@
 		border-top: 0.42em solid transparent;
 		border-bottom: 0.42em solid transparent;
 		border-right: 0.42em solid currentColor;
-	}
-
-	// mobile carries the star clearance on --pad-top instead, but the header still needs
-	// enough of its own to keep the title off the MENU hint
-	@media (max-width: $breakpoint-mobile) {
-		.about-head--tab {
-			padding-top: 3rem;
-		}
 	}
 
 	.about-back:hover .about-back__icon,

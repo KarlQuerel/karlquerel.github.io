@@ -27,9 +27,18 @@ $phosphor-green: #33ff66;
 $tag-education: $light-blue;
 $tag-experience: $purple;
 
-// Mobile top padding that clears the fixed star toggle + MENU hint, so a page
+// Top padding that clears the fixed star toggle + MENU hint, so a page
 // heading never slides under the chrome. Used by every route-level page.
+$chrome-clearance: 3.6rem;
 $chrome-clearance-mobile: 5.25rem;
+
+// Title-page top padding: drops the heading to ~15% of the viewport so it
+// breathes below the star; the floor keeps the chrome clear on short screens.
+$page-pad-top: clamp($chrome-clearance, 15vh, 10rem);
+
+// Distance from a page-head's top edge to the heading text (scrim padding +
+// heading margin) — the tab header pads by this much to keep titles aligned.
+$page-head-title-offset: 1.75rem + 1.75rem;
 
 // Shared About column: intro + timeline align to one centred column with a left gutter
 // for the rail/badges. Exposed as CSS vars on `.about`.

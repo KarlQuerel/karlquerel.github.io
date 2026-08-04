@@ -1,6 +1,8 @@
 <template>
 	<div class="content contact">
-		<PageTitle :lead="CONTACT_HEADING.lead" :accent="CONTACT_HEADING.accent" />
+		<header class="contact-head">
+			<PageTitle :lead="CONTACT_HEADING.lead" :accent="CONTACT_HEADING.accent" />
+		</header>
 
 		<ul class="contact-list">
 			<li
@@ -42,28 +44,28 @@
 	// Per-item entrance stagger: each card animates in after the previous.
 	$contact-stagger: 90ms;
 
-	// Same shell as .about: scrollable, min full height, top padding clears the star toggle.
 	.contact {
-		min-height: 100dvh;
-		gap: 2rem;
-		padding: 3.6rem 1rem 4rem;
+		@include page-shell($pad-bottom: 4rem);
 	}
 
-	@media (max-width: $breakpoint-mobile) {
-		.contact {
-			padding-top: $chrome-clearance-mobile;
-		}
+	.contact-head {
+		@include page-head;
 	}
 
 	// Same portal row as the About hub: icon tiles wrapping around the centre.
 	.contact-list {
 		list-style: none;
 		@include portal-row;
+
+		// with the report row below, the pair centres under the pinned heading
+		& {
+			margin-top: auto;
+		}
 	}
 
 	// Set apart from the channel row: a secondary action, not a fourth way to reach me.
 	.contact-report {
-		margin-top: 2.5rem;
+		margin: 2.5rem 0 auto;
 	}
 
 	.contact-item {

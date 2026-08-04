@@ -41,6 +41,30 @@
 	);
 }
 
+// Shared shell for the full-height title pages (About, Contact). Top-anchored —
+// not centred — so the heading lands at the same y on every page and screen
+// regardless of how much content follows it. The content below the head centres
+// itself in the leftover space via auto margins (see .about-hub, .contact-list).
+@mixin page-shell($pad-bottom) {
+	min-height: 100dvh;
+	justify-content: flex-start;
+	gap: 2rem;
+	padding: variables.$page-pad-top 1rem $pad-bottom;
+
+	@media (max-width: variables.$breakpoint-mobile) {
+		padding-top: variables.$chrome-clearance-mobile;
+	}
+}
+
+// Scrim-backed heading panel shared by those pages, so every title gets the
+// same wash and sits exactly $page-head-title-offset below the shell padding.
+@mixin page-head {
+	@include void-scrim($size: 120% 130%);
+	max-width: min(46rem, 94vw);
+	margin: 0 auto;
+	padding: 1.75rem 1.5rem 2rem;
+}
+
 // The interactive counterpart, used by every clickable button on the site so
 // they read as one system. Text rests near-white and shifts to $yellow on hover
 // / focus (the shared site-wide convention), over a warm yellow starlight bloom +
