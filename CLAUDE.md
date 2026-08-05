@@ -109,7 +109,7 @@ When touching existing code, always:
 - **Retro pixel aesthetic is non-negotiable.** The custom void SCSS system is the design system. Do not introduce Tailwind, Bootstrap, Material, NES.css, or any other CSS framework.
 - Animations must feel 8-bit — stepped, not smooth easing.
 - Font choices must remain pixel-compatible (no system-ui or sans-serif as primary). Fonts are self-hosted woff2 in `public/assets/fonts/` + `src/styles/_fonts.scss` — never re-add render-blocking font CDNs.
-- Firebase: prefer Firestore, keep API keys in `.env` — never hardcode, never commit.
+- Firebase: prefer Firestore. The web config in `firebase-setup.js` is committed on purpose — those are public client identifiers (shipped in the bundle regardless); access control lives in Firestore security rules, not key secrecy.
 
 ---
 
