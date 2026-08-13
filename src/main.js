@@ -34,9 +34,10 @@ const routes = [
 		meta: { prefetch: true, title: 'Contact' },
 	},
 	{
+		// unlisted personal page: reachable by URL, so it never warms on a public visit
 		path: '/sport',
 		component: () => import('./components/sport/SportPage.vue'),
-		meta: { prefetch: true, title: 'Sport' },
+		meta: { title: 'Sport' },
 	},
 	{
 		// unlinked while the teaser homepage is up; reachable by URL for dev

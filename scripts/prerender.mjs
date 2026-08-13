@@ -50,12 +50,15 @@ const ROUTES = [
 		render: true,
 	},
 	{
+		// unlisted: still snapshotted so the URL answers 200, but kept out of the
+		// sitemap and marked noindex — it is a personal page, not site content
 		path: '/sport',
 		dir: 'sport',
 		title: 'Sport • Karl Querel',
 		description:
 			'The weekly training split behind the code - how Karl Querel spends the hours away from a keyboard.',
 		render: true,
+		noindex: true,
 	},
 	{
 		path: '/terminal',
@@ -96,11 +99,17 @@ function applyMeta(html, route) {
 		[/<meta property="og:url"[^>]*>/, `<meta property="og:url" content="${url}">`],
 		[/<link rel="canonical"[^>]*>/, `<link rel="canonical" href="${url}">`],
 	]
+	if (route.noindex) {
+		pairs.push([
+			/<meta name="robots"[^>]*>/,
+			'<meta name="robots" content="noindex, nofollow">',
+		])
+	}
 	return pairs.reduce((acc, [pattern, replacement]) => swap(acc, pattern, replacement), html)
 }
 
 function buildSitemap(lastmod) {
-	const entries = ROUTES.map(
+	const entries = ROUTES.filter(route => !route.noindex).map(
 		route =>
 			`\t<url>\n\t\t<loc>${SITE}${route.dir ? `/${route.dir}/` : '/'}</loc>\n\t\t<lastmod>${lastmod}</lastmod>\n\t</url>`
 	).join('\n')

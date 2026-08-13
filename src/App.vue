@@ -2,7 +2,7 @@
 	<div class="app-root">
 		<!-- Teleported outside #app so `page-scrollable` toggles can't re-rasterise the fixed starfield -->
 		<Teleport to="body">
-			<SpaceBackground />
+			<SpaceBackground v-if="showChrome" />
 		</Teleport>
 		<!-- no persistent chrome; NavToggle summons the navbar -->
 		<!-- explicit :duration — the transition lives on a ::before, which Vue can't auto-detect -->
@@ -17,7 +17,7 @@
 				</keep-alive>
 			</router-view>
 		</main>
-		<NavToggle :open="navOpen" @toggle="navOpen = !navOpen" />
+		<NavToggle v-if="showChrome" :open="navOpen" @toggle="navOpen = !navOpen" />
 	</div>
 </template>
 
@@ -30,12 +30,17 @@
 
 	const SCROLLABLE_PATHS = ['/preview', '/sport', '/about', '/contact']
 
+	// Unlisted personal pages: no site chrome at all — no drifting starfield behind
+	// the text, no MENU toggle over it. Reached by URL, so nothing to navigate from.
+	const BARE_PATHS = ['/sport']
+
 	// Component names (see defineOptions) kept mounted across navigation.
 	const KEPT_ALIVE_VIEWS = ['HeroIntro']
 
 	const route = useRoute()
 	const normalizedPath = () => route.path.replace(/\/$/, '') || '/'
 	const isPageScrollable = computed(() => SCROLLABLE_PATHS.includes(normalizedPath()))
+	const showChrome = computed(() => !BARE_PATHS.includes(normalizedPath()))
 
 	// modal overlay; links emit `close` so it never lands over the next page
 	const navOpen = ref(false)
