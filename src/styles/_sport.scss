@@ -1,10 +1,12 @@
 @use 'variables';
-@use 'mixins';
 
+// Unlisted personal page. Keeps the card / chip / badge system and the muscle
+// colour coding, but deliberately drops the pixel font for a plain system stack:
+// this is read mid-set, so legibility beats the site theme here.
 .sport-page {
-	--muted: rgba(255, 255, 255, 0.62);
-	--faint: rgba(255, 255, 255, 0.72);
-	--chip-foreground: rgba(255, 255, 255, 0.86);
+	--muted: rgba(255, 255, 255, 0.68);
+	--faint: rgba(255, 255, 255, 0.78);
+	--chip-foreground: rgba(255, 255, 255, 0.9);
 	--bar-dimmed: rgba(255, 255, 255, 0.2);
 	--chest: #3b9eff;
 	--back: #ff7c38;
@@ -17,20 +19,17 @@
 	--forearms: #ffb347;
 	--hard: #ff5050;
 	--drop-tint: #ebff6b;
-	--font: #{variables.$font-pixel};
+	--font: #{variables.$font-readable};
 	--surface-bg: rgba(255, 255, 255, 0.04);
 	--surface-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
-	--focus-ring: 2px solid rgba(255, 255, 255, 0.8);
 
 	max-width: 84rem;
 	margin: 0 auto;
-	padding: 2.5rem 1.5rem 5.5rem;
+	padding: 2.5rem 1.5rem 4rem;
 
 	font-family: var(--font);
-	font-size: clamp(0.44rem, 1.1vw, 0.52rem);
-	line-height: 1.65;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
+	font-size: clamp(0.9rem, 1.05vw, 1rem);
+	line-height: 1.5;
 	text-align: left;
 
 	[data-muscle='chest'] {
@@ -69,70 +68,9 @@
 		padding: 0;
 	}
 
-	:is(.session-head, .exercise, .show-all-btn):focus-visible {
-		outline: var(--focus-ring);
-		outline-offset: 2px;
-	}
-
-	// PageTitle supplies the flanked grid and the shared heading type; sport only
-	// sizes and cants the dumbbell sprites either side of it.
 	.page-title {
 		margin-bottom: 1.75rem;
-	}
-
-	.page-heading__slot {
-		width: clamp(5.75rem, 16vw, 9.5rem);
-		height: clamp(4rem, 12vw, 6.75rem);
-	}
-
-	.page-heading__slot--left {
-		transform: translateX(clamp(-0.35rem, -1.2vw, -0.15rem));
-	}
-
-	.page-heading__slot--left .page-title__icon {
-		transform: rotate(-8deg) rotateY(14deg);
-		transform-origin: center;
-	}
-
-	.page-heading__slot--right {
-		transform: translateX(clamp(0.15rem, 1.2vw, 0.35rem));
-	}
-
-	.page-heading__slot--right .page-title__icon {
-		transform: rotate(16deg) rotateY(-28deg);
-		transform-origin: center;
-	}
-
-	.page-title__icon,
-	.page-footer__icon {
-		display: block;
-		width: auto;
-		object-fit: contain;
-		object-position: center;
-		image-rendering: pixelated;
-	}
-
-	.page-title__icon {
-		max-width: 100%;
-		max-height: 100%;
-		height: auto;
-	}
-
-	.page-title .page-heading__text {
-		grid-column: 2;
-		justify-self: center;
 		text-align: center;
-	}
-
-	.page-footer {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		margin-top: clamp(2rem, 5vw, 3.25rem);
-	}
-
-	.page-footer__icon {
-		height: clamp(5rem, 14vw, 8.5rem);
 	}
 
 	hr {
@@ -145,13 +83,14 @@
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 20px;
+		align-items: start;
 	}
 
 	.legend {
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: center;
-		gap: 10px 14px;
+		gap: 10px 16px;
 		margin-bottom: 2rem;
 		padding: 1rem 0.75rem;
 		border: variables.$void-border;
@@ -159,18 +98,18 @@
 		background: var(--surface-bg);
 		box-shadow: var(--surface-shadow);
 		color: var(--faint);
-		font-size: clamp(0.44rem, 1.1vw, 0.54rem);
+		font-size: clamp(0.85rem, 1vw, 0.95rem);
 	}
 
 	.legend span {
 		display: flex;
 		align-items: center;
-		gap: 6px;
+		gap: 7px;
 	}
 
 	.dot {
-		width: 8px;
-		height: 8px;
+		width: 9px;
+		height: 9px;
 		flex-shrink: 0;
 		background: var(--muscle);
 	}
@@ -180,22 +119,17 @@
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		gap: 0;
+		gap: 20px;
 		overflow: hidden;
 		padding: 22px 20px;
 		border: variables.$void-border;
+		border-color: rgba(255, 255, 255, 0.22);
 		border-radius: variables.$void-radius;
-		background: var(--surface-bg);
+		background: rgba(255, 255, 255, 0.05);
 		box-shadow: var(--surface-shadow);
 	}
 
-	.card.is-open {
-		gap: 20px;
-		border-color: rgba(255, 255, 255, 0.22);
-		background: rgba(255, 255, 255, 0.05);
-	}
-
-	.card.is-open::before {
+	.card::before {
 		content: '';
 		position: absolute;
 		inset: 0 0 auto;
@@ -220,7 +154,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
-		cursor: pointer;
 	}
 
 	.session-head > :first-child {
@@ -228,15 +161,17 @@
 	}
 
 	.day-name {
-		font-size: clamp(0.78rem, 2vw, 1rem);
-		line-height: 1.5;
+		font-size: clamp(1.2rem, 2vw, 1.45rem);
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		line-height: 1.3;
 	}
 
 	.session-kind {
-		margin-top: 4px;
+		margin-top: 2px;
 		color: var(--accent);
-		font-size: clamp(0.58rem, 1.4vw, 0.72rem);
-		letter-spacing: 0.06em;
+		font-size: clamp(0.95rem, 1.35vw, 1.08rem);
+		font-weight: 500;
 	}
 
 	.chips {
@@ -252,14 +187,13 @@
 		align-items: center;
 		justify-content: center;
 		min-height: 2.1em;
-		padding: 6px 4px;
+		padding: 5px 4px;
 		border: 1px solid var(--muscle);
 		background: rgba(0, 0, 0, 0.5);
 		color: var(--muscle);
 		text-align: center;
-		font-size: clamp(0.44rem, 1.15vw, 0.56rem);
-		letter-spacing: 0.02em;
-		line-height: 1.4;
+		font-size: clamp(0.78rem, 1.05vw, 0.88rem);
+		line-height: 1.35;
 	}
 
 	.exercise-list {
@@ -272,17 +206,11 @@
 		display: flex;
 		flex-direction: column;
 		gap: 6px;
-		cursor: pointer;
 		padding: 14px;
 		border: variables.$void-border;
+		border-color: rgba(255, 255, 255, 0.22);
 		border-radius: variables.$void-radius;
 		border-left: 4px solid var(--muscle);
-		background: rgba(255, 255, 255, 0.03);
-	}
-
-	.exercise:hover,
-	.exercise.is-open {
-		border-color: rgba(255, 255, 255, 0.22);
 		background: rgba(255, 255, 255, 0.05);
 	}
 
@@ -297,25 +225,22 @@
 		display: flex;
 		align-items: center;
 		min-width: 0;
-		min-height: calc(2 * 1.7em);
-		font-size: clamp(0.5rem, 1.25vw, 0.6rem);
-		line-height: 1.7;
+		min-height: calc(2 * 1.5em);
+		font-size: clamp(1rem, 1.25vw, 1.12rem);
+		font-weight: 600;
+		line-height: 1.4;
 		text-wrap: balance;
 	}
 
 	.meta-list {
-		display: none;
-	}
-
-	.exercise.is-open .meta-list {
 		display: grid;
 		grid-template-columns: max-content 1fr;
 		column-gap: 12px;
 		row-gap: 6px;
-		margin-top: 8px;
+		margin-top: 4px;
 		color: var(--muted);
-		font-size: clamp(0.48rem, 1.15vw, 0.58rem);
-		line-height: 1.85;
+		font-size: clamp(0.88rem, 1.1vw, 0.98rem);
+		line-height: 1.55;
 	}
 
 	.meta-term {
@@ -347,14 +272,14 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		min-height: 1.65em;
-		padding: 4px 7px;
+		min-height: 1.75em;
+		padding: 4px 8px;
 		border: 1px solid currentColor;
 		white-space: nowrap;
 		text-align: center;
-		font-size: clamp(0.36rem, 0.9vw, 0.44rem);
-		letter-spacing: 0.02em;
-		line-height: 1.45;
+		font-size: clamp(0.72rem, 0.9vw, 0.8rem);
+		font-weight: 500;
+		line-height: 1.4;
 		text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.65);
 	}
 
@@ -363,7 +288,7 @@
 	.badge.hard,
 	.badge.rest,
 	.badge.warmup-time {
-		min-width: 5rem;
+		min-width: 4.5rem;
 	}
 
 	.badge.easy,
@@ -429,8 +354,8 @@
 	.badge.legs {
 		order: 1;
 		padding: 5px 8px;
-		font-size: clamp(0.44rem, 1.1vw, 0.54rem);
-		line-height: 1.5;
+		font-size: clamp(0.76rem, 0.95vw, 0.85rem);
+		font-weight: 600;
 		background: rgba(0, 0, 0, 0.62);
 		color: #ffffff;
 		border-color: var(--badge-color);
@@ -474,16 +399,17 @@
 		background: rgba(255, 79, 139, 0.4);
 		color: #ffffff;
 		border-color: #ff8fbb;
-		font-size: clamp(0.42rem, 1.05vw, 0.5rem);
-		line-height: 1.5;
+		font-size: clamp(0.76rem, 0.95vw, 0.85rem);
+		font-weight: 600;
 	}
 
 	.superset {
 		overflow: hidden;
 		border: variables.$void-border;
+		border-color: rgba(255, 255, 255, 0.22);
 		border-radius: variables.$void-radius;
 		border-left: 4px solid var(--muscle);
-		background: rgba(255, 255, 255, 0.03);
+		background: rgba(255, 255, 255, 0.05);
 	}
 
 	.superset-head {
@@ -493,8 +419,10 @@
 		padding: 8px 10px;
 		background: rgba(0, 0, 0, 0.35);
 		color: var(--muscle);
-		font-size: clamp(0.34rem, 0.85vw, 0.4rem);
-		letter-spacing: 0.06em;
+		font-size: clamp(0.72rem, 0.88vw, 0.8rem);
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
 		border-bottom: variables.$void-border;
 	}
 
@@ -502,11 +430,6 @@
 		border: none;
 		border-left: none;
 		background: transparent;
-	}
-
-	.superset .exercise:hover,
-	.superset .exercise.is-open {
-		background: rgba(255, 255, 255, 0.04);
 	}
 
 	.superset .exercise + .exercise {
@@ -517,28 +440,10 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		min-width: 1.25em;
+		min-width: 1.35em;
 		margin-right: 6px;
 		color: var(--muscle);
-		font-size: clamp(0.3rem, 0.75vw, 0.36rem);
-	}
-
-	// Floating action button — same void-button language as the rest of the site.
-	.show-all-btn {
-		position: fixed;
-		right: 18px;
-		bottom: 18px;
-		z-index: 20;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 2.75em;
-		padding: 12px 16px;
-		font-family: var(--font);
-		font-size: clamp(0.42rem, 1.05vw, 0.52rem);
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		@include mixins.void-button($lift: -2px);
+		font-size: clamp(0.8rem, 0.95vw, 0.88rem);
 	}
 }
 
@@ -551,8 +456,9 @@
 
 @media (max-width: #{variables.$breakpoint-mobile}) {
 	.sport-page {
-		padding: variables.$chrome-clearance-mobile 0.85rem 4.5rem;
-		font-size: clamp(0.5rem, 1.9vw, 0.56rem);
+		// no MENU toggle on this route, so no chrome clearance to reserve
+		padding: 1.5rem 0.85rem 3rem;
+		font-size: clamp(0.95rem, 3.4vw, 1.05rem);
 	}
 
 	.sport-page .grid {
@@ -564,26 +470,11 @@
 	}
 
 	.sport-page .legend {
-		font-size: clamp(0.5rem, 1.9vw, 0.56rem);
+		font-size: clamp(0.9rem, 3.2vw, 1rem);
 	}
 }
 
 @media (max-width: 480px) {
-	.sport-page .page-title {
-		column-gap: 0.4rem;
-	}
-
-	// the shared heading holds the centre column, so the sprites take what is left
-	.sport-page .page-heading__slot--left,
-	.sport-page .page-heading__slot--right {
-		width: clamp(3rem, 19vw, 5rem);
-		height: clamp(2.25rem, 13vw, 3.75rem);
-	}
-
-	.sport-page .page-footer__icon {
-		height: clamp(4.25rem, 24vw, 6.5rem);
-	}
-
 	/* Two chips per row reads better than three squeezed columns on phones. */
 	.sport-page .chips {
 		grid-template-columns: repeat(2, minmax(0, 1fr));

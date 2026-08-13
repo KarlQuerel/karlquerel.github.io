@@ -16,6 +16,17 @@ $azure: #007fff;
 $font-pixel: 'Press Start 2P', ui-monospace, monospace;
 // VT323 — DEC-VT320-style console font for the terminal page.
 $font-terminal: 'VT323', ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', monospace;
+// Plain system stack — deliberately off-theme, and only for the unlisted /sport
+// page, which is read mid-set and trades the pixel look for legibility. Costs no
+// download. Not a theme font: don't reach for it on public pages.
+$font-readable:
+	system-ui,
+	-apple-system,
+	'Segoe UI',
+	Roboto,
+	'Helvetica Neue',
+	Arial,
+	sans-serif;
 
 // Terminal phosphor default. The alternate tints the in-terminal `theme`
 // command switches to (amber/blue/paper) live in constants/terminal.js.

@@ -1,14 +1,5 @@
 <template>
-	<div
-		class="exercise"
-		:class="{ 'is-open': isOpen }"
-		:data-muscle="exercise.muscle"
-		role="button"
-		tabindex="0"
-		:aria-expanded="String(isOpen)"
-		@click="$emit('toggle')"
-		@keydown="$emit('keydown', $event)"
-	>
+	<div class="exercise" :data-muscle="exercise.muscle">
 		<div class="exercise-row">
 			<div class="exercise-name">
 				<span v-if="exercise.step" class="superset-step">{{ exercise.step }}</span>
@@ -43,13 +34,7 @@
 			type: Object,
 			required: true,
 		},
-		isOpen: {
-			type: Boolean,
-			default: false,
-		},
 	})
-
-	defineEmits(['toggle', 'keydown'])
 
 	const hasWarmupBadge = computed(() => props.exercise.badges.some(b => b.class === 'warm-up'))
 </script>
