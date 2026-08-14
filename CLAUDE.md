@@ -50,6 +50,7 @@ npm run clean        # lint:fix + format (run before every commit)
 npm run format       # prettier + eslint fix + checks
 npm run lint         # check only, no fix
 npm run lint:check   # strict check — fails on any warning (the real gate)
+npm test             # Playwright smoke test — every route renders cleanly (CI runs it)
 npm run deploy       # manual fallback — CI deploys every push to master
 ```
 
@@ -124,7 +125,7 @@ When touching existing code, always:
 
 ## What NOT to do
 
-- Do not add a test framework unless explicitly asked — the test script is a placeholder.
+- Do not add another test framework — `npm test` is a Playwright smoke test (`tests/smoke.spec.js`, one render check per route). Extend it when adding a route; keep it passing.
 - Do not switch from Composition API to Options API.
 - Do not install new npm dependencies without asking — keep the bundle lean.
 - Do not modify `vite.config.js`, the route table in `src/main.js`, or Firebase config without good reason — these are load-bearing.

@@ -1,14 +1,8 @@
-### Access
+# karlquerel.com
 
-You can visit my website by clicking [**here**](https://karlquerel.com/).
+Source of my personal portfolio, live at [**karlquerel.com**](https://karlquerel.com/).
 
-### Features
-
-- **Built with**: 
-  - [Vue.js](https://vuejs.org/)
-  - [Vite](https://vite.dev/)
-  - Custom JavaScript animations
-- **Deployed with**: [GitHub Pages](https://pages.github.com/)
+Built with [Vue 3](https://vuejs.org/) and [Vite](https://vite.dev/), styled by a custom pixel-art SCSS design system, and auto-deployed to GitHub Pages on every push to `master`.
 
 ### License
 
