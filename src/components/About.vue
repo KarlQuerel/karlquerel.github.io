@@ -123,35 +123,7 @@
 	// pinned chrome, not a breadcrumb: it stays reachable once the header scrolls off, since
 	// the star menu only reaches global nav and never the hub
 	.about-back {
-		position: fixed;
-		bottom: 1rem;
-		right: 1rem;
-		// under the star toggle (50) and the nav overlay
-		z-index: 20;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.6rem;
-		font-family: $font-pixel;
-		font-size: clamp(0.7rem, 2.2vw, 1rem);
-		letter-spacing: 1px;
-		text-transform: uppercase;
-		padding: 0.5rem 0.9rem;
-		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
-		@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.55));
-
-		// borderless chip: drop the void frame and its hover/active inset ring, keep the glow
-		& {
-			border: 0;
-		}
-
-		&:hover,
-		&:focus-visible {
-			box-shadow: 0 0 28px rgba($yellow, 0.18);
-		}
-
-		&:active {
-			box-shadow: 0 0 16px rgba($yellow, 0.12);
-		}
+		@include pinned-chip;
 	}
 
 	// twin "rewind" triangles, em-sized so they scale with the label

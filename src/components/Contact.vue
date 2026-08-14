@@ -20,15 +20,16 @@
 			</li>
 		</ul>
 
-		<div class="contact-report">
-			<PixelPortal
-				compact
-				:label="BUG_REPORT.label"
-				:image="BUG_REPORT.icon"
-				:href="BUG_REPORT.issueUrl"
-				blank
-			/>
-		</div>
+		<a
+			class="contact-report"
+			:href="BUG_REPORT.issueUrl"
+			:aria-label="BUG_REPORT.ariaLabel"
+			target="_blank"
+			rel="noopener noreferrer"
+		>
+			<img class="contact-report__icon" :src="BUG_REPORT.icon" alt="" />
+			{{ BUG_REPORT.label }}
+		</a>
 	</div>
 </template>
 
@@ -45,7 +46,8 @@
 	$contact-stagger: 90ms;
 
 	.contact {
-		@include page-shell($pad-bottom: 4rem);
+		// bottom clears the pinned report chip
+		@include page-shell($pad-bottom: 5rem);
 	}
 
 	.contact-head {
@@ -57,15 +59,21 @@
 		list-style: none;
 		@include portal-row;
 
-		// with the report row below, the pair centres under the pinned heading
+		// centre in the space left under the pinned heading
 		& {
-			margin-top: auto;
+			margin-block: auto;
 		}
 	}
 
-	// Set apart from the channel row: a secondary action, not a fourth way to reach me.
+	// A secondary action, not a fourth way to reach me — pinned as chrome (like
+	// About's Back) so the mobile portal column can't push it below the fold.
 	.contact-report {
-		margin: 2.5rem 0 auto;
+		@include pinned-chip;
+	}
+
+	.contact-report__icon {
+		width: 1.6em;
+		height: auto;
 	}
 
 	.contact-item {

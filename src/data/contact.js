@@ -33,11 +33,13 @@ export const CONTACT_CHANNELS = [
 	},
 ]
 
-// The bug-report button at the foot of the page: opens a prefilled GitHub issue.
+// The bug-report chip pinned bottom-right: opens a prefilled GitHub issue.
 const ISSUE_BODY = ['### What happened?', '', '### Where?', '', '### Browser', ''].join('\n')
 
 export const BUG_REPORT = {
-	label: 'REPORT\nA BUG',
+	// terse chip label; the icon carries the rest, the aria label keeps it explicit
+	label: 'BUG?',
+	ariaLabel: 'Report a bug',
 	icon: '/assets/contact/bug.png',
 	issueUrl: `https://github.com/KarlQuerel/karlquerel.github.io/issues/new?labels=bug&title=${encodeURIComponent(
 		'Bug report'

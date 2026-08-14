@@ -30,6 +30,41 @@
 	}
 }
 
+// Pinned bottom-right action chip (About's Back, Contact's bug report): a
+// borderless void-button that stays reachable once the page scrolls, sitting
+// under the star toggle (50) and the nav overlay.
+@mixin pinned-chip {
+	position: fixed;
+	bottom: 1rem;
+	right: 1rem;
+	z-index: 20;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.6rem;
+	font-family: variables.$font-pixel;
+	font-size: clamp(0.7rem, 2.2vw, 1rem);
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	text-decoration: none;
+	padding: 0.5rem 0.9rem;
+	text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+	@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.55));
+
+	// borderless chip: drop the void frame and its hover/active inset ring, keep the glow
+	& {
+		border: 0;
+	}
+
+	&:hover,
+	&:focus-visible {
+		box-shadow: 0 0 28px rgba(variables.$yellow, 0.18);
+	}
+
+	&:active {
+		box-shadow: 0 0 16px rgba(variables.$yellow, 0.12);
+	}
+}
+
 // Dark radial wash that lifts text off the starfield without drawing a panel edge.
 // Move $at to wherever the text actually sits so the densest part sits under it.
 @mixin void-scrim($size: 85% 130%, $at: 50% 50%) {
