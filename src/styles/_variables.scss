@@ -104,6 +104,11 @@ $void-border: 1px solid $void-border-color;
 // full pixel-square.
 $void-radius: 3px;
 
+// Nav overlay iris disc: black centre with a faint grey corona around the star
+// origin — an eclipse silhouette against the starfield. Fully opaque — the
+// page must never read through (see _site-chrome.scss).
+$void-overlay-iris: radial-gradient(circle 90vmax at center, #000000 0%, #262626 18%, #000000 60%);
+
 // Interactive text convention: every button, link, and menu item rests at this
 // near-white and shifts to $yellow on hover / focus, so all hovers read as one
 // system. Change these two to restyle every hover at once.

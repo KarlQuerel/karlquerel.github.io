@@ -16,7 +16,7 @@
 	// the dim lives on ::before so the reveal is a pure composited transform
 }
 
-// disc scales on the compositor so it survives main-thread stalls (the old clip-path iris froze ~0.4s on home); solid black so the page never reads through
+// disc scales on the compositor so it survives main-thread stalls (the old clip-path iris froze ~0.4s on home); opaque grey-vignette fill so the page never reads through
 .site-nav-overlay::before {
 	content: '';
 	position: fixed;
@@ -27,7 +27,7 @@
 	height: 300vmax;
 	margin: -150vmax 0 0 -150vmax;
 	border-radius: 50%;
-	background: variables.$black;
+	background: variables.$void-overlay-iris;
 	transform: scale(1);
 	transform-origin: center center;
 	// Behind the menu links (z 3), above the page the overlay covers.
