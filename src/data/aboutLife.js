@@ -11,24 +11,27 @@ export const DOG_LINES = [
 	'Placeholder placeholder placeholder placeholder placeholder.',
 ]
 
-// Transparent-cutout webp photos (public/assets/about/), shown on the dark panel.
-// Three per dog, first is the resting frame; clicking the deck cycles through them.
-// `placeholder-slide-*` are temporary stand-ins to be replaced with real photos.
+// Photo decks (public/assets/about/) — 800×800 webp squares cropped around each dog.
+// First photo is the resting frame; clicking the deck cycles through them.
 export const DOGS = [
 	{
 		name: 'Lesko',
 		photos: [
-			'/assets/about/lesko.webp',
-			'/assets/about/placeholder-slide-1.webp',
-			'/assets/about/placeholder-slide-2.webp',
+			'/assets/about/L1.webp',
+			'/assets/about/L2.webp',
+			'/assets/about/L3.webp',
+			'/assets/about/L4.webp',
+			'/assets/about/L5.webp',
 		],
 	},
 	{
 		name: 'Yako',
 		photos: [
-			'/assets/about/yako.webp',
-			'/assets/about/placeholder-slide-3.webp',
-			'/assets/about/placeholder-slide-2.webp',
+			'/assets/about/Y1.webp',
+			'/assets/about/Y2.webp',
+			'/assets/about/Y3.webp',
+			'/assets/about/Y4.webp',
+			'/assets/about/Y5.webp',
 		],
 	},
 ]

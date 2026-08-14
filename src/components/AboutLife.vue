@@ -220,7 +220,7 @@
 		@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.45));
 	}
 
-	// cutout photos (transparent bg): contain shows the whole dog on the dark frame;
+	// square photo crops fill the frame edge to edge (inset by the padding);
 	// only the active frame shows, swapped with a stepped crossfade on each click
 	.dog__photo {
 		position: absolute;
@@ -228,7 +228,7 @@
 		width: 100%;
 		height: 100%;
 		box-sizing: border-box;
-		object-fit: contain;
+		object-fit: cover;
 		padding: 0.6rem;
 		opacity: 0;
 		transition: opacity 0.35s steps(5, end);
