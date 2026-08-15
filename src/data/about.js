@@ -13,11 +13,13 @@ export const ABOUT_HEADINGS = {
 // flags the present role (gold); `emblem` is the sprite on the rail; `chapter` adds a
 // divider above the card; `detail` is an optional one-line caption on it, kept to the
 // milestones that carry the story — bare rows read as the run-up between them.
-// Jobs: career-defining roles only.
+// Jobs: career-defining roles only. `from`/`to` are the rail's tick labels: a `to` that
+// matches the next entry's `from` is drawn once, so keep contiguous periods exact.
 export const CAREER_TIMELINE = [
 	{
 		type: 'study',
-		year: '2003 – 2010',
+		from: '2003',
+		to: '2010',
 		title: 'French Baccalauréat in Economics',
 		place: 'Grand Lycée Franco-Libanais',
 		location: 'Beirut, Lebanon',
@@ -26,7 +28,8 @@ export const CAREER_TIMELINE = [
 	},
 	{
 		type: 'study',
-		year: '2010 – 2013',
+		from: '2010',
+		to: '2013',
 		title: 'Bachelor of Business Administration',
 		place: 'University of Geneva (HEC)',
 		location: 'Geneva, Switzerland',
@@ -36,7 +39,8 @@ export const CAREER_TIMELINE = [
 	},
 	{
 		type: 'study',
-		year: '2013 – 2015',
+		from: '2013',
+		to: '2015',
 		title: 'Bachelor in International Business',
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
@@ -45,7 +49,8 @@ export const CAREER_TIMELINE = [
 	},
 	{
 		type: 'study',
-		year: '2015 – 2017',
+		from: '2015',
+		to: '2017',
 		title: 'MSc Finance',
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
@@ -55,7 +60,8 @@ export const CAREER_TIMELINE = [
 	},
 	{
 		type: 'job',
-		year: '2017 – 2018',
+		from: '2017',
+		to: '2018',
 		title: 'Sales Associate',
 		place: 'Cedar Europe',
 		location: 'Madrid, Spain',
@@ -65,7 +71,8 @@ export const CAREER_TIMELINE = [
 	},
 	{
 		type: 'job',
-		year: '2018 – 2022',
+		from: '2018',
+		to: '2022',
 		title: 'Commodity Broker',
 		place: 'Cedar Europe',
 		location: 'Paris, France',
@@ -75,7 +82,8 @@ export const CAREER_TIMELINE = [
 	},
 	{
 		type: 'study',
-		year: '2022 – 2024',
+		from: '2022',
+		to: '2024',
 		title: 'Software Engineering',
 		place: '42 Paris',
 		location: 'Paris, France',
@@ -86,7 +94,8 @@ export const CAREER_TIMELINE = [
 	},
 	{
 		type: 'job',
-		year: '2025 – Present',
+		from: '2025',
+		to: 'Now',
 		title: 'Software Engineer',
 		place: 'Zetra',
 		location: 'Paris, France',

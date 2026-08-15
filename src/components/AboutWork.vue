@@ -1,8 +1,8 @@
 <template>
 	<ol class="ztl">
 		<li
-			v-for="item in CAREER_TIMELINE"
-			:key="item.year + item.title"
+			v-for="item in ROWS"
+			:key="item.from + item.title"
 			v-reveal
 			class="ztl-item"
 			:class="{ 'is-current': item.current }"
@@ -11,12 +11,13 @@
 			<div class="ztl-row">
 				<!-- emblem = the timeline node -->
 				<div class="ztl-art">
+					<span class="ztl-tick ztl-tick--start">{{ item.from }}</span>
 					<span class="ztl-badge" :class="`ztl-badge--${item.type}`">
 						<PixelEmblem :emblem="item.emblem" class="ztl-emblem" />
 					</span>
+					<span v-if="item.end" class="ztl-tick ztl-tick--end">{{ item.end }}</span>
 				</div>
 				<div class="ztl-card">
-					<span class="ztl-year">{{ item.year }}</span>
 					<span class="ztl-kind" :class="`ztl-kind--${item.type}`">{{
 						CAREER_TYPE_LABELS[item.type]
 					}}</span>
@@ -40,6 +41,14 @@
 	import { reveal as vReveal } from '@/directives/reveal'
 	import PixelFlag from '@/components/PixelFlag.vue'
 	import PixelEmblem from '@/components/PixelEmblem.vue'
+
+	// A closing year is dropped when the next entry opens on it, so a shared boundary is
+	// drawn once — the surviving tick is the next row's start. What's left is a strictly
+	// increasing axis, and the one real gap (2024 -> 2025) still shows both ends.
+	const ROWS = CAREER_TIMELINE.map((item, i) => ({
+		...item,
+		end: CAREER_TIMELINE[i + 1]?.from === item.to ? null : item.to,
+	}))
 </script>
 
 <style scoped lang="scss">
@@ -50,6 +59,7 @@
 	$rail-w: 3px;
 	$badge: clamp(2.6rem, 6.5vw, 3.4rem);
 	$emblem-ghost: 0.88;
+	$tick-gap: 0.25rem;
 	$chevron: 2ch; // the '> ' prefix, exact in the monospace terminal face
 
 	.ztl {
@@ -126,12 +136,40 @@
 		opacity: 0;
 	}
 
-	// badge rides the rail, centred against the text block
+	// badge rides the rail, centred against the text block. Years hang off it rather than
+	// stacking with it, so the badge holds its place whether or not this row closes a period.
 	.ztl-art {
 		position: absolute;
 		left: var(--rail-center);
 		top: 50%;
 		transform: translate(-50%, -50%);
+	}
+
+	// opaque so each tick punches a gap in the dashed spine behind it
+	.ztl-tick {
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+		// the badge is the containing block, so a multi-word tick would wrap inside it
+		white-space: nowrap;
+		font-family: $font-pixel;
+		font-size: clamp(0.42rem, 1.2vw, 0.55rem);
+		line-height: 1;
+		letter-spacing: 0.08em;
+		padding: 0.2rem 0.15rem;
+		background: rgba(0, 0, 0, 0.85);
+		color: rgba($yellow, 0.72);
+		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+	}
+
+	.ztl-tick--start {
+		bottom: 100%;
+		margin-bottom: $tick-gap;
+	}
+
+	.ztl-tick--end {
+		top: 100%;
+		margin-top: $tick-gap;
 	}
 
 	.ztl-badge {
@@ -176,15 +214,6 @@
 		align-items: flex-start;
 		gap: $row-gap;
 		text-align: left;
-	}
-
-	.ztl-year {
-		font-family: $font-pixel;
-		font-size: clamp(0.5rem, 1.4vw, 0.65rem);
-		line-height: 1.4;
-		letter-spacing: 0.12em;
-		color: rgba($yellow, 0.72);
-		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 	}
 
 	.ztl-kind {
@@ -283,7 +312,7 @@
 		color: $yellow;
 	}
 
-	.is-current .ztl-year {
+	.is-current .ztl-tick {
 		color: $yellow;
 	}
 
