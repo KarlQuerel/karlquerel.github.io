@@ -1,12 +1,12 @@
 <template>
 	<div class="life">
 		<!-- no accent dot — reads as the header above the themed cards -->
-		<section v-reveal class="life-card reveal-block is-left">
+		<section v-reveal class="life-card reveal-block">
 			<h2 class="life-card__title">ABOUT ME</h2>
 			<p v-for="(line, i) in ABOUT_ME" :key="i" class="life-card__line">{{ line }}</p>
 		</section>
 
-		<section v-reveal class="life-card reveal-block is-right" data-section="dogs">
+		<section v-reveal class="life-card reveal-block" data-section="dogs">
 			<h2 class="life-card__title"><span class="life-card__dot" aria-hidden="true" />DOGS</h2>
 			<p v-for="(line, i) in DOG_LINES" :key="i" class="life-card__line">{{ line }}</p>
 			<div class="dogs" @mouseenter="stopTimer" @mouseleave="startTimer">
@@ -31,17 +31,18 @@
 							decoding="async"
 						/>
 					</button>
-					<figcaption class="dog__name">{{ dog.name }}</figcaption>
+					<figcaption class="dog__name">
+						{{ dog.name }}<span class="dog__years">{{ dog.years }}</span>
+					</figcaption>
 				</figure>
 			</div>
 		</section>
 
 		<section
-			v-for="(section, i) in LIFE_SECTIONS"
+			v-for="section in LIFE_SECTIONS"
 			:key="section.id"
 			v-reveal
 			class="life-card reveal-block"
-			:class="i % 2 === 0 ? 'is-left' : 'is-right'"
 			:data-section="section.id"
 		>
 			<h2 class="life-card__title">
@@ -100,7 +101,7 @@
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
-	// zigzag rhythm borrowed from the work timeline (AboutWork.vue)
+	// how far a card travels on its slide-in
 	$slide: 28px;
 	// offset between the photo-deck cards peeking out behind each dog's frame
 	$stack-step: 6px;
@@ -108,6 +109,7 @@
 	.life {
 		display: flex;
 		flex-direction: column;
+		align-items: center;
 		gap: 2rem;
 		width: min(52rem, 94vw);
 		margin: 0 auto;
@@ -119,21 +121,6 @@
 		padding: 1rem 1.1rem 1.2rem;
 		// borderless: just the dark wash, no void frame (matches the work timeline)
 		background: rgba(0, 0, 0, 0.7);
-	}
-
-	// cards alternate sides down the column; right cards mirror their text
-	.is-left {
-		align-self: flex-start;
-	}
-
-	.is-right {
-		align-self: flex-end;
-		text-align: right;
-	}
-
-	// accent dot rides the outer edge on mirrored cards (like the work flag)
-	.is-right .life-card__title {
-		flex-direction: row-reverse;
 	}
 
 	.life-card__title {
@@ -163,8 +150,10 @@
 		// so a size up) carries the reading text
 		font-family: $font-terminal;
 		font-size: clamp(1.1rem, 2.2vw, 1.25rem);
-		line-height: 1.35;
+		line-height: 1.55;
 		letter-spacing: 0.02em;
+		// a `\n` in the copy breaks the line without opening a paragraph gap
+		white-space: pre-line;
 		// the global `p { text-align: center }` would otherwise centre it
 		text-align: inherit;
 		color: rgba(255, 255, 255, 0.88);
@@ -275,17 +264,21 @@
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 	}
 
-	// slide in from the card's own side, like the work timeline
+	// the years sit a step under the name — terminal font, caption warmth, so the
+	// closed range and the open one read as a pair without shouting
+	.dog__years {
+		display: block;
+		margin-top: 0.3rem;
+		font-family: $font-terminal;
+		font-size: clamp(0.9rem, 2vw, 1rem);
+		letter-spacing: 0.04em;
+		color: $text-caption;
+	}
+
+	// every card rises into place on the same beat
 	.reveal-block {
 		opacity: 0;
-	}
-
-	.is-left.reveal-block {
-		transform: translateX(-$slide);
-	}
-
-	.is-right.reveal-block {
-		transform: translateX($slide);
+		transform: translateY($slide);
 	}
 
 	.reveal-block.is-visible {
@@ -307,10 +300,7 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		// match is-left / is-right specificity or the side offset never clears
-		.reveal-block,
-		.is-left.reveal-block,
-		.is-right.reveal-block {
+		.reveal-block {
 			opacity: 1;
 			transform: none;
 			animation: none;
