@@ -32,6 +32,8 @@ export const DOGS = [
 			'/assets/about/Y3.webp',
 			'/assets/about/Y4.webp',
 			'/assets/about/Y5.webp',
+			'/assets/about/Y6.webp',
+			'/assets/about/Y7.webp',
 		],
 	},
 ]

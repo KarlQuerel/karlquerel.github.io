@@ -9,15 +9,15 @@
 		<section v-reveal class="life-card reveal-block is-right" data-section="dogs">
 			<h2 class="life-card__title"><span class="life-card__dot" aria-hidden="true" />DOGS</h2>
 			<p v-for="(line, i) in DOG_LINES" :key="i" class="life-card__line">{{ line }}</p>
-			<div class="dogs">
+			<div class="dogs" @mouseenter="stopTimer" @mouseleave="startTimer">
 				<!-- photo deck: offset cards peek out behind the frame to hint there's more;
-				     click / tap shuffles to the next photo (works on touch, unlike hover) -->
+				     photos auto-cycle (paused while hovered), click / tap skips ahead -->
 				<figure v-for="dog in DOGS" :key="dog.name" class="dog">
 					<button
 						type="button"
 						class="dog__stack"
 						:aria-label="`Next photo of ${dog.name}`"
-						@click="advance(dog)"
+						@click="skip(dog)"
 					>
 						<img
 							v-for="(photo, i) in dog.photos"
@@ -53,12 +53,17 @@
 </template>
 
 <script setup>
-	import { ref } from 'vue'
+	import { onBeforeUnmount, onMounted, ref } from 'vue'
+	import { DOG_DECK_INTERVAL_MS } from '@/constants/aboutLife'
 	import { ABOUT_ME, DOG_LINES, DOGS, LIFE_SECTIONS } from '@/data/aboutLife'
 	import { reveal as vReveal } from '@/directives/reveal'
 
-	// One deck per dog: clicking the stack shows the next photo, looping.
+	// One deck per dog: photos auto-cycle on a shared beat, looping. Hovering the
+	// decks pauses the cycle; clicking skips ahead (and restarts the beat, so the
+	// chosen photo gets a full stay). Reduced motion keeps the decks click-only.
 	const activeIndexes = ref({})
+	let deckTimer = null
+	let autoCycles = false
 
 	const activeIndex = dog => activeIndexes.value[dog.name] ?? 0
 
@@ -68,6 +73,28 @@
 			[dog.name]: (activeIndex(dog) + 1) % dog.photos.length,
 		}
 	}
+
+	function startTimer() {
+		stopTimer()
+		if (!autoCycles) return
+		deckTimer = setInterval(() => DOGS.forEach(advance), DOG_DECK_INTERVAL_MS)
+	}
+
+	function stopTimer() {
+		clearInterval(deckTimer)
+	}
+
+	function skip(dog) {
+		advance(dog)
+		startTimer()
+	}
+
+	onMounted(() => {
+		autoCycles = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+		startTimer()
+	})
+
+	onBeforeUnmount(stopTimer)
 </script>
 
 <style scoped lang="scss">
