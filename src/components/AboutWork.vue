@@ -50,6 +50,7 @@
 	$rail-w: 3px;
 	$badge: clamp(2.6rem, 6.5vw, 3.4rem);
 	$emblem-ghost: 0.88;
+	$chevron: 2ch; // the '> ' prefix, exact in the monospace terminal face
 
 	.ztl {
 		// column + text gutter come from the shared About tokens, set on `.about`
@@ -246,8 +247,8 @@
 	// caption closing the card. The VT323 face keeps it subordinate to the pixel type
 	// above it, and the chevron echoes the terminal voice used across the site.
 	.ztl-detail {
-		// the About column caps this well before it bites on narrow screens
-		max-width: 64ch;
+		// 64ch of text plus the hanging chevron; the About column caps this well before it bites
+		max-width: calc(64ch + #{$chevron});
 		// the card's flex gap is tuned for pixel type; VT323 wants a touch more air
 		margin: 0.35rem 0 0;
 		font-family: $font-terminal;
@@ -255,10 +256,13 @@
 		line-height: 1.45;
 		// global `p` is centred (_layout.scss) — the card reads as a left-aligned stack
 		text-align: left;
-		// a `\n` in the caption forces a break; the rest still soft-wraps
-		white-space: pre-line;
-		// captions run to two lines; balance splits them evenly instead of leaving an orphan tail
-		text-wrap: balance;
+		// captions soft-wrap to the column; `pretty` only trims a last-line orphan, where
+		// `balance` would shorten every line to match and leave the caption floating short
+		text-wrap: pretty;
+		// hanging indent: wrapped lines sit under the text, not back under the chevron,
+		// the way a wrapped command hangs off a terminal prompt
+		padding-left: $chevron;
+		text-indent: -$chevron;
 		color: $text-caption;
 		text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
 	}

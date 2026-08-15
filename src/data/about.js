@@ -93,7 +93,7 @@ export const CAREER_TIMELINE = [
 		flag: 'france',
 		current: true,
 		emblem: 'charger',
-		detail: 'Building the software behind EV charging and renewable energy.\nLoving every second.',
+		detail: 'Building the software behind EV charging and renewable energy.',
 	},
 ]
 
