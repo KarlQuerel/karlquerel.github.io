@@ -350,6 +350,32 @@
 			width: min(13rem, 60%);
 			margin: 0 auto 1rem;
 		}
+
+		// Stacked, the art would split the opener from the paragraph it illustrates.
+		// Flex order moves it one slot down without touching the DOM order the
+		// desktop float depends on. Scoped by :has, so cards without art stay block
+		// — ordering an unscoped .dogs deck would jump it above the prose.
+		.life-card:has(.life-card__media) {
+			display: flex;
+			flex-direction: column;
+
+			.life-card__line {
+				order: 3;
+			}
+
+			// the opener stays put; the paragraph right after the art trades with it
+			.life-card__line:first-of-type {
+				order: 0;
+			}
+
+			.life-card__media + .life-card__line {
+				order: 1;
+			}
+
+			.life-card__media {
+				order: 2;
+			}
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
