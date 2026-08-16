@@ -44,7 +44,7 @@
 
 	// A closing year is dropped when the next entry opens on it, so a shared boundary is
 	// drawn once — the surviving tick is the next row's start. What's left is a strictly
-	// increasing axis, and the one real gap (2024 -> 2025) still shows both ends.
+	// increasing axis; only the open-ended current role still carries a closing tick.
 	const ROWS = CAREER_TIMELINE.map((item, i) => ({
 		...item,
 		end: CAREER_TIMELINE[i + 1]?.from === item.to ? null : item.to,
@@ -281,6 +281,7 @@
 		// the card's flex gap is tuned for pixel type; VT323 wants a touch more air
 		margin: 0.35rem 0 0;
 		font-family: $font-terminal;
+		// 20px at the cap keeps VT323's 0.4em advance on whole pixels
 		font-size: clamp(1.05rem, 2.4vw, 1.25rem);
 		line-height: 1.45;
 		// global `p` is centred (_layout.scss) — the card reads as a left-aligned stack

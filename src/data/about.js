@@ -83,7 +83,7 @@ export const CAREER_TIMELINE = [
 	{
 		type: 'study',
 		from: '2022',
-		to: '2024',
+		// no `to`: the opening tick carries this one on its own
 		title: 'Software Engineering',
 		place: '42 Paris',
 		location: 'Paris, France',
