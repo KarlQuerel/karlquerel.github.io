@@ -58,6 +58,9 @@ export const LIFE_SECTIONS = [
 	{
 		id: 'games',
 		title: 'VIDEO GAMES',
-		lines: ['To write.'],
+		lines: [
+			"I've loved video games for as long as I can remember.\nMy first real dive was Final Fantasy VII, where I was completely amazed by the visuals, music, and story, even if I was too young to fully grasp it all. Then came our first home PC, and with it Heroes of Might and Magic IV and Age of Mythology. That was the spark.\nYears later I got into World of Warcraft, amazing and addictive in equal measure. I played it for 13 years, ran a Twitch channel, and led teams of more than 10 players on Discord. Eventually I added up how much of my life it was eating, deleted my account, and stepped away entirely. Today I only dabble in short single-player masterpieces like This War of Mine, Outer Wilds, or Return of the Obra Dinn.",
+			'Coding has since replaced that screen obsession, and this time, the love is actually mutual.',
+		],
 	},
 ]
