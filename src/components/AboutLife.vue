@@ -186,13 +186,17 @@
 		margin-bottom: 0;
 	}
 
-	// section art floated into the prose, so the paragraphs after it wrap alongside
+	// section art floated into the prose, so the paragraphs after it wrap alongside.
+	// Framed like the dog photos: the art carries its own dark backdrop, so without
+	// the void border its rectangle reads as an accident rather than a picture.
 	.life-card__media {
 		// <picture> is inline by default, so width would be ignored once the float drops
 		display: block;
 		float: right;
 		width: min(15rem, 34%);
 		margin: 0.2rem 0 0.6rem 1.4rem;
+		overflow: hidden;
+		@include void-panel(transparent);
 	}
 
 	.life-card__media img {
