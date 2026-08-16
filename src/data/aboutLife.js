@@ -55,7 +55,10 @@ export const LIFE_SECTIONS = [
 	{
 		id: 'music',
 		title: 'MUSIC',
-		lines: ['To write.'],
+		lines: [
+			"I've been playing the guitar since I was eight years old, performing in three different bands during my teenage years in Lebanon.",
+			'While that passion eventually faded over time, I still pick up the instrument whenever inspiration strikes.',
+		],
 	},
 	{
 		id: 'games',
