@@ -119,6 +119,8 @@
 	$slide: 28px;
 	// offset between the photo-deck cards peeking out behind each dog's frame
 	$stack-step: 6px;
+	// mat between a section image and its void frame
+	$media-mat: 5px;
 
 	.life {
 		display: flex;
@@ -195,8 +197,10 @@
 		float: right;
 		width: min(15rem, 34%);
 		margin: 0.2rem 0 0.6rem 1.4rem;
-		overflow: hidden;
-		@include void-panel(transparent);
+		// the art is near-black, so it needs a lighter mat between it and the border —
+		// without one the void hairline sits darker than the art and vanishes
+		padding: $media-mat;
+		@include void-panel(rgba(255, 255, 255, 0.06));
 	}
 
 	.life-card__media img {
