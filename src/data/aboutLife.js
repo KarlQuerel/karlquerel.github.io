@@ -48,7 +48,7 @@ export const LIFE_SECTIONS = [
 		title: 'SPORTS',
 		lines: [
 			'Nothing clears my head like moving.',
-			'I practiced Filipino martial arts for five years and ran regularly until my right knee politely asked me to stop.\nFor a while, I was completely hooked on bouldering and lead climbing.',
+			'I practiced Filipino martial arts for five years and ran regularly until my right knee politely asked me to stop.\nFor a while, I was hooked on bouldering and lead climbing.',
 			"Nowadays, I keep things grounded by hitting the gym four times a week.\nBut whenever I can, you'll find me outdoors at the beach, mostly trying to convince myself that I know what I'm doing on a surfboard.",
 		],
 	},
