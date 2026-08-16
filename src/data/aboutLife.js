@@ -1,10 +1,7 @@
 // Drives the LIFE tab of /about (AboutLife.vue). One entry per paragraph;
 // a `\n` inside an entry breaks the line without opening a paragraph gap.
-// Copy is still placeholder outside DOG_LINES, written card by card.
-export const ABOUT_ME = [
-	'Placeholder placeholder placeholder placeholder placeholder.',
-	'Placeholder placeholder placeholder placeholder placeholder.',
-]
+// Cards still marked "To write." are waiting on copy, written card by card.
+export const ABOUT_ME = ['To write.']
 
 // Intro copy shown above the dog photos on the DOGS card.
 export const DOG_LINES = [
@@ -50,32 +47,17 @@ export const LIFE_SECTIONS = [
 		id: 'sports',
 		title: 'SPORTS',
 		lines: [
-			'Placeholder placeholder placeholder placeholder placeholder.',
-			'Placeholder placeholder placeholder placeholder placeholder.',
-		],
-	},
-	{
-		id: 'finance',
-		title: 'FINANCE',
-		lines: [
-			'Placeholder placeholder placeholder placeholder placeholder.',
-			'Placeholder placeholder placeholder placeholder placeholder.',
+			"Staying active has always been my favorite way to clear my head.\nI practiced Filipino martial arts for five years and ran regularly until my right knee politely asked me to stop. For a while, I was completely hooked on bouldering and lead climbing.\nNowadays, I keep things grounded by hitting the gym four times a week. But whenever I can, you'll find me outdoors at the beach, mostly trying to convince myself that I know what I'm doing on a surfboard.",
 		],
 	},
 	{
 		id: 'music',
 		title: 'MUSIC',
-		lines: [
-			'Placeholder placeholder placeholder placeholder placeholder.',
-			'Placeholder placeholder placeholder placeholder placeholder.',
-		],
+		lines: ['To write.'],
 	},
 	{
 		id: 'games',
 		title: 'VIDEO GAMES',
-		lines: [
-			'Placeholder placeholder placeholder placeholder placeholder.',
-			'Placeholder placeholder placeholder placeholder placeholder.',
-		],
+		lines: ['To write.'],
 	},
 ]
