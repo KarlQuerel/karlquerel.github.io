@@ -48,7 +48,21 @@
 			<h2 class="life-card__title">
 				<span class="life-card__dot" aria-hidden="true" />{{ section.title }}
 			</h2>
-			<p v-for="(line, i) in section.lines" :key="i" class="life-card__line">{{ line }}</p>
+			<template v-for="(line, i) in section.lines" :key="i">
+				<picture v-if="section.media?.beforeLine === i" class="life-card__media">
+					<source
+						:srcset="section.media.still"
+						media="(prefers-reduced-motion: reduce)"
+					/>
+					<img
+						:src="section.media.src"
+						:alt="section.media.alt"
+						loading="lazy"
+						decoding="async"
+					/>
+				</picture>
+				<p class="life-card__line">{{ line }}</p>
+			</template>
 		</section>
 	</div>
 </template>
@@ -117,6 +131,8 @@
 	}
 
 	.life-card {
+		// flow-root, not block: contains the floated art so it can't spill past the wash
+		display: flow-root;
 		// wide column, but the prose below scales with it so the measure stays ~75ch
 		width: min(50rem, 92vw);
 		padding: 1rem 1.1rem 1.2rem;
@@ -168,6 +184,23 @@
 
 	.life-card__line:last-child {
 		margin-bottom: 0;
+	}
+
+	// section art floated into the prose, so the paragraphs after it wrap alongside
+	.life-card__media {
+		// <picture> is inline by default, so width would be ignored once the float drops
+		display: block;
+		float: right;
+		width: min(15rem, 34%);
+		margin: 0.2rem 0 0.6rem 1.4rem;
+	}
+
+	.life-card__media img {
+		display: block;
+		width: 100%;
+		height: auto;
+		// pixel art: never let the browser smooth it when it scales
+		image-rendering: pixelated;
 	}
 
 	// per-section accents from the shared palette so LIFE stays in the site's system
@@ -301,6 +334,13 @@
 		.dogs {
 			grid-template-columns: 1fr;
 			gap: 1.25rem;
+		}
+
+		// too narrow to wrap text beside it — drop the float and centre the art
+		.life-card__media {
+			float: none;
+			width: min(13rem, 60%);
+			margin: 0 auto 1rem;
 		}
 	}
 
