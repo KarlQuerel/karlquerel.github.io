@@ -111,13 +111,14 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 2rem;
-		width: min(52rem, 94vw);
+		width: min(64rem, 94vw);
 		margin: 0 auto;
 		text-align: left;
 	}
 
 	.life-card {
-		width: min(34rem, 100%);
+		// wide column, but the prose below scales with it so the measure stays ~75ch
+		width: min(50rem, 92vw);
 		padding: 1rem 1.1rem 1.2rem;
 		// borderless: just the dark wash, no void frame (matches the work timeline)
 		background: rgba(0, 0, 0, 0.7);
@@ -129,7 +130,8 @@
 		gap: 0.55rem;
 		margin: 0 0 0.8rem;
 		font-family: $font-pixel;
-		font-size: clamp(0.7rem, 2.2vw, 0.95rem);
+		// tracks the prose cap, so the pixel title keeps its weight over bigger body text
+		font-size: clamp(0.7rem, 2.2vw, 1.1rem);
 		color: $yellow;
 		text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
 	}
@@ -149,9 +151,14 @@
 		// terminal font for prose: Press Start 2P stays on titles, VT323 (narrow,
 		// so a size up) carries the reading text
 		font-family: $font-terminal;
-		font-size: clamp(1.1rem, 2.2vw, 1.25rem);
+		// the cap rises with the column — a wider measure needs bigger type to stay readable.
+		// 25px is deliberate: VT323 advances 0.4em, so only multiples of 2.5px land the
+		// glyphs on whole pixels instead of antialiasing off the grid.
+		font-size: clamp(1.1rem, 2.2vw, 1.5625rem);
 		line-height: 1.55;
-		letter-spacing: 0.02em;
+		// 1px at the 25px cap — tracking has to be whole pixels too, or it puts the
+		// glyphs back on half-pixels and undoes the size choice above
+		letter-spacing: 0.04em;
 		// a `\n` in the copy breaks the line without opening a paragraph gap
 		white-space: pre-line;
 		// the global `p { text-align: center }` would otherwise centre it
@@ -174,11 +181,6 @@
 		box-shadow: 0 0 8px 1px rgba($phosphor-green, 0.55);
 	}
 
-	[data-section='finance'] .life-card__dot {
-		background: $mint;
-		box-shadow: 0 0 8px 1px rgba($mint, 0.55);
-	}
-
 	[data-section='music'] .life-card__dot {
 		background: $purple;
 		box-shadow: 0 0 8px 1px rgba($purple, 0.6);
@@ -189,10 +191,13 @@
 		box-shadow: 0 0 8px 1px rgba($light-blue, 0.55);
 	}
 
+	// the deck spans the text column, so the photos and the prose share one edge.
+	// Its own top margin reads as a section break, not another paragraph gap.
 	.dogs {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 1rem;
+		margin-top: 1.6rem;
 	}
 
 	.dog {
