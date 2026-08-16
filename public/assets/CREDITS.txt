@@ -5,7 +5,7 @@ Pixel art
 ---------
 Files: about/briefcase.png, about/ps1-controller.png,
        contact/bug.png, contact/email.png, contact/github.png,
-       contact/linkedin.png, img/dumbbell.png,
+       contact/linkedin.png, img/og-card.png,
        img/Yako_Animations/Idle.gif
 
 License: CC0 1.0 (public domain dedication) — no attribution required.
@@ -17,7 +17,7 @@ the site renders them with image-rendering: pixelated).
 
 Photos
 ------
-Files: about/L1-L5.webp, about/Y1-Y5.webp
+Files: about/L1-L5.webp, about/Y1-Y7.webp
 
 Personal photos of my dogs — all rights reserved, not covered by the
 CC0 dedication above.
