@@ -2,8 +2,8 @@
 // a `\n` inside an entry breaks the line without opening a paragraph gap.
 export const ABOUT_ME = [
 	'I come from a multicultural background.',
-	'Born in France to a Lebanese mother, I spent my teenage years in Lebanon before moving back to Europe.',
-	"I have been moving around Europe ever since. The countries changed, but what I do with my free time didn't.",
+	'Born in France to a Lebanese mother, I spent my teenage years in Lebanon before coming back to Europe.',
+	"I have been moving around ever since. The countries changed, but what I do with my free time didn't.",
 ]
 
 // Intro copy shown above the dog photos on the DOGS card.
