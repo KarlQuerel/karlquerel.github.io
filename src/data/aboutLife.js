@@ -1,7 +1,9 @@
 // Drives the LIFE tab of /about (AboutLife.vue). One entry per paragraph;
 // a `\n` inside an entry breaks the line without opening a paragraph gap.
-// Cards still marked "To write." are waiting on copy, written card by card.
-export const ABOUT_ME = ['To write.']
+export const ABOUT_ME = [
+	'I come from a multicultural background.',
+	'Born in France to a Lebanese mother, I spent my teenage years in Lebanon before returning to Europe to pursue my studies and career.',
+]
 
 // Intro copy shown above the dog photos on the DOGS card.
 export const DOG_LINES = [
@@ -57,7 +59,7 @@ export const LIFE_SECTIONS = [
 		title: 'MUSIC',
 		lines: [
 			"I've been playing the guitar since I was eight years old, performing in three different bands during my teenage years in Lebanon.",
-			'While that passion eventually faded over time, I still pick up the instrument whenever inspiration strikes.',
+			'While that passion eventually faded, I still pick up the instrument whenever inspiration strikes.',
 		],
 	},
 	{
