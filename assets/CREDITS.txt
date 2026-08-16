@@ -4,6 +4,7 @@ Asset credits — karlquerel.github.io
 Pixel art
 ---------
 Files: about/briefcase.png, about/ps1-controller.png,
+       about/ps1.gif, about/ps1-still.png,
        contact/bug.png, contact/email.png, contact/github.png,
        contact/linkedin.png, img/og-card.png,
        img/Yako_Animations/Idle.gif
