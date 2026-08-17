@@ -62,10 +62,12 @@ export const STAR_LAYERS = [
 // Per-dot size multiplier so dots vary instead of reading as one stamped disc.
 export const STAR_SIZE_JITTER = [0.75, 1.25]
 
-// Seconds between drift steps. Stepped (not linear) drift lets the compositor
-// skip the ~59 identical frames between ~1px hops — the drift was forcing
-// full-screen recomposites every vsync, the main scroll-lag cost on phones.
-export const DRIFT_STEP_SECONDS = 1
+// Device pixels of travel per drift step. Stepped (not linear) drift lets the
+// compositor skip the frames between hops — linear drift recomposited the
+// full screen every vsync, the main scroll-lag cost on phones. Sizing the step
+// by distance instead of by a fixed clock is what keeps the hop invisible: a
+// 1s cadence made the near plane jump 2.6px, wider than its own dots.
+export const DRIFT_STEP_DEVICE_PX = 1
 
 // Sparse comet streaks. Tints echo the starfield, weighted toward plain white.
 // Each entry is a [min, max] range fed straight to rand(), except `tints`.

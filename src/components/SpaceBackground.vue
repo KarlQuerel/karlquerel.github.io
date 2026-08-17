@@ -26,7 +26,7 @@
 		STAR_LAYERS,
 		STAR_SIZE_JITTER,
 		SHOOTING_STAR,
-		DRIFT_STEP_SECONDS,
+		DRIFT_STEP_DEVICE_PX,
 	} from '@/constants/starfield'
 	import { FINE_POINTER_QUERY, MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
 
@@ -48,11 +48,13 @@
 		)
 	}
 
+	// capped: past 2x a phone gains no visible sharpness for 2.25x the texture bytes
+	const dpr = Math.min(window.devicePixelRatio || 1, 2)
+
 	// paint the tile's dots once into a bitmap: re-rasterizing after GPU eviction then
 	// costs one texture blit instead of repainting dozens of stacked radial-gradients
 	function rasterizeTile(layer) {
 		const [w, h] = layer.tile
-		const dpr = Math.min(window.devicePixelRatio || 1, 2)
 		const canvas = document.createElement('canvas')
 		canvas.width = w * dpr
 		canvas.height = h * dpr
@@ -92,7 +94,12 @@
 				'--drift-x': `${dirX * w}px`,
 				'--drift-y': `${dirY * h}px`,
 				'--dur': `${layer.duration}s`,
-				'--drift-steps': Math.max(1, Math.round(layer.duration / DRIFT_STEP_SECONDS)),
+				// one step per device pixel of travel — the hop reads as continuous
+				// motion, yet the compositor still skips ~9 frames in 10
+				'--drift-steps': Math.max(
+					1,
+					Math.round((Math.hypot(w, h) * dpr) / DRIFT_STEP_DEVICE_PX)
+				),
 				'--depth': layer.depth,
 			},
 		}
@@ -192,9 +199,10 @@
 		// no will-change: the animation promotes the layer while it runs; a permanent
 		// hint would keep the ~full-screen textures resident even while paused
 		animation: starDrift var(--dur) linear infinite;
-		// Default (touch / phones): stepped ~1px hops. The ~59 identical frames
-		// between steps cost the compositor nothing — this is the scroll-lag fix.
-		animation-timing-function: steps(var(--drift-steps, 60), end);
+		// Default (touch / phones): hops of one device pixel, a few per second.
+		// The identical frames in between cost the compositor nothing — this is
+		// the scroll-lag fix, and the hop is too small to read as a stutter.
+		animation-timing-function: steps(var(--drift-steps, 600), end);
 	}
 
 	// Desktop / trackpad can afford a full-rate composited transform, so drift
