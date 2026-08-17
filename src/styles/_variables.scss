@@ -21,6 +21,11 @@ $font-terminal: 'Departure Mono', ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mo
 // Whole multiples of Departure Mono's 11px grid — the only crisp prose sizes.
 $type-prose: 22px;
 $type-prose-sm: 11px;
+// Press Start 2P is drawn on an 8px grid, so it is crisp only at 8/16/24. Together
+// the two faces give one stepped scale — 8 / 11 / 16 / 22 — every step on-pixel.
+// Never size either face fluidly: a clamp spends most viewports off both grids.
+$type-title: 16px;
+$type-label: 8px;
 // Plain system stack — deliberately off-theme, and only for the unlisted /sport
 // page, which is read mid-set and trades the pixel look for legibility. Costs no
 // download. Not a theme font: don't reach for it on public pages.

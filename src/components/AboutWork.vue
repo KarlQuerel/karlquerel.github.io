@@ -106,7 +106,7 @@
 		gap: 1rem;
 		margin: 0.4rem 0 2rem;
 		font-family: $font-pixel;
-		font-size: clamp(0.6rem, 1.9vw, 0.8rem);
+		font-size: $type-title;
 		letter-spacing: 0.18em;
 		text-transform: uppercase;
 		color: $yellow;
@@ -153,7 +153,7 @@
 		// the badge is the containing block, so a multi-word tick would wrap inside it
 		white-space: nowrap;
 		font-family: $font-pixel;
-		font-size: clamp(0.42rem, 1.2vw, 0.55rem);
+		font-size: $type-label;
 		line-height: 1;
 		letter-spacing: 0.08em;
 		padding: 0.2rem 0.15rem;
@@ -218,7 +218,7 @@
 
 	.ztl-kind {
 		font-family: $font-pixel;
-		font-size: clamp(0.4rem, 1.2vw, 0.5rem);
+		font-size: $type-label;
 		line-height: 1.4;
 		letter-spacing: 0.16em;
 		text-transform: uppercase;
@@ -236,7 +236,7 @@
 	.ztl-title {
 		margin: 0;
 		font-family: $font-pixel;
-		font-size: clamp(0.6rem, 1.9vw, 0.8rem);
+		font-size: $type-title;
 		line-height: 1.4;
 		color: $white;
 		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
@@ -245,8 +245,10 @@
 	// school / employer — type-tinted so the institution reads as its own beat instead
 	// of trailing off under the white title
 	.ztl-school {
-		font-family: $font-pixel;
-		font-size: clamp(0.56rem, 1.7vw, 0.7rem);
+		// prose face, not display: institution names are read, and Press Start 2P
+		// mangles the accents in "Grand Lycée Franco-Libanais" at this size
+		font-family: $font-terminal;
+		font-size: $type-prose-sm;
 		line-height: 1.5;
 		text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
 	}
@@ -265,8 +267,8 @@
 		align-items: center;
 		gap: 0.5em;
 		line-height: 1.2;
-		font-family: $font-pixel;
-		font-size: clamp(0.42rem, 1.2vw, 0.52rem);
+		font-family: $font-terminal;
+		font-size: $type-prose-sm;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
 		color: $light-gray;
