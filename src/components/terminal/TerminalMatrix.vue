@@ -108,7 +108,7 @@
 		transform: translateX(-50%);
 		color: var(--phosphor);
 		font-family: $font-terminal;
-		font-size: 0.8rem;
+		font-size: $type-prose-sm;
 		opacity: 0.7;
 		pointer-events: none;
 		text-shadow: 0 0 4px currentColor;

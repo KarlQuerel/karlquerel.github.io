@@ -14,8 +14,13 @@ $azure: #007fff;
 
 // Fonts
 $font-pixel: 'Press Start 2P', ui-monospace, monospace;
-// VT323 — DEC-VT320-style console font for the terminal page.
-$font-terminal: 'VT323', ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', monospace;
+// Departure Mono — bitmap console font carrying every bit of prose on the site.
+// Set it at 11px or 22px only: it is drawn on an 11px grid, so anything between
+// those steps antialiases and the pixel edges go soft.
+$font-terminal: 'Departure Mono', ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', monospace;
+// Whole multiples of Departure Mono's 11px grid — the only crisp prose sizes.
+$type-prose: 22px;
+$type-prose-sm: 11px;
 // Plain system stack — deliberately off-theme, and only for the unlisted /sport
 // page, which is read mid-set and trades the pixel look for legibility. Costs no
 // download. Not a theme font: don't reach for it on public pages.

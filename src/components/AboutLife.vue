@@ -166,17 +166,15 @@
 
 	.life-card__line {
 		margin: 0 0 0.6rem;
-		// terminal font for prose: Press Start 2P stays on titles, VT323 (narrow,
-		// so a size up) carries the reading text
+		// terminal font for prose: Press Start 2P stays on titles, Departure Mono
+		// carries the reading text
 		font-family: $font-terminal;
-		// the cap rises with the column — a wider measure needs bigger type to stay readable.
-		// 25px is deliberate: VT323 advances 0.4em, so only multiples of 2.5px land the
-		// glyphs on whole pixels instead of antialiasing off the grid.
-		font-size: clamp(1.1rem, 2.2vw, 1.5625rem);
+		// stepped, not fluid: the face is crisp only on its 11px grid, so a clamp
+		// would spend most widths antialiased. 22px puts ~54ch on the desktop column.
+		font-size: $type-prose;
 		line-height: 1.55;
-		// 1px at the 25px cap — tracking has to be whole pixels too, or it puts the
-		// glyphs back on half-pixels and undoes the size choice above
-		letter-spacing: 0.04em;
+		// no tracking: the face is monospaced and already spaced, and any em-based
+		// value lands on half-pixels and undoes the size choice above
 		// a `\n` in the copy breaks the line without opening a paragraph gap
 		white-space: pre-line;
 		// the global `p { text-align: center }` would otherwise centre it
@@ -316,8 +314,7 @@
 		display: block;
 		margin-top: 0.3rem;
 		font-family: $font-terminal;
-		font-size: clamp(0.9rem, 2vw, 1rem);
-		letter-spacing: 0.04em;
+		font-size: $type-prose-sm;
 		color: $text-caption;
 	}
 
@@ -339,6 +336,11 @@
 	}
 
 	@media (max-width: $breakpoint-mobile) {
+		// down a whole step on the 11px grid: 22px would leave barely 23ch per line
+		.life-card__line {
+			font-size: $type-prose-sm;
+		}
+
 		.dogs {
 			grid-template-columns: 1fr;
 			gap: 1.25rem;

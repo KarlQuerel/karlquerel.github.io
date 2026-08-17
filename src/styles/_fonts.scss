@@ -1,5 +1,5 @@
-// Self-hosted pixel fonts (latin subsets, ~30 kB total) so first paint never
-// waits on the render-blocking Google Fonts CSS + a second font origin.
+// Self-hosted pixel fonts (~35 kB total) so first paint never waits on the
+// render-blocking Google Fonts CSS + a second font origin.
 @font-face {
 	font-family: 'Press Start 2P';
 	font-style: normal;
@@ -8,10 +8,13 @@
 	src: url('/assets/fonts/press-start-2p-latin.woff2') format('woff2');
 }
 
+// Departure Mono is an 11px bitmap design: it renders without antialiasing only
+// at whole multiples of 11 (11px, 22px), so prose steps between those two rather
+// than scaling fluidly. See $font-terminal in _variables.scss.
 @font-face {
-	font-family: 'VT323';
+	font-family: 'Departure Mono';
 	font-style: normal;
 	font-weight: 400;
 	font-display: swap;
-	src: url('/assets/fonts/vt323-latin.woff2') format('woff2');
+	src: url('/assets/fonts/departure-mono.woff2') format('woff2');
 }

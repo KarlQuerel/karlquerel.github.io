@@ -100,7 +100,8 @@ $console-max-height: 47rem;
 	border-radius: $void-radius;
 	overflow: hidden;
 	font-family: $font-terminal;
-	font-size: 1.4rem;
+	// 22px, not 22.4: on Departure Mono's 11px grid only whole steps stay crisp
+	font-size: $type-prose;
 	// Lift the console off the starfield so it reads as floating in the void.
 	box-shadow:
 		0 1.5rem 4rem rgba(0, 0, 0, 0.55),
@@ -156,7 +157,7 @@ $console-max-height: 47rem;
 
 .terminal-title {
 	color: $light-gray;
-	font-size: 0.95rem;
+	font-size: $type-prose-sm;
 	letter-spacing: 0.5px;
 	opacity: 0.85;
 }
@@ -283,7 +284,7 @@ $console-max-height: 47rem;
 	}
 
 	.terminal-title {
-		font-size: 0.75rem;
+		font-size: $type-prose-sm;
 	}
 }
 
@@ -293,7 +294,8 @@ $console-max-height: 47rem;
 		padding-bottom: 1rem;
 	}
 
-	// hold 1rem — readable and avoids iOS focus-zoom; width is reclaimed via padding
+	// Hold 1rem. Off Departure Mono's 11px grid, so it antialiases — accepted: 11px
+	// would trip iOS focus-zoom on the input, and 22px leaves ~25 columns on a phone.
 	.terminal-window {
 		font-size: 1rem;
 		// fill phone width; container padding (not the desktop cap) sets the height

@@ -25,8 +25,10 @@ CC0 dedication above.
 
 Fonts
 -----
-Files: fonts/press-start-2p-latin.woff2, fonts/vt323-latin.woff2
+Files: fonts/press-start-2p-latin.woff2, fonts/departure-mono.woff2
 
-"Press Start 2P" by CodeMan38 and "VT323" by Peter Hull, both released
-under the SIL Open Font License 1.1 (via Google Fonts), self-hosted as
-latin-subset woff2.
+"Press Start 2P" by CodeMan38, released under the SIL Open Font License
+1.1 (via Google Fonts), self-hosted as a latin-subset woff2.
+
+"Departure Mono" copyright 2022-2024 Helena Zhang (helenazhang.com),
+released under the SIL Open Font License 1.1, self-hosted as woff2.

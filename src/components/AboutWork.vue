@@ -273,16 +273,17 @@
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 	}
 
-	// caption closing the card. The VT323 face keeps it subordinate to the pixel type
-	// above it, and the chevron echoes the terminal voice used across the site.
+	// caption closing the card. The terminal face keeps it subordinate to the pixel
+	// type above it, and the chevron echoes the terminal voice used across the site.
 	.ztl-detail {
 		// 64ch of text plus the hanging chevron; the About column caps this well before it bites
 		max-width: calc(64ch + #{$chevron});
-		// the card's flex gap is tuned for pixel type; VT323 wants a touch more air
+		// the card's flex gap is tuned for pixel type; the caption wants a touch more air
 		margin: 0.35rem 0 0;
 		font-family: $font-terminal;
-		// 20px at the cap keeps VT323's 0.4em advance on whole pixels
-		font-size: clamp(1.05rem, 2.4vw, 1.25rem);
+		// a whole step below the LIFE prose: captions stay secondary, and 11px is the
+		// only crisp size under Departure Mono's 22px
+		font-size: $type-prose-sm;
 		line-height: 1.45;
 		// global `p` is centred (_layout.scss) — the card reads as a left-aligned stack
 		text-align: left;
