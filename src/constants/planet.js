@@ -5,8 +5,10 @@
 export const PLANET = {
 	// Logical sprite resolution; each cell becomes one chunky on-screen pixel.
 	// Higher = finer, more HD detail, but the surface is a per-pixel noise shader
-	// so cost scales with resolution² — this is the main lever on mobile render load.
-	resolution: 120,
+	// so cost scales with resolution² — these are the main levers on render load.
+	// The landing scales the globe up to ~2.7x, so desktop carries more detail.
+	resolution: 192,
+	resolutionMobile: 128,
 	// Disc radius as a fraction of the sprite — the margin leaves room for the
 	// atmosphere halo to bleed past the limb.
 	discRadius: 0.36,
@@ -17,6 +19,12 @@ export const PLANET = {
 	// phone viewports redraw slower — imperceptible at this pixel scale, cheaper on battery
 	fpsMobile: 20,
 	spinSeconds: 64,
+	// Redraw rate while the spin is scroll-driven (PixelPlanet `spin` prop). Higher
+	// than the idle rate on purpose: the layers around the planet move at full frame
+	// rate under scroll, so a coarse surface redraw reads as lag rather than as pixel
+	// art. If this costs too much on a phone, drop `resolution` — cost is resolution².
+	orbitFps: 60,
+	orbitFpsMobile: 30,
 	// Axial tilt of the spin (degrees), so continents drift across on a diagonal
 	// rather than straight sideways.
 	tiltDeg: 18,
@@ -41,6 +49,18 @@ export const PLANET = {
 	// it fade between shades so rotating coastlines don't snap/blink. 0 = hard
 	// edges (crisp but aliased); larger = softer bands.
 	bandBlend: 0.012,
+	// Cloud shell: a second, cheaper noise field drifting ahead of the ground.
+	// `cover` is the density threshold (2-octave fbm tops out near 0.75); `blend`
+	// keeps the edges pixel-crisp; `spinFactor` > 1 lets weather cross coastlines.
+	clouds: {
+		scale: 2.4,
+		cover: 0.46,
+		blend: 0.03,
+		spinFactor: 1.25,
+		octaves: 2,
+		opacity: 0.85,
+		color: [234, 231, 226],
+	},
 	// Atmosphere rim colour — a thin, dusty red-grey haze.
 	atmosphere: [172, 120, 104],
 	// Atmosphere halo: how far past the limb it reaches (fraction of radius) and
@@ -49,6 +69,51 @@ export const PLANET = {
 	haloAlpha: 70,
 	// Strength of the lit-limb rim glow (0 = none).
 	rimStrength: 0.35,
+	// Sun glint on open water: specular strength where the key light mirrors off
+	// the seas (masked by cloud cover). The wet shine that sells a real planet.
+	oceanGloss: 0.6,
+}
+
+// Band override for the moon flyby (PixelPlanet `palette` prop): airless grey,
+// maria in the lowlands. The faint "atmosphere" halo reads as earthshine.
+export const MOON_PALETTE = {
+	ocean: [38, 36, 40],
+	oceanShallow: [58, 56, 60],
+	land: [96, 94, 98],
+	highland: [128, 126, 130],
+	atmosphere: [140, 138, 142],
+}
+
+// Band override for the distant sister world (drifter): a cold iced-over globe.
+export const ICE_PALETTE = {
+	ocean: [30, 44, 62],
+	oceanShallow: [56, 84, 108],
+	land: [148, 168, 182],
+	highland: [214, 228, 236],
+	atmosphere: [150, 190, 214],
+}
+
+// Tunables for the drifting rocks (PixelAsteroid.vue): sculpted pixel boulders
+// drawn once per visit — a heightfield (dome + lumps + cratering) shaded by its
+// own normals, then quantised into hard light bands so it stays pixel art.
+export const ASTEROID = {
+	// sprite resolution; drawn once, so this costs nothing per frame
+	resolution: 128,
+	// silhouette: base radius (fraction of the sprite) ± the roughness ripple
+	baseRadius: 0.34,
+	roughness: 0.26,
+	edgeFreq: 2.3,
+	// relief: lump amplitude/frequency over the dome, and the seeded crater field
+	lumpAmp: 0.55,
+	lumpFreq: 2.4,
+	craters: { count: 7, rMin: 0.09, rMax: 0.24, depthMin: 0.25, depthMax: 0.5 },
+	// shading: normal strength from the height gradient, banded light levels
+	// (the pixel-art quantisation), and two regolith albedos mixed in patches
+	gradientScale: 10,
+	shadeBands: 5,
+	albedoDark: [88, 80, 74],
+	albedoLight: [126, 116, 104],
+	patchFreq: 1.6,
 }
 
 // Band override for the launch beat's dying Earth (PixelPlanet `palette` prop):

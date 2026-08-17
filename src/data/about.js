@@ -1,10 +1,9 @@
-// Drives the /about page.
+// Drives the WORK and LIFE stations of the landing journey (HomeJourney.vue).
 
-// Page headings for the hub and each tab, rendered by PageTitle (see also
-// CONTACT_HEADING / SPORT_HEADING — one heading shape across the whole site).
-// Trailing space on `lead` is intentional: it separates the lead from the accent.
+// Station headings, rendered by PageTitle (see also CONTACT_HEADING /
+// SPORT_HEADING — one heading shape across the whole site). Trailing space on
+// `lead` is intentional: it separates the lead from the accent.
 export const ABOUT_HEADINGS = {
-	hub: { line1: 'Hello there!', lead: "I'm ", accent: 'Karl' },
 	work: { lead: 'How I got ', accent: 'here' },
 	life: { lead: 'Off the ', accent: 'clock' },
 }

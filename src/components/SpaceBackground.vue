@@ -6,7 +6,13 @@
 		:style="parallaxStyle"
 		aria-hidden="true"
 	>
-		<div v-for="layer in starLayers" :key="layer.id" class="star-layer" :style="layer.style" />
+		<div
+			v-for="layer in starLayers"
+			:key="layer.id"
+			:ref="el => el && (layerEls[layer.id] = el)"
+			class="star-layer"
+			:style="layer.style"
+		/>
 		<div
 			v-for="star in shootingStars"
 			:key="star.id"
@@ -25,6 +31,7 @@
 		STAR_COLORS,
 		STAR_LAYERS,
 		STAR_SIZE_JITTER,
+		SCROLL_PARALLAX,
 		SHOOTING_STAR,
 		DRIFT_STEP_DEVICE_PX,
 	} from '@/constants/starfield'
@@ -75,10 +82,16 @@
 		return canvas.toDataURL()
 	}
 
+	// scroll parallax is desktop-only: full-rate layer recomposits during scroll
+	// were the phone lag this component was tuned to avoid
+	const scrollParallax = window.matchMedia(FINE_POINTER_QUERY).matches
+
 	// one parallax plane: its pre-rendered dot tile + drift vars
 	function buildLayer(layer, id) {
 		const [w, h] = layer.tile
-		// bleed only the two trailing edges (leading never uncovers); pad covers the mouse parallax
+		// bleed only the two trailing edges (leading never uncovers); pad covers the
+		// mouse parallax. Scroll parallax lifts the layer up to one tile, so it
+		// needs the bottom bled by a full tile whichever way the drift runs.
 		const [dirX, dirY] = layer.dir
 		const pad = layer.depth + 8
 		return {
@@ -88,7 +101,7 @@
 				backgroundSize: `${w}px ${h}px`,
 				'--bleed-top': `${(dirY > 0 ? h : 0) + pad}px`,
 				'--bleed-right': `${(dirX < 0 ? w : 0) + pad}px`,
-				'--bleed-bottom': `${(dirY < 0 ? h : 0) + pad}px`,
+				'--bleed-bottom': `${(dirY < 0 || scrollParallax ? h : 0) + pad}px`,
 				'--bleed-left': `${(dirX > 0 ? w : 0) + pad}px`,
 				// drift exactly one tile so the loop is seamless; sign sets direction
 				'--drift-x': `${dirX * w}px`,
@@ -111,6 +124,20 @@
 		: STAR_LAYERS
 	// Generated once per visit → no two loads share the same sky.
 	const starLayers = layerSpecs.map((layer, i) => buildLayer(layer, i))
+	const layerEls = []
+
+	// Streaming the planes past at depth-scaled rates as the page scrolls — the
+	// "camera is travelling" cue. Wrapped per tile height (the pattern repeats,
+	// so a whole-tile jump is invisible) and quantised to whole pixels.
+	const onScrollParallax = useRafThrottle(() => {
+		const y = window.scrollY
+		layerSpecs.forEach((spec, i) => {
+			const el = layerEls[i]
+			if (!el) return
+			const offset = Math.round((y * SCROLL_PARALLAX * spec.depth) % spec.tile[1])
+			el.style.setProperty('--sy', `${-offset}px`)
+		})
+	})
 
 	// axes normalised to -1..1 and negated so layers drift against the cursor via --depth
 	const pointer = ref({ x: 0, y: 0 })
@@ -166,8 +193,9 @@
 		document.addEventListener('visibilitychange', onVisibility)
 		// no cursor on touch devices — and their drag-scrolls fire pointermove,
 		// which would restyle every huge star layer mid-scroll
-		if (window.matchMedia(FINE_POINTER_QUERY).matches) {
+		if (scrollParallax) {
 			window.addEventListener('pointermove', onPointerMove, { passive: true })
+			window.addEventListener('scroll', onScrollParallax, { passive: true })
 		}
 		scheduleNext()
 	})
@@ -176,6 +204,7 @@
 		window.clearTimeout(timer)
 		document.removeEventListener('visibilitychange', onVisibility)
 		window.removeEventListener('pointermove', onPointerMove)
+		window.removeEventListener('scroll', onScrollParallax)
 	})
 </script>
 
@@ -195,7 +224,8 @@
 		inset: calc(var(--bleed-top) * -1) calc(var(--bleed-right) * -1)
 			calc(var(--bleed-bottom) * -1) calc(var(--bleed-left) * -1);
 		background-repeat: repeat;
-		translate: calc(var(--mx, 0) * var(--depth) * 1px) calc(var(--my, 0) * var(--depth) * 1px);
+		translate: calc(var(--mx, 0) * var(--depth) * 1px)
+			calc(var(--my, 0) * var(--depth) * 1px + var(--sy, 0px));
 		// no will-change: the animation promotes the layer while it runs; a permanent
 		// hint would keep the ~full-screen textures resident even while paused
 		animation: starDrift var(--dur) linear infinite;

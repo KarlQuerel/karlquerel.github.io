@@ -63,7 +63,7 @@
 	$chevron: 2ch; // the '> ' prefix, exact in the monospace terminal face
 
 	.ztl {
-		// column + text gutter come from the shared About tokens, set on `.about`
+		// column + text gutter come from the shared tokens set on the WORK station
 		--rail-center: 2rem;
 		position: relative;
 		width: var(--about-column);

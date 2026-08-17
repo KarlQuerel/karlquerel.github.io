@@ -17,11 +17,11 @@ export const HERO_CRAWL = {
 	],
 }
 
-// The live homepage — name, role, and a build-status notice.
+// The landing journey's departure hero — name, role, and the scroll cue.
 export const HOME_LANDING = {
 	name: 'Karl Querel',
 	label: 'Software Engineer',
-	notice: 'Under construction',
+	scrollHint: 'Scroll to begin',
 }
 
 // Copy for the wake-up beat that follows the crawl: the ship HUD the envoy's

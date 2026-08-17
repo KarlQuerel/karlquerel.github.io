@@ -28,14 +28,14 @@
 	import SiteNavbar from './components/SiteNavbar.vue'
 	import NavToggle from './components/NavToggle.vue'
 
-	const SCROLLABLE_PATHS = ['/preview', '/sport', '/about', '/contact']
+	const SCROLLABLE_PATHS = ['/', '/preview', '/sport']
 
 	// Unlisted personal pages: no site chrome at all — no drifting starfield behind
 	// the text, no MENU toggle over it. Reached by URL, so nothing to navigate from.
 	const BARE_PATHS = ['/sport']
 
 	// Component names (see defineOptions) kept mounted across navigation.
-	const KEPT_ALIVE_VIEWS = ['HeroIntro']
+	const KEPT_ALIVE_VIEWS = ['HeroIntro', 'HomeJourney']
 
 	const route = useRoute()
 	const normalizedPath = () => route.path.replace(/\/$/, '') || '/'

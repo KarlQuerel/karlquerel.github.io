@@ -1,5 +1,9 @@
 <template>
-	<h1 class="page-heading" :class="{ 'page-heading--flanked': $slots.left || $slots.right }">
+	<component
+		:is="tag"
+		class="page-heading"
+		:class="{ 'page-heading--flanked': $slots.left || $slots.right }"
+	>
 		<span v-if="$slots.left" class="page-heading__slot page-heading__slot--left">
 			<slot name="left" />
 		</span>
@@ -14,11 +18,13 @@
 		<span v-if="$slots.right" class="page-heading__slot page-heading__slot--right">
 			<slot name="right" />
 		</span>
-	</h1>
+	</component>
 </template>
 
 <script setup>
 	defineProps({
+		// heading level: h1 on standalone pages, h2 for stations within the landing
+		tag: { type: String, default: 'h1' },
 		// text before the accent — keep the trailing space that separates the two
 		lead: { type: String, required: true },
 		// final word, rendered in yellow

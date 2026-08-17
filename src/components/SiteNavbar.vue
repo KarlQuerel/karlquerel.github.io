@@ -19,6 +19,7 @@
 					:key="link.to"
 					:to="link.to"
 					class="site-chrome-link"
+					:active-class="activeClass(link)"
 					@click="emitClose"
 					>{{ link.label }}</router-link
 				>
@@ -38,6 +39,10 @@
 	let previousOverflow = ''
 
 	const emitClose = () => emit('close')
+
+	// Anchor links share the `/` path, so the router would mark them all active on
+	// the landing at once — give them an unstyled class so only true pages glow.
+	const activeClass = link => (link.to.includes('#') ? 'site-chrome-link--anchor' : undefined)
 
 	const focusableItems = () =>
 		overlay.value

@@ -34,22 +34,6 @@ const ROUTES = [
 		render: true,
 	},
 	{
-		path: '/about',
-		dir: 'about',
-		title: 'About • Karl Querel',
-		description:
-			'From five years broking commodities to software engineering at 42 Paris. The work timeline behind Karl Querel, now building for renewable energy.',
-		render: true,
-	},
-	{
-		path: '/contact',
-		dir: 'contact',
-		title: 'Contact • Karl Querel',
-		description:
-			'Get in touch with Karl Querel - software engineer in Paris, building software for EV charging and renewable energy.',
-		render: true,
-	},
-	{
 		// unlisted: still snapshotted so the URL answers 200, but kept out of the
 		// sitemap and marked noindex — it is a personal page, not site content
 		path: '/sport',
@@ -68,6 +52,14 @@ const ROUTES = [
 			"An interactive retro terminal - type a command and explore Karl Querel's site the long way round.",
 		render: false,
 	},
+]
+
+// The old standalone pages, folded into the landing journey: keep their URLs
+// answering 200 with an instant hop to the right station. noindex + canonical
+// to `/` retires them from search without breaking inbound links.
+const REDIRECTS = [
+	{ dir: 'about', to: '/#work' },
+	{ dir: 'contact', to: '/#contact' },
 ]
 
 // Swap a single-tag element matched by `pattern` for `replacement`, tolerating the
@@ -152,6 +144,16 @@ await server.close()
 // unknown URL, and baking the homepage into it would flash the wrong page.
 writeFileSync(join(DIST, '404.html'), shell)
 
+for (const { dir, to } of REDIRECTS) {
+	mkdirSync(join(DIST, dir), { recursive: true })
+	writeFileSync(
+		join(DIST, dir, 'index.html'),
+		`<!DOCTYPE html>\n<html lang="en"><head><meta charset="utf-8"><title>Karl Querel</title>` +
+			`<meta name="robots" content="noindex"><link rel="canonical" href="${SITE}/">` +
+			`<meta http-equiv="refresh" content="0;url=${SITE}${to}"></head><body></body></html>\n`
+	)
+}
+
 for (const [route, html] of pages) {
 	const dir = join(DIST, route.dir)
 	mkdirSync(dir, { recursive: true })
@@ -160,4 +162,4 @@ for (const [route, html] of pages) {
 
 writeFileSync(join(DIST, 'sitemap.xml'), buildSitemap(new Date().toISOString().slice(0, 10)))
 
-console.warn(`prerender: ${pages.length} routes, sitemap written`)
+console.warn(`prerender: ${pages.length} routes, ${REDIRECTS.length} redirects, sitemap written`)

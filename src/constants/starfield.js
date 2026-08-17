@@ -62,6 +62,12 @@ export const STAR_LAYERS = [
 // Per-dot size multiplier so dots vary instead of reading as one stamped disc.
 export const STAR_SIZE_JITTER = [0.75, 1.25]
 
+// Vertical scroll parallax: px of layer shift per px scrolled, per depth unit —
+// scrolling streams the near planes past faster, so the camera reads as
+// travelling. Fine-pointer devices only: phones keep stars static during
+// scroll, because full-rate layer recomposits were the mobile lag (see below).
+export const SCROLL_PARALLAX = 0.004
+
 // Device pixels of travel per drift step. Stepped (not linear) drift lets the
 // compositor skip the frames between hops — linear drift recomposited the
 // full screen every vsync, the main scroll-lag cost on phones. Sizing the step

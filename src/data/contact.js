@@ -1,4 +1,4 @@
-// Drives the /contact page.
+// Drives the contact arrival at the end of the landing journey (JourneyArrival.vue).
 
 // The page heading, rendered by PageTitle like every other page. Trailing space on
 // `lead` is intentional — it separates the lead from the accented word.

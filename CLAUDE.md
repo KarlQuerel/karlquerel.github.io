@@ -108,7 +108,8 @@ When touching existing code, always:
 ## Design constraints
 
 - **Retro pixel aesthetic is non-negotiable.** The custom void SCSS system is the design system. Do not introduce Tailwind, Bootstrap, Material, NES.css, or any other CSS framework.
-- Animations must feel 8-bit — stepped, not smooth easing.
+- **Animations must feel 8-bit, but "stepped" applies narrowly.** Motion on its own clock is stepped — self-running CSS animation and hover transitions use `steps(2..6, end)` (flickers, blinks, alarm pulses, card reveals). Motion the user's hand drives, or that moves in world space, is **continuous**: scroll progress (`useScrollSections` hands out a raw float), the hero crawl, the planet's reveal and orbit, and desktop starfield drift. Quantising those does not read as retro, it reads as jank.
+- **The retro look comes from spatial quantisation, not frame cadence** — `image-rendering: pixelated`, a low sprite `resolution`, hard colour bands (`bandBlend`). A pixel grid moved smoothly still reads as 8-bit; the grid quantises the motion for you. Where stepping does appear in world-space motion it is a compositor cost-saver, not a style choice — see `DRIFT_STEP_DEVICE_PX = 1` (one step per device pixel, deliberately too fine to see) and the desktop override that drops it entirely.
 - Font choices must remain pixel-compatible (no system-ui or sans-serif as primary). Fonts are self-hosted woff2 in `public/assets/fonts/` + `src/styles/_fonts.scss` — never re-add render-blocking font CDNs.
 - Firebase: prefer Firestore. The web config in `firebase-setup.js` is committed on purpose — those are public client identifiers (shipped in the bundle regardless); access control lives in Firestore security rules, not key secrecy.
 

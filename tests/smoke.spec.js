@@ -4,10 +4,13 @@ import { test, expect } from '@playwright/test'
 // right title, and logs no console/page errors. Catches broken lazy chunks,
 // runtime errors in main.js, and dead routes — things `vite build` can't see.
 const ROUTES = [
-	{ path: '/', title: 'Karl Querel • Software Engineer', sees: null },
-	{ path: '/about', title: 'About • Karl Querel', sees: /hello there/i },
-	{ path: '/contact', title: 'Contact • Karl Querel', sees: /send me a/i },
+	{ path: '/', title: 'Karl Querel • Software Engineer', sees: /software engineer/i },
+	// the old page URLs redirect onto their journey stations
+	{ path: '/about', title: 'Karl Querel • Software Engineer', sees: /how i got/i },
+	{ path: '/contact', title: 'Karl Querel • Software Engineer', sees: /send me a/i },
 	{ path: '/sport', title: 'Sport • Karl Querel', sees: /weekly split/i },
+	// the hero cinematic — the heaviest component, and the one the game work builds on
+	{ path: '/preview', title: 'Preview • Karl Querel', sees: /scroll to begin/i },
 	{ path: '/terminal', title: 'Terminal • Karl Querel', sees: null },
 	{ path: '/game', title: 'Signal Lost • Karl Querel', sees: null },
 	{ path: '/definitely-not-a-page', title: '404 • Karl Querel', sees: null },

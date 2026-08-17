@@ -33,7 +33,7 @@
 			<div class="hero-hint" :style="hintStyle" aria-hidden="true">
 				<span class="hero-hint__name">{{ HERO_CRAWL.name }}</span>
 				<span class="hero-hint__label">{{ HERO_CRAWL.scrollHint }}</span>
-				<span class="hero-hint__arrow" />
+				<PixelArrow />
 			</div>
 
 			<!-- Departure beat: the ship pulls away from a dying Earth. -->
@@ -69,10 +69,12 @@
 	import { computed, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { HERO_CRAWL, HERO_WAKE } from '../data/heroLines.js'
+	import { clamp01, smoothstep } from '../js/math.js'
 	import { useScrollSections } from '../composables/useScrollSections.js'
 	import ShipHud from './ShipHud.vue'
 	import ShipLaunch from './ShipLaunch.vue'
 	import CryoPod from './CryoPod.vue'
+	import PixelArrow from './PixelArrow.vue'
 
 	// named so App.vue's <KeepAlive> reuses this heavy component's build
 	defineOptions({ name: 'HeroIntro' })
@@ -141,9 +143,6 @@
 		willChange: crawlActive.value ? 'transform' : 'auto',
 	}))
 
-	const clamp01 = v => Math.min(1, Math.max(0, v))
-	const smooth = t => t * t * (3 - 2 * t)
-
 	// Aperture of the shared black sheet (1 open → 0 sealed): stays open through
 	// the launch, seals as the cryo lid, holds shut for the sleep, then blinks
 	// awake through the EYE_BLINK keyframes.
@@ -152,7 +151,7 @@
 		if (p <= phase(LAUNCH_END)) return 1
 		if (p <= phase(POD_END)) {
 			// the cryo lid: the eyes mask, run in reverse
-			return 1 - smooth((p - phase(LAUNCH_END)) / (phase(POD_END) - phase(LAUNCH_END)))
+			return 1 - smoothstep((p - phase(LAUNCH_END)) / (phase(POD_END) - phase(LAUNCH_END)))
 		}
 		if (p <= phase(EYES_START)) return 0
 		const t = clamp01((p - phase(EYES_START)) / (phase(EYES_END) - phase(EYES_START)))
@@ -160,7 +159,7 @@
 			const [t1, v1] = EYE_BLINK[i]
 			if (t <= t1) {
 				const [t0, v0] = EYE_BLINK[i - 1]
-				return v0 + (v1 - v0) * smooth((t - t0) / (t1 - t0))
+				return v0 + (v1 - v0) * smoothstep((t - t0) / (t1 - t0))
 			}
 		}
 		return 1
@@ -412,34 +411,6 @@
 		text-align: center;
 	}
 
-	// pixel-art arrow: this base pixel is the top-centre; box-shadow copies fan out a 5x3 triangle
-	$arrow-pixel: 9px;
-	.hero-hint__arrow {
-		width: $arrow-pixel;
-		height: $arrow-pixel;
-		background: currentColor;
-		box-shadow:
-			#{$arrow-pixel * -2} 0,
-			#{$arrow-pixel * -1} 0,
-			#{$arrow-pixel} 0,
-			#{$arrow-pixel * 2} 0,
-			#{$arrow-pixel * -1} #{$arrow-pixel},
-			0 #{$arrow-pixel},
-			#{$arrow-pixel} #{$arrow-pixel},
-			0 #{$arrow-pixel * 2};
-		animation: heroHintBob 1s steps(3, end) infinite;
-	}
-
-	@keyframes heroHintBob {
-		0%,
-		100% {
-			transform: translateY(0);
-		}
-		50% {
-			transform: translateY(0.35rem);
-		}
-	}
-
 	// the HUD layer the eyes open onto; blur/scale resolve via scroll-driven props
 	.hero-hud {
 		position: absolute;
@@ -545,10 +516,6 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.hero-hint__arrow {
-			animation: none;
-		}
-
 		// Drop the tilt so the crawl reads as plain, comfortable scrolling text.
 		.hero-crawl {
 			perspective: none;

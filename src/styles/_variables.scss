@@ -73,12 +73,8 @@ $chrome-clearance-mobile: 5.25rem;
 // breathes below the star; the floor keeps the chrome clear on short screens.
 $page-pad-top: clamp($chrome-clearance, 15vh, 10rem);
 
-// Distance from a page-head's top edge to the heading text (scrim padding +
-// heading margin) — the tab header pads by this much to keep titles aligned.
-$page-head-title-offset: 1.75rem + 1.75rem;
-
-// Shared About column: intro + timeline align to one centred column with a left gutter
-// for the rail/badges. Exposed as CSS vars on `.about`.
+// Shared WORK-timeline column: one centred column with a left gutter for the
+// rail/badges. Exposed as CSS vars on the journey's WORK station.
 // deliberately narrower than the LIFE card: timeline rows are short left-aligned
 // labels that never reach the right edge, so extra width reads as an off-centre block
 $about-column: min(37rem, 94vw);
@@ -118,9 +114,9 @@ $heading-pixel-size: 16px;
 // one whole step up once there is room; see PageTitle.vue
 $heading-pixel-size-lg: 24px;
 
-// Gap between PixelPortal tiles in the shared portal row (About hub + Contact).
-// One token so both pages stay identically spaced; wide enough that the longest
-// overflowing label (LINKEDIN) keeps clear air from its neighbours.
+// Gap between PixelPortal tiles in the portal row (the contact portals). Wide
+// enough that the longest overflowing label (LINKEDIN) keeps clear air from
+// its neighbours.
 $portal-row-gap: 3.5rem;
 
 // Z-Index

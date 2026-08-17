@@ -1,18 +1,19 @@
 import './styles/main.scss'
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
+import { prefersReducedMotion } from './composables/usePrefersReducedMotion.js'
 import App from './App.vue'
 
 // every route is lazy so the Firebase-carrying pages stay out of the entry chunk
 const routes = [
 	{
-		// simple text landing; HeroIntro is kept for when the site relaunches
+		// the landing journey: hero → WORK → LIFE → contact, one scroll-driven flight
 		path: '/',
-		component: () => import('./components/HomeLanding.vue'),
+		component: () => import('./components/HomeJourney.vue'),
 	},
 	{
 		// hidden dev route: the full hero cinematic that transitions into /game.
-		// Develop here while `/` stays under construction; swap `/` to it to go live.
+		// Develop here while the journey fronts `/`; swap `/` to it to go live.
 		path: '/preview',
 		component: () => import('./components/HeroIntro.vue'),
 		meta: { title: 'Preview' },
@@ -22,17 +23,10 @@ const routes = [
 		component: () => import('./components/Terminal.vue'),
 		meta: { title: 'Terminal' },
 	},
-	{
-		path: '/about',
-		component: () => import('./components/About.vue'),
-		meta: { prefetch: true, title: 'About' },
-	},
+	// the old standalone pages fold into the journey's stations
+	{ path: '/about', redirect: { path: '/', hash: '#work' } },
+	{ path: '/contact', redirect: { path: '/', hash: '#contact' } },
 	{ path: '/secret_link', component: () => import('./components/SecretRedirect.vue') },
-	{
-		path: '/contact',
-		component: () => import('./components/Contact.vue'),
-		meta: { prefetch: true, title: 'Contact' },
-	},
 	{
 		// unlisted personal page: reachable by URL, so it never warms on a public visit
 		path: '/sport',
@@ -40,7 +34,7 @@ const routes = [
 		meta: { title: 'Sport' },
 	},
 	{
-		// unlinked while the teaser homepage is up; reachable by URL for dev
+		// unlinked while the journey fronts the site; reachable by URL for dev
 		path: '/game',
 		component: () => import('./components/game/GamePage.vue'),
 		meta: { title: 'Signal Lost' },
@@ -55,6 +49,17 @@ const routes = [
 const router = createRouter({
 	history: createWebHistory('/'),
 	routes,
+	// hash links land on their station; back/forward restores; the rest start at
+	// the top. The glide is for in-page hops only — a fresh visit (no matched
+	// `from`) lands instantly, and reduced motion always does.
+	scrollBehavior(to, from, savedPosition) {
+		if (savedPosition) return savedPosition
+		if (to.hash) {
+			const instant = from.matched.length === 0 || prefersReducedMotion()
+			return { el: to.hash, behavior: instant ? 'auto' : 'smooth' }
+		}
+		return { top: 0 }
+	},
 })
 
 // per-route titles so tabs and history entries are distinguishable
@@ -64,19 +69,3 @@ router.afterEach(to => {
 })
 
 createApp(App).use(router).mount('#app')
-
-// warm prefetch-flagged chunks at idle; Firebase-carrying routes stay on-demand.
-// Skipped under automation: the prerender snapshot would otherwise capture every
-// prefetched route's CSS as render-blocking <link> tags in the static HTML.
-function prefetchRouteChunks() {
-	for (const route of routes) {
-		if (route.meta?.prefetch && typeof route.component === 'function') route.component()
-	}
-}
-if (!navigator.webdriver) {
-	if ('requestIdleCallback' in window) {
-		window.requestIdleCallback(prefetchRouteChunks, { timeout: 3000 })
-	} else {
-		window.setTimeout(prefetchRouteChunks, 2000)
-	}
-}

@@ -1,4 +1,4 @@
-// Drives the LIFE tab of /about (AboutLife.vue). One entry per paragraph;
+// Drives the journey's LIFE station (AboutLife.vue). One entry per paragraph;
 // a `\n` inside an entry breaks the line without opening a paragraph gap.
 export const ABOUT_ME = [
 	'I come from a multicultural background.',
