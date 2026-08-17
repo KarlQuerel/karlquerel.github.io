@@ -21,6 +21,11 @@ $font-terminal: 'Departure Mono', ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mo
 // Whole multiples of Departure Mono's 11px grid — the only crisp prose sizes.
 $type-prose: 22px;
 $type-prose-sm: 11px;
+// Deliberately OFF the grid, and the only prose size that is. The grid's two steps
+// are 11px (8px cap — too small to read comfortably on a phone) and 22px (~23ch on
+// a 390px screen). 16px is the standard mobile body size; long prose is where the
+// softness reads least and the legibility counts most. See AboutLife.vue.
+$type-prose-mobile: 16px;
 // Press Start 2P is drawn on an 8px grid, so it is crisp only at 8/16/24. Together
 // the two faces give one stepped scale — 8 / 11 / 16 / 22 — every step on-pixel.
 // Never size either face fluidly: a clamp spends most viewports off both grids.
