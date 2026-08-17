@@ -6,6 +6,6 @@
 // layout on top of this base.
 button {
 	padding: 10px 20px;
-	font-size: clamp(0.875rem, 1.5vw, variables.$font-size-medium);
+	font-size: variables.px8(2);
 	@include mixins.void-button;
 }

@@ -58,7 +58,7 @@
 		transform: translateX(-50%);
 		margin: 0;
 		font-family: $font-pixel;
-		font-size: clamp(0.6rem, 1.8vw, 0.9rem);
+		font-size: px8(1);
 		letter-spacing: 0.2em;
 		color: $light-blue;
 		text-shadow: 0 0 14px rgba($light-blue, 0.45);

@@ -149,7 +149,7 @@
 		margin: 0 0 0.8rem;
 		font-family: $font-pixel;
 		// tracks the prose cap, so the pixel title keeps its weight over bigger body text
-		font-size: clamp(0.7rem, 2.2vw, 1.1rem);
+		font-size: px8(2);
 		color: $yellow;
 		text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
 	}
@@ -173,9 +173,9 @@
 		// would spend most widths antialiased. 22px puts ~54ch on the desktop column.
 		font-size: $type-prose;
 		line-height: 1.55;
-		// no tracking: the face is monospaced and already spaced, and any em-based
-		// value lands on half-pixels and undoes the size choice above
-		// a `\n` in the copy breaks the line without opening a paragraph gap
+		// no tracking: the face is monospaced and already spaced, and an em-based
+		// value would land on half-pixels and undo the size choice above.
+		// A `\n` in the copy breaks the line without opening a paragraph gap.
 		white-space: pre-line;
 		// the global `p { text-align: center }` would otherwise centre it
 		text-align: inherit;
@@ -302,7 +302,7 @@
 		// extra top room clears the deck cards sticking out below the frame
 		margin-top: calc(0.55rem + #{$stack-step * 2});
 		font-family: $font-pixel;
-		font-size: clamp(0.55rem, 1.6vw, 0.72rem);
+		font-size: px8(1);
 		text-align: center;
 		color: rgba(255, 255, 255, 0.85);
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);

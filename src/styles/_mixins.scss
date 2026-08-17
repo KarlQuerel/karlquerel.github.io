@@ -42,7 +42,7 @@
 	align-items: center;
 	gap: 0.6rem;
 	font-family: variables.$font-pixel;
-	font-size: clamp(0.7rem, 2.2vw, 1rem);
+	font-size: variables.px8(1);
 	letter-spacing: 1px;
 	text-transform: uppercase;
 	text-decoration: none;

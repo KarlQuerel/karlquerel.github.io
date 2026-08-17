@@ -320,6 +320,8 @@
 		transform: none;
 	}
 
+	// the crawl's three levels each take a whole 8px step (8 / 16 / 24) instead of
+	// em fractions, which land off-grid whatever the container is set to
 	.hero-crawl__deck {
 		position: absolute;
 		left: 50%;
@@ -339,7 +341,7 @@
 		text-transform: uppercase;
 		// Press Start 2P runs wide and tall — scale down with extra line breathing room
 		font-family: $font-pixel;
-		font-size: clamp(0.7rem, 2.2vw, 1.2rem);
+		font-size: px8(3);
 		line-height: 1.8;
 	}
 
@@ -354,7 +356,7 @@
 		margin: 0 0 0.4em;
 		text-align: center;
 		font-family: $font-pixel;
-		font-size: 0.42em;
+		font-size: px8(1);
 		letter-spacing: 0.3em;
 	}
 
@@ -362,7 +364,7 @@
 		margin: 0 0 1em;
 		text-align: center;
 		font-family: $font-pixel;
-		font-size: 0.7em;
+		font-size: px8(2);
 		line-height: 1.4;
 	}
 
@@ -391,7 +393,7 @@
 
 	.hero-hint__name {
 		font-family: $font-pixel;
-		font-size: clamp(1.9rem, 7.5vw, 4rem);
+		font-size: px8(4);
 		line-height: 1.3;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
@@ -404,7 +406,7 @@
 
 	.hero-hint__label {
 		font-family: $font-pixel;
-		font-size: clamp(1.1rem, 4.5vw, 2.4rem);
+		font-size: px8(2);
 		letter-spacing: 0.18em;
 		text-transform: uppercase;
 		text-align: center;
@@ -465,7 +467,7 @@
 		transform: translate(-50%, -50%);
 		margin: 0;
 		font-family: $font-pixel;
-		font-size: clamp(0.8rem, 2.6vw, 1.4rem);
+		font-size: px8(2);
 		letter-spacing: 0.22em;
 		color: $light-blue;
 		text-shadow: 0 0 16px rgba($light-blue, 0.4);

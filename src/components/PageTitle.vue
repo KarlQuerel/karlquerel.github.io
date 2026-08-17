@@ -44,6 +44,13 @@
 		animation: heading-in 0.35s steps(4, end) both;
 	}
 
+	// steps up a whole 8px multiple rather than scaling through it
+	@media (min-width: #{$breakpoint-desktop}) {
+		.page-heading {
+			font-size: $heading-pixel-size-lg;
+		}
+	}
+
 	// icon-flanked variant: title holds the centre column, sprites sit either side
 	.page-heading--flanked {
 		display: grid;

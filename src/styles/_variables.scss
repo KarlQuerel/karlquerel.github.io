@@ -26,6 +26,17 @@ $type-prose-sm: 11px;
 // Never size either face fluidly: a clamp spends most viewports off both grids.
 $type-title: 16px;
 $type-label: 8px;
+
+// Whole steps on each face's own grid. Type STEPS at breakpoints through these
+// rather than scaling: `clamp()` lands on fractional pixels at nearly every
+// viewport, and a bitmap glyph off its grid antialiases into mush.
+@function px8($steps) {
+	@return $steps * 8px;
+}
+
+@function px11($steps) {
+	@return $steps * 11px;
+}
 // Plain system stack — deliberately off-theme, and only for the unlisted /sport
 // page, which is read mid-set and trades the pixel look for legibility. Costs no
 // download. Not a theme font: don't reach for it on public pages.
@@ -98,7 +109,9 @@ $font-size-medium-max: 2rem;
 // Large pixel heading shared across the personal pages — the About greeting and the
 // Contact heading — so page-level headings read as one size site-wide. (The WORK/LIFE
 // hub labels sit a step below this; see $portal-label-size in PixelPortal.vue.)
-$heading-pixel-size: clamp(1rem, 2.6vw, 1.35rem);
+$heading-pixel-size: 16px;
+// one whole step up once there is room; see PageTitle.vue
+$heading-pixel-size-lg: 24px;
 
 // Gap between PixelPortal tiles in the shared portal row (About hub + Contact).
 // One token so both pages stay identically spaced; wide enough that the longest

@@ -33,7 +33,7 @@
 	$portal-pad-x: 1.4rem;
 	$portal-pad-y: 0.9rem;
 	// a step below $heading-pixel-size so page headings stay dominant
-	$portal-label-size: clamp(0.85rem, 2.1vw, 1.1rem);
+	$portal-label-size: px8(2);
 
 	.portal {
 		display: flex;

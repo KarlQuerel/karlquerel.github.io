@@ -62,7 +62,7 @@
 	.scene__location {
 		margin: 0;
 		font-family: $font-pixel;
-		font-size: clamp(0.7rem, 2vw, 1rem);
+		font-size: px8(2);
 		letter-spacing: 0.2em;
 		color: $text-interactive;
 	}
@@ -90,7 +90,7 @@
 	.scene__line {
 		margin: 0 0 0.9em;
 		font-family: $font-pixel;
-		font-size: clamp(0.55rem, 1.4vw, 0.75rem);
+		font-size: px8(1);
 		line-height: 1.9;
 		color: $white;
 		text-align: left;
@@ -106,7 +106,7 @@
 	.scene__option {
 		padding: 0.8rem 1.2rem;
 		font-family: $font-pixel;
-		font-size: clamp(0.5rem, 1.3vw, 0.7rem);
+		font-size: px8(1);
 		letter-spacing: 0.08em;
 		text-align: left;
 		// last: the mixin emits nested states, so trailing declarations would warn

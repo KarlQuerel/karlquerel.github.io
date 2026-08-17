@@ -48,11 +48,7 @@ body {
 	box-sizing: border-box;
 	z-index: variables.$z-index-content;
 	text-align: center;
-	font-size: clamp(
-		variables.$font-size-large-min,
-		variables.$font-size-large-preferred,
-		variables.$font-size-large-max
-	);
+	font-size: variables.px8(3);
 	position: relative;
 }
 
@@ -60,11 +56,7 @@ p,
 h1 {
 	color: variables.$white;
 	text-align: center;
-	font-size: clamp(
-		variables.$font-size-medium-min,
-		variables.$font-size-medium-preferred,
-		variables.$font-size-medium-max
-	);
+	font-size: variables.px8(2);
 }
 
 p {

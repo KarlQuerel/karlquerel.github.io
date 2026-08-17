@@ -99,7 +99,7 @@
 	// keep each label wrapping as a unit, never mid-word
 	white-space: nowrap;
 	color: variables.$text-interactive;
-	font-size: clamp(0.95rem, 3.2vw, 1.5rem);
+	font-size: variables.px8(3);
 	line-height: 1.2;
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
@@ -180,6 +180,6 @@
 	}
 
 	.site-chrome-link {
-		font-size: clamp(1rem, 6vw, 1.35rem);
+		font-size: variables.px8(2);
 	}
 }

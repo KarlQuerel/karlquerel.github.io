@@ -275,16 +275,19 @@ $console-max-height: 47rem;
 		line-height: 1.15;
 	}
 
-	.terminal-window {
-		font-size: 1.05rem;
-	}
-
 	.terminal-body {
 		padding: 0.5rem;
 	}
 
 	.terminal-title {
 		font-size: $type-prose-sm;
+	}
+
+	// iOS zooms the viewport when an input under 16px takes focus. This layer is
+	// transparent — the user reads .input-mirror — so it can sit off the grid at
+	// 16px purely to defeat that, while the visible text steps down to 11px.
+	.terminal-input {
+		font-size: 16px;
 	}
 }
 
@@ -294,10 +297,9 @@ $console-max-height: 47rem;
 		padding-bottom: 1rem;
 	}
 
-	// Hold 1rem. Off Departure Mono's 11px grid, so it antialiases — accepted: 11px
-	// would trip iOS focus-zoom on the input, and 22px leaves ~25 columns on a phone.
+	// A whole step down the 11px grid: 22px would leave ~26 columns on a phone.
 	.terminal-window {
-		font-size: 1rem;
+		font-size: px11(1);
 		// fill phone width; container padding (not the desktop cap) sets the height
 		max-width: none;
 		max-height: none;

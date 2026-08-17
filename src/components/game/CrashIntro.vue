@@ -106,7 +106,7 @@
 		transform: translateX(-50%);
 		margin: 0;
 		font-family: $font-pixel;
-		font-size: clamp(0.6rem, 1.8vw, 0.9rem);
+		font-size: px8(1);
 		letter-spacing: 0.16em;
 		color: $light-blue;
 		text-shadow: 0 0 14px rgba($light-blue, 0.5);
@@ -137,7 +137,7 @@
 		z-index: 5;
 		padding: 0.7rem 1.1rem;
 		font-family: $font-pixel;
-		font-size: 0.6rem;
+		font-size: px8(1);
 		letter-spacing: 0.12em;
 		// last: the mixin emits nested states, so trailing declarations would warn
 		@include void-button($lift: -2px);

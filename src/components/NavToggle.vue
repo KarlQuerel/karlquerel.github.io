@@ -109,7 +109,7 @@
 		left: 50%;
 		transform: translateX(-50%) translateY(0.3rem);
 		font-family: $font-pixel;
-		font-size: 0.6rem;
+		font-size: px8(1);
 		letter-spacing: 0.24em;
 		text-transform: uppercase;
 		color: $yellow;

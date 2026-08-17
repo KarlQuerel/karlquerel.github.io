@@ -103,14 +103,14 @@
 
 	.hud__ship {
 		margin: 0 0 0.7em;
-		font-size: clamp(0.6rem, 1.6vw, 0.85rem);
+		font-size: px8(1);
 		color: $yellow;
 		text-align: left;
 	}
 
 	.hud__readout {
 		margin: 0 0 0.6em;
-		font-size: clamp(0.45rem, 1.2vw, 0.6rem);
+		font-size: px8(1);
 		color: $text-interactive;
 		text-align: left;
 
@@ -133,7 +133,7 @@
 		align-items: center;
 		gap: 0.6em;
 		margin: 0 0 0.7em;
-		font-size: clamp(0.45rem, 1.2vw, 0.6rem);
+		font-size: px8(1);
 		color: $light-red;
 		text-align: left;
 		// staggered so the wall of warnings never blinks in unison
@@ -165,7 +165,7 @@
 
 	.hud__alert {
 		margin: 0;
-		font-size: clamp(0.7rem, 2.4vw, 1.2rem);
+		font-size: px8(2);
 		letter-spacing: 0.18em;
 		color: $light-red;
 		text-shadow: 0 0 18px rgba($light-red, 0.5);
@@ -175,7 +175,7 @@
 	.hud__respond {
 		padding: 0.9rem 2.2rem;
 		font-family: $font-pixel;
-		font-size: clamp(0.65rem, 2vw, 0.95rem);
+		font-size: px8(2);
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
 		// last: the mixin emits nested states, so trailing declarations would warn
