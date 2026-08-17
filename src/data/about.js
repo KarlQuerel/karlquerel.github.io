@@ -51,7 +51,7 @@ export const CAREER_TIMELINE = [
 		type: 'study',
 		from: '2015',
 		to: '2017',
-		title: 'MSc Finance',
+		title: 'Master in Finance',
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
 		flag: 'france',

@@ -233,10 +233,13 @@
 		color: $tag-experience;
 	}
 
+	// prose face, not display: Press Start 2P advances a full 1em per glyph, so a
+	// spelled-out degree ate three lines. Departure Mono at 22px holds nearly the
+	// same weight at 0.64em, and 22 is on its 11px grid.
 	.ztl-title {
 		margin: 0;
-		font-family: $font-pixel;
-		font-size: $type-title;
+		font-family: $font-terminal;
+		font-size: $type-prose;
 		line-height: 1.4;
 		color: $white;
 		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
