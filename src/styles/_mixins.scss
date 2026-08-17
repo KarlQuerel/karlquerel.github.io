@@ -42,7 +42,9 @@
 	align-items: center;
 	gap: 0.6rem;
 	font-family: variables.$font-pixel;
-	font-size: variables.px8(1);
+	// px8(2), not px8(1): this is a tap target, and 8px Press Start 2P is the
+	// font's floor — legible as a label, far too small as a control
+	font-size: variables.px8(2);
 	letter-spacing: 1px;
 	text-transform: uppercase;
 	text-decoration: none;
