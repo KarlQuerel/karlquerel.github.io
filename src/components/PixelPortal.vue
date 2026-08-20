@@ -46,14 +46,8 @@
 		width: calc(#{$portal-icon-size} + #{$portal-pad-x} * 2);
 		padding: $portal-pad-y $portal-pad-x;
 		text-decoration: none;
-		@include void-button(
-			$bg: radial-gradient(
-					125% 125% at 50% 38%,
-					rgba(0, 0, 0, 0.55) 0%,
-					rgba(0, 0, 0, 0.18) 68%,
-					rgba(0, 0, 0, 0) 100%
-				)
-		);
+		// no plate behind the icon — the sprite sits straight on the sky
+		@include void-button($bg: transparent);
 	}
 
 	// Separate rule so it overrides the mixin's radius without trailing it.

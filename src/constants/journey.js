@@ -20,9 +20,10 @@ export const JOURNEY = {
 // Camera keyframes: where the planet sits at each beat, as its centre's offset
 // from the viewport centre (vw / vh) plus the scale of the base 84vmin globe.
 // The track eases between them — dock before a station enters, hold while it
-// reads, swing across the screen during the empty legs. `fade` dims the globe
-// while a station is read: the flat card washes edge harshly against a bright
-// limb, and the world receding behind the page reads as depth anyway.
+// reads, swing across the screen during the empty legs. `fade` is the globe's
+// opacity — solid the whole way, dropping to 0 only at `gone`, where the entry
+// scene takes the sky over. The stations carry their own panels, so the world
+// behind them never needs dimming.
 // Extra channels beyond position/scale/fade:
 //   roll  — cumulative extra longitude (turns) on top of JOURNEY.turns; ramping
 //           it through the skim and the entry makes the ground rush past
@@ -32,11 +33,11 @@ export const JOURNEY = {
 export const CAMERA = {
 	rest: { x: 0, y: 20, scale: 0.14, fade: 1, roll: 0, tilt: 0 },
 	swing: { x: -26, y: 6, scale: 0.6, fade: 1, roll: 0.05, tilt: -4 },
-	work: { x: -52, y: -4, scale: 1.35, fade: 0.85, roll: 0.1, tilt: -2 },
-	workEnd: { x: -50, y: -10, scale: 1.48, fade: 0.85, roll: 0.14, tilt: -1 },
+	work: { x: -52, y: -4, scale: 1.35, fade: 1, roll: 0.1, tilt: -2 },
+	workEnd: { x: -50, y: -10, scale: 1.48, fade: 1, roll: 0.14, tilt: -1 },
 	dive: { x: 6, y: 58, scale: 3.4, fade: 1, roll: 0.5, tilt: 5 },
-	life: { x: 56, y: 2, scale: 1.7, fade: 0.62, roll: 0.6, tilt: 2 },
-	lifeEnd: { x: 53, y: -2, scale: 1.82, fade: 0.62, roll: 0.64, tilt: 1 },
+	life: { x: 56, y: 2, scale: 1.7, fade: 1, roll: 0.6, tilt: 2 },
+	lifeEnd: { x: 53, y: -2, scale: 1.82, fade: 1, roll: 0.64, tilt: 1 },
 	// the descent: horizon at pin start, then the limb swells past the frame and
 	// the globe hands off to the entry scene (PlanetEntry) under the sky takeover
 	approach: { x: 0, y: 62, scale: 2.0, fade: 1, roll: 0.7, tilt: 0 },
@@ -49,11 +50,11 @@ export const CAMERA = {
 export const CAMERA_PORTRAIT = {
 	rest: { x: 0, y: 18, scale: 0.16, fade: 1, roll: 0, tilt: 0 },
 	swing: { x: -28, y: 6, scale: 0.7, fade: 1, roll: 0.05, tilt: -4 },
-	work: { x: -55, y: -6, scale: 1.6, fade: 0.75, roll: 0.1, tilt: -2 },
-	workEnd: { x: -53, y: -11, scale: 1.72, fade: 0.75, roll: 0.14, tilt: -1 },
+	work: { x: -55, y: -6, scale: 1.6, fade: 1, roll: 0.1, tilt: -2 },
+	workEnd: { x: -53, y: -11, scale: 1.72, fade: 1, roll: 0.14, tilt: -1 },
 	dive: { x: 4, y: 46, scale: 4.4, fade: 1, roll: 0.5, tilt: 5 },
-	life: { x: 55, y: 0, scale: 2.0, fade: 0.55, roll: 0.6, tilt: 2 },
-	lifeEnd: { x: 52, y: -3, scale: 2.12, fade: 0.55, roll: 0.64, tilt: 1 },
+	life: { x: 55, y: 0, scale: 2.0, fade: 1, roll: 0.6, tilt: 2 },
+	lifeEnd: { x: 52, y: -3, scale: 2.12, fade: 1, roll: 0.64, tilt: 1 },
 	approach: { x: 0, y: 42, scale: 2.6, fade: 1, roll: 0.7, tilt: 0 },
 	entry: { x: 0, y: 70, scale: 6, fade: 1, roll: 0.9, tilt: 0 },
 	gone: { x: 0, y: 80, scale: 7, fade: 0, roll: 1, tilt: 0 },
