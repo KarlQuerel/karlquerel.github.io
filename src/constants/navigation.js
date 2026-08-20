@@ -1,6 +1,9 @@
-// The only primary link while the rest of the site lives on the landing journey:
-// everything else (work, life, contact) is a station you scroll to, not a page.
-export const NAVBAR_LINKS = [{ to: '/game', label: 'Game' }]
+// Primary links for the nav overlay. Just the two pages: work, life and contact
+// are stations on the landing journey, reached from the rail (JOURNEY_STOPS).
+export const NAVBAR_LINKS = [
+	{ to: '/', label: 'Home' },
+	{ to: '/game', label: 'Game' },
+]
 
 // The landing journey's stations, in flight order. The rail tracks these and
 // lets you jump between them. Deliberately separate from NAVBAR_LINKS: these
