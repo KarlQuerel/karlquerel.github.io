@@ -119,31 +119,58 @@ export const ENTRY = {
 		{ left: 42, scale: 1.15, start: 0.55 },
 		{ left: 66, scale: 0.95, start: 0.58, flip: true },
 	],
-	// procedural ridgelines: sprite width in cells, height as a width fraction,
-	// and how much of the runway each band spends settling into place
+	// Procedural ridgelines: sprite width in cells, height as a width fraction,
+	// and how much of the runway each band spends settling into place.
 	ridgeRes: 256,
 	ridgeAspect: 0.36,
 	ridgeSettle: 0.16,
+	// Relief shading. Each column is lit by which way its face turns (`slopeGain`
+	// per band), measured across `ridgeSlopeSpan` cells so facets come out broad
+	// rather than one-column stripes. The light then dies off over `faceDepth`
+	// cells below the crest, so the lit face hugs the ridge and the mass beneath
+	// it sinks into shadow. `ridgeLight` is the sun's side: -1 puts it stage
+	// left, matching the planet's key.
+	ridgeLight: -1,
+	ridgeSlopeSpan: 2,
+	ridgeDepthFade: 0.6,
+	// crag texture broken across the faces, so a slope is not one flat wash
+	ridgeRough: 0.2,
+	ridgeRoughFreq: 26,
 	far: {
 		revealAt: 0.56,
 		liftVh: 10,
 		heightVh: 34,
-		freq: 7,
+		freq: 9,
 		base: 0.32,
 		amp: 0.5,
 		seed: 11,
-		body: 'rgb(88, 56, 50)',
-		crest: 'rgb(158, 104, 88)',
+		slopeGain: 40,
+		faceDepth: 22,
+		// dark → lit ramp, hard-banded like every other surface here
+		shades: [
+			[54, 33, 32],
+			[74, 46, 43],
+			[96, 61, 55],
+			[122, 80, 69],
+		],
+		crest: [158, 104, 88],
 	},
 	near: {
 		revealAt: 0.62,
 		liftVh: 16,
 		heightVh: 22,
-		freq: 4,
+		freq: 5.5,
 		base: 0.3,
 		amp: 0.55,
 		seed: 29,
-		body: 'rgb(38, 24, 24)',
-		crest: 'rgb(96, 58, 50)',
+		slopeGain: 52,
+		faceDepth: 28,
+		shades: [
+			[22, 14, 15],
+			[33, 20, 20],
+			[45, 28, 27],
+			[61, 38, 35],
+		],
+		crest: [96, 58, 50],
 	},
 }

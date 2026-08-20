@@ -105,22 +105,59 @@
 		)
 	}
 
-	// silhouette with a single lit crest pixel per column; drawn once per visit,
-	// upscaled pixelated by CSS
+	// Shaded relief, drawn once per visit and upscaled pixelated by CSS. Each
+	// column is lit by the way its face turns, then darkened with depth into the
+	// mass, and the result is quantised onto the band's ramp — same trick the
+	// planet sprite uses, so the ridges gain volume without losing the pixel grid.
 	function drawRidge(el, band, visitSeed) {
 		const w = ENTRY.ridgeRes
 		const h = Math.round(w * ENTRY.ridgeAspect)
 		el.width = w
 		el.height = h
 		const ctx = el.getContext('2d')
+		const img = ctx.createImageData(w, h)
+		const px = img.data
+		const levels = band.shades.length
+
+		// the whole profile first, so a column can be compared with its neighbour
+		const profile = new Array(w)
 		for (let x = 0; x < w; x++) {
-			const ridge = band.base + fbm1((x / w) * band.freq, band.seed + visitSeed) * band.amp
-			const yTop = Math.round(h * (1 - ridge))
-			ctx.fillStyle = band.crest
-			ctx.fillRect(x, yTop, 1, 1)
-			ctx.fillStyle = band.body
-			ctx.fillRect(x, yTop + 1, 1, h - yTop)
+			profile[x] = band.base + fbm1((x / w) * band.freq, band.seed + visitSeed) * band.amp
 		}
+
+		const put = (x, y, [r, g, b]) => {
+			const i = (y * w + x) * 4
+			px[i] = r
+			px[i + 1] = g
+			px[i + 2] = b
+			px[i + 3] = 255
+		}
+
+		for (let x = 0; x < w; x++) {
+			const ridge = profile[x]
+			const yTop = Math.round(h * (1 - ridge))
+			// which way this face turns decides how much of the sun it catches,
+			// measured across a span so the facets come out broad
+			const span = ENTRY.ridgeSlopeSpan
+			const lo = profile[Math.max(0, x - span)]
+			const hi = profile[Math.min(w - 1, x + span)]
+			const slope = (hi - lo) / (2 * span)
+			// a little crag noise on top, so each face is rock rather than a wash
+			const rough =
+				(fbm1((x / w) * ENTRY.ridgeRoughFreq, band.seed + visitSeed + 5) - 0.5) *
+				ENTRY.ridgeRough
+			const face = clamp01(0.5 + slope * band.slopeGain * ENTRY.ridgeLight + rough)
+			for (let y = yTop; y < h; y++) {
+				// the face is a band under the crest; below it the mass goes dark
+				const depth = Math.min(1, (y - yTop) / band.faceDepth)
+				const lit = clamp01(face * (1 - depth * ENTRY.ridgeDepthFade))
+				put(x, y, band.shades[Math.min(levels - 1, Math.floor(lit * levels))])
+			}
+			// the sunlit rim along the very top of the ridge
+			put(x, yTop, band.crest)
+		}
+
+		ctx.putImageData(img, 0, 0)
 	}
 
 	onMounted(() => {
