@@ -8,17 +8,6 @@
 		<div class="stage__planet" :style="planetStyle">
 			<PixelPlanet :reveal="cam.fade > 0 ? 1 : 0" :spin="spin" :light-yaw="lightYaw" />
 		</div>
-		<!-- the near field: asteroids and sister worlds crossing at their own
-		     depths — each draws once; only its transform rides the scroll -->
-		<div v-for="(d, i) in drifters" :key="i" class="stage__drifter" :style="d.style">
-			<PixelPlanet
-				v-if="d.kind === 'planet'"
-				:reveal="1"
-				:spin="d.spin"
-				:palette="PALETTES[d.palette]"
-			/>
-			<PixelAsteroid v-else :size="d.size" />
-		</div>
 		<!-- atmosphere on entry: haze rising from the horizon, in the planet's tint -->
 		<div class="stage__haze" :style="hazeStyle" />
 	</div>
@@ -26,8 +15,7 @@
 
 <script setup>
 	import { computed } from 'vue'
-	import { ICE_PALETTE, MOON_PALETTE, PLANET } from '@/constants/planet'
-	import PixelAsteroid from './PixelAsteroid.vue'
+	import { PLANET } from '@/constants/planet'
 	import PixelPlanet from './PixelPlanet.vue'
 
 	const props = defineProps({
@@ -39,12 +27,7 @@
 		lightYaw: { type: Number, default: 0 },
 		// 0 → vacuum, 1 → full entry haze
 		haze: { type: Number, default: 0 },
-		// bodies currently crossing the frame ({ kind, style, … }), see DRIFTERS
-		drifters: { type: Array, default: () => [] },
 	})
-
-	// palette registry for the planet-kind drifters
-	const PALETTES = { moon: MOON_PALETTE, ice: ICE_PALETTE }
 
 	// the haze borrows the planet's atmosphere colour, so entry matches the limb
 	const stageStyle = { '--atmosphere': PLANET.atmosphere.join(', ') }
@@ -84,13 +67,6 @@
 	}
 
 	.stage__planet {
-		position: absolute;
-		inset: 0;
-		will-change: transform;
-	}
-
-	// in front of the planet, behind the page — the near layers of the parallax
-	.stage__drifter {
 		position: absolute;
 		inset: 0;
 		will-change: transform;

@@ -74,48 +74,6 @@ export const PLANET = {
 	oceanGloss: 0.6,
 }
 
-// Band override for the moon flyby (PixelPlanet `palette` prop): airless grey,
-// maria in the lowlands. The faint "atmosphere" halo reads as earthshine.
-export const MOON_PALETTE = {
-	ocean: [38, 36, 40],
-	oceanShallow: [58, 56, 60],
-	land: [96, 94, 98],
-	highland: [128, 126, 130],
-	atmosphere: [140, 138, 142],
-}
-
-// Band override for the distant sister world (drifter): a cold iced-over globe.
-export const ICE_PALETTE = {
-	ocean: [30, 44, 62],
-	oceanShallow: [56, 84, 108],
-	land: [148, 168, 182],
-	highland: [214, 228, 236],
-	atmosphere: [150, 190, 214],
-}
-
-// Tunables for the drifting rocks (PixelAsteroid.vue): sculpted pixel boulders
-// drawn once per visit — a heightfield (dome + lumps + cratering) shaded by its
-// own normals, then quantised into hard light bands so it stays pixel art.
-export const ASTEROID = {
-	// sprite resolution; drawn once, so this costs nothing per frame
-	resolution: 128,
-	// silhouette: base radius (fraction of the sprite) ± the roughness ripple
-	baseRadius: 0.34,
-	roughness: 0.26,
-	edgeFreq: 2.3,
-	// relief: lump amplitude/frequency over the dome, and the seeded crater field
-	lumpAmp: 0.55,
-	lumpFreq: 2.4,
-	craters: { count: 7, rMin: 0.09, rMax: 0.24, depthMin: 0.25, depthMax: 0.5 },
-	// shading: normal strength from the height gradient, banded light levels
-	// (the pixel-art quantisation), and two regolith albedos mixed in patches
-	gradientScale: 10,
-	shadeBands: 5,
-	albedoDark: [88, 80, 74],
-	albedoLight: [126, 116, 104],
-	patchFreq: 1.6,
-}
-
 // Band override for the launch beat's dying Earth (PixelPlanet `palette` prop):
 // steel seas, sickly olive land, ashen peaks under a pale fading atmosphere.
 export const EARTH_PALETTE = {

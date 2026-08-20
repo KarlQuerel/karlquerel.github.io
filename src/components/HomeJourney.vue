@@ -1,12 +1,6 @@
 <template>
 	<section id="top" ref="trackRef" class="journey" :style="trackStyle">
-		<PlanetStage
-			:cam="cam"
-			:spin="spin"
-			:light-yaw="lightYaw"
-			:haze="haze"
-			:drifters="drifters"
-		/>
+		<PlanetStage :cam="cam" :spin="spin" :light-yaw="lightYaw" :haze="haze" />
 		<JourneyRail :active="activeStop" />
 
 		<!-- Departure: deep space, the destination a distant dot below the name. -->
@@ -55,14 +49,7 @@
 
 <script setup>
 	import { computed, onActivated, onBeforeUnmount, onMounted, ref } from 'vue'
-	import {
-		ARRIVAL,
-		CAMERA,
-		CAMERA_PORTRAIT,
-		DEPTH_HAZE,
-		DRIFTERS,
-		JOURNEY,
-	} from '@/constants/journey'
+	import { ARRIVAL, CAMERA, CAMERA_PORTRAIT, JOURNEY } from '@/constants/journey'
 	import { ABOUT_HEADINGS } from '@/data/about'
 	import { HOME_LANDING } from '@/data/heroLines'
 	import { clamp01, smoothstep } from '@/js/math'
@@ -98,7 +85,6 @@
 	const dims = ref({ trackH: 0, vh: 0 })
 	const camTrack = ref([])
 	const stops = ref([])
-	const resolvedDrifters = ref([])
 	let resizeObserver = null
 
 	function measure() {
@@ -132,21 +118,6 @@
 			{ s: arrivalTop + runwayPx * ARRIVAL.entryAt, ...cameras.entry },
 			{ s: arrivalTop + runwayPx * ARRIVAL.goneAt, ...cameras.gone },
 		]
-		// resolve each drifter's scroll window against the measured section edges
-		const anchors = {
-			top: 0,
-			workTop: topOf(workRef.value),
-			workBottom: bottomOf(workRef.value),
-			lifeTop: topOf(lifeRef.value),
-			lifeBottom: bottomOf(lifeRef.value),
-			arrivalTop,
-		}
-		const at = ([name, offsetVh]) => anchors[name] + (offsetVh / 100) * vh
-		resolvedDrifters.value = DRIFTERS.map(d => ({
-			...d,
-			s0: at(d.window[0]),
-			s1: at(d.window[1]),
-		}))
 		// rail thresholds: a stop lights once its station crosses mid-viewport
 		stops.value = [0, topOf(workRef.value), topOf(lifeRef.value), topOf(arrivalRef.value)]
 	}
@@ -179,44 +150,6 @@
 
 	// the sun holds still in the world while you orbit — the terminator advances
 	const lightYaw = computed(() => progress.value * JOURNEY.sunTurns * Math.PI * 2)
-
-	// the near field, in perspective: lateral offset and size divide by the
-	// body's distance, so approaches accelerate hyperbolically — the camera
-	// flies past at constant speed, the world does the rest
-	const drifters = computed(() => {
-		const out = []
-		for (const d of resolvedDrifters.value) {
-			const t = (scrolled.value - d.s0) / (d.s1 - d.s0 || 1)
-			if (t <= 0 || t >= 1) continue
-			const z = d.z ? d.z[0] + (d.z[1] - d.z[0]) * t : 1
-			const x = (d.from.x + (d.to.x - d.from.x) * t) / z
-			const y = (d.from.y + (d.to.y - d.from.y) * t) / z
-			const scale = (d.scale ?? 1) / z
-			// soft edges so a track that starts on-screen never pops
-			const opacity = Math.min(1, Math.min(t, 1 - t) / 0.1)
-			// aerial perspective: the farther out, the dimmer and greyer
-			const far = Math.max(0, z - 1)
-			const haze =
-				far > 0
-					? `brightness(${Math.max(DEPTH_HAZE.dimMin, 1 - far * DEPTH_HAZE.dim).toFixed(2)}) saturate(${Math.max(DEPTH_HAZE.desatMin, 1 - far * DEPTH_HAZE.desat).toFixed(2)})`
-					: null
-			out.push({
-				kind: d.kind,
-				spin: d.spin,
-				palette: d.palette,
-				size: d.size,
-				style: {
-					transform:
-						`translate3d(${x.toFixed(2)}vw, ${y.toFixed(2)}vh, 0)` +
-						` rotate(${((d.rotTurns || 0) * 360 * t).toFixed(1)}deg)` +
-						` scale(${scale.toFixed(3)})`,
-					opacity: opacity.toFixed(3),
-					filter: haze,
-				},
-			})
-		}
-		return out
-	})
 
 	// departure: the name drifts away faster than the scroll, then fades
 	const lockupStyle = computed(() => {
