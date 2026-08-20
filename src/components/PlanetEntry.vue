@@ -1,26 +1,19 @@
 <template>
-	<!-- Atmospheric entry: the hull lights up on the interface, the dusk sky
-	     swallows the stars, a cloud deck rushes up past the camera, and the
-	     surface ridgelines settle in — the journey ends standing on the planet.
-	     All scroll-scrubbed. -->
+	<!-- Atmospheric entry: a cloud deck rushes up and closes over the camera,
+	     the dusk sky takes over behind it, and the surface ridgelines settle in —
+	     the journey ends standing on the planet. All scroll-scrubbed. -->
 	<div class="entry" aria-hidden="true">
-		<!-- oversized, so the buffet can shift it without exposing an edge -->
+		<div class="entry__sky" :style="skyStyle" />
 		<div
-			class="entry__shake"
-			:class="{ 'entry__shake--buffeting': buffet > 0 }"
-			:style="shakeStyle"
-		>
-			<div class="entry__sky" :style="skyStyle" />
-			<div
-				v-for="(cloud, i) in ENTRY.clouds"
-				:key="i"
-				class="entry__cloud"
-				:style="cloudStyle(cloud)"
-			/>
-			<canvas ref="farEl" class="entry__ridge" :style="ridgeStyle(ENTRY.far)" />
-			<canvas ref="nearEl" class="entry__ridge" :style="ridgeStyle(ENTRY.near)" />
-			<div class="entry__heat" :style="heatStyle" />
-		</div>
+			v-for="(cloud, i) in ENTRY.clouds"
+			:key="i"
+			class="entry__cloud"
+			:style="cloudStyle(cloud)"
+		/>
+		<!-- inside the deck: cloud closes over the lens and hides the sky handoff -->
+		<div class="entry__deck" :style="deckStyle" />
+		<canvas ref="farEl" class="entry__ridge" :style="ridgeStyle(ENTRY.far)" />
+		<canvas ref="nearEl" class="entry__ridge" :style="ridgeStyle(ENTRY.near)" />
 	</div>
 </template>
 
@@ -34,30 +27,20 @@
 		progress: { type: Number, default: 0 },
 	})
 
-	// friction bloom: ramps in on the interface, holds the peak, then cools —
-	// a plain triangular envelope, eased on both sides
-	const heat = computed(() => {
-		const { start, peak, end, max } = ENTRY.heat
+	// inside the deck the view goes to cloud, which is what the sky handoff hides
+	// behind. Plain triangular envelope, eased both sides.
+	const deck = computed(() => {
+		const { start, peak, end, max } = ENTRY.deck
 		const p = props.progress
 		if (p <= start || p >= end) return 0
 		const t = p < peak ? (p - start) / (peak - start) : 1 - (p - peak) / (end - peak)
 		return smoothstep(clamp01(t)) * max
 	})
 
-	const heatStyle = computed(() => ({
-		opacity: heat.value.toFixed(3),
-		display: heat.value > 0 ? null : 'none',
+	const deckStyle = computed(() => ({
+		opacity: deck.value.toFixed(3),
+		display: deck.value > 0 ? null : 'none',
 	}))
-
-	// buffet amplitude in px; the keyframes read it back as --buffet
-	const buffet = computed(() => {
-		const { start, end, maxPx } = ENTRY.buffet
-		const t = clamp01((props.progress - start) / (end - start))
-		// up and back down across the window, so it never cuts off mid-shake
-		return t <= 0 || t >= 1 ? 0 : Math.sin(t * Math.PI) * maxPx
-	})
-
-	const shakeStyle = computed(() => ({ '--buffet': buffet.value.toFixed(2) }))
 
 	// dusk takeover: transparent space → opaque sky, then it holds
 	const skyStyle = computed(() => {
@@ -65,14 +48,26 @@
 		return { opacity: t.toFixed(3), display: t > 0 ? null : 'none' }
 	})
 
-	// each cloud rushes up past the camera inside its own window of the drop
+	// Each cloud rushes up past the camera inside its own window of the drop. It
+	// swells and fans away from centre as it closes — the perspective is what
+	// makes the deck read as something we are flying into rather than past.
 	function cloudStyle(cloud) {
 		const t = clamp01((props.progress - cloud.start) / ENTRY.cloudTravel)
-		const y = ENTRY.cloudFromVh - (ENTRY.cloudFromVh - ENTRY.cloudToVh) * t
+		const ease = t * t
+		const y = ENTRY.cloudFromVh - (ENTRY.cloudFromVh - ENTRY.cloudToVh) * ease
+		const drift = (cloud.left - 50) * ENTRY.cloudSpread * ease
+		const scale = cloud.scale * (1 + ENTRY.cloudApproach * ease)
 		return {
 			left: `${cloud.left}vw`,
 			display: t > 0 && t < 1 ? null : 'none',
-			transform: `translate3d(0, ${y.toFixed(1)}vh, 0) scale(${cloud.scale})`,
+			// fade the last stretch so a puff never pops out at the frame edge
+			opacity: Math.min(1, (1 - t) / 0.15).toFixed(3),
+			transform:
+				`translate3d(${drift.toFixed(1)}vw, ${y.toFixed(1)}vh, 0)` +
+				` scale(${scale.toFixed(2)})` +
+				// mirrored puffs: cheap variety across a deck this dense. Last in
+				// the list, so it flips the sprite and not the drift.
+				(cloud.flip ? ' scaleX(-1)' : ''),
 		}
 	}
 
@@ -136,48 +131,6 @@
 </script>
 
 <style scoped lang="scss">
-	// headroom for the buffet shift, so no edge ever peeks in
-	$buffet-overscan: 8px;
-
-	// under the contact content (z 3), over the planet stage showing through the pin
-	.entry {
-		position: absolute;
-		inset: 0;
-		z-index: 1;
-		overflow: hidden;
-		pointer-events: none;
-	}
-
-	// oversized so a few px of buffet never uncovers the layers behind the pin
-	.entry__shake {
-		position: absolute;
-		inset: -#{$buffet-overscan};
-	}
-
-	// hard-stepped judder: the air is fighting the hull. Amplitude comes from
-	// --buffet (scroll-scrubbed), so it dies out on its own at both ends.
-	.entry__shake--buffeting {
-		animation: entry-buffet 0.32s steps(1, end) infinite;
-	}
-
-	@keyframes entry-buffet {
-		0% {
-			transform: translate3d(0, 0, 0);
-		}
-		20% {
-			transform: translate3d(calc(var(--buffet) * -1px), calc(var(--buffet) * 1px), 0);
-		}
-		40% {
-			transform: translate3d(calc(var(--buffet) * 1px), calc(var(--buffet) * -0.5px), 0);
-		}
-		60% {
-			transform: translate3d(calc(var(--buffet) * -0.5px), calc(var(--buffet) * -1px), 0);
-		}
-		80% {
-			transform: translate3d(calc(var(--buffet) * 1px), calc(var(--buffet) * 0.5px), 0);
-		}
-	}
-
 	// alien dusk in the planet's dusty palette; opaque so the starfield vanishes
 	$sky-top: #150a0d;
 	$sky-mid: #5c3a38;
@@ -234,44 +187,17 @@
 		image-rendering: pixelated;
 	}
 
-	// The shock layer. Two stacked fields: a sheath wrapping the frame edges, and
-	// the compression bloom off the leading edge below the frame. Hard colour
-	// stops rather than smooth ramps — the banding is what keeps plasma reading
-	// as pixel art at this size.
-	.entry__heat {
+	// Inside the deck: cloud closes right over the lens. Deliberately a flat
+	// wash — any shaped gradient at full-frame size reads as a shape sitting on
+	// the screen. All the form here comes from the puff sprites in front of it.
+	.entry__deck {
 		position: absolute;
 		inset: 0;
-		background:
-			radial-gradient(
-				118% 108% at 50% 50%,
-				rgba(255, 150, 62, 0) 52%,
-				rgba(255, 150, 62, 0.24) 52%,
-				rgba(255, 150, 62, 0.24) 68%,
-				rgba(206, 76, 30, 0.44) 68%,
-				rgba(206, 76, 30, 0.44) 84%,
-				rgba(132, 38, 18, 0.6) 84%
-			),
-			radial-gradient(
-				150% 130% at 50% 132%,
-				rgba(255, 247, 226, 0.98) 0%,
-				rgba(255, 247, 226, 0.98) 14%,
-				rgba(255, 198, 112, 0.95) 14%,
-				rgba(255, 198, 112, 0.95) 27%,
-				rgba(242, 126, 48, 0.88) 27%,
-				rgba(242, 126, 48, 0.88) 42%,
-				rgba(178, 64, 32, 0.7) 42%,
-				rgba(178, 64, 32, 0.7) 58%,
-				rgba(98, 30, 18, 0.4) 58%,
-				rgba(98, 30, 18, 0.4) 76%,
-				rgba(40, 12, 10, 0.12) 76%,
-				rgba(40, 12, 10, 0) 100%
-			);
-	}
-
-	// the judder is the one thing here that runs on its own clock
-	@media (prefers-reduced-motion: reduce) {
-		.entry__shake--buffeting {
-			animation: none;
-		}
+		background: linear-gradient(
+			to bottom,
+			rgb(198, 176, 172) 0%,
+			rgb(224, 206, 200) 45%,
+			rgb(232, 216, 210) 100%
+		);
 	}
 </style>

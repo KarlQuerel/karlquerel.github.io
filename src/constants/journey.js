@@ -78,29 +78,46 @@ export const ARRIVAL = {
 	hazeMax: 0.7,
 }
 
-// The entry scene (PlanetEntry.vue): friction heat, sky takeover, hull buffet,
-// cloud deck, ridgelines. Fractions are of the approach runway; colours echo
-// the planet's palette.
+// The entry scene (PlanetEntry.vue): cloud deck, sky takeover, ridgelines.
+// Fractions are of the approach runway; colours echo the planet's palette.
 export const ENTRY = {
-	// the sky only starts once the limb has cleared the frame (see CAMERA.entry),
-	// so it takes over from a screen already full of surface, never mid-dissolve
-	skyStart: 0.3,
-	skyFull: 0.5,
-	// atmospheric friction: the bloom lights at the interface, peaks in the thick
-	// of it, and cools once the dusk sky owns the frame
-	heat: { start: 0.16, peak: 0.4, end: 0.66, max: 0.9 },
-	// hull buffet through the heavy air. Starts only after the sky is opaque —
-	// the globe is a separate fixed layer and would not shake along with it.
-	buffet: { start: 0.5, end: 0.76, maxPx: 3 },
-	// each cloud rushes up past the camera inside its own slice of the drop
+	// The sky only starts once the limb has cleared the frame (see CAMERA.entry)
+	// and the deck has closed over, so it never reads as a dissolve.
+	skyStart: 0.32,
+	skyFull: 0.52,
+	// the whiteout while the camera is inside the deck — this is the cover the
+	// sky handoff happens behind
+	deck: { start: 0.28, peak: 0.42, end: 0.6, max: 0.92 },
+	// each cloud rushes up past the camera inside its own slice of the drop,
+	// swelling (`cloudApproach`) and fanning off centre (`cloudSpread`) as it
+	// closes, so the deck has depth rather than sliding past as a flat layer
 	cloudTravel: 0.2,
 	cloudFromVh: 110,
 	cloudToVh: -70,
+	cloudApproach: 5.2,
+	cloudSpread: 1.1,
+	// A dense, staggered stream: the deck has to be thick enough through the
+	// takeover that the surface is gone before the sky is up. `flip` mirrors the
+	// puff so one sprite does not read as a repeat.
 	clouds: [
-		{ left: 6, scale: 1.3, start: 0.42 },
-		{ left: 52, scale: 1.9, start: 0.48 },
-		{ left: 24, scale: 2.6, start: 0.55 },
-		{ left: 66, scale: 1.5, start: 0.62 },
+		{ left: 18, scale: 0.5, start: 0.22 },
+		{ left: 74, scale: 0.42, start: 0.24, flip: true },
+		{ left: 44, scale: 0.6, start: 0.26 },
+		{ left: 8, scale: 0.72, start: 0.28, flip: true },
+		{ left: 62, scale: 0.66, start: 0.3 },
+		{ left: 32, scale: 0.85, start: 0.32, flip: true },
+		{ left: 88, scale: 0.78, start: 0.34 },
+		{ left: 52, scale: 1.5, start: 0.36, flip: true },
+		{ left: 14, scale: 1.4, start: 0.38 },
+		{ left: 70, scale: 1.7, start: 0.4, flip: true },
+		{ left: 38, scale: 1.6, start: 0.42 },
+		{ left: 84, scale: 1.35, start: 0.44, flip: true },
+		{ left: 24, scale: 1.7, start: 0.46 },
+		{ left: 58, scale: 1.55, start: 0.48, flip: true },
+		{ left: 6, scale: 1.0, start: 0.5 },
+		{ left: 78, scale: 1.25, start: 0.52, flip: true },
+		{ left: 42, scale: 1.15, start: 0.55 },
+		{ left: 66, scale: 0.95, start: 0.58, flip: true },
 	],
 	// procedural ridgelines: sprite width in cells, height as a width fraction,
 	// and how much of the runway each band spends settling into place
