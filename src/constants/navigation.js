@@ -1,9 +1,3 @@
-// Primary links for the nav overlay the star toggle summons. The journey's
-// stations are same-page anchors; the router glides to them via scrollBehavior.
-export const NAVBAR_LINKS = [
-	{ to: '/', label: 'Home' },
-	{ to: '/#work', label: 'Work' },
-	{ to: '/#life', label: 'Life' },
-	{ to: '/#contact', label: 'Contact' },
-	{ to: '/terminal', label: 'for the nerds' },
-]
+// The only primary link while the rest of the site lives on the landing journey:
+// everything else (work, life, contact) is a station you scroll to, not a page.
+export const NAVBAR_LINKS = [{ to: '/game', label: 'Game' }]

@@ -38,11 +38,12 @@ export const CAMERA = {
 	dive: { x: 6, y: 58, scale: 3.4, fade: 1, roll: 0.5, tilt: 5 },
 	life: { x: 56, y: 2, scale: 1.7, fade: 1, roll: 0.6, tilt: 2 },
 	lifeEnd: { x: 53, y: -2, scale: 1.82, fade: 1, roll: 0.64, tilt: 1 },
-	// the descent: horizon at pin start, then the limb swells past the frame and
-	// the globe hands off to the entry scene (PlanetEntry) under the sky takeover
+	// the descent: horizon at pin start, then the globe swells hard enough that
+	// its crest leaves the top of the frame — from there the screen is nothing but
+	// surface, which is what lets the sky take over without reading as a dissolve
 	approach: { x: 0, y: 62, scale: 2.0, fade: 1, roll: 0.7, tilt: 0 },
-	entry: { x: 0, y: 95, scale: 4.8, fade: 1, roll: 0.9, tilt: 0 },
-	gone: { x: 0, y: 110, scale: 5.6, fade: 0, roll: 1, tilt: 0 },
+	entry: { x: 0, y: 100, scale: 8, fade: 1, roll: 1.05, tilt: 0 },
+	gone: { x: 0, y: 115, scale: 11, fade: 0, roll: 1.35, tilt: 0 },
 }
 
 // Portrait screens: vmin is the narrow side, so the same scales render a far
@@ -56,8 +57,8 @@ export const CAMERA_PORTRAIT = {
 	life: { x: 55, y: 0, scale: 2.0, fade: 1, roll: 0.6, tilt: 2 },
 	lifeEnd: { x: 52, y: -3, scale: 2.12, fade: 1, roll: 0.64, tilt: 1 },
 	approach: { x: 0, y: 42, scale: 2.6, fade: 1, roll: 0.7, tilt: 0 },
-	entry: { x: 0, y: 70, scale: 6, fade: 1, roll: 0.9, tilt: 0 },
-	gone: { x: 0, y: 80, scale: 7, fade: 0, roll: 1, tilt: 0 },
+	entry: { x: 0, y: 58, scale: 19, fade: 1, roll: 1.05, tilt: 0 },
+	gone: { x: 0, y: 66, scale: 25, fade: 0, roll: 1.35, tilt: 0 },
 }
 
 // The final approach: horizon → limb blowout → atmosphere → surface. All
@@ -67,7 +68,7 @@ export const ARRIVAL = {
 	runwayVh: 300,
 	// Camera keyframe positions along the runway (see CAMERA.entry / .gone).
 	entryAt: 0.45,
-	goneAt: 0.58,
+	goneAt: 0.52,
 	// Contact heading + portals fade in across this window — on the surface.
 	contactFadeStart: 0.66,
 	contactFadeEnd: 0.88,
@@ -77,21 +78,29 @@ export const ARRIVAL = {
 	hazeMax: 0.7,
 }
 
-// The entry scene (PlanetEntry.vue): sky takeover, cloud deck, ridgelines.
-// Fractions are of the approach runway; colours echo the planet's palette.
+// The entry scene (PlanetEntry.vue): friction heat, sky takeover, hull buffet,
+// cloud deck, ridgelines. Fractions are of the approach runway; colours echo
+// the planet's palette.
 export const ENTRY = {
-	// dusk swallows the stars across this window, then holds
-	skyStart: 0.34,
-	skyFull: 0.56,
+	// the sky only starts once the limb has cleared the frame (see CAMERA.entry),
+	// so it takes over from a screen already full of surface, never mid-dissolve
+	skyStart: 0.3,
+	skyFull: 0.5,
+	// atmospheric friction: the bloom lights at the interface, peaks in the thick
+	// of it, and cools once the dusk sky owns the frame
+	heat: { start: 0.16, peak: 0.4, end: 0.66, max: 0.9 },
+	// hull buffet through the heavy air. Starts only after the sky is opaque —
+	// the globe is a separate fixed layer and would not shake along with it.
+	buffet: { start: 0.5, end: 0.76, maxPx: 3 },
 	// each cloud rushes up past the camera inside its own slice of the drop
 	cloudTravel: 0.2,
 	cloudFromVh: 110,
 	cloudToVh: -70,
 	clouds: [
-		{ left: 6, scale: 1.3, start: 0.34 },
-		{ left: 52, scale: 1.9, start: 0.4 },
-		{ left: 24, scale: 2.6, start: 0.47 },
-		{ left: 66, scale: 1.5, start: 0.54 },
+		{ left: 6, scale: 1.3, start: 0.42 },
+		{ left: 52, scale: 1.9, start: 0.48 },
+		{ left: 24, scale: 2.6, start: 0.55 },
+		{ left: 66, scale: 1.5, start: 0.62 },
 	],
 	// procedural ridgelines: sprite width in cells, height as a width fraction,
 	// and how much of the runway each band spends settling into place

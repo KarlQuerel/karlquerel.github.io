@@ -1,3 +1,16 @@
+// The game is still being built — /game serves the holding screen until this
+// flips. Everything under components/game/ is finished and wired; the flag is
+// the only thing standing between it and the route.
+export const GAME_READY = false
+
+// Copy for the holding screen (GameHolding.vue).
+export const GAME_HOLDING = {
+	lead: 'Under ',
+	accent: 'construction',
+	body: 'The game is still being built. Come back soon.',
+	back: '< Back to the journey',
+}
+
 // Timeline of the /game crash intro, in seconds since mount: warp in, cruise,
 // drop out onto the planet, impact, cut to black. Tune the feel here.
 export const CRASH_INTRO = {

@@ -1,17 +1,26 @@
 <template>
-	<!-- Atmospheric entry: past the entry point the dusk sky swallows the stars,
-	     a cloud deck rushes up past the camera, and the surface ridgelines settle
-	     in — the journey ends standing on the planet. All scroll-scrubbed. -->
+	<!-- Atmospheric entry: the hull lights up on the interface, the dusk sky
+	     swallows the stars, a cloud deck rushes up past the camera, and the
+	     surface ridgelines settle in — the journey ends standing on the planet.
+	     All scroll-scrubbed. -->
 	<div class="entry" aria-hidden="true">
-		<div class="entry__sky" :style="skyStyle" />
+		<!-- oversized, so the buffet can shift it without exposing an edge -->
 		<div
-			v-for="(cloud, i) in ENTRY.clouds"
-			:key="i"
-			class="entry__cloud"
-			:style="cloudStyle(cloud)"
-		/>
-		<canvas ref="farEl" class="entry__ridge" :style="ridgeStyle(ENTRY.far)" />
-		<canvas ref="nearEl" class="entry__ridge" :style="ridgeStyle(ENTRY.near)" />
+			class="entry__shake"
+			:class="{ 'entry__shake--buffeting': buffet > 0 }"
+			:style="shakeStyle"
+		>
+			<div class="entry__sky" :style="skyStyle" />
+			<div
+				v-for="(cloud, i) in ENTRY.clouds"
+				:key="i"
+				class="entry__cloud"
+				:style="cloudStyle(cloud)"
+			/>
+			<canvas ref="farEl" class="entry__ridge" :style="ridgeStyle(ENTRY.far)" />
+			<canvas ref="nearEl" class="entry__ridge" :style="ridgeStyle(ENTRY.near)" />
+			<div class="entry__heat" :style="heatStyle" />
+		</div>
 	</div>
 </template>
 
@@ -24,6 +33,31 @@
 		// approach progress: 0 → still in space, 1 → landed
 		progress: { type: Number, default: 0 },
 	})
+
+	// friction bloom: ramps in on the interface, holds the peak, then cools —
+	// a plain triangular envelope, eased on both sides
+	const heat = computed(() => {
+		const { start, peak, end, max } = ENTRY.heat
+		const p = props.progress
+		if (p <= start || p >= end) return 0
+		const t = p < peak ? (p - start) / (peak - start) : 1 - (p - peak) / (end - peak)
+		return smoothstep(clamp01(t)) * max
+	})
+
+	const heatStyle = computed(() => ({
+		opacity: heat.value.toFixed(3),
+		display: heat.value > 0 ? null : 'none',
+	}))
+
+	// buffet amplitude in px; the keyframes read it back as --buffet
+	const buffet = computed(() => {
+		const { start, end, maxPx } = ENTRY.buffet
+		const t = clamp01((props.progress - start) / (end - start))
+		// up and back down across the window, so it never cuts off mid-shake
+		return t <= 0 || t >= 1 ? 0 : Math.sin(t * Math.PI) * maxPx
+	})
+
+	const shakeStyle = computed(() => ({ '--buffet': buffet.value.toFixed(2) }))
 
 	// dusk takeover: transparent space → opaque sky, then it holds
 	const skyStyle = computed(() => {
@@ -102,6 +136,9 @@
 </script>
 
 <style scoped lang="scss">
+	// headroom for the buffet shift, so no edge ever peeks in
+	$buffet-overscan: 8px;
+
 	// under the contact content (z 3), over the planet stage showing through the pin
 	.entry {
 		position: absolute;
@@ -109,6 +146,36 @@
 		z-index: 1;
 		overflow: hidden;
 		pointer-events: none;
+	}
+
+	// oversized so a few px of buffet never uncovers the layers behind the pin
+	.entry__shake {
+		position: absolute;
+		inset: -#{$buffet-overscan};
+	}
+
+	// hard-stepped judder: the air is fighting the hull. Amplitude comes from
+	// --buffet (scroll-scrubbed), so it dies out on its own at both ends.
+	.entry__shake--buffeting {
+		animation: entry-buffet 0.32s steps(1, end) infinite;
+	}
+
+	@keyframes entry-buffet {
+		0% {
+			transform: translate3d(0, 0, 0);
+		}
+		20% {
+			transform: translate3d(calc(var(--buffet) * -1px), calc(var(--buffet) * 1px), 0);
+		}
+		40% {
+			transform: translate3d(calc(var(--buffet) * 1px), calc(var(--buffet) * -0.5px), 0);
+		}
+		60% {
+			transform: translate3d(calc(var(--buffet) * -0.5px), calc(var(--buffet) * -1px), 0);
+		}
+		80% {
+			transform: translate3d(calc(var(--buffet) * 1px), calc(var(--buffet) * 0.5px), 0);
+		}
 	}
 
 	// alien dusk in the planet's dusty palette; opaque so the starfield vanishes
@@ -165,5 +232,46 @@
 		width: 100%;
 		// hard-edged silhouettes, like the rest of the sprite work
 		image-rendering: pixelated;
+	}
+
+	// The shock layer. Two stacked fields: a sheath wrapping the frame edges, and
+	// the compression bloom off the leading edge below the frame. Hard colour
+	// stops rather than smooth ramps — the banding is what keeps plasma reading
+	// as pixel art at this size.
+	.entry__heat {
+		position: absolute;
+		inset: 0;
+		background:
+			radial-gradient(
+				118% 108% at 50% 50%,
+				rgba(255, 150, 62, 0) 52%,
+				rgba(255, 150, 62, 0.24) 52%,
+				rgba(255, 150, 62, 0.24) 68%,
+				rgba(206, 76, 30, 0.44) 68%,
+				rgba(206, 76, 30, 0.44) 84%,
+				rgba(132, 38, 18, 0.6) 84%
+			),
+			radial-gradient(
+				150% 130% at 50% 132%,
+				rgba(255, 247, 226, 0.98) 0%,
+				rgba(255, 247, 226, 0.98) 14%,
+				rgba(255, 198, 112, 0.95) 14%,
+				rgba(255, 198, 112, 0.95) 27%,
+				rgba(242, 126, 48, 0.88) 27%,
+				rgba(242, 126, 48, 0.88) 42%,
+				rgba(178, 64, 32, 0.7) 42%,
+				rgba(178, 64, 32, 0.7) 58%,
+				rgba(98, 30, 18, 0.4) 58%,
+				rgba(98, 30, 18, 0.4) 76%,
+				rgba(40, 12, 10, 0.12) 76%,
+				rgba(40, 12, 10, 0) 100%
+			);
+	}
+
+	// the judder is the one thing here that runs on its own clock
+	@media (prefers-reduced-motion: reduce) {
+		.entry__shake--buffeting {
+			animation: none;
+		}
 	}
 </style>
