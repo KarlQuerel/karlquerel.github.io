@@ -3,12 +3,10 @@
 // the only thing standing between it and the route.
 export const GAME_READY = false
 
-// Copy for the holding screen (GameHolding.vue).
+// Copy for the holding screen (GameHolding.vue) — the heading is the whole page.
 export const GAME_HOLDING = {
 	lead: 'Under ',
 	accent: 'construction',
-	body: 'The game is still being built. Come back soon.',
-	back: '< Back to the journey',
 }
 
 // Timeline of the /game crash intro, in seconds since mount: warp in, cruise,
