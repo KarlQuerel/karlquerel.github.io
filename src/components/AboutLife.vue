@@ -336,14 +336,14 @@
 	}
 
 	@media (max-width: $breakpoint-mobile) {
-		// The one place the pixel grid loses. Departure Mono is crisp only at 11px
-		// and 22px: 22px leaves ~23ch on a phone, and 11px has an 8px cap — smaller
-		// than the VT323 it replaced, on the very axis this font was chosen for.
-		// 16px is off-grid (33% antialiased at DPR3) but is the comfortable reading
-		// size, and body prose is where softness shows least and legibility matters
-		// most. Titles, labels and chrome stay on-grid.
+		// Where the pixel grid loses. Departure Mono is crisp only at 11px and 22px:
+		// 22px leaves ~23ch on a phone, and 11px has an 8px cap — smaller than the
+		// VT323 it replaced, on the very axis this font was chosen for. 16px is
+		// off-grid (33% antialiased at DPR3) but is the comfortable reading size, and
+		// body prose is where softness shows least and legibility matters most.
+		// Titles, labels and chrome stay on-grid.
 		.life-card__line {
-			font-size: $type-prose-mobile;
+			font-size: $type-prose-md;
 		}
 
 		.dogs {

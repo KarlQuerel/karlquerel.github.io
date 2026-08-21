@@ -21,11 +21,18 @@ $font-terminal: 'Departure Mono', ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mo
 // Whole multiples of Departure Mono's 11px grid — the only crisp prose sizes.
 $type-prose: 22px;
 $type-prose-sm: 11px;
-// Deliberately OFF the grid, and the only prose size that is. The grid's two steps
-// are 11px (8px cap — too small to read comfortably on a phone) and 22px (~23ch on
-// a 390px screen). 16px is the standard mobile body size; long prose is where the
-// softness reads least and the legibility counts most. See AboutLife.vue.
-$type-prose-mobile: 16px;
+// Deliberately OFF the grid, and the only prose size that is. Departure Mono is crisp
+// only at 11px and 22px, which leaves prose a straight 2:1 jump with no middle rung at
+// all — and 11px has an 8px cap, which is a label size, not a reading size. 16px is the
+// standard body size; long prose is where the softness reads least and the legibility
+// counts most, so it is worth the antialias anywhere text is there to be READ rather
+// than to be labelled.
+//
+// Two such places: phone body copy (AboutLife) and the WORK timeline's institution and
+// caption lines (AboutWork). The latter were sitting on the 11px floor while the very
+// same role read at 22px one station over, which made the timeline's own captions —
+// the part carrying the story — the smallest type on the page.
+$type-prose-md: 16px;
 // Press Start 2P is drawn on an 8px grid, so it is crisp only at 8/16/24. Together
 // the two faces give one stepped scale — 8 / 11 / 16 / 22 — every step on-pixel.
 // Never size either face fluidly: a clamp spends most viewports off both grids.

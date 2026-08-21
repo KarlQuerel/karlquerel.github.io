@@ -249,9 +249,10 @@
 	// of trailing off under the white title
 	.ztl-school {
 		// prose face, not display: institution names are read, and Press Start 2P
-		// mangles the accents in "Grand Lycée Franco-Libanais" at this size
+		// mangles the accents in "Grand Lycée Franco-Libanais" at this size — and read
+		// is also why it takes the 16px step rather than the 11px floor
 		font-family: $font-terminal;
-		font-size: $type-prose-sm;
+		font-size: $type-prose-md;
 		line-height: 1.5;
 		text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
 	}
@@ -286,9 +287,12 @@
 		// the card's flex gap is tuned for pixel type; the caption wants a touch more air
 		margin: 0.35rem 0 0;
 		font-family: $font-terminal;
-		// a whole step below the LIFE prose: captions stay secondary, and 11px is the
-		// only crisp size under Departure Mono's 22px
-		font-size: $type-prose-sm;
+		// A step below the LIFE prose rather than half of it. This caption is the line
+		// that carries the story for its milestone, and at the 11px floor it was the
+		// smallest type in the station — set under the institution above it and level
+		// with a location label. 16px keeps it subordinate to the 22px title without
+		// making the most interesting text on the row the hardest to read.
+		font-size: $type-prose-md;
 		line-height: 1.45;
 		// global `p` is centred (_layout.scss) — the card reads as a left-aligned stack
 		text-align: left;
