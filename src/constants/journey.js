@@ -21,11 +21,13 @@ export const JOURNEY = {
 	sunTurns: 0.12,
 	// The cursor's lean, in px of travel per layer. The whole ladder, nearest first:
 	// the title plate (HERO_FLYBY.plateDepth 26) is the plane we fly through, then the
-	// ridge we lift off (DEPARTURE_RIDGE bands, 20 and 7), then the planet — a world,
-	// so it answers least of the things in front of you — and the station headings,
-	// which sit behind it and move less again. Body copy never moves: a page you are
-	// reading should hold still, and a depth cue everything has stops being one.
-	parallax: { planet: 9, heading: 5 },
+	// planet — the nearest thing in frame at a station, where it fills half of it —
+	// then the ridge we lift off (DEPARTURE_RIDGE bands, 20 and 7), then the station
+	// headings, which sit behind the planet and move less again. The ridge and the
+	// planet are never in frame together, so their two claims on being near never meet.
+	// Body copy never moves: a page you are reading should hold still, and a depth cue
+	// everything has stops being one.
+	parallax: { planet: 22, heading: 10 },
 	// Where the departure's beats land, as fractions of the run from the top of the
 	// page to the WORK dock. `void` has to sit past the end of the pass
 	// (HERO_FLYBY.runVh, which is in viewports) so the planet stays out of the frame
