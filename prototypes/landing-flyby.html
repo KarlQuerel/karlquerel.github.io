@@ -221,7 +221,7 @@
 		z-index: 5;
 		display: flex;
 		align-items: flex-start;
-		justify-content: space-between;
+		justify-content: flex-end;
 		gap: 16px;
 		padding: 20px 6vw;
 		font-size: 8px;
@@ -242,9 +242,14 @@
 		text-shadow: 2px 2px 0 #000, var(--outline);
 		transition: color 0.1s steps(2);
 	}
-	/* raised only once the title itself has gone past, so the opening frame keeps
-	   giving nothing away */
+	/* Bottom left, opposite the readout: the copy column scrolls up through the top left
+	   on its way out, and a wordmark there ends up interleaved between two lines of it.
+	   Raised only once the title itself has gone past, so the opening frame still gives
+	   nothing away. */
 	.chrome__mark {
+		position: fixed;
+		left: 6vw;
+		bottom: 5vh;
 		opacity: 0;
 		transition:
 			opacity 0.25s steps(3),
@@ -296,6 +301,7 @@
 		.hud {
 			font-size: 7px;
 		}
+		.chrome__mark,
 		.hud {
 			bottom: 3vh;
 		}
@@ -959,9 +965,17 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		// turns is a degree the reader's eye has to follow.
 		{ s: 0.0, b: 0, w: 0 },
 		{ s: 0.24, b: 0, w: 0.08 },
-		{ s: 0.31, b: 0, w: 0.2 }, // a lean toward it, no more; it is big enough by now
-		{ s: 0.35, b: 0, w: 0.15 }, // to fill the frame without being followed
-		{ s: 0.4, b: 0, w: 0 },
+		// A lean into the approach, and then let go. The weight has to be back to zero by
+		// the closest pass at s=0.349: hold any of it past there and the camera is turning
+		// to keep in view something it has already gone by, which it can never manage. It
+		// used to carry 0.15 to s=0.35 and reach zero only at 0.40, and so swung 15 degrees
+		// off the direction of travel at s=0.36 - peaking after the ringed world was behind
+		// the camera, which is the worst possible moment for it. This peaks at 4 degrees at
+		// s=0.31, while the thing is still ahead and worth a look, and is straight again
+		// before the pass. It is big enough by then to fill the frame without being
+		// followed, which was always the intent.
+		{ s: 0.3, b: 0, w: 0.24 },
+		{ s: 0.345, b: 0, w: 0 },
 		{ s: 0.78, b: 1, w: 0.25 }, // then nothing but the destination, dead centre
 		{ s: 0.88, b: 1, w: 0.45 },
 		{ s: 1.0, b: 1, w: 0.55 },
