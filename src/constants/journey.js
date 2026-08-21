@@ -70,6 +70,10 @@ export const HERO_FLYBY = {
 	// The field wakes with the engines rather than on load, and is gone by the time the
 	// planet is up: past that we are in orbit, not running anywhere. Fractions of the
 	// pass, so it can outlast it.
+	// The chrome holds back until the hero has gone by — the opening frame is meant to
+	// be the name and nothing else — then rides the rest of the flight.
+	chromeFrom: 0.85,
+	chromeTo: 1.45,
 	dustIn: 0.05,
 	dustFull: 0.4,
 	dustOut: 1.6,

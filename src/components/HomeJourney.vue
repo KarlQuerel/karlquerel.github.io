@@ -3,6 +3,21 @@
 		<PlanetStage :cam="cam" :spin="spin" :light-yaw="lightYaw" :haze="haze" />
 		<JourneyRail :active="activeStop" />
 
+		<!-- Chrome that rides the whole flight once the hero has gone by: the name, a
+		     way to the far end of the journey, and how far along it you are. The rail
+		     counts the stations on the left; this counts the distance on the right. -->
+		<div class="journey__chrome" :style="chromeStyle">
+			<RouterLink class="journey__mark" :to="JOURNEY_STOPS[0].to">
+				{{ HOME_LANDING.name }}
+			</RouterLink>
+			<RouterLink class="journey__cta" :to="JOURNEY_STOPS.at(-1).to">
+				{{ JOURNEY_STOPS.at(-1).label }}
+			</RouterLink>
+			<div class="journey__progress" aria-hidden="true">
+				<span class="journey__progress-run" :style="progressStyle" />
+			</div>
+		</div>
+
 		<!-- Departure: deep space, the destination a distant dot below the name. The
 		     camera's axis runs through the gap between the two words, and the first
 		     stretch of scroll flies it through. -->
@@ -70,6 +85,7 @@
 
 <script setup>
 	import { computed, onActivated, onBeforeUnmount, onMounted, ref } from 'vue'
+	import { RouterLink } from 'vue-router'
 	import { ARRIVAL, CAMERA, CAMERA_PORTRAIT, HERO_FLYBY, JOURNEY } from '@/constants/journey'
 	import { JOURNEY_STOPS } from '@/constants/navigation'
 	import { ABOUT_HEADINGS } from '@/data/about'
@@ -285,6 +301,18 @@
 		return active
 	})
 
+	// held back through the hero, then along for the rest of the trip
+	const chromeStyle = computed(() => {
+		const t = smoothstep(
+			clamp01(
+				(pass.value - HERO_FLYBY.chromeFrom) / (HERO_FLYBY.chromeTo - HERO_FLYBY.chromeFrom)
+			)
+		)
+		return { opacity: t.toFixed(3), visibility: t > 0.01 ? null : 'hidden' }
+	})
+
+	const progressStyle = computed(() => ({ height: `${(progress.value * 100).toFixed(1)}%` }))
+
 	const hintStyle = computed(() => ({
 		'--hint-opacity': Math.max(0, 1 - progress.value / JOURNEY.hintFadeEnd),
 	}))
@@ -313,6 +341,52 @@
 
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
+
+	// The flight's chrome: fixed to the frame, the wrapper carrying the fade so the
+	// name, the way out and the distance all arrive together.
+	.journey__chrome {
+		position: fixed;
+		inset: 0;
+		z-index: 20;
+		pointer-events: none;
+	}
+
+	// the site's own chip chrome, moved from its usual bottom corner to the top ones
+	.journey__mark,
+	.journey__cta {
+		@include pinned-chip;
+
+		& {
+			position: absolute;
+			top: 0.6rem;
+			bottom: auto;
+			pointer-events: auto;
+		}
+	}
+
+	.journey__mark {
+		left: 0.6rem;
+		right: auto;
+	}
+
+	// Distance run, against the rail's count of stations — a plain column rather than
+	// a gradient, so it quantises the way everything else here does.
+	.journey__progress {
+		position: absolute;
+		top: 50%;
+		right: 1.4rem;
+		width: 3px;
+		height: 26vh;
+		transform: translateY(-50%);
+		background: rgba($white, 0.12);
+	}
+
+	.journey__progress-run {
+		display: block;
+		width: 100%;
+		background: $yellow;
+		box-shadow: 0 0 10px rgba($yellow, 0.4);
+	}
 
 	// Isolated so a station heading can sit at a negative z-index and land behind the
 	// planet stage rather than behind the page itself.
@@ -519,6 +593,12 @@
 	}
 
 	@media (max-width: $breakpoint-mobile) {
+		// A phone has room for one chip up there, and the way out is worth more than
+		// the name — the rail's own HOME stop already anchors the top of the journey.
+		.journey__mark {
+			display: none;
+		}
+
 		.journey__cue {
 			gap: 2.5rem;
 		}
