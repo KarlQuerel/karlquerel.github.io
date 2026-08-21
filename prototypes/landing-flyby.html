@@ -668,32 +668,35 @@ void main(){
 
 	// The title stands in the world on its own plane, sixteen units ahead of where the
 	// camera rests. It is not an overlay: the flight closes on it, magnifies it, and
-	// goes through it, which is the moment the page admits it was never flat.
+	// passes between the two words of the name, which is the moment the page admits it
+	// was never flat.
+	// uAnchor is the point in the texture the plane hangs from - the middle of that gap -
+	// rather than its centre, so capping the width on a narrow viewport pivots there and
+	// the flight still threads the same hole.
 	const TITLE_VS = `
 attribute vec2 aUV;
 uniform vec3 uCamPos, uRight, uUp, uFwd, uTPos, uTRight, uTUp;
+uniform vec2 uAnchor;
 uniform float uFocal, uAspect, uTW, uTH;
 varying vec2 vUV;
-varying float vFade;
 void main(){
-  vec3 world = uTPos + uTRight*((aUV.x - 0.5)*uTW) + uTUp*((0.5 - aUV.y)*uTH);
+  vec3 world = uTPos + uTRight*((aUV.x - uAnchor.x)*uTW) + uTUp*((uAnchor.y - aUV.y)*uTH);
   vec3 rel = world - uCamPos;
   float z = dot(rel, uFwd);
   vUV = aUV;
-  if (z < 0.3){ gl_Position = vec4(2.0,2.0,2.0,1.0); vFade = 0.0; return; }
+  if (z < 0.3){ gl_Position = vec4(2.0,2.0,2.0,1.0); return; }
   vec2 s = uFocal*vec2(dot(rel, uRight), dot(rel, uUp))/z;
   gl_Position = vec4(2.0*s.x/uAspect, 2.0*s.y, 0.0, 1.0);
-  vFade = smoothstep(0.9, 5.0, z);   // dissolve on the way through rather than clipping
 }`
 	const TITLE_FS = `
 precision highp float;
 varying vec2 vUV;
-varying float vFade;
 uniform sampler2D uTex;
+uniform float uFade;
 void main(){
   vec4 t = texture2D(uTex, vUV);
   if (t.a < 0.02) discard;
-  gl_FragColor = vec4(t.rgb, t.a)*vFade;   // premultiplied: colour fades with alpha
+  gl_FragColor = vec4(t.rgb, t.a)*uFade;   // premultiplied: colour fades with alpha
 }`
 
 	const DUST_VS = `
@@ -926,25 +929,39 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		gl.STATIC_DRAW
 	)
 
-	// The name, rendered once into a canvas at about the size it covers on screen at
-	// rest. NEAREST magnification then does the rest: close in, the letters go chunky
+	// The name, rendered once into a canvas at one texel per render pixel at rest.
+	// NEAREST magnification then does the rest: close in, the letters go chunky
 	// instead of soft, which is the direction pixel art should break.
 	const titleTex = gl.createTexture()
 	function buildTitle() {
 		const c = document.createElement('canvas')
 		;[c.width, c.height] = TITLE.tex
 		const x = c.getContext('2d')
-		x.textAlign = 'center'
 		x.textBaseline = 'middle'
-		const line = (text, size, cy) => {
+		// A keyline the whole way round, not a drop shadow. The words cross the moon's lit
+		// limb and then a cloud deck on the way past, so they need holding off the
+		// background from every side; one design pixel of it (the grid is size/8) is
+		// enough, and stays a keyline rather than a smear under NEAREST.
+		const line = (text, size, left, cy) => {
 			x.font = `${size}px "Press Start 2P", monospace`
-			x.fillStyle = '#000'
-			x.fillText(text, c.width / 2 + size * 0.1, cy + size * 0.1)
-			x.fillStyle = '#e6eef8'
-			x.fillText(text, c.width / 2, cy)
+			const d = size / 8
+			x.fillStyle = TITLE.edge
+			for (let ox = -d; ox <= d; ox++)
+				for (let oy = -d; oy <= d; oy++) x.fillText(text, left + ox, cy + oy)
+			x.fillStyle = TITLE.ink
+			x.fillText(text, left, cy)
 		}
-		line(TITLE.name, 38, 52)
-		line(TITLE.role, 13, 98)
+		const [first, last] = TITLE.name
+		line(first, TITLE.size, TITLE.block, TITLE.nameY)
+		line(last, TITLE.size, TITLE.block + first.length * TITLE.size + TITLE.gap, TITLE.nameY)
+		// Centred on the corridor rather than on the name, which puts its own word space
+		// on the flight line: everything the camera aims at is a hole.
+		line(
+			TITLE.role,
+			TITLE.roleSize,
+			TITLE.anchor[0] * TITLE.tex[0] - (TITLE.role.length * TITLE.roleSize) / 2,
+			TITLE.roleY
+		)
 		gl.bindTexture(gl.TEXTURE_2D, titleTex)
 		gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c)
@@ -963,23 +980,46 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		gl.STATIC_DRAW
 	)
 
-	// dust motes: two verts per mote (head + tail) drawn as speed streaks
-	// Drawn at roughly the size it occupies on screen at rest, so it is crisp there and
-	// goes chunky as you close on it - which is the right direction for pixel art.
+	// Drawn at the size it occupies on screen at rest, so it is crisp there and goes
+	// chunky as you close on it - which is the right direction for pixel art.
 	const TITLE = {
-		name: 'Karl Querel',
+		name: ['Karl', 'Querel'], // two words, so the flight can go between them
 		role: 'Software Engineer',
-		// Sits in the band of sky above the moon's limb, square-on to the pitched camera.
-		// Solved rather than guessed: uv.y spans half a unit, so the frame is 15.5 degrees
-		// off-axis vertically, not the 29 the focal length reads like.
-		pos: [8.76, 7.19, 8.67],
-		right: [1, 0, -0.016],
-		up: [0.002, 0.992, 0.125],
-		w: 7.8,
+		// Layout in texels. Sizes are multiples of 8 - Press Start 2P's own design grid,
+		// one em per glyph - so every pixel of every letter lands on a whole texel and the
+		// keyline stays one design pixel wide.
+		size: 40,
+		roleSize: 16,
+		gap: 88, // the corridor between the words: what the camera flies down
+		nameY: 46,
+		roleY: 94,
 		tex: [512, 128],
-		rest: 16, // how far ahead of the resting camera the plane sits
+		ink: '#f4f8ff',
+		edge: '#05070e',
+		// Where on the flight it stands. The plane used to hang above the corridor, so the
+		// name slid off the top of the frame and the pass never happened; sitting it on
+		// the path is what makes the gap something you go through.
+		at: 0.1777,
+		// Square-on to the resting camera rather than aimed at its centre: aligning to the
+		// view plane is what keeps the letters free of keystone. These are that camera's
+		// own axes - re-derive them from basis(0) if the first leg of PATH moves.
+		right: [0.9994, 0.0036, -0.0351],
+		up: [0.0003, 0.9941, 0.1084],
 	}
+	// Everything below follows from the numbers above; none of it is tuned by hand.
+	TITLE.pos = camAt(TITLE.at)
+	TITLE.rest = Math.hypot(...sub(TITLE.pos, PATH[0].p))
+	TITLE.block = (TITLE.tex[0] - (TITLE.name.join('').length * TITLE.size + TITLE.gap)) / 2
+	// the middle of the corridor, in uv: the plane's anchor, and the point the flight
+	// pierces it - the name row's own centre line
+	TITLE.anchor = [
+		(TITLE.block + TITLE.name[0].length * TITLE.size + TITLE.gap / 2) / TITLE.tex[0],
+		TITLE.nameY / TITLE.tex[1],
+	]
+	TITLE.wide = Math.max(TITLE.anchor[0], 1 - TITLE.anchor[0]) // the anchor's long side
+	TITLE.w = (TITLE.tex[0] * TITLE.rest) / (FOCAL * ART_STEPS[0]) // one texel per pixel
 
+	// dust motes: two verts per mote (head + tail) drawn as speed streaks
 	const MOTES = 900
 	// World units the motes wrap inside. Streaks run along travel, so a mote near the
 	// vanishing point has no length to show - keep the box tight and the near field
@@ -1032,10 +1072,12 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		'uTPos',
 		'uTRight',
 		'uTUp',
+		'uAnchor',
 		'uFocal',
 		'uAspect',
 		'uTW',
 		'uTH',
+		'uFade',
 	])
 		TU[n] = gl.getUniformLocation(title, n)
 	const DU = {}
@@ -1198,31 +1240,43 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		gl.disable(gl.BLEND)
 		gl.drawArrays(gl.TRIANGLES, 0, 6)
 
-		// the title plane, over the scene: nothing else is ever nearer than it is
-		gl.useProgram(title)
-		gl.bindBuffer(gl.ARRAY_BUFFER, titleQuad)
-		const aU = gl.getAttribLocation(title, 'aUV')
-		gl.enableVertexAttribArray(aU)
-		gl.vertexAttribPointer(aU, 2, gl.FLOAT, false, 0, 0)
-		gl.activeTexture(gl.TEXTURE0)
-		gl.bindTexture(gl.TEXTURE_2D, titleTex)
-		gl.uniform3fv(TU.uCamPos, pos)
-		gl.uniform3fv(TU.uRight, right)
-		gl.uniform3fv(TU.uUp, up)
-		gl.uniform3fv(TU.uFwd, fwd)
-		gl.uniform3fv(TU.uTPos, TITLE.pos)
-		gl.uniform3fv(TU.uTRight, TITLE.right)
-		gl.uniform3fv(TU.uTUp, TITLE.up)
-		gl.uniform1f(TU.uFocal, FOCAL)
-		gl.uniform1f(TU.uAspect, W / H)
-		// Hold it inside the frame on narrow viewports. Screen x is 2*focal*X/(z*aspect),
-		// so the half-width that lands at 0.86 of the frame edge is what caps it.
-		const tw = Math.min(TITLE.w, (0.86 * TITLE.rest * (W / H)) / FOCAL)
-		gl.uniform1f(TU.uTW, tw)
-		gl.uniform1f(TU.uTH, (tw * TITLE.tex[1]) / TITLE.tex[0])
-		gl.enable(gl.BLEND)
-		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-		gl.drawArrays(gl.TRIANGLES, 0, 6)
+		// The title plane, over the scene: nothing else is ever nearer than it is. One
+		// dissolve for the whole plane rather than per corner - the words are metres wide
+		// by the time we are between them, and a per-vertex fade leaves the far end of the
+		// name hanging on as a pale slab while the near end has gone. It has to be solid
+		// while the two words sweep out past the frame edges and gone a hair later, or the
+		// last letter lies across the frame as a grey wedge on the way out.
+		const tz = dot(sub(TITLE.pos, pos), fwd)
+		const tfade = smooth(clamp01((tz - 0.75) / 1.35))
+		if (tfade > 0.01) {
+			gl.useProgram(title)
+			gl.bindBuffer(gl.ARRAY_BUFFER, titleQuad)
+			const aU = gl.getAttribLocation(title, 'aUV')
+			gl.enableVertexAttribArray(aU)
+			gl.vertexAttribPointer(aU, 2, gl.FLOAT, false, 0, 0)
+			gl.activeTexture(gl.TEXTURE0)
+			gl.bindTexture(gl.TEXTURE_2D, titleTex)
+			gl.uniform3fv(TU.uCamPos, pos)
+			gl.uniform3fv(TU.uRight, right)
+			gl.uniform3fv(TU.uUp, up)
+			gl.uniform3fv(TU.uFwd, fwd)
+			gl.uniform3fv(TU.uTPos, TITLE.pos)
+			gl.uniform3fv(TU.uTRight, TITLE.right)
+			gl.uniform3fv(TU.uTUp, TITLE.up)
+			gl.uniform2fv(TU.uAnchor, TITLE.anchor)
+			gl.uniform1f(TU.uFocal, FOCAL)
+			gl.uniform1f(TU.uAspect, W / H)
+			// Hold it inside the frame on narrow viewports. Screen x is 2*focal*X/(z*aspect),
+			// so what caps it is the wider of the plane's two sides of the anchor landing at
+			// 0.86 of the frame edge.
+			const tw = Math.min(TITLE.w, (0.43 * TITLE.rest * (W / H)) / (FOCAL * TITLE.wide))
+			gl.uniform1f(TU.uTW, tw)
+			gl.uniform1f(TU.uTH, (tw * TITLE.tex[1]) / TITLE.tex[0])
+			gl.uniform1f(TU.uFade, tfade)
+			gl.enable(gl.BLEND)
+			gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+			gl.drawArrays(gl.TRIANGLES, 0, 6)
+		}
 
 		// dust streaks: strongest in open space, gone once we hit atmosphere
 		const speed = Math.hypot(...sub(ahead, behind)) / (2 * HEADING_SPAN)
