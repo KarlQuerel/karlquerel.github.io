@@ -35,8 +35,9 @@ export const JOURNEY = {
 // same factor. Nothing else is needed: the role line and the cue hang below the
 // corridor, so the same scale carries them out of the bottom of frame.
 export const HERO_FLYBY = {
-	// scroll the pass takes, in viewports — a flight, so it is over quickly
-	runVh: 0.45,
+	// Scroll the pass takes, in viewports. Long enough that lifting over the ridge and
+	// the words going by are two beats rather than one flick.
+	runVh: 0.55,
 	// The depth cue (FlightDust): motes standing still in the world while the camera
 	// runs through them. Nothing here streaks on its own clock — the field shares the
 	// pass's camera, so the parallax between the motes and the words is honest, which
@@ -84,6 +85,48 @@ export const HERO_FLYBY = {
 	// half the difference in their lengths, in advances of 1em plus this spacing.
 	// Keep in step with `letter-spacing` on .journey__name.
 	letterSpacingEm: 0.1,
+}
+
+// The ground we leave from: one near ridge across the foot of the opening frame, so
+// the page opens on a world rather than on empty space — and so the planet is hidden
+// by something in the scene rather than by nothing being there. Cut from the same
+// grid and the same shading as the arrival's range (see ENTRY and js/ridge.js), which
+// is what makes the two ends of the trip the same world-building, but cold instead of
+// warm: this is a night-side silhouette under starlight, not a dusk landscape.
+export const DEPARTURE_RIDGE = {
+	heightVh: 34,
+	freq: 7,
+	base: 0.24,
+	amp: 0.52,
+	seed: 83,
+	slopeGain: 0.9,
+	faceDepth: 26,
+	// dark enough to stay a silhouette: at night a range this close is a shape with a
+	// rim, not a lit landscape — the arrival is where the ground gets its colour
+	shades: [
+		[6, 7, 11],
+		[11, 13, 19],
+		[17, 20, 28],
+		[23, 27, 37],
+		[30, 35, 47],
+		[38, 44, 59],
+	],
+	crest: [66, 76, 100],
+	// The climb, per world unit the flight covers: the horizon drops away and the
+	// crests swell as we lift over them. Both come off the flight's own travel, so
+	// the ridge, the motes and the name are all one movement. Kept slow — a range
+	// this size is far off, and a foreground rock's drop rate would take the whole
+	// opening beat away on the first flick of the wheel.
+	dropVhPerUnit: 3,
+	swellPerUnit: 0.05,
+	// gone by this much of the pass — from here on the frame is open space
+	goneFrom: 0.55,
+	goneTo: 0.85,
+	// Air stacked over the range, behind the silhouette so the ridge masks its own
+	// half of it: the ground meets the sky with atmosphere rather than a hard cut.
+	airFrom: 0.28,
+	airTo: 0.92,
+	air: 'rgba(96, 116, 160, 0.34)',
 }
 
 // Camera keyframes: where the planet sits at each beat, as its centre's offset

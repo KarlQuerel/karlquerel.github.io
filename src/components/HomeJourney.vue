@@ -11,6 +11,8 @@
 			     from the same camera, both vanishing at the frame's centre -->
 			<div class="journey__flight" :style="flightStyle">
 				<FlightDust :travel="travel" :fade="dust" />
+				<!-- the ground we leave from, dropping away as the flight lifts over it -->
+				<DepartureRidge :travel="travel" :pass="pass" />
 				<div class="journey__lockup" :style="flybyStyle">
 					<h1 class="journey__name">
 						<span>{{ firstWords }}</span>
@@ -72,6 +74,7 @@
 	import { useScrollSections } from '@/composables/useScrollSections'
 	import AboutLife from './AboutLife.vue'
 	import AboutWork from './AboutWork.vue'
+	import DepartureRidge from './DepartureRidge.vue'
 	import FlightDust from './FlightDust.vue'
 	import JourneyArrival from './JourneyArrival.vue'
 	import JourneyRail from './JourneyRail.vue'
