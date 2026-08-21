@@ -97,6 +97,11 @@
 		@include pixel-keyline;
 	}
 
+	// the accent word's own shadow would replace the border, so it takes it too
+	.arrival__head :deep(.page-heading__accent) {
+		@include pixel-keyline($halo: 0.5em, $halo-colour: rgba($yellow, 0.5));
+	}
+
 	.arrival__channels {
 		list-style: none;
 		@include portal-row;

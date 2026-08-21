@@ -498,6 +498,13 @@
 		@include pixel-keyline;
 	}
 
+	// The accent word carries its own text-shadow, and a child's replaces what it would
+	// have inherited — so the yellow word needs the border stating again, with its glow
+	// as the halo behind it.
+	.journey__station-head :deep(.page-heading__accent) {
+		@include pixel-keyline($halo: 0.5em, $halo-colour: rgba($yellow, 0.5));
+	}
+
 	// the beat's number and name, small against the display size above it
 	.journey__kicker {
 		margin: 0 0 1.2rem;
