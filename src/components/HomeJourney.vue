@@ -3,16 +3,26 @@
 		<PlanetStage :cam="cam" :spin="spin" :light-yaw="lightYaw" :haze="haze" />
 		<JourneyRail :active="activeStop" />
 
-		<!-- Departure: deep space, the destination a distant dot below the name. -->
+		<!-- Departure: deep space, the destination a distant dot below the name. The
+		     camera's axis runs through the gap between the two words, and the first
+		     stretch of scroll flies it through. -->
 		<header class="journey__hero">
-			<!-- the lockup pulls away faster than the page — left behind at departure -->
-			<div class="journey__lockup" :style="lockupStyle">
-				<h1 class="journey__name">{{ HOME_LANDING.name }}</h1>
-				<p class="journey__label">{{ HOME_LANDING.label }}</p>
-			</div>
-			<div class="journey__hint" :style="hintStyle" aria-hidden="true">
-				<span>{{ HOME_LANDING.scrollHint }}</span>
-				<PixelArrow />
+			<div class="journey__lockup" :style="flybyStyle">
+				<h1 class="journey__name">
+					<span>{{ firstWords }}</span>
+					<!-- a real space, so the heading still reads as the name: the template's
+					     own whitespace is condensed away, and flex skips a blank text run -->
+					{{ ' ' }}
+					<span>{{ lastWord }}</span>
+				</h1>
+				<!-- under the corridor, so the same pass carries it out of frame -->
+				<div class="journey__cue">
+					<p class="journey__label">{{ HOME_LANDING.label }}</p>
+					<div class="journey__hint" :style="hintStyle" aria-hidden="true">
+						<span>{{ HOME_LANDING.scrollHint }}</span>
+						<PixelArrow />
+					</div>
+				</div>
 			</div>
 		</header>
 
@@ -49,7 +59,7 @@
 
 <script setup>
 	import { computed, onActivated, onBeforeUnmount, onMounted, ref } from 'vue'
-	import { ARRIVAL, CAMERA, CAMERA_PORTRAIT, JOURNEY } from '@/constants/journey'
+	import { ARRIVAL, CAMERA, CAMERA_PORTRAIT, HERO_FLYBY, JOURNEY } from '@/constants/journey'
 	import { ABOUT_HEADINGS } from '@/data/about'
 	import { HOME_LANDING } from '@/data/heroLines'
 	import { clamp01, smoothstep } from '@/js/math'
@@ -80,7 +90,22 @@
 		'--leg-hero': `${JOURNEY.heroLegVh}vh`,
 		'--leg-dive': `${JOURNEY.diveLegVh}vh`,
 		'--arrival-runway': `${ARRIVAL.runwayVh}vh`,
+		'--hero-aim': `${HERO_FLYBY.aimVh}vh`,
 	}
+
+	// The two words the camera flies between: everything but the last, then the
+	// last. The corridor is the gap between them, and the lockup hangs from it.
+	const nameWords = HOME_LANDING.name.split(' ')
+	const firstWords = nameWords.slice(0, -1).join(' ')
+	const lastWord = nameWords.at(-1)
+	// Where the gap's centre sits relative to the row's, in the name's own em: half
+	// the difference in the words' lengths, less the trailing spacing the first word
+	// carries into the gap. The pass scales about that point, so the corridor is
+	// what holds still on the axis while everything else sweeps off it.
+	const corridorEm =
+		((firstWords.length - lastWord.length) * (1 + HERO_FLYBY.letterSpacingEm) -
+			HERO_FLYBY.letterSpacingEm) /
+		2
 
 	// camera keyframes in scrolled-px space, measured from the real section layout
 	const dims = ref({ trackH: 0, vh: 0 })
@@ -152,12 +177,24 @@
 	// the sun holds still in the world while you orbit — the terminator advances
 	const lightYaw = computed(() => progress.value * JOURNEY.sunTurns * Math.PI * 2)
 
-	// departure: the name drifts away faster than the scroll, then fades
-	const lockupStyle = computed(() => {
-		const t = clamp01(scrolled.value / (dims.value.vh || 1))
+	// Departure: the pass through the corridor. z falls at a steady rate, so the
+	// spread accelerates hyperbolically the way a real approach does — and since
+	// scale and offset-from-the-axis grow by the same factor, one scale about the
+	// corridor is the whole move. The words go on out past the frame edges; the
+	// dissolve is what ends the pass.
+	const flybyStyle = computed(() => {
+		const t = clamp01(scrolled.value / ((dims.value.vh || 1) * HERO_FLYBY.runVh))
+		const scale = 1 / (1 - (1 - 1 / HERO_FLYBY.nearScale) * t)
+		const gone = clamp01(
+			(scale - HERO_FLYBY.fadeFromScale) / (HERO_FLYBY.nearScale - HERO_FLYBY.fadeFromScale)
+		)
 		return {
-			transform: `translate3d(0, ${(-t * 18).toFixed(2)}vh, 0)`,
-			opacity: (1 - smoothstep(t)).toFixed(3),
+			// the origin is the corridor: the gap's centre, not the row's
+			transformOrigin: `calc(50% + ${corridorEm.toFixed(2)}em) 50%`,
+			transform: `scale(${scale.toFixed(3)})`,
+			opacity: (1 - smoothstep(gone)).toFixed(3),
+			// past the pass it is a frame-filling layer with nothing in it
+			visibility: gone < 1 ? null : 'hidden',
 		}
 	})
 
@@ -212,23 +249,44 @@
 		width: 100%;
 	}
 
-	// Departure viewport: content rides the upper half; the destination planet
-	// (PlanetStage) waits in the lower half.
+	// Departure viewport: the destination planet (PlanetStage) waits in the lower
+	// half. The hero itself is only the scroll the pass is spent over — the lockup
+	// rides the viewport, not the page.
 	.journey__hero {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
 		min-height: 100vh;
-		padding: $chrome-clearance 1rem 46vh;
-		text-align: center;
 	}
 
+	// Fixed, so the corridor holds still on the camera's axis while the world moves
+	// past it — and so the frame-filling letters of the pass clip at the frame
+	// edges instead of widening the page. Its box is the name row alone (the cue
+	// hangs out of flow beneath), which puts the scale's origin on the corridor.
+	.journey__lockup {
+		position: fixed;
+		top: var(--hero-aim);
+		left: 0;
+		right: 0;
+		z-index: 2;
+		padding: 0 1rem;
+		// the name's own size, so the corridor offset (set in JS, in em) measures in
+		// character advances
+		font-size: px8(4);
+		text-align: center;
+		// decorative once it is moving, and never in the way of the chrome
+		pointer-events: none;
+	}
+
+	// the gap between the words is the corridor: the two of them are what the
+	// camera goes between, so the space is load-bearing, not styling
 	.journey__name {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: center;
+		// a real space's advance: the corridor is the gap the name always had
+		gap: 1.1em;
 		margin: 0;
 		font-family: $font-pixel;
-		font-size: px8(4);
+		font-size: inherit;
 		line-height: 1.3;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
@@ -238,8 +296,22 @@
 			0 0 28px rgba($yellow, 0.3);
 	}
 
+	// under the corridor and out of flow: the pass scales it away from the axis
+	// along with everything else, and the lockup's box stays the name row
+	.journey__cue {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 3.5rem;
+		padding-top: 1.3rem;
+	}
+
 	.journey__label {
-		margin: 1.3rem 0 0;
+		margin: 0;
 		font-family: $font-pixel;
 		font-size: px8(2);
 		letter-spacing: 0.18em;
@@ -250,7 +322,7 @@
 
 	// a hero should dominate on a big screen; whole steps, so it stays on-pixel
 	@media (min-width: #{$breakpoint-desktop}) {
-		.journey__name {
+		.journey__lockup {
 			font-size: px8(8);
 		}
 
@@ -260,10 +332,6 @@
 	}
 
 	.journey__hint {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 3rem;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -324,8 +392,8 @@
 	}
 
 	@media (max-width: $breakpoint-mobile) {
-		.journey__hero {
-			padding-bottom: 42vh;
+		.journey__cue {
+			gap: 2.5rem;
 		}
 
 		.journey__station--work {

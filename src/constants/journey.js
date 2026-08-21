@@ -21,6 +21,31 @@ export const JOURNEY = {
 	sunTurns: 0.22,
 }
 
+// The departure flyby: the camera's axis runs through the gap between the two
+// words of the name, and the first stretch of scroll takes it through. The lockup
+// is a plane square-on to the view, so the whole pass is one scale about the point
+// the camera aims at — the corridor — every offset from that point growing by the
+// same factor. Nothing else is needed: the role line and the cue hang below the
+// corridor, so the same scale carries them out of the bottom of frame.
+export const HERO_FLYBY = {
+	// where the corridor sits in the frame (vh from the top): the camera's axis
+	aimVh: 26,
+	// scroll the pass takes, in viewports
+	runVh: 0.7,
+	// How near the words get by the end. They never clear the frame edges — their
+	// inner edges are only half a corridor off the axis — so the pass has to end
+	// in a dissolve, and it has to happen while they are big and rushing rather
+	// than while they still read as a title.
+	nearScale: 6,
+	fadeFromScale: 2.6,
+	// The camera's axis is the corridor, not the middle of the frame: two words of
+	// different lengths put the gap off the row's centre, and it is the gap the
+	// pass has to hold. Press Start 2P is monospaced, so that offset is exact —
+	// half the difference in their lengths, in advances of 1em plus this spacing.
+	// Keep in step with `letter-spacing` on .journey__name.
+	letterSpacingEm: 0.1,
+}
+
 // Camera keyframes: where the planet sits at each beat, as its centre's offset
 // from the viewport centre (vw / vh) plus the scale of the base 84vmin globe.
 // The track eases between them — dock before a station enters, hold while it
