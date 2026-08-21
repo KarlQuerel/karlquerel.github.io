@@ -114,6 +114,26 @@
 			measure(roleEl.value, true),
 			measure(cueEl.value),
 		]
+
+		// The corridor: the gap between the two words, and vertically the middle of the
+		// row they sit on — which is not the sprite's middle, since the role and the cue
+		// hang below them. Stacked into two rows on a narrow frame the corridor becomes a
+		// horizontal band instead, so across it is simply the centre and down it is the
+		// space between the rows: the same two lines of code either way.
+		const [first, last, , cue] = runs
+		const stacked = Math.abs(first.mid - last.mid) > 1
+		const gapFrom = first.x + first.text.length * (first.size + first.spacing) - first.spacing
+		const axis = {
+			x: stacked ? 0 : gapFrom + (last.x - gapFrom) / 2 - box.width / 2,
+			y: (first.mid + last.mid) / 2 - box.height / 2,
+		}
+
+		// The cue goes on the axis rather than on the block. The flight puts the corridor
+		// on the frame's centre, so the lockup as a whole sits off it — invisible on a
+		// name that spans most of the frame, but the one small line under it reads as
+		// off-centre. Its width is exact rather than measured: monospaced caps.
+		cue.x =
+			box.width / 2 + axis.x - (cue.text.length * (cue.size + cue.spacing) - cue.spacing) / 2
 		// Shadow and bloom as their own passes, then the letters crisp on top: what the
 		// live type got from its text-shadows. Blurring under the per-glyph loop instead
 		// would stack each glyph's shadow on the next and smear the lot.
@@ -129,18 +149,7 @@
 		ctx.shadowColor = 'transparent'
 		for (const run of runs) drawRun(ctx, run, dpr)
 
-		// The corridor: the gap between the two words, and vertically the middle of the
-		// row they sit on — which is not the sprite's middle, since the role line hangs
-		// below them. Stacked into two rows on a narrow frame the corridor becomes a
-		// horizontal band instead, so across it is simply the centre and down it is the
-		// space between the rows: the same two lines of code either way.
-		const [first, last] = runs
-		const stacked = Math.abs(first.mid - last.mid) > 1
-		const gapFrom = first.x + first.text.length * (first.size + first.spacing) - first.spacing
-		emit('axis', {
-			x: stacked ? 0 : gapFrom + (last.x - gapFrom) / 2 - box.width / 2,
-			y: (first.mid + last.mid) / 2 - box.height / 2,
-		})
+		emit('axis', axis)
 	}
 
 	const repaint = useRafThrottle(paint)
