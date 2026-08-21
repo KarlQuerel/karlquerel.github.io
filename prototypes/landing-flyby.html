@@ -1,0 +1,1301 @@
+<title>The Long Way Here</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+	href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+	rel="stylesheet"
+/>
+<style>
+	:root {
+		--ink: #d7e3ef;
+		--dim: #7f93a8;
+		--hot: #ffb454;
+		--px: #0b0d14;
+		/* a one-pixel hard outline: what 8-bit games did to keep text on a busy field */
+		--outline: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+	}
+	* {
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+	}
+	html,
+	body {
+		background: var(--px);
+		color: var(--ink);
+		font-family: 'Press Start 2P', ui-monospace, monospace;
+		overflow-x: hidden;
+	}
+	#gl {
+		position: fixed;
+		inset: 0;
+		width: 100vw;
+		height: 100vh;
+		display: block;
+		image-rendering: pixelated;
+		image-rendering: crisp-edges;
+		z-index: 0;
+	}
+	#doc {
+		position: relative;
+		z-index: 2;
+	}
+	.beat {
+		display: flex;
+		align-items: center;
+		pointer-events: none;
+	}
+	/* Section heights are the flight plan. Each is as long as the leg it narrates, so
+	   the copy arrives with the view it describes. The first is exactly one screen:
+	   any taller and its card centres below the fold, which is where you land. */
+	.beat--still {
+		height: 100vh;
+	}
+	.beat--work {
+		height: 300vh;
+	}
+	.beat--life {
+		height: 390vh;
+	}
+	.beat--entry {
+		height: 210vh;
+	}
+	/* One column, always left. The flight fills the frame from every angle by the end,
+	   so a fixed reading position beats alternating sides that the planets keep landing
+	   on. The scrim is banded rather than smooth, to sit with the renderer's own colour
+	   quantisation, and runs to the viewport edge so it reads as shade, not as a box. */
+	.card {
+		position: relative;
+		max-width: calc(30rem + 12vw);
+		padding: 22px 6vw;
+	}
+	.card::before {
+		content: '';
+		position: absolute;
+		inset: -5vh 0;
+		z-index: -1;
+		background: linear-gradient(
+			90deg,
+			#0b0d14f0 0 46%,
+			#0b0d14bf 46% 70%,
+			#0b0d1466 70% 86%,
+			#0b0d1400 86%
+		);
+		/* fade the shade out top and bottom too, or it reads as a black box on the
+		   opening frame where there is nothing behind it that needs covering */
+		-webkit-mask-image: linear-gradient(180deg, #0000, #000 30%, #000 70%, #0000);
+		mask-image: linear-gradient(180deg, #0000, #000 30%, #000 70%, #0000);
+	}
+	/* the name is drawn into the scene now, so keep a real one for screen readers */
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+	h2 em {
+		font-style: normal;
+		color: var(--hot);
+	}
+	.kicker {
+		font-size: 8px;
+		letter-spacing: 2px;
+		color: var(--hot);
+		margin-bottom: 12px;
+		text-shadow: 2px 2px 0 #000, var(--outline);
+	}
+	h1 {
+		font-size: clamp(16px, 4vw, 33px);
+		line-height: 1.5;
+		text-shadow: 3px 3px 0 #000, var(--outline);
+	}
+	h2 {
+		font-size: clamp(11px, 2.2vw, 22px);
+		line-height: 1.6;
+		text-shadow: 3px 3px 0 #000, var(--outline);
+	}
+	p {
+		font-size: 11px;
+		line-height: 2;
+		color: var(--dim);
+		margin-top: 16px;
+		text-shadow: 2px 2px 0 #000, var(--outline);
+	}
+	.hint {
+		position: fixed;
+		left: 50%;
+		bottom: 6vh;
+		transform: translateX(-50%);
+		font-size: 8px;
+		color: var(--dim);
+		z-index: 3;
+		text-align: center;
+	}
+	.hint {
+		text-shadow: 2px 2px 0 #000, var(--outline);
+	}
+	.hint b {
+		display: block;
+		margin-top: 8px;
+		color: var(--hot);
+	}
+	#end {
+		position: fixed;
+		inset: auto 0 0 0;
+		z-index: 4;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 24px;
+		padding-bottom: 14vh;
+		opacity: 0;
+		pointer-events: none;
+	}
+	#end h2 {
+		font-size: clamp(11px, 2.4vw, 18px);
+	}
+	.portals {
+		display: flex;
+		gap: 18px;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+	.portal {
+		display: block;
+		padding: 14px 18px;
+		font-size: 9px;
+		color: var(--ink);
+		text-decoration: none;
+		background: #111826cc;
+		border: 3px solid var(--ink);
+		box-shadow: 5px 5px 0 #000;
+		transform: translateY(14px);
+		opacity: 0;
+		transition:
+			transform 0.18s steps(3),
+			opacity 0.18s steps(3),
+			color 0.1s steps(2),
+			border-color 0.1s steps(2);
+	}
+	.portal.on {
+		transform: none;
+		opacity: 1;
+	}
+	.portal:hover,
+	.portal:focus-visible {
+		color: var(--hot);
+		border-color: var(--hot);
+		outline: none;
+	}
+	.portal:focus-visible {
+		box-shadow:
+			5px 5px 0 #000,
+			0 0 0 3px var(--hot);
+	}
+	/* the flight itself is scroll-scrubbed, so it only moves when the reader does */
+	@media (prefers-reduced-motion: reduce) {
+		.portal {
+			transition: none;
+		}
+	}
+	@media (max-width: 720px) {
+		p {
+			font-size: 10px;
+		}
+		.portal {
+			padding: 11px 12px;
+			font-size: 8px;
+		}
+	}
+</style>
+
+<canvas id="gl" aria-hidden="true"></canvas>
+
+<div id="doc">
+	<section class="beat beat--still">
+		<h1 class="sr-only">Karl Querel &mdash; Software Engineer</h1>
+	</section>
+	<section class="beat beat--work">
+		<div class="card">
+			<div class="kicker">01 &middot; RING PASS</div>
+			<h2>How I got <em>here</em></h2>
+			<p>Traded gold, oil, and petrochemicals across EMEA.</p>
+			<p>Rebooted from scratch. Deep dive into C and Unix.</p>
+			<p>Building the software behind EV charging and renewable energy.</p>
+		</div>
+	</section>
+	<section class="beat beat--life">
+		<div class="card">
+			<div class="kicker">02 &middot; CLOSE PASS</div>
+			<h2>Off the <em>clock</em></h2>
+			<p>I come from a multicultural background.</p>
+			<p>I have been moving around ever since. The countries changed, but what I do with my
+				free time didn&rsquo;t.</p>
+		</div>
+	</section>
+	<section class="beat beat--entry"></section>
+</div>
+
+<div class="hint" id="hint">Scroll to begin<b>&#9660;</b></div>
+
+<div id="end">
+	<h2>Send me a <span style="color: var(--hot)">signal</span></h2>
+	<div class="portals">
+		<a class="portal" href="mailto:karlquerel@gmail.com">EMAIL</a>
+		<a class="portal" href="https://www.linkedin.com/in/karlquerel" target="_blank" rel="noopener"
+			>LINKEDIN</a
+		>
+		<a class="portal" href="https://github.com/KarlQuerel" target="_blank" rel="noopener">GITHUB</a>
+	</div>
+</div>
+
+<script>
+	// ---------------------------------------------------------------- shaders
+	const VS = `attribute vec2 aP; void main(){ gl_Position = vec4(aP,0.0,1.0); }`
+
+	const FS = `
+precision highp float;
+uniform vec2  uRes;
+uniform vec3  uCamPos, uRight, uUp, uFwd;
+uniform float uFocal, uEntry, uProg;
+uniform vec3  uSun;
+uniform vec4  uB[3];    // center.xyz, radius
+uniform vec4  uBP[3];   // paletteId, spin, ringInner, ringOuter
+uniform vec3  uRingN;
+const int NR = 2;       // rocks on the corridor, always marched, never gated
+uniform vec4  uRock[NR];    // centre.xyz, radius
+uniform float uRockSpin[NR];
+
+// quantisation is what makes it pixel art; too few levels makes it a poster
+const float LEVELS = 22.0;
+
+// --- ordered dithering (4x4/8x8 bayer, no bit ops in GLSL ES 1.00)
+float bayer2(vec2 a){ a = floor(a); return fract(a.x/2.0 + a.y*a.y*0.75); }
+float bayer8(vec2 a){ return bayer2(0.25*a)*0.0625 + bayer2(0.5*a)*0.25 + bayer2(a); }
+
+float hash13(vec3 p){
+  p = fract(p*0.3183099 + vec3(0.71,0.113,0.419));
+  p *= 17.0;
+  return fract(p.x*p.y*p.z*(p.x+p.y+p.z));
+}
+float noise3(vec3 x){
+  vec3 i = floor(x), f = fract(x);
+  f = f*f*(3.0-2.0*f);
+  float a = mix(mix(mix(hash13(i+vec3(0,0,0)), hash13(i+vec3(1,0,0)), f.x),
+                    mix(hash13(i+vec3(0,1,0)), hash13(i+vec3(1,1,0)), f.x), f.y),
+                mix(mix(hash13(i+vec3(0,0,1)), hash13(i+vec3(1,0,1)), f.x),
+                    mix(hash13(i+vec3(0,1,1)), hash13(i+vec3(1,1,1)), f.x), f.y), f.z);
+  return a;
+}
+float fbm(vec3 p){
+  float s = 0.0, a = 0.5;
+  for (int o = 0; o < 5; o++){ s += a*noise3(p); p *= 2.02; a *= 0.5; }
+  return s;
+}
+float fbm3(vec3 p){
+  float s = 0.0, a = 0.5;
+  for (int o = 0; o < 3; o++){ s += a*noise3(p); p *= 2.13; a *= 0.5; }
+  return s;
+}
+// ridged noise reads as crater rims and scarps on airless bodies
+float ridged(vec3 p){
+  float s = 0.0, a = 0.5;
+  for (int o = 0; o < 3; o++){ s += a*(1.0 - abs(2.0*noise3(p) - 1.0)); p *= 2.17; a *= 0.5; }
+  return s;
+}
+// surface relief at one scale - same field feeds the colour bands and the normal,
+// so the shading lines up with the terrain instead of floating over it
+float detail(vec3 sp, float f, float ocean){
+  return ocean > 0.0 ? fbm3(sp*f) : ridged(sp*f);
+}
+
+// --- the hero asteroid. Marched rather than traced: a real rock's outline is lumpy,
+// and a circle in silhouette is the one thing that gives a sphere away.
+float rockRadius(vec3 dir, float seed){
+  vec3 ax = vec3(1.26, 0.66, 0.92);                     // elongated, not round
+  float r = inversesqrt(dot(dir*dir/(ax*ax), vec3(1.0)));
+  r += 0.30*(ridged(dir*1.4 + seed) - 0.5);             // big bites out of the outline
+  r += 0.14*(fbm3(dir*3.6 + seed*1.7) - 0.5);
+  r += 0.05*(fbm3(dir*9.0 + seed) - 0.5);
+  for (int i = 0; i < 3; i++){                          // craters: bowl plus raised rim
+    float fi = float(i) + seed;
+    vec3 c = normalize(vec3(hash13(vec3(fi,1.0,2.0)), hash13(vec3(fi,3.0,4.0)),
+                            hash13(vec3(fi,5.0,6.0))) - 0.5);
+    float a = dot(dir, c);
+    float w = 0.80 + 0.12*hash13(vec3(fi,7.0,8.0));
+    r -= 0.17*smoothstep(w - 0.16, 1.0, a);
+    r += 0.05*smoothstep(w - 0.20, w - 0.09, a)*(1.0 - smoothstep(w - 0.09, w, a));
+  }
+  return r;
+}
+float rockDist(vec3 wp, vec4 rk, float cs, float sn){
+  vec3 q = wp - rk.xyz;
+  vec3 dir = normalize(vec3(q.x*cs + q.z*sn, q.y, -q.x*sn + q.z*cs));
+  // seed off the position too, or every rock of a given size is the same rock
+  return length(q) - rk.w*rockRadius(dir, rk.w*7.0 + rk.x*0.37 + rk.z*0.11);
+}
+float traceRock(vec3 ro, vec3 rd, vec4 rk, float cs, float sn){
+  if (rk.w <= 0.0) return -1.0;
+  vec3 oc = ro - rk.xyz;                     // bounding sphere: a miss costs three flops
+  float R = rk.w*1.75;
+  float b = dot(oc, rd), c2 = dot(oc, oc) - R*R;
+  float h = b*b - c2;
+  if (h < 0.0) return -1.0;
+  float t = max(-b - sqrt(h), 0.02), tEnd = -b + sqrt(h);
+  for (int i = 0; i < 60; i++){
+    float d = rockDist(ro + rd*t, rk, cs, sn);
+    if (d < 0.004*t) return t;
+    t += d*0.55;
+    if (t > tEnd) return -1.0;
+  }
+  return -1.0;
+}
+vec3 rockNormal(vec3 wp, vec4 rk, float cs, float sn){
+  vec2 e = vec2(0.010, 0.0);
+  float d0 = rockDist(wp, rk, cs, sn);
+  return normalize(vec3(rockDist(wp + e.xyy, rk, cs, sn) - d0,
+                        rockDist(wp + e.yxy, rk, cs, sn) - d0,
+                        rockDist(wp + e.yyx, rk, cs, sn) - d0));
+}
+
+// --- per-world palettes (band colours low -> high elevation)
+void palette(float pid, out vec3 c1, out vec3 c2, out vec3 c3, out vec3 c4, out vec3 c5,
+             out float sea, out float ocean){
+  if (pid < 0.5){            // the ringed world: rust and basalt, airless
+    c1 = vec3(28,22,26); c2 = vec3(66,38,36); c3 = vec3(118,58,42);
+    c4 = vec3(158,92,58); c5 = vec3(172,142,118);
+    sea = 0.46; ocean = 0.0;
+  } else if (pid < 1.5){     // destination: sulphur flats over dark olive basins
+    c1 = vec3(10,24,16); c2 = vec3(38,70,32); c3 = vec3(116,138,38);
+    c4 = vec3(178,178,58); c5 = vec3(228,222,148);
+    sea = 0.49; ocean = 1.0;
+  } else {                   // the near moon: cold grey basalt, no air at all
+    c1 = vec3(26,26,30); c2 = vec3(58,58,64); c3 = vec3(92,92,98);
+    c4 = vec3(134,134,140); c5 = vec3(186,186,192);
+    sea = 0.46; ocean = 0.0;
+  }
+  c1/=255.0; c2/=255.0; c3/=255.0; c4/=255.0; c5/=255.0;
+}
+
+// five bands. The shoreline shoulder stays tight so coasts read as edges;
+// the ones above it are wider, because scrub does not stop on a line.
+vec3 bands(vec3 c1, vec3 c2, vec3 c3, vec3 c4, vec3 c5, float sea, float n, float shore){
+  vec3 col = mix(c1, c2, smoothstep(sea-0.17, sea-0.05, n));
+  col = mix(col, c3, smoothstep(sea-shore, sea+shore, n));
+  col = mix(col, c4, smoothstep(sea+0.045, sea+0.105, n));
+  col = mix(col, c5, smoothstep(sea+0.15, sea+0.215, n));
+  return col;
+}
+
+// star cells track the art grid, so a star stays one pixel however fine the grid gets
+vec3 stars(vec3 rd){
+  vec3 col = vec3(0.0);
+  float base = uRes.y*0.45;
+  for (int L = 0; L < 3; L++){
+    float sc = base*(1.0 + float(L)*1.45);
+    vec3 c = floor(rd*sc);
+    float h = hash13(c + float(L)*31.7);
+    if (h > 0.9955 - float(L)*0.0007){
+      vec3 j = vec3(hash13(c+1.3), hash13(c+2.7), hash13(c+3.1)) - 0.5;
+      float d = length(fract(rd*sc) - 0.5 - j*0.6);
+      float b = smoothstep(0.30, 0.0, d) * (0.35 + 0.65*hash13(c+7.7));
+      vec3 tint = mix(vec3(0.72,0.80,1.0), vec3(1.0,0.86,0.68), hash13(c+9.1));
+      col += tint*b;
+    }
+  }
+  // galactic band
+  float band = exp(-pow(abs(rd.y*2.2 + rd.x*0.5), 2.0)*3.0);
+  col += vec3(0.16,0.17,0.28) * band * (0.25 + 0.75*fbm3(rd*7.0));
+  return col;
+}
+
+// ring opacity at radius r: two noise scales for fine gaps, one wide division
+float ringDensity(float r, float ri, float ro){
+  if (ro <= 0.0 || r < ri || r > ro) return 0.0;
+  float u = (r - ri)/(ro - ri);
+  float g = fbm3(vec3(r*3.4, 0.0, 0.0))*0.64 + fbm3(vec3(r*12.0, 0.0, 0.0))*0.36;
+  float a = smoothstep(0.42, 0.58, g);
+  a *= 1.0 - 0.94*exp(-pow((u - 0.46)*16.0, 2.0));
+  return a * smoothstep(0.0, 0.05, u) * smoothstep(1.0, 0.90, u);
+}
+
+// ring shadow cast onto the planet
+float ringShadow(vec3 p, vec3 c, float ri, float ro){
+  if (ro <= 0.0) return 1.0;
+  float dn = dot(uRingN, uSun);
+  if (abs(dn) < 0.001) return 1.0;
+  float t = dot(c - p, uRingN)/dn;
+  if (t < 0.0) return 1.0;
+  float r = length((p + uSun*t) - c);
+  return 1.0 - 0.66*ringDensity(r, ri, ro);
+}
+
+void main(){
+  vec2 frag = gl_FragCoord.xy;
+  vec2 uv = (frag - 0.5*uRes)/uRes.y;
+  vec3 rd = normalize(uv.x*uRight + uv.y*uUp + uFocal*uFwd);
+  vec3 ro = uCamPos;
+
+  vec3 col = stars(rd);
+
+  // the sun: disc + bloom
+  float sd = max(dot(rd, uSun), 0.0);
+  col += vec3(1.0,0.82,0.52)*smoothstep(0.99986, 0.99996, sd)*2.4;
+  col += vec3(0.95,0.55,0.26)*pow(sd, 26.0)*0.14;
+
+  // --- nearest sphere
+  float best = 1e9; int hit = -1;
+  for (int i = 0; i < 3; i++){
+    if (uB[i].w <= 0.0) continue;
+    vec3 oc = ro - uB[i].xyz;
+    float b = dot(oc, rd);
+    float c2 = dot(oc, oc) - uB[i].w*uB[i].w;
+    float h = b*b - c2;
+    if (h < 0.0) continue;
+    float t = -b - sqrt(h);
+    if (t > 0.0 && t < best){ best = t; hit = i; }
+  }
+
+  // --- ring plane (slot 0 only), composited by depth
+  float ringT = 1e9; float ringA = 0.0; vec3 ringC = vec3(0.0);
+  if (uBP[0].w > 0.0){
+    float dn = dot(rd, uRingN);
+    if (abs(dn) > 0.0005){
+      float t = dot(uB[0].xyz - ro, uRingN)/dn;
+      if (t > 0.0){
+        vec3 p = ro + rd*t;
+        float r = length(p - uB[0].xyz);
+        float dens = ringDensity(r, uBP[0].z, uBP[0].w);
+        if (dens > 0.004){
+          ringT = t;
+          // grain resolves into individual shards up close
+          float grain = 0.55 + 0.45*fbm3(p*vec3(2.4,9.0,2.4)*(1.0 + 8.0/max(t,0.6)));
+          // edge-on the band thins to a line, so fade with the grazing angle
+          ringA = dens*grain*(0.30 + 0.70*smoothstep(0.0, 0.10, abs(dn)));
+          // planet shadow on the ring
+          vec3 oc = p - uB[0].xyz;
+          float bb = dot(oc, uSun);
+          float cc = dot(oc,oc) - uB[0].w*uB[0].w;
+          float hh = bb*bb - cc;
+          float lit = (hh > 0.0 && -bb - sqrt(hh) > 0.0) ? 0.30 : 1.0;
+          ringC = mix(vec3(0.40,0.36,0.34), vec3(0.80,0.74,0.68), grain)*lit;
+        }
+      }
+    }
+  }
+
+  if (hit >= 0){
+    int H = hit;
+    vec3 c = vec3(0.0); float rad = 0.0; vec4 pp = vec4(0.0);
+    for (int i = 0; i < 3; i++){ if (i == H){ c = uB[i].xyz; rad = uB[i].w; pp = uBP[i]; } }
+
+    vec3 p = ro + rd*best;
+    vec3 n = normalize(p - c);
+
+    // spin the surface under fixed lighting
+    float s = pp.y, cs = cos(s), ss = sin(s);
+    vec3 sp = vec3(n.x*cs + n.z*ss, n.y, -n.x*ss + n.z*cs);
+
+    vec3 c1,c2,c3,c4,c5; float sea, ocean;
+    palette(pp.x, c1,c2,c3,c4,c5, sea, ocean);
+
+    // detail LOD: a close pass has to resolve relief that orbit never shows,
+    // so extra octaves fade in with altitude measured in body radii
+    float alt = length(ro - c)/rad - 1.0;
+    float near = smoothstep(6.0, 0.05, alt);
+    float close = smoothstep(0.90, 0.04, alt);
+    // one mid scale always on: crater fields and coastlines are visible from orbit
+    float e = fbm(sp*3.2) + (detail(sp, 11.0, ocean) - 0.5)*0.11;
+    // the detail scale climbs as we drop, so the ground never smears into mud
+    // the ceiling is where an octave stops being terrain and starts being speckle:
+    // past it the features land inside one art pixel and just alias
+    float dFreq = mix(ocean > 0.0 ? 17.0 : 15.0, 78.0, close);
+    if (near > 0.0){
+      e += (detail(sp, dFreq, ocean) - 0.5)*0.16*near;
+      e += (ridged(sp*dFreq*3.0) - 0.5)*0.062*near*near;
+      e += (fbm3(sp*dFreq*6.6) - 0.5)*0.022*near*near;
+    }
+    // Banded by latitude rather than blotched into continents. Blue water beside tan
+    // land is Earth's own palette, and the shapes read as Earth however they are
+    // coloured - breaking the layout matters as much as breaking the hues.
+    if (ocean > 0.0) e = mix(e, 0.30 + 0.34*e + 0.17*sin(sp.y*7.5 + fbm3(sp*2.4)*2.6), 0.72);
+    vec3 base = bands(c1,c2,c3,c4,c5, sea, e, ocean > 0.0 ? 0.014 : 0.030);
+
+    // relief shading from the elevation gradient - a smooth sphere gives it away
+    if (near > 0.0){
+      vec3 t1 = normalize(cross(n, vec3(0.0,1.0,0.001)));
+      vec3 t2 = cross(n, t1);
+      float h = 0.1/dFreq;   // a tenth of a noise cell, whatever scale we are at
+      float ea = detail(sp + t1*h, dFreq, ocean) - detail(sp - t1*h, dFreq, ocean);
+      float eb = detail(sp + t2*h, dFreq, ocean) - detail(sp - t2*h, dFreq, ocean);
+      // ease the relief off as we drop in, or per-pixel shading turns to static
+      n = normalize(n - (t1*ea + t2*eb)*mix(3.0, 1.7, close)*near);
+    }
+
+    float ndl = dot(n, uSun);
+    float day = max(ndl, 0.0);
+    // airless bodies stay flat toward the terminator instead of rolling off as a cosine
+    float shade = 0.09 + 0.91*mix(pow(day, 0.75), day, ocean);
+    shade *= ringShadow(p, c, pp.z, pp.w);
+
+    // cloud shell, drifting ahead of the ground
+    if (ocean > 0.0){
+      vec3 cq = vec3(sp.x*cs*1.0 + 4.1, sp.y, sp.z)*3.1 + vec3(s*0.35,0.0,0.0);
+      float cn = fbm3(cq)*0.70 + fbm3(cq*4.7)*0.30;
+      float ca = smoothstep(0.52, 0.66, cn)*0.80;
+      base = mix(base, vec3(0.87,0.90,0.60), ca);
+      // cloud tops catch the light a beat before the ground does
+      shade += ca*day*0.10;
+    }
+    // specular glint off open water
+    if (ocean > 0.0 && e < sea){
+      vec3 hv = normalize(uSun - rd);
+      base += vec3(0.96,1.0,0.62)*pow(max(dot(n,hv),0.0), 90.0)*0.55;
+    }
+    vec3 lit = base*shade;
+
+    // atmosphere: forward-scattering rim, warm at the terminator
+    float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
+    float term = smoothstep(0.35, 0.0, abs(ndl));
+    // each world declares its own air: the rock has barely any, the brine world cyan
+    vec3 haze = mix(vec3(0.34,0.44,0.72), vec3(0.44,0.70,0.26), ocean);
+    vec3 dusk = mix(vec3(1.0,0.52,0.28), vec3(1.0,0.68,0.32), ocean);
+    vec3 atmo = mix(haze, dusk, term);
+    lit += atmo*rim*(0.20 + 0.80*day)*(0.35 + 0.65*ocean);
+
+    col = lit;
+  }
+
+  if (ringA > 0.0 && ringT < best) col = mix(col, ringC, clamp(ringA, 0.0, 1.0));
+
+  // --- the rocks, each composited by depth against everything above and each other
+  for (int i = 0; i < NR; i++){
+    float cs = cos(uRockSpin[i]), sn = sin(uRockSpin[i]);
+    float tr = traceRock(ro, rd, uRock[i], cs, sn);
+    if (tr > 0.0 && tr < best){
+      best = tr;
+      vec3 hp = ro + rd*tr;
+      vec3 n = rockNormal(hp, uRock[i], cs, sn);
+      vec3 q = hp - uRock[i].xyz;
+      vec3 lp = vec3(q.x*cs + q.z*sn, q.y, -q.x*sn + q.z*cs);
+      vec3 base = mix(vec3(0.24,0.23,0.25), vec3(0.56,0.52,0.48), fbm3(lp*3.4));
+      base = mix(base, vec3(0.40,0.34,0.29), smoothstep(0.45,0.80,ridged(lp*9.0))*0.5);
+      float day = max(dot(n, uSun), 0.0);
+      float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
+      col = base*(0.07 + 0.98*day) + vec3(0.42,0.50,0.66)*rim*0.14;
+    }
+  }
+
+  // ------------------------------------------------ atmospheric entry
+  if (uEntry > 0.0){
+    float E = uEntry;
+    // dusk sky swallows the stars
+    vec3 top = mix(vec3(0.05,0.10,0.06), vec3(0.08,0.20,0.10), E);
+    vec3 low = mix(vec3(0.38,0.34,0.12), vec3(0.94,0.84,0.30), smoothstep(0.2,0.9,E));
+    vec3 sky = mix(low, top, smoothstep(-0.28, 0.40, uv.y));
+    // hold the fade back: the ground below should stay readable well into the burn
+    col = mix(col, sky, smoothstep(0.04, 0.42, E));
+
+    // wisps streaming past on the way down, well above the main deck
+    float wisps = smoothstep(0.06, 0.22, E)*smoothstep(0.60, 0.38, E);
+    for (int k = 0; k < 2; k++){
+      float fk = float(k);
+      float ph = fract(E*2.3 + fk*0.33);
+      float z = mix(3.0, 0.44, ph);
+      vec2 q = uv/z + vec2(fk*3.7, -0.55 + ph*1.9);
+      // a second octave: one blob per deck reads as fog once the grid is this fine
+      float d = fbm3(vec3(q*3.8, fk*5.0 + 11.0))*0.72 + fbm3(vec3(q*13.0, fk*5.0 + 3.0))*0.28;
+      float a = smoothstep(0.53, 0.61, d) * smoothstep(0.0,0.15,ph) * smoothstep(1.0,0.82,ph);
+      col = mix(col, vec3(0.84,0.86,0.62)*(0.55 + 0.45*d), a*0.85*wisps);
+    }
+
+    // plasma on the shield: hottest high up, spent before the deck closes in
+    float heat = smoothstep(0.04,0.20,E)*smoothstep(0.46,0.26,E);
+    float vig = smoothstep(0.30, 0.85, length(uv*vec2(0.85,1.25)));
+    col += vec3(1.0,0.44,0.16)*heat*vig*0.55;
+    col += vec3(1.0,0.80,0.55)*heat*0.04;
+
+    // the ground, uncovered as the deck lets go of it: three ridge bands in parallax
+    float land = smoothstep(0.48, 0.70, E);
+    if (land > 0.0){
+      for (int k = 0; k < 3; k++){
+        float fk = float(k)*0.5;
+        float freq = mix(6.0, 2.0, fk);
+        float amp  = mix(0.045, 0.15, fk);
+        float horizon = -0.06 - fk*0.10 + (1.0-land)*0.26;
+        float hgt = horizon + amp*(fbm3(vec3(uv.x*freq + fk*34.0 + uProg*0.6, 0.0, fk*6.0))*1.6 - 0.35);
+        if (uv.y < hgt){
+          vec3 body = mix(vec3(0.18,0.24,0.12), vec3(0.05,0.09,0.05), fk);
+          float tex = 0.80 + 0.40*fbm3(vec3(uv.x*7.0 + fk*10.0, uv.y*7.0, fk*4.0));
+          float crest = smoothstep(0.018, 0.0, hgt - uv.y);
+          col = mix(body*tex, mix(vec3(0.68,0.62,0.22), vec3(0.30,0.30,0.14), fk), crest);
+        }
+      }
+    }
+
+    // air stacked along the horizon, thickest just after breakout
+    float band = exp(-pow((uv.y + 0.06)*5.5, 2.0));
+    col = mix(col, vec3(0.72,0.62,0.46),
+              band*0.34*smoothstep(0.46,0.60,E)*smoothstep(1.0,0.72,E));
+
+    // Inside the deck. Everything above is still being drawn underneath - this is what
+    // hides it, and letting go of it is the reveal.
+    float inCloud = smoothstep(0.20, 0.34, E)*smoothstep(0.66, 0.50, E);
+    if (inCloud > 0.0){
+      // the deck streams upward past a diving camera, so advect the noise with descent
+      vec2 q = uv*vec2(1.0, 0.72) + vec2(0.0, -E*3.4);
+      float t1 = fbm3(vec3(q*3.0, E*5.0));
+      float t2 = fbm3(vec3(q*8.0 + 4.0, E*9.0));
+      float t3 = fbm3(vec3(q*19.0 - 2.0, E*14.0));
+      float murk = t1*0.55 + t2*0.30 + t3*0.15;
+      // Sunlit at the top of the deck, unlit underneath. That gradient is the whole
+      // trick: without it the screen is a grey card, with it you are inside weather.
+      float lift = smoothstep(-0.5, 0.45, uv.y);
+      vec3 fog = mix(vec3(0.20,0.19,0.23), vec3(0.97,0.86,0.72),
+                     clamp(lift*0.8 + murk*0.6 - 0.18, 0.0, 1.0));
+      col = mix(col, fog, inCloud*0.94);
+    }
+  }
+
+  // ------------------------------------------------ pixel-art finish
+  col = pow(clamp(col, 0.0, 1.0), vec3(0.92));                     // gentle lift
+  float dth = (bayer8(frag) - 0.5)/LEVELS;                          // ordered dither
+  col = floor(clamp(col + dth, 0.0, 1.0)*(LEVELS-1.0) + 0.5)/(LEVELS-1.0);
+  gl_FragColor = vec4(col, 1.0);
+}`
+
+	// The title stands in the world on its own plane, sixteen units ahead of where the
+	// camera rests. It is not an overlay: the flight closes on it, magnifies it, and
+	// goes through it, which is the moment the page admits it was never flat.
+	const TITLE_VS = `
+attribute vec2 aUV;
+uniform vec3 uCamPos, uRight, uUp, uFwd, uTPos, uTRight, uTUp;
+uniform float uFocal, uAspect, uTW, uTH;
+varying vec2 vUV;
+varying float vFade;
+void main(){
+  vec3 world = uTPos + uTRight*((aUV.x - 0.5)*uTW) + uTUp*((0.5 - aUV.y)*uTH);
+  vec3 rel = world - uCamPos;
+  float z = dot(rel, uFwd);
+  vUV = aUV;
+  if (z < 0.3){ gl_Position = vec4(2.0,2.0,2.0,1.0); vFade = 0.0; return; }
+  vec2 s = uFocal*vec2(dot(rel, uRight), dot(rel, uUp))/z;
+  gl_Position = vec4(2.0*s.x/uAspect, 2.0*s.y, 0.0, 1.0);
+  vFade = smoothstep(0.9, 5.0, z);   // dissolve on the way through rather than clipping
+}`
+	const TITLE_FS = `
+precision highp float;
+varying vec2 vUV;
+varying float vFade;
+uniform sampler2D uTex;
+void main(){
+  vec4 t = texture2D(uTex, vUV);
+  if (t.a < 0.02) discard;
+  gl_FragColor = vec4(t.rgb, t.a)*vFade;   // premultiplied: colour fades with alpha
+}`
+
+	const DUST_VS = `
+attribute vec3 aSeed;
+attribute float aTail;
+uniform vec3 uCamPos, uRight, uUp, uFwd, uStreak;
+uniform float uFocal, uAspect, uBox;
+varying float vA;
+void main(){
+  // Motes sit still in the world and wrap into a box that follows the camera. Built in
+  // camera space instead, as they were, they ride the view: turn the camera and the
+  // whole field turns with it, which is why the streaks never answered a turn.
+  vec3 rel = mod(aSeed*uBox - uCamPos, uBox) - uBox*0.5;
+  vec3 q = rel - uStreak*aTail;          // the tail trails along the way we are going
+  float z = dot(q, uFwd);
+  if (z < 0.25){ gl_Position = vec4(2.0,2.0,2.0,1.0); vA = 0.0; return; }
+  vec2 s = uFocal*vec2(dot(q, uRight), dot(q, uUp))/z;
+  gl_Position = vec4(2.0*s.x/uAspect, 2.0*s.y, 0.0, 1.0);
+  gl_PointSize = 1.0;
+  // fade at the edge of the box, so wrapping never shows as a pop
+  vA = smoothstep(uBox*0.5, uBox*0.18, length(rel))*smoothstep(0.25, 1.8, z);
+}`
+	const DUST_FS = `
+precision mediump float;
+varying float vA;
+uniform float uFade;
+void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
+
+	// ---------------------------------------------------------------- journey
+	// Two worlds: a ringed one to thread, and the one we are heading home to.
+	// Radius 1 = ~Earth. Both strung along -Z so the camera flies a corridor.
+	const BODIES = [
+		{ c: [10.4, 3.0, -60], r: 3.0, pid: 0, spin: 0.9, ring: [4.3, 7.2] }, // the ringed world
+		{ c: [14, -3.0, -186], r: 6.0, pid: 1, spin: 0.2, ring: [0, 0] }, // the destination
+		// The ridge. It sits squarely between the camera and everything else, so at rest
+		// the page is a grey horizon under stars and nothing else exists. It hides the
+		// corridor by blocking it, not by the camera looking away - which is why the
+		// reveal is parallax as we climb over it, and needs no camera trick at all.
+		{ c: [6.5, -6, -25], r: 12.0, pid: 2, spin: 0.12, ring: [0, 0] },
+	]
+	// Rocks down the corridor, each marched in the scene shader so they occlude the
+	// scene, each other, and get occluded in turn. Sizes and offsets all differ: a
+	// field of one rock repeated is worse than no field at all.
+	// Deliberately NOT on the sightline to the destination. Anything that fully covers
+	// what is dead ahead has to be dead ahead itself, and we fly into it - measured at
+	// -0.33 clearance before this was reverted. Occlusion reveals need an occluder the
+	// route passes to one side of, which is what the ridge and the ringed world are.
+	const ROCKS = [
+		{ c: [4.2, -1.6, -104.5], r: 1.3, spin: 0.55 },
+		{ c: [7.6, 2.4, -146], r: 1.9, spin: 0.25 },
+	]
+	// what the camera can be asked to watch. The rocks are not on the list any more:
+	// they sweep through frame on their own, which is what passing something looks like.
+	const TARGETS = [BODIES[0], BODIES[1]]
+
+	// Camera waypoints: s = scroll progress, p = world position. One long arc - x eases
+	// in for the ring pass and back out to the destination, y and z never reverse, so
+	// the flight reads as one curve rather than a series of corrections.
+	//
+	// The s values are the speed profile. The first leg covers six units across a tenth
+	// of the scroll: from eighty units out that is no visible motion at all, so the page
+	// opens as a still frame and only admits it is 3D once you have scrolled past it.
+	const PATH = [
+		{ s: 0.0, p: [9.0, 2.6, 24] },
+		{ s: 0.123, p: [8.8, 3.4, 18] }, // still frame ends here, engines light
+		{ s: 0.194, p: [8.4, 6.0, 4] }, // climbing: the ridge starts to drop away
+		{ s: 0.255, p: [7.8, 8.6, -20] }, // up and over it, and the system is just there
+		{ s: 0.306, p: [6.9, 6.4, -44] }, // settling back onto the corridor
+		{ s: 0.356, p: [3.8, 4.4, -61.2] }, // through the ring plane, near its outer edge
+		{ s: 0.415, p: [3.4, 2.4, -78] }, // wider and slower: a close pass sweeps the frame
+		{ s: 0.475, p: [3.0, 1.2, -103] }, // faster than the eye wants to follow
+		{ s: 0.519, p: [2.6, -0.1, -118] },
+		{ s: 0.6, p: [2.8, -0.7, -136] }, // the low point; from here it only opens out
+		{ s: 0.7, p: [4.6, -1.1, -158] },
+		{ s: 0.78, p: [8.0, -1.5, -168] }, // lining up on the approach axis
+		{ s: 0.86, p: [11.6, -2.2, -174] },
+		{ s: 0.93, p: [13.4, -2.8, -176.5] }, // from here it is a straight run in
+		{ s: 1.0, p: [14.0, -3.0, -179.1] }, // dead radial, into the atmosphere
+	]
+
+	// which world the camera turns to watch, and how hard, across the trip
+	// b = world to watch, w = how hard the camera turns to hold it,
+	// h = aim at the horizon instead of the centre (descent only)
+	const FOCUS = [
+		// Straight down the corridor at first - the ridge does the hiding, so the camera
+		// need not point anywhere clever. Weights stay low the whole way: anything we
+		// merely pass should sweep through frame on its own, and every degree the camera
+		// turns is a degree the reader's eye has to follow.
+		{ s: 0.0, b: 0, w: 0 },
+		{ s: 0.24, b: 0, w: 0.08 },
+		{ s: 0.31, b: 0, w: 0.2 }, // a lean toward it, no more; it is big enough by now
+		{ s: 0.35, b: 0, w: 0.15 }, // to fill the frame without being followed
+		{ s: 0.4, b: 0, w: 0 },
+		{ s: 0.78, b: 1, w: 0.25 }, // then nothing but the destination, dead centre
+		{ s: 0.88, b: 1, w: 0.45 },
+		{ s: 1.0, b: 1, w: 0.55 },
+	]
+
+	const ENTRY_START = 0.87
+	const UP = [0, 1, 0]
+	// the dust wakes up with the engines, not on load: streaks past the camera are a
+	// depth cue, and the opening frame is meant to give nothing away
+	const WAKE_START = 0.03
+	const WAKE_SPAN = 0.09
+	// how far the camera rolls into a turn, in radians, how hard it reacts, and how
+	// wide a slice of path it reads
+	// Rolling the horizon is what makes this kind of thing tiring to watch, so the bank
+	// is kept to a lean you can feel rather than a manoeuvre you have to brace for.
+	const BANK_MAX = 0.045
+	const BANK_GAIN = 1.0
+	const BANK_SPAN = 0.06
+	// How much path the heading averages over. Short windows make the camera track every
+	// kink in the spline; a long one flies it like something with mass, which is the
+	// difference between looking around and going somewhere.
+	const HEADING_SPAN = 0.045
+	// A few degrees of look, driven by the pointer. Enough to feel the depth, far too
+	// little to steer with - the flight is still entirely the reader's scroll.
+	const LOOK_MAX = 0.055
+	const LOOK_EASE = 0.055
+	const FOCAL = 1 / Math.tan((58 * Math.PI) / 360)
+	const SUN = norm([0.82, 0.3, 0.48])
+
+	function norm(v) {
+		const m = Math.hypot(v[0], v[1], v[2]) || 1
+		return [v[0] / m, v[1] / m, v[2] / m]
+	}
+	const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+	const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+	const mul = (a, k) => [a[0] * k, a[1] * k, a[2] * k]
+	const cross = (a, b) => [
+		a[1] * b[2] - a[2] * b[1],
+		a[2] * b[0] - a[0] * b[2],
+		a[0] * b[1] - a[1] * b[0],
+	]
+	const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+	const clamp01 = v => (v < 0 ? 0 : v > 1 ? 1 : v)
+	// rotate a toward b by u of the angle between them. A linear blend cancels to
+	// nothing when they point opposite ways; a rotation stays well defined.
+	const slerp = (a, b, u) => {
+		const ang = Math.acos(Math.max(-1, Math.min(1, dot(a, b))))
+		if (ang < 1e-4) return b
+		if (ang > Math.PI - 1e-3) return a // exactly opposed: no unique way round
+		const s = Math.sin(ang)
+		return add(mul(a, Math.sin((1 - u) * ang) / s), mul(b, Math.sin(u * ang) / s))
+	}
+	const smooth = t => t * t * (3 - 2 * t)
+	const lerp = (a, b, t) => a + (b - a) * t
+
+	// Velocity at each waypoint, in world units per unit of scroll. Plain Catmull-Rom
+	// assumes evenly spaced knots; ours are not, so its tangents disagree across every
+	// knot and the camera kinks there. A three-point difference in s does not.
+	const TAN = PATH.map((_, j) => {
+		const a = PATH[Math.max(0, j - 1)],
+			b = PATH[Math.min(PATH.length - 1, j + 1)]
+		return mul(sub(b.p, a.p), 1 / (b.s - a.s || 1))
+	})
+
+	// cubic Hermite through the waypoints, keyed on scroll
+	function camAt(s) {
+		const P = PATH
+		let i = 0
+		while (i < P.length - 2 && s > P[i + 1].s) i++
+		const d = P[i + 1].s - P[i].s || 1
+		const t = clamp01((s - P[i].s) / d),
+			t2 = t * t,
+			t3 = t2 * t
+		const h00 = 2 * t3 - 3 * t2 + 1,
+			h10 = t3 - 2 * t2 + t,
+			h01 = -2 * t3 + 3 * t2,
+			h11 = t3 - t2
+		const out = []
+		for (let k = 0; k < 3; k++)
+			out[k] =
+				h00 * P[i].p[k] + h10 * d * TAN[i][k] + h01 * P[i + 1].p[k] + h11 * d * TAN[i + 1][k]
+		return out
+	}
+
+	function focusAt(s) {
+		const F = FOCUS
+		let i = 0
+		while (i < F.length - 2 && s > F[i + 1].s) i++
+		const t = smooth(clamp01((s - F[i].s) / (F[i + 1].s - F[i].s || 1)))
+		return {
+			b0: F[i].b,
+			b1: F[i + 1].b,
+			w0: F[i].w,
+			w1: F[i + 1].w,
+			t,
+		}
+	}
+
+	// ---------------------------------------------------------------- gl setup
+	const canvas = document.getElementById('gl')
+	const gl = canvas.getContext('webgl', { antialias: false, alpha: false })
+	// internal resolution, in art pixels tall. Fine enough that the grid reads as
+	// detail rather than as blocks; the ladder below gives it back if the GPU chokes.
+	const ART_STEPS = [560, 420, 300]
+	let artStep = 0
+	let W = 0,
+		H = 0
+
+	function compile(vs, fs) {
+		const p = gl.createProgram()
+		for (const [type, src] of [
+			[gl.VERTEX_SHADER, vs],
+			[gl.FRAGMENT_SHADER, fs],
+		]) {
+			const sh = gl.createShader(type)
+			gl.shaderSource(sh, src)
+			gl.compileShader(sh)
+			if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS))
+				console.error(gl.getShaderInfoLog(sh), src)
+			gl.attachShader(p, sh)
+		}
+		gl.linkProgram(p)
+		if (!gl.getProgramParameter(p, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(p))
+		return p
+	}
+
+	const scene = compile(VS, FS)
+	const dust = compile(DUST_VS, DUST_FS)
+	const title = compile(TITLE_VS, TITLE_FS)
+
+	// Two triangles carrying UVs; the plane's world corners are built in the shader.
+	const titleQuad = gl.createBuffer()
+	gl.bindBuffer(gl.ARRAY_BUFFER, titleQuad)
+	gl.bufferData(
+		gl.ARRAY_BUFFER,
+		new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]),
+		gl.STATIC_DRAW
+	)
+
+	// The name, rendered once into a canvas at about the size it covers on screen at
+	// rest. NEAREST magnification then does the rest: close in, the letters go chunky
+	// instead of soft, which is the direction pixel art should break.
+	const titleTex = gl.createTexture()
+	function buildTitle() {
+		const c = document.createElement('canvas')
+		;[c.width, c.height] = TITLE.tex
+		const x = c.getContext('2d')
+		x.textAlign = 'center'
+		x.textBaseline = 'middle'
+		const line = (text, size, cy) => {
+			x.font = `${size}px "Press Start 2P", monospace`
+			x.fillStyle = '#000'
+			x.fillText(text, c.width / 2 + size * 0.1, cy + size * 0.1)
+			x.fillStyle = '#e6eef8'
+			x.fillText(text, c.width / 2, cy)
+		}
+		line(TITLE.name, 38, 52)
+		line(TITLE.role, 13, 98)
+		gl.bindTexture(gl.TEXTURE_2D, titleTex)
+		gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c)
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+		prog = -1 // the plane changed, so the next frame has to redraw
+	}
+
+	const quad = gl.createBuffer()
+	gl.bindBuffer(gl.ARRAY_BUFFER, quad)
+	gl.bufferData(
+		gl.ARRAY_BUFFER,
+		new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+		gl.STATIC_DRAW
+	)
+
+	// dust motes: two verts per mote (head + tail) drawn as speed streaks
+	// Drawn at roughly the size it occupies on screen at rest, so it is crisp there and
+	// goes chunky as you close on it - which is the right direction for pixel art.
+	const TITLE = {
+		name: 'Karl Querel',
+		role: 'Software Engineer',
+		// Sits in the band of sky above the moon's limb, square-on to the pitched camera.
+		// Solved rather than guessed: uv.y spans half a unit, so the frame is 15.5 degrees
+		// off-axis vertically, not the 29 the focal length reads like.
+		pos: [8.76, 7.19, 8.67],
+		right: [1, 0, -0.016],
+		up: [0.002, 0.992, 0.125],
+		w: 7.8,
+		tex: [512, 128],
+		rest: 16, // how far ahead of the resting camera the plane sits
+	}
+
+	const MOTES = 900
+	// World units the motes wrap inside. Streaks run along travel, so a mote near the
+	// vanishing point has no length to show - keep the box tight and the near field
+	// dense, or almost every mote lands where it cannot read as motion.
+	const DUST_BOX = 22
+	const dSeed = new Float32Array(MOTES * 6)
+	const dTail = new Float32Array(MOTES * 2)
+	for (let i = 0; i < MOTES; i++) {
+		const s = [Math.random(), Math.random(), Math.random()]
+		for (let k = 0; k < 2; k++) {
+			dSeed[i * 6 + k * 3] = s[0]
+			dSeed[i * 6 + k * 3 + 1] = s[1]
+			dSeed[i * 6 + k * 3 + 2] = s[2]
+			dTail[i * 2 + k] = k * 0.38 // tail sits behind the head in travel space
+		}
+	}
+	const dBufS = gl.createBuffer()
+	gl.bindBuffer(gl.ARRAY_BUFFER, dBufS)
+	gl.bufferData(gl.ARRAY_BUFFER, dSeed, gl.STATIC_DRAW)
+	const dBufT = gl.createBuffer()
+	gl.bindBuffer(gl.ARRAY_BUFFER, dBufT)
+	gl.bufferData(gl.ARRAY_BUFFER, dTail, gl.STATIC_DRAW)
+
+	const U = {}
+	for (const n of [
+		'uRes',
+		'uCamPos',
+		'uRight',
+		'uUp',
+		'uFwd',
+		'uFocal',
+		'uEntry',
+		'uProg',
+		'uSun',
+		'uRingN',
+	])
+		U[n] = gl.getUniformLocation(scene, n)
+	U.uRock = gl.getUniformLocation(scene, 'uRock[0]')
+	U.uRockSpin = gl.getUniformLocation(scene, 'uRockSpin[0]')
+	const rockArr = new Float32Array(ROCKS.length * 4)
+	const rockSpin = new Float32Array(ROCKS.length)
+	U.uB = gl.getUniformLocation(scene, 'uB[0]')
+	U.uBP = gl.getUniformLocation(scene, 'uBP[0]')
+	const TU = {}
+	for (const n of [
+		'uCamPos',
+		'uRight',
+		'uUp',
+		'uFwd',
+		'uTPos',
+		'uTRight',
+		'uTUp',
+		'uFocal',
+		'uAspect',
+		'uTW',
+		'uTH',
+	])
+		TU[n] = gl.getUniformLocation(title, n)
+	const DU = {}
+	for (const n of [
+		'uCamPos',
+		'uRight',
+		'uUp',
+		'uFwd',
+		'uFocal',
+		'uAspect',
+		'uBox',
+		'uStreak',
+		'uFade',
+	])
+		DU[n] = gl.getUniformLocation(dust, n)
+	const bodyArr = new Float32Array(BODIES.length * 4)
+	const bodyP = new Float32Array(BODIES.length * 4)
+	BODIES.forEach((b, i) => {
+		bodyArr.set(b.c.concat([b.r]), i * 4)
+		bodyP.set([b.pid, 0, b.ring[0], b.ring[1]], i * 4)
+	})
+
+	function resize() {
+		const cssW = canvas.clientWidth || window.innerWidth
+		const cssH = canvas.clientHeight || window.innerHeight
+		H = ART_STEPS[artStep]
+		W = Math.max(160, Math.round(H * (cssW / cssH)))
+		canvas.width = W
+		canvas.height = H
+		gl.viewport(0, 0, W, H)
+	}
+
+	// ---------------------------------------------------------------- frame
+	const hint = document.getElementById('hint'),
+		end = document.getElementById('end'),
+		portals = [...document.querySelectorAll('.portal')]
+
+	// Pointer look. Held at a fraction of strength until the engines are up, so wiggling
+	// the mouse on the opening frame does not give away that it was ever 3D.
+	const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+	let mx = 0,
+		my = 0,
+		mxs = 0,
+		mys = 0
+	if (!still)
+		addEventListener(
+			'pointermove',
+			e => {
+				if (e.pointerType !== 'mouse') return
+				mx = (e.clientX / innerWidth) * 2 - 1
+				my = (e.clientY / innerHeight) * 2 - 1
+			},
+			{ passive: true }
+		)
+
+	let prog = -1
+	let eased = null
+	function draw() {
+		const doc = document.documentElement
+		const max = doc.scrollHeight - window.innerHeight
+		const target = clamp01(max > 0 ? window.scrollY / max : 0)
+		// a wheel notch is a jump; the camera glides to it instead of snapping
+		if (eased === null) eased = target
+		eased += (target - eased) * 0.085
+		if (Math.abs(target - eased) < 0.00004) eased = target
+		const p = eased
+		mxs += (mx - mxs) * LOOK_EASE
+		mys += (my - mys) * LOOK_EASE
+		const settling = Math.abs(mx - mxs) > 0.0008 || Math.abs(my - mys) > 0.0008
+		if (Math.abs(p - prog) < 0.00002 && !settling) return false
+		prog = p
+		// how far out of the still frame we are: drives the dust and the pointer look
+		const wake = smooth(clamp01((p - WAKE_START) / WAKE_SPAN))
+
+		const pos = camAt(p)
+		const ahead = camAt(Math.min(1, p + HEADING_SPAN))
+		const behind = camAt(Math.max(0, p - HEADING_SPAN))
+		let fwd = norm(sub(ahead, behind))
+		const travel = fwd // where we are actually going, before the camera turns to look
+
+		// turn toward the world being passed, so it sweeps the frame instead of
+		// just growing in the middle
+		const f = focusAt(p)
+		const aimAt = b => norm(sub(TARGETS[b].c, pos))
+		// Turn the flight direction toward the world being watched. While the two
+		// keyframes name the same world that is one rotation; across a handover the
+		// pulls cross-fade, which beats switching the target index and snapping the
+		// view across whatever angle separates them.
+		if (f.b0 === f.b1) {
+			const w = lerp(f.w0, f.w1, f.t)
+			if (w > 0) fwd = slerp(fwd, aimAt(f.b0), w)
+		} else {
+			const pull0 = f.w0 * (1 - f.t),
+				pull1 = f.w1 * f.t
+			if (pull0 > 0) fwd = slerp(fwd, aimAt(f.b0), pull0)
+			if (pull1 > 0) fwd = slerp(fwd, aimAt(f.b1), pull1)
+		}
+
+		// A few degrees of look, off the world axes so it composes with the bank rather
+		// than fighting it. Applied to the heading only - the flight path never moves.
+		if (!still) {
+			const amt = LOOK_MAX * (0.4 + 0.6 * wake)
+			const rref = norm(cross(fwd, UP))
+			fwd = norm(add(fwd, add(mul(rref, mxs * amt), mul(cross(rref, fwd), -mys * amt))))
+		}
+
+		// Roll into the turn, from how far the path bends across the frame. Saturating
+		// rather than clamped, so a hard turn eases over instead of hitting a stop and
+		// kinking there - unbounded, this reached 80 degrees and cartwheeled the horizon.
+		// Read over a wider span than the heading uses: the horizon should lean through
+		// a whole turn, not twitch at every wiggle in the path. The window slides but
+		// never shrinks - clamping its ends instead leaves a zero-length chord at s=1,
+		// which flips the horizon on the last frame of the scroll.
+		const bEnd = Math.min(1, Math.max(2 * BANK_SPAN, p + BANK_SPAN)),
+			bMid = bEnd - BANK_SPAN
+		const c0 = norm(sub(camAt(bMid), camAt(bMid - BANK_SPAN))),
+			c1 = norm(sub(camAt(bEnd), camAt(bMid)))
+		const turn = dot(sub(c1, c0), norm(cross(fwd, UP)))
+		const bank = BANK_MAX * Math.tanh((turn * BANK_GAIN) / BANK_MAX)
+		let up = norm([Math.sin(-bank), Math.cos(bank), 0])
+		let right = norm(cross(fwd, up))
+		up = cross(right, fwd)
+
+		const entry = clamp01((p - ENTRY_START) / (1 - ENTRY_START))
+		// shake while the shield is hot
+		const heat = smooth(clamp01(entry / 0.4)) * smooth(clamp01((0.95 - entry) / 0.4))
+		const jit = k => (Math.sin(p * 9000 + k) + Math.sin(p * 23000 + k * 3)) * 0.0016 * heat
+		right = norm(add(right, [0, jit(1), 0]))
+		up = norm(add(up, [jit(2), 0, 0]))
+
+		// spins accumulate with scroll, never on a clock
+		BODIES.forEach((b, i) => (bodyP[i * 4 + 1] = b.spin * p * 6.283))
+
+		gl.useProgram(scene)
+		gl.bindBuffer(gl.ARRAY_BUFFER, quad)
+		const aP = gl.getAttribLocation(scene, 'aP')
+		gl.enableVertexAttribArray(aP)
+		gl.vertexAttribPointer(aP, 2, gl.FLOAT, false, 0, 0)
+		gl.uniform2f(U.uRes, W, H)
+		gl.uniform3fv(U.uCamPos, pos)
+		gl.uniform3fv(U.uRight, right)
+		gl.uniform3fv(U.uUp, up)
+		gl.uniform3fv(U.uFwd, fwd)
+		gl.uniform1f(U.uFocal, FOCAL)
+		gl.uniform1f(U.uEntry, entry)
+		gl.uniform1f(U.uProg, p)
+		gl.uniform3fv(U.uSun, SUN)
+		gl.uniform3fv(U.uRingN, norm([0.2, 1.0, 0.13]))
+		gl.uniform4fv(U.uB, bodyArr)
+		gl.uniform4fv(U.uBP, bodyP)
+		// No range gate: culling by distance made them wink in and out of existence.
+		// Two bounding spheres cost almost nothing on a ray that misses.
+		ROCKS.forEach((r, i) => {
+			rockArr.set(r.c, i * 4)
+			rockArr[i * 4 + 3] = r.r
+			rockSpin[i] = r.spin * p * 6.283
+		})
+		gl.uniform4fv(U.uRock, rockArr)
+		gl.uniform1fv(U.uRockSpin, rockSpin)
+		gl.disable(gl.BLEND)
+		gl.drawArrays(gl.TRIANGLES, 0, 6)
+
+		// the title plane, over the scene: nothing else is ever nearer than it is
+		gl.useProgram(title)
+		gl.bindBuffer(gl.ARRAY_BUFFER, titleQuad)
+		const aU = gl.getAttribLocation(title, 'aUV')
+		gl.enableVertexAttribArray(aU)
+		gl.vertexAttribPointer(aU, 2, gl.FLOAT, false, 0, 0)
+		gl.activeTexture(gl.TEXTURE0)
+		gl.bindTexture(gl.TEXTURE_2D, titleTex)
+		gl.uniform3fv(TU.uCamPos, pos)
+		gl.uniform3fv(TU.uRight, right)
+		gl.uniform3fv(TU.uUp, up)
+		gl.uniform3fv(TU.uFwd, fwd)
+		gl.uniform3fv(TU.uTPos, TITLE.pos)
+		gl.uniform3fv(TU.uTRight, TITLE.right)
+		gl.uniform3fv(TU.uTUp, TITLE.up)
+		gl.uniform1f(TU.uFocal, FOCAL)
+		gl.uniform1f(TU.uAspect, W / H)
+		// Hold it inside the frame on narrow viewports. Screen x is 2*focal*X/(z*aspect),
+		// so the half-width that lands at 0.86 of the frame edge is what caps it.
+		const tw = Math.min(TITLE.w, (0.86 * TITLE.rest * (W / H)) / FOCAL)
+		gl.uniform1f(TU.uTW, tw)
+		gl.uniform1f(TU.uTH, (tw * TITLE.tex[1]) / TITLE.tex[0])
+		gl.enable(gl.BLEND)
+		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+		gl.drawArrays(gl.TRIANGLES, 0, 6)
+
+		// dust streaks: strongest in open space, gone once we hit atmosphere
+		const speed = Math.hypot(...sub(ahead, behind)) / (2 * HEADING_SPAN)
+		const fade = clamp01(speed / 320) * (1 - clamp01(entry / 0.35)) * wake
+		if (fade > 0.01) {
+			gl.useProgram(dust)
+			gl.bindBuffer(gl.ARRAY_BUFFER, dBufS)
+			const aS = gl.getAttribLocation(dust, 'aSeed')
+			gl.enableVertexAttribArray(aS)
+			gl.vertexAttribPointer(aS, 3, gl.FLOAT, false, 0, 0)
+			gl.bindBuffer(gl.ARRAY_BUFFER, dBufT)
+			const aT = gl.getAttribLocation(dust, 'aTail')
+			gl.enableVertexAttribArray(aT)
+			gl.vertexAttribPointer(aT, 1, gl.FLOAT, false, 0, 0)
+			gl.uniform3fv(DU.uCamPos, pos)
+			gl.uniform3fv(DU.uRight, right)
+			gl.uniform3fv(DU.uUp, up)
+			gl.uniform3fv(DU.uFwd, fwd)
+			gl.uniform1f(DU.uFocal, FOCAL)
+			gl.uniform1f(DU.uAspect, W / H)
+			gl.uniform1f(DU.uBox, DUST_BOX)
+			// streak length follows real speed, so the cue is the motion, not a constant
+			gl.uniform3fv(DU.uStreak, mul(travel, clamp01(speed / 900) * 4.0 + 0.25))
+			gl.uniform1f(DU.uFade, fade)
+			gl.enable(gl.BLEND)
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE)
+			gl.drawArrays(gl.LINES, 0, MOTES * 2)
+		}
+
+		// arrival chrome
+		hint.style.opacity = String(clamp01(1 - p / 0.06))
+		// start the reveal once the ground has settled, and give it enough scroll that
+		// every link is up well before the page runs out
+		const arrive = clamp01((p - 0.955) / 0.035)
+		end.style.opacity = String(arrive)
+		end.style.pointerEvents = arrive > 0.6 ? 'auto' : 'none'
+		portals.forEach((el, i) => el.classList.toggle('on', arrive > 0.3 + i * 0.15))
+		return true
+	}
+
+	// Watch 90 back-to-back rendered frames; if the GPU cannot hold ~33fps through
+	// them, step the grid down. One way only, so it can never oscillate.
+	const WINDOW = 45
+	let winFrames = 0,
+		winStart = 0
+	function loop(t) {
+		const drew = draw()
+		requestAnimationFrame(loop)
+		if (artStep >= ART_STEPS.length - 1) return
+		if (!drew) {
+			winStart = 0
+			return
+		}
+		if (!winStart) {
+			winStart = t
+			winFrames = 0
+		} else if (++winFrames === WINDOW && (t - winStart) / WINDOW > 30) {
+			artStep++
+			resize()
+			prog = -1
+			winStart = 0
+		} else if (winFrames >= WINDOW) {
+			winStart = 0
+		}
+	}
+	window.addEventListener('resize', () => {
+		resize()
+		prog = -1
+	})
+	resize()
+	buildTitle()
+	// the pixel font may still be loading; redraw the plane once it lands
+	if (document.fonts) document.fonts.ready.then(buildTitle).catch(() => {})
+	loop()
+	window.__flyby = { draw: () => ((prog = -1), draw()) }
+</script>
