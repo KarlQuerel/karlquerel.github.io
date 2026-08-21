@@ -10,7 +10,7 @@
 			<RouterLink class="journey__mark" :to="JOURNEY_STOPS[0].to">
 				{{ HOME_LANDING.name }}
 			</RouterLink>
-			<RouterLink class="journey__cta" :to="JOURNEY_STOPS.at(-1).to">
+			<RouterLink class="journey__cta" :style="ctaStyle" :to="JOURNEY_STOPS.at(-1).to">
 				{{ JOURNEY_STOPS.at(-1).label }}
 			</RouterLink>
 			<div class="journey__progress" aria-hidden="true">
@@ -318,6 +318,21 @@
 	})
 
 	const progressStyle = computed(() => ({ height: `${(progress.value * 100).toFixed(1)}%` }))
+
+	// The way out goes away once you have arrived at it: the portals are right there on
+	// the surface, so it fades out over the same window they fade in.
+	const ctaStyle = computed(() => {
+		const there = smoothstep(
+			clamp01(
+				(arrivalProgress.value - ARRIVAL.contactFadeStart) /
+					(ARRIVAL.contactFadeEnd - ARRIVAL.contactFadeStart)
+			)
+		)
+		return {
+			opacity: (1 - there).toFixed(3),
+			visibility: there < 1 ? null : 'hidden',
+		}
+	})
 
 	const hintStyle = computed(() => ({
 		'--hint-opacity': Math.max(0, 1 - progress.value / JOURNEY.hintFadeEnd),
