@@ -409,6 +409,21 @@ uniform vec4  uRockSpin[NR];  // (cos,sin) of the spin, then of the tumble
 // quantisation is what makes it pixel art; too few levels makes it a poster
 const float LEVELS = 22.0;
 
+// Aerial perspective, borrowed. There is no fog in space, but contrast against a star
+// field does fall away with distance and the eye reads faint as far. With no distance term
+// at all - and there was none - a two-degree disc a hundred and sixty units out was
+// rendered as crisply and as saturated as a nine-degree one at twenty, so the whole system
+// flattened onto a single plane: five bodies in one frame read as a diorama instead of as
+// depth. Near things are left alone, the falloff only opening past HAZE_NEAR, so the ridge
+// that owns the opening frame is untouched by it.
+const float HAZE_NEAR = 30.0;
+const float HAZE_FAR = 230.0;
+const float HAZE_MAX = 0.85;
+const vec3 VOID_TINT = vec3(0.055, 0.062, 0.105);
+vec3 farOff(vec3 c, float d){
+  return mix(c, VOID_TINT, smoothstep(HAZE_NEAR, HAZE_FAR, d)*HAZE_MAX);
+}
+
 // --- ordered dithering (4x4/8x8 bayer, no bit ops in GLSL ES 1.00)
 float bayer2(vec2 a){ a = floor(a); return fract(a.x/2.0 + a.y*a.y*0.75); }
 float bayer8(vec2 a){ return bayer2(0.25*a)*0.0625 + bayer2(0.5*a)*0.25 + bayer2(a); }
@@ -714,7 +729,7 @@ void main(){
     vec3 atmo = mix(haze, dusk, term);
     lit += atmo*rim*(0.20 + 0.80*day)*(0.35 + 0.65*ocean);
 
-    col = lit;
+    col = farOff(lit, best);
   }
 
   // --- the rocks, each composited by depth against everything above and each other
@@ -731,14 +746,14 @@ void main(){
       base = mix(base, vec3(0.40,0.34,0.29), smoothstep(0.45,0.80,ridged(lp*9.0))*0.5);
       float day = max(dot(n, uSun), 0.0);
       float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
-      col = base*(0.07 + 0.98*day) + vec3(0.42,0.50,0.66)*rim*0.14;
+      col = farOff(base*(0.07 + 0.98*day) + vec3(0.42,0.50,0.66)*rim*0.14, tr);
     }
   }
 
   // The ring goes last, so it is composited against whatever ended up nearest, sphere or
   // rock. Drawn before the rocks it was only ever tested against the spheres, which is why
   // a rock behind the ring drew straight over it.
-  if (ringA > 0.0 && ringT < best) col = mix(col, ringC, clamp(ringA, 0.0, 1.0));
+  if (ringA > 0.0 && ringT < best) col = mix(col, farOff(ringC, ringT), clamp(ringA, 0.0, 1.0));
 
   // ------------------------------------------------ atmospheric entry
   if (uEntry > 0.0){
@@ -923,8 +938,15 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	// face reads as a prop on a turntable.
 	const ROCKS = [
 		{ c: [4.2, -1.6, -104.5], r: 1.3, spin: 2.3, tumble: 1.4 },
-		// lifted clear of the corridor moon - at its old y it was inside it
-		{ c: [7.6, 5.6, -146], r: 1.9, spin: 1.7, tumble: 2.6 },
+		// Its own stretch of corridor, and the only thing in the flight that passes on the
+		// left. It used to sit two radii off the corridor moon - close enough that the two
+		// read as one lumpy object - while everything else worth looking at is right of the
+		// flight line. Placed for presence rather than proximity: a rock passed at two radii
+		// is at its largest when it is ninety degrees off the axis, which is off the frame
+		// entirely, so what matters is how big it gets while still inside it. Ten degrees at
+		// s=0.51, low and left, against the moon high and right - and it is six radii clear
+		// of everything else in the scene.
+		{ c: [-1, -2, -125], r: 1.9, spin: 1.7, tumble: 2.6 },
 	]
 	// what the camera can be asked to watch. The rocks are not on the list any more:
 	// they sweep through frame on their own, which is what passing something looks like.
