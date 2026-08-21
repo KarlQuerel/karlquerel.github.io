@@ -26,11 +26,10 @@
 		font-family: 'Press Start 2P', ui-monospace, monospace;
 		overflow-x: hidden;
 	}
+	/* Sized and placed from resize(): the element has to be a whole number of device
+	   pixels per art pixel, which 100vw/100vh cannot promise. */
 	#gl {
 		position: fixed;
-		inset: 0;
-		width: 100vw;
-		height: 100vh;
 		display: block;
 		image-rendering: pixelated;
 		image-rendering: crisp-edges;
@@ -892,9 +891,15 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	// ---------------------------------------------------------------- gl setup
 	const canvas = document.getElementById('gl')
 	const gl = canvas.getContext('webgl', { antialias: false, alpha: false })
-	// internal resolution, in art pixels tall. Fine enough that the grid reads as
-	// detail rather than as blocks; the ladder below gives it back if the GPU chokes.
-	const ART_STEPS = [560, 420, 300]
+	// The art grid we aim for, in pixels tall. Fine enough that it reads as detail rather
+	// than as blocks; the ladder in loop() coarsens it if the GPU chokes.
+	// What resize() actually solves for is whole device pixels per art pixel. A fractional
+	// upscale - 560 tall stretched over a 900px window, say - shows up as every edge on
+	// screen changing width by a pixel whenever anything moves, because each art pixel
+	// lands on one device pixel or two depending on where it sits. On hard-edged letters
+	// that reads as the name chattering under the pointer look.
+	const ART_TARGET = 560
+	const ART_RUNGS = 3
 	let artStep = 0
 	let W = 0,
 		H = 0
@@ -930,13 +935,26 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		gl.STATIC_DRAW
 	)
 
-	// The name, rendered once into a canvas at one texel per render pixel at rest.
-	// NEAREST magnification then does the rest: close in, the letters go chunky
-	// instead of soft, which is the direction pixel art should break.
+	// The name, rendered into a canvas at exactly the pixels the plane covers at rest -
+	// one texel per art pixel, whatever grid resize() landed on. NEAREST magnification
+	// then does the rest: close in, the letters go chunky instead of soft, which is the
+	// direction pixel art should break. Authoring it any smaller than the plane means
+	// LINEAR minification, and a minified pixel font drops a column here and there as
+	// soon as anything moves it.
 	const titleTex = gl.createTexture()
 	function buildTitle() {
 		const c = document.createElement('canvas')
 		;[c.width, c.height] = TITLE.tex
+		// The layout constants are quoted against a 512-wide texture; scale them to this
+		// one. Rounding moves the drawn corridor off TITLE.anchor by at most a texel, out
+		// of forty-odd texels of corridor, so the flight still goes down the middle of it.
+		const k = c.width / TITLE_REF
+		const size = Math.max(8, Math.round(TITLE.size * k))
+		const roleSize = Math.max(5, Math.round(TITLE.roleSize * k))
+		const gap = Math.round(TITLE.gap * k)
+		const nameY = Math.round(TITLE.nameY * k),
+			roleY = Math.round(TITLE.roleY * k)
+		const block = Math.round((c.width - (TITLE.name.join('').length * size + gap)) / 2)
 		const x = c.getContext('2d')
 		x.textBaseline = 'middle'
 		// A keyline the whole way round, not a drop shadow. The words cross the moon's lit
@@ -945,7 +963,7 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		// enough, and stays a keyline rather than a smear under NEAREST.
 		const line = (text, size, left, cy) => {
 			x.font = `${size}px "Press Start 2P", monospace`
-			const d = size / 8
+			const d = Math.max(1, Math.round(size / 8))
 			x.fillStyle = TITLE.edge
 			for (let ox = -d; ox <= d; ox++)
 				for (let oy = -d; oy <= d; oy++) x.fillText(text, left + ox, cy + oy)
@@ -953,16 +971,11 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 			x.fillText(text, left, cy)
 		}
 		const [first, last] = TITLE.name
-		line(first, TITLE.size, TITLE.block, TITLE.nameY)
-		line(last, TITLE.size, TITLE.block + first.length * TITLE.size + TITLE.gap, TITLE.nameY)
+		line(first, size, block, nameY)
+		line(last, size, block + first.length * size + gap, nameY)
 		// Centred on the corridor rather than on the name, which puts its own word space
 		// on the flight line: everything the camera aims at is a hole.
-		line(
-			TITLE.role,
-			TITLE.roleSize,
-			TITLE.anchor[0] * TITLE.tex[0] - (TITLE.role.length * TITLE.roleSize) / 2,
-			TITLE.roleY
-		)
+		line(TITLE.role, roleSize, block + first.length * size + gap / 2 - (TITLE.role.length * roleSize) / 2, roleY)
 		gl.bindTexture(gl.TEXTURE_2D, titleTex)
 		gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c)
@@ -991,6 +1004,11 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		// keyline stays one design pixel wide.
 		size: 40,
 		roleSize: 16,
+		// The plane's world width, fixed. The title is a thing standing in the scene, not
+		// something laid over it, so it must not change size when the art grid does: it is
+		// the texture that adapts. This is the width that made one texel one pixel on the
+		// 560-tall grid it was tuned against.
+		w: 8.05,
 		gap: 88, // the corridor between the words: what the camera flies down
 		nameY: 46,
 		roleY: 94,
@@ -1010,15 +1028,17 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	// Everything below follows from the numbers above; none of it is tuned by hand.
 	TITLE.pos = camAt(TITLE.at)
 	TITLE.rest = Math.hypot(...sub(TITLE.pos, PATH[0].p))
-	TITLE.block = (TITLE.tex[0] - (TITLE.name.join('').length * TITLE.size + TITLE.gap)) / 2
-	// the middle of the corridor, in uv: the plane's anchor, and the point the flight
-	// pierces it - the name row's own centre line
+	// The middle of the corridor, in uv: the plane's anchor, and the point the flight
+	// pierces it - the name row's own centre line. Measured off the layout as quoted;
+	// buildTitle re-lays it out for whatever grid it gets and lands within a texel.
+	const refBlock = (TITLE.tex[0] - (TITLE.name.join('').length * TITLE.size + TITLE.gap)) / 2
 	TITLE.anchor = [
-		(TITLE.block + TITLE.name[0].length * TITLE.size + TITLE.gap / 2) / TITLE.tex[0],
+		(refBlock + TITLE.name[0].length * TITLE.size + TITLE.gap / 2) / TITLE.tex[0],
 		TITLE.nameY / TITLE.tex[1],
 	]
 	TITLE.wide = Math.max(TITLE.anchor[0], 1 - TITLE.anchor[0]) // the anchor's long side
-	TITLE.w = (TITLE.tex[0] * TITLE.rest) / (FOCAL * ART_STEPS[0]) // one texel per pixel
+	const TITLE_REF = TITLE.tex[0] // the width the layout constants above are quoted in
+	const TITLE_FLOOR = 320 // never author the name below 25px: it has to survive the pass
 
 	// dust motes: two verts per mote (head + tail) drawn as speed streaks
 	const MOTES = 900
@@ -1103,13 +1123,43 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	})
 
 	function resize() {
-		const cssW = canvas.clientWidth || window.innerWidth
-		const cssH = canvas.clientHeight || window.innerHeight
-		H = ART_STEPS[artStep]
-		W = Math.max(160, Math.round(H * (cssW / cssH)))
+		// innerWidth rather than the element's own box: the element is about to be a hair
+		// wider than the viewport, and 100vw counts the scrollbar the same way this does.
+		const dpr = window.devicePixelRatio || 1
+		const devW = Math.round(window.innerWidth * dpr),
+			devH = Math.round(window.innerHeight * dpr)
+		// device pixels per art pixel: whole, never fewer than two, one more per rung down
+		const k = Math.max(2, Math.round(devH / ART_TARGET) + artStep)
+		W = Math.max(160, Math.ceil(devW / k))
+		H = Math.max(120, Math.ceil(devH / k))
 		canvas.width = W
 		canvas.height = H
+		// Rounding the buffer up to whole art pixels leaves the element a little larger
+		// than the viewport; offset by half the spill, floored to a whole device pixel, so
+		// the overflow splits instead of cropping one side - and so the element's own edges
+		// stay on the device grid, which is the whole point of the exercise.
+		canvas.style.width = `${(W * k) / dpr}px`
+		canvas.style.height = `${(H * k) / dpr}px`
+		canvas.style.left = `${-Math.floor((W * k - devW) / 2) / dpr}px`
+		canvas.style.top = `${-Math.floor((H * k - devH) / 2) / dpr}px`
 		gl.viewport(0, 0, W, H)
+		// Hold the title inside the frame on narrow viewports. Screen x is
+		// 2*focal*X/(z*aspect), so what caps it is the wider of the plane's two sides of
+		// the anchor landing at 0.86 of the frame edge. Depends on the viewport, not the
+		// scroll, so it belongs here.
+		TITLE.tw = Math.min(TITLE.w, (0.43 * TITLE.rest * (W / H)) / (FOCAL * TITLE.wide))
+		// Then author the texture at the pixels that plane covers at rest - one texel per
+		// art pixel, so the look cannot shimmer it - with a floor on how few that can be.
+		// A narrow viewport caps the plane to a third of its width, and a texture authored
+		// that small has nothing left to magnify: the flight goes between the words at ten
+		// times the size the letters were drawn, and every antialiased edge becomes a grey
+		// slab. Below the floor the letters are minified at rest instead, which is soft but
+		// still, and stillness is all it needs there - the look only answers a mouse.
+		const px = Math.max(TITLE_FLOOR, Math.round((FOCAL * TITLE.tw * H) / TITLE.rest))
+		if (px !== TITLE.tex[0]) {
+			TITLE.tex = [px, Math.round(px / 4)]
+			buildTitle()
+		}
 	}
 
 	// ---------------------------------------------------------------- frame
@@ -1269,12 +1319,8 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 			gl.uniform2fv(TU.uAnchor, TITLE.anchor)
 			gl.uniform1f(TU.uFocal, FOCAL)
 			gl.uniform1f(TU.uAspect, W / H)
-			// Hold it inside the frame on narrow viewports. Screen x is 2*focal*X/(z*aspect),
-			// so what caps it is the wider of the plane's two sides of the anchor landing at
-			// 0.86 of the frame edge.
-			const tw = Math.min(TITLE.w, (0.43 * TITLE.rest * (W / H)) / (FOCAL * TITLE.wide))
-			gl.uniform1f(TU.uTW, tw)
-			gl.uniform1f(TU.uTH, (tw * TITLE.tex[1]) / TITLE.tex[0])
+			gl.uniform1f(TU.uTW, TITLE.tw)
+			gl.uniform1f(TU.uTH, (TITLE.tw * TITLE.tex[1]) / TITLE.tex[0])
 			gl.uniform1f(TU.uFade, tfade)
 			// Snap the plane onto the art grid. The pointer look slides the title forty-odd
 			// art pixels across a full sweep, and the plane samples its texture NEAREST at
@@ -1340,7 +1386,7 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	function loop(t) {
 		const drew = draw()
 		requestAnimationFrame(loop)
-		if (artStep >= ART_STEPS.length - 1) return
+		if (artStep >= ART_RUNGS - 1) return
 		if (!drew) {
 			winStart = 0
 			return
