@@ -7,10 +7,10 @@
 		     camera's axis runs through the gap between the two words, and the first
 		     stretch of scroll flies it through. -->
 		<header class="journey__hero">
-			<!-- the flight: the star tunnel streams past behind the name, and both
-			     share the frame's centre as their vanishing point -->
-			<div class="journey__flight">
-				<HyperspaceWarp :intensity="warp" />
+			<!-- the flight: the mote field runs past behind the name, both projected
+			     from the same camera, both vanishing at the frame's centre -->
+			<div class="journey__flight" :style="flightStyle">
+				<FlightDust :travel="travel" :fade="dust" />
 				<div class="journey__lockup" :style="flybyStyle">
 					<h1 class="journey__name">
 						<span>{{ firstWords }}</span>
@@ -72,7 +72,7 @@
 	import { useScrollSections } from '@/composables/useScrollSections'
 	import AboutLife from './AboutLife.vue'
 	import AboutWork from './AboutWork.vue'
-	import HyperspaceWarp from './HyperspaceWarp.vue'
+	import FlightDust from './FlightDust.vue'
 	import JourneyArrival from './JourneyArrival.vue'
 	import JourneyRail from './JourneyRail.vue'
 	import PageTitle from './PageTitle.vue'
@@ -203,13 +203,14 @@
 	// carries on into the void
 	const pass = computed(() => scrolled.value / ((dims.value.vh || 1) * HERO_FLYBY.runVh))
 
-	// Departure: the pass through the corridor. z falls at a steady rate, so the
-	// spread accelerates hyperbolically the way a real approach does — and since
-	// scale and offset-from-the-axis grow by the same factor, one scale about the
-	// corridor is the whole move. The words go on out past the frame edges; the
-	// dissolve is what ends the pass.
+	// Departure: the pass through the corridor. The name stands on a plane `titleZ`
+	// ahead, so its scale is what closing that gap does — the same travel the motes
+	// ride, which is what makes the two read as one movement instead of two effects.
+	// Since scale and offset-from-the-axis grow together, one scale about the corridor
+	// is the whole move. The words go on out past the frame edges; the dissolve is
+	// what ends the pass.
 	const flybyStyle = computed(() => {
-		const scale = 1 / (1 - (1 - 1 / HERO_FLYBY.nearScale) * clamp01(pass.value))
+		const scale = 1 / (1 - flown(clamp01(pass.value)) / HERO_FLYBY.titleZ)
 		const gone = clamp01(
 			(scale - HERO_FLYBY.fadeFromScale) / (HERO_FLYBY.nearScale - HERO_FLYBY.fadeFromScale)
 		)
@@ -225,13 +226,34 @@
 		}
 	})
 
-	// The star tunnel: up as the flight starts, hard on through the pass, out again
-	// as the planet comes up. Measured on the pass's clock, past 1, so it outlasts
-	// the words and covers the empty stretch before the planet.
-	const warp = computed(() => {
+	// How far down the corridor the camera has run, in world units — the one number
+	// the whole flight comes from. Distance under constant acceleration for the first
+	// stretch, then constant speed, normalised so the pass still ends where it did.
+	function flown(p) {
+		const h = HERO_FLYBY.spoolUp
+		const d = p < h ? (p * p) / (2 * h) : p - h / 2
+		return (HERO_FLYBY.titleZ * (1 - 1 / HERO_FLYBY.nearScale) * d) / (1 - h / 2)
+	}
+
+	// the motes ride this; past the end of the pass it carries on into the void
+	const travel = computed(() => flown(Math.max(0, pass.value)))
+
+	// the camera's own drift across the corridor, carrying motes and words together —
+	// it is the camera that moves, not them
+	const flightStyle = computed(() => {
+		const t = smoothstep(clamp01(pass.value))
+		const x = (t * HERO_FLYBY.driftVw).toFixed(2)
+		const y = (t * HERO_FLYBY.driftVh).toFixed(2)
+		return { transform: `translate3d(${x}vw, ${y}vh, 0)` }
+	})
+
+	// The mote field: up as the flight starts, on through the pass, out again as the
+	// planet comes up. Measured on the pass's clock, past 1, so it outlasts the words
+	// and carries the empty stretch before the planet.
+	const dust = computed(() => {
 		const t = pass.value
-		const up = clamp01((t - HERO_FLYBY.warpIn) / (HERO_FLYBY.warpFull - HERO_FLYBY.warpIn))
-		const out = clamp01((HERO_FLYBY.warpOut - t) / (HERO_FLYBY.warpOut - HERO_FLYBY.warpFull))
+		const up = clamp01((t - HERO_FLYBY.dustIn) / (HERO_FLYBY.dustFull - HERO_FLYBY.dustIn))
+		const out = clamp01((HERO_FLYBY.dustOut - t) / (HERO_FLYBY.dustOut - HERO_FLYBY.dustFull))
 		return smoothstep(Math.min(up, out))
 	})
 

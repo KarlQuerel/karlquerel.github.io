@@ -37,12 +37,41 @@ export const JOURNEY = {
 export const HERO_FLYBY = {
 	// scroll the pass takes, in viewports — a flight, so it is over quickly
 	runVh: 0.45,
-	// The star tunnel behind it (HyperspaceWarp): up as the flight starts, hard on
-	// through the pass, and out again as the planet comes up — the deceleration
-	// into orbit. Fractions of the pass, so it can outlast it.
-	warpIn: 0.08,
-	warpFull: 0.45,
-	warpOut: 1.5,
+	// The depth cue (FlightDust): motes standing still in the world while the camera
+	// runs through them. Nothing here streaks on its own clock — the field shares the
+	// pass's camera, so the parallax between the motes and the words is honest, which
+	// is the whole difference between reading as travel and reading as a zoom.
+	// `titleZ` is how far ahead the name stands, in world units; the pass is the camera
+	// closing that gap at a constant rate, so travel = titleZ * (1 - 1/scale).
+	titleZ: 16,
+	fovDeg: 58,
+	// The flight spools up rather than snapping to speed: this much of the pass is
+	// spent getting there. The opening frame is meant to read as a still, and the
+	// acceleration is what admits the page was never flat.
+	spoolUp: 0.28,
+	// The camera is not on rails down the middle — it eases across as it goes, so the
+	// pass reads as a trajectory rather than as everything swelling out of one fixed
+	// point. Small enough that the corridor, which widens as we close on it, stays the
+	// hole we go through.
+	driftVw: 3.5,
+	driftVh: -1.6,
+	motes: 1500,
+	moteBox: 13,
+	// Tail length in world units, times each mote's own share. Long enough to read as
+	// speed at the near plane, short enough that the far field stays points of light.
+	moteTail: 0.36,
+	// Motes closer than this are behind the lens. Anything nearer projects wider than
+	// the frame anyway, and its tail swings through half the screen.
+	moteNear: 0.35,
+	moteColor: 'rgb(199, 217, 255)',
+	// backing-store downscale, as the warp does it: one mote is one art pixel
+	motePixelScale: 2,
+	// The field wakes with the engines rather than on load, and is gone by the time the
+	// planet is up: past that we are in orbit, not running anywhere. Fractions of the
+	// pass, so it can outlast it.
+	dustIn: 0.05,
+	dustFull: 0.4,
+	dustOut: 1.6,
 	// How near the words get by the end. They never clear the frame edges — their
 	// inner edges are only half a corridor off the axis — so the pass has to end
 	// in a dissolve, and it has to happen while they are big and rushing rather
