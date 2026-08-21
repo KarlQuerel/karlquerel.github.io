@@ -1197,8 +1197,19 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		line(first, size, block, nameY)
 		line(last, size, block + first.length * size + gap, nameY)
 		// Centred on the corridor rather than on the name, which puts its own word space
-		// on the flight line: everything the camera aims at is a hole.
-		line(TITLE.role, roleSize, block + first.length * size + gap / 2 - (TITLE.role.length * roleSize) / 2, roleY)
+		// on the flight line: everything the camera aims at is a hole. Rounded to a whole
+		// texel because it is a bitmap face: the role has an odd character count, so this
+		// lands on a half texel whenever exactly one of gap and roleSize is odd - true on
+		// four of six common grids, including 1366x768, 4K and mobile - and half a texel
+		// puts every glyph through the antialiaser, which NEAREST then magnifies on the way
+		// past. Round the centre once here rather than per glyph: the words themselves are
+		// drawn as whole strings, so the font's own advance keeps the tracking exact.
+		line(
+			TITLE.role,
+			roleSize,
+			Math.round(block + first.length * size + gap / 2 - (TITLE.role.length * roleSize) / 2),
+			roleY
+		)
 		gl.bindTexture(gl.TEXTURE_2D, titleTex)
 		gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c)
