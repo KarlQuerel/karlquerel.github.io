@@ -43,7 +43,7 @@
 
 		<section id="work" ref="workRef" class="journey__station journey__station--work">
 			<!-- the heading sits in the scene: the planet's limb crosses it -->
-			<header class="journey__station-head" :style="headingLean">
+			<header class="journey__station-head" :style="headingStyle">
 				<p class="journey__kicker">{{ kicker(1) }}</p>
 				<PageTitle
 					tag="h2"
@@ -55,7 +55,7 @@
 		</section>
 
 		<section id="life" ref="lifeRef" class="journey__station journey__station--life">
-			<header class="journey__station-head" :style="headingLean">
+			<header class="journey__station-head" :style="headingStyle">
 				<p class="journey__kicker">{{ kicker(2) }}</p>
 				<PageTitle
 					tag="h2"
@@ -130,9 +130,17 @@
 	// hold whatever the breakpoints and any wrapping did. The pass scales about that
 	// point and shifts it onto the frame's centre, which is where the mote field's
 	// vanishing point is and where the planet comes up.
-	// the headings are in the scene, so they answer the cursor with it — less than the
-	// planet in front of them (see JOURNEY.parallax)
-	const headingLean = { '--depth': JOURNEY.parallax.heading }
+	// Pushing the camera in for portrait leaves the globe filling the frame rather than
+	// sitting to one side of it, and a heading behind that is not crossed by a limb —
+	// it is simply hidden (measured: up to 86% of it). So the words come in front there.
+	// Landscape keeps them in the scene, which is the whole point of the treatment.
+	const portrait = ref(false)
+
+	// they answer the cursor either way — less than the planet (see JOURNEY.parallax)
+	const headingStyle = computed(() => ({
+		'--depth': JOURNEY.parallax.heading,
+		zIndex: portrait.value ? 1 : -1,
+	}))
 
 	const axis = ref({ x: 0, y: 0 })
 	const onAxis = next => (axis.value = next)
@@ -151,7 +159,8 @@
 		const topOf = el => el.getBoundingClientRect().top - trackTop
 		const bottomOf = el => topOf(el) + el.offsetHeight
 		// portrait renders the vmin-sized globe far smaller — push the camera in
-		const cameras = vh > track.clientWidth ? CAMERA_PORTRAIT : CAMERA
+		portrait.value = vh > track.clientWidth
+		const cameras = portrait.value ? CAMERA_PORTRAIT : CAMERA
 		dims.value = { trackH: track.offsetHeight, vh }
 		// the departure flies out empty, the planet comes up dead ahead, the camera
 		// comes around it, then stations dock as they enter; inside the pinned runway
@@ -464,11 +473,11 @@
 	}
 
 	// In the scene rather than over it: behind the stage, so the planet's limb crosses
-	// the words. No scrim — a dark box behind type sitting on a lit limb reads as a
-	// panel floating in space, which is why the arrival heading carries none either.
+	// the words — landscape only, and the depth is set in JS with the portrait test the
+	// camera table shares. No scrim either: a dark box behind type sitting on a lit limb
+	// reads as a panel floating in space, which is why the arrival heading carries none.
 	.journey__station-head {
 		position: relative;
-		z-index: -1;
 		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
 			calc(var(--my, 0) * var(--depth, 0) * 1px);
 		max-width: min(64rem, 92vw);
