@@ -260,12 +260,12 @@ uniform vec2  uRes;
 uniform vec3  uCamPos, uRight, uUp, uFwd;
 uniform float uFocal, uEntry, uProg;
 uniform vec3  uSun;
-uniform vec4  uB[3];    // center.xyz, radius
-uniform vec4  uBP[3];   // paletteId, spin, ringInner, ringOuter
+uniform vec4  uB[4];    // center.xyz, radius
+uniform vec4  uBP[4];   // paletteId, spin, ringInner, ringOuter
 uniform vec3  uRingN;
 const int NR = 2;       // rocks on the corridor, always marched, never gated
 uniform vec4  uRock[NR];    // centre.xyz, radius
-uniform float uRockSpin[NR];
+uniform vec4  uRockSpin[NR];  // (cos,sin) of the spin, then of the tumble
 
 // quantisation is what makes it pixel art; too few levels makes it a poster
 const float LEVELS = 22.0;
@@ -329,13 +329,20 @@ float rockRadius(vec3 dir, float seed){
   }
   return r;
 }
-float rockDist(vec3 wp, vec4 rk, float cs, float sn){
+// Into the rock's own frame: a spin about the vertical, then a turn end over end. One
+// axis reads as something on a lathe; two, at rates that do not divide into each other,
+// is what a rock with no reason to be balanced actually does.
+vec3 rockLocal(vec3 q, vec4 rot){
+  vec3 a = vec3(q.x*rot.x + q.z*rot.y, q.y, -q.x*rot.y + q.z*rot.x);
+  return vec3(a.x, a.y*rot.z + a.z*rot.w, -a.y*rot.w + a.z*rot.z);
+}
+float rockDist(vec3 wp, vec4 rk, vec4 rot){
   vec3 q = wp - rk.xyz;
-  vec3 dir = normalize(vec3(q.x*cs + q.z*sn, q.y, -q.x*sn + q.z*cs));
+  vec3 dir = normalize(rockLocal(q, rot));
   // seed off the position too, or every rock of a given size is the same rock
   return length(q) - rk.w*rockRadius(dir, rk.w*7.0 + rk.x*0.37 + rk.z*0.11);
 }
-float traceRock(vec3 ro, vec3 rd, vec4 rk, float cs, float sn){
+float traceRock(vec3 ro, vec3 rd, vec4 rk, vec4 rot){
   if (rk.w <= 0.0) return -1.0;
   vec3 oc = ro - rk.xyz;                     // bounding sphere: a miss costs three flops
   float R = rk.w*1.75;
@@ -344,19 +351,19 @@ float traceRock(vec3 ro, vec3 rd, vec4 rk, float cs, float sn){
   if (h < 0.0) return -1.0;
   float t = max(-b - sqrt(h), 0.02), tEnd = -b + sqrt(h);
   for (int i = 0; i < 60; i++){
-    float d = rockDist(ro + rd*t, rk, cs, sn);
+    float d = rockDist(ro + rd*t, rk, rot);
     if (d < 0.004*t) return t;
     t += d*0.55;
     if (t > tEnd) return -1.0;
   }
   return -1.0;
 }
-vec3 rockNormal(vec3 wp, vec4 rk, float cs, float sn){
+vec3 rockNormal(vec3 wp, vec4 rk, vec4 rot){
   vec2 e = vec2(0.010, 0.0);
-  float d0 = rockDist(wp, rk, cs, sn);
-  return normalize(vec3(rockDist(wp + e.xyy, rk, cs, sn) - d0,
-                        rockDist(wp + e.yxy, rk, cs, sn) - d0,
-                        rockDist(wp + e.yyx, rk, cs, sn) - d0));
+  float d0 = rockDist(wp, rk, rot);
+  return normalize(vec3(rockDist(wp + e.xyy, rk, rot) - d0,
+                        rockDist(wp + e.yxy, rk, rot) - d0,
+                        rockDist(wp + e.yyx, rk, rot) - d0));
 }
 
 // --- per-world palettes (band colours low -> high elevation)
@@ -370,10 +377,14 @@ void palette(float pid, out vec3 c1, out vec3 c2, out vec3 c3, out vec3 c4, out 
     c1 = vec3(10,24,16); c2 = vec3(38,70,32); c3 = vec3(116,138,38);
     c4 = vec3(178,178,58); c5 = vec3(228,222,148);
     sea = 0.49; ocean = 1.0;
-  } else {                   // the near moon: cold grey basalt, no air at all
+  } else if (pid < 2.5){     // the near moon: cold grey basalt, no air at all
     c1 = vec3(26,26,30); c2 = vec3(58,58,64); c3 = vec3(92,92,98);
     c4 = vec3(134,134,140); c5 = vec3(186,186,192);
     sea = 0.46; ocean = 0.0;
+  } else {                   // the corridor moon: iron, colder and darker than that one -
+    c1 = vec3(16,19,26); c2 = vec3(38,44,58); c3 = vec3(66,74,92);   // it has to read as
+    c4 = vec3(98,106,124); c5 = vec3(142,150,168);                   // its own body, not
+    sea = 0.46; ocean = 0.0;                                         // as the ridge again
   }
   c1/=255.0; c2/=255.0; c3/=255.0; c4/=255.0; c5/=255.0;
 }
@@ -446,7 +457,7 @@ void main(){
 
   // --- nearest sphere
   float best = 1e9; int hit = -1;
-  for (int i = 0; i < 3; i++){
+  for (int i = 0; i < 4; i++){
     if (uB[i].w <= 0.0) continue;
     vec3 oc = ro - uB[i].xyz;
     float b = dot(oc, rd);
@@ -488,7 +499,7 @@ void main(){
   if (hit >= 0){
     int H = hit;
     vec3 c = vec3(0.0); float rad = 0.0; vec4 pp = vec4(0.0);
-    for (int i = 0; i < 3; i++){ if (i == H){ c = uB[i].xyz; rad = uB[i].w; pp = uBP[i]; } }
+    for (int i = 0; i < 4; i++){ if (i == H){ c = uB[i].xyz; rad = uB[i].w; pp = uBP[i]; } }
 
     vec3 p = ro + rd*best;
     vec3 n = normalize(p - c);
@@ -567,18 +578,16 @@ void main(){
     col = lit;
   }
 
-  if (ringA > 0.0 && ringT < best) col = mix(col, ringC, clamp(ringA, 0.0, 1.0));
-
   // --- the rocks, each composited by depth against everything above and each other
   for (int i = 0; i < NR; i++){
-    float cs = cos(uRockSpin[i]), sn = sin(uRockSpin[i]);
-    float tr = traceRock(ro, rd, uRock[i], cs, sn);
+    vec4 rot = uRockSpin[i];
+    float tr = traceRock(ro, rd, uRock[i], rot);
     if (tr > 0.0 && tr < best){
       best = tr;
       vec3 hp = ro + rd*tr;
-      vec3 n = rockNormal(hp, uRock[i], cs, sn);
+      vec3 n = rockNormal(hp, uRock[i], rot);
       vec3 q = hp - uRock[i].xyz;
-      vec3 lp = vec3(q.x*cs + q.z*sn, q.y, -q.x*sn + q.z*cs);
+      vec3 lp = rockLocal(q, rot);
       vec3 base = mix(vec3(0.24,0.23,0.25), vec3(0.56,0.52,0.48), fbm3(lp*3.4));
       base = mix(base, vec3(0.40,0.34,0.29), smoothstep(0.45,0.80,ridged(lp*9.0))*0.5);
       float day = max(dot(n, uSun), 0.0);
@@ -586,6 +595,11 @@ void main(){
       col = base*(0.07 + 0.98*day) + vec3(0.42,0.50,0.66)*rim*0.14;
     }
   }
+
+  // The ring goes last, so it is composited against whatever ended up nearest, sphere or
+  // rock. Drawn before the rocks it was only ever tested against the spheres, which is why
+  // a rock behind the ring drew straight over it.
+  if (ringA > 0.0 && ringT < best) col = mix(col, ringC, clamp(ringA, 0.0, 1.0));
 
   // ------------------------------------------------ atmospheric entry
   if (uEntry > 0.0){
@@ -729,13 +743,28 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	// Two worlds: a ringed one to thread, and the one we are heading home to.
 	// Radius 1 = ~Earth. Both strung along -Z so the camera flies a corridor.
 	const BODIES = [
-		{ c: [10.4, 3.0, -60], r: 3.0, pid: 0, spin: 0.9, ring: [4.3, 7.2] }, // the ringed world
+		// The ringed world. Its y is solved, not chosen: it has to take the destination off
+		// the ridge with no gap (the ridge lets go of it at s=0.197) and hold it until the
+		// ridge reveal has finished landing, so the destination coming out from behind this
+		// limb is its own beat rather than a detail inside a bigger one. Hides it
+		// s=0.196..0.241, clear of it by 0.318. One unit lower and the two beats collide.
+		{ c: [10.15, 4.0, -60], r: 3.0, pid: 0, spin: 0.9, ring: [4.3, 7.2] },
 		{ c: [14, -3.0, -186], r: 6.0, pid: 1, spin: 0.2, ring: [0, 0] }, // the destination
 		// The ridge. It sits squarely between the camera and everything else, so at rest
 		// the page is a grey horizon under stars and nothing else exists. It hides the
 		// corridor by blocking it, not by the camera looking away - which is why the
 		// reveal is parallax as we climb over it, and needs no camera trick at all.
 		{ c: [6.5, -6, -25], r: 12.0, pid: 2, spin: 0.12, ring: [0, 0] },
+		// The corridor moon: the ridge's trick again, but spent on one body instead of the
+		// whole scene. It takes the destination back after the first look at it and holds
+		// it to s=0.527, so the arrival happens at 8.2 degrees across instead of 2.4 - the
+		// flight closes a third of the remaining distance while it is out of sight.
+		// Solved the same way the ridge was: on the sightline to the destination, sized to
+		// cover it with margin, far enough off the route to clear its surface by a third of
+		// a radius (the ridge is passed at 1.29, this at 1.36). It has to be a smooth body
+		// and not a rock: rockRadius bulges 30%, so a marched rock passed this close would
+		// put the camera inside its own silhouette.
+		{ c: [8.55, -1.17, -148.2], r: 3.68, pid: 3, spin: 0.16, ring: [0, 0] },
 	]
 	// Rocks down the corridor, each marched in the scene shader so they occlude the
 	// scene, each other, and get occluded in turn. Sizes and offsets all differ: a
@@ -744,9 +773,13 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	// what is dead ahead has to be dead ahead itself, and we fly into it - measured at
 	// -0.33 clearance before this was reverted. Occlusion reveals need an occluder the
 	// route passes to one side of, which is what the ridge and the ringed world are.
+	// spin and tumble are turns per full scroll, about the vertical and end over end. The
+	// rates are deliberately not multiples of each other: a rock that returns to the same
+	// face reads as a prop on a turntable.
 	const ROCKS = [
-		{ c: [4.2, -1.6, -104.5], r: 1.3, spin: 0.55 },
-		{ c: [7.6, 2.4, -146], r: 1.9, spin: 0.25 },
+		{ c: [4.2, -1.6, -104.5], r: 1.3, spin: 2.3, tumble: 1.4 },
+		// lifted clear of the corridor moon - at its old y it was inside it
+		{ c: [7.6, 5.6, -146], r: 1.9, spin: 1.7, tumble: 2.6 },
 	]
 	// what the camera can be asked to watch. The rocks are not on the list any more:
 	// they sweep through frame on their own, which is what passing something looks like.
@@ -1081,7 +1114,7 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	U.uRock = gl.getUniformLocation(scene, 'uRock[0]')
 	U.uRockSpin = gl.getUniformLocation(scene, 'uRockSpin[0]')
 	const rockArr = new Float32Array(ROCKS.length * 4)
-	const rockSpin = new Float32Array(ROCKS.length)
+	const rockSpin = new Float32Array(ROCKS.length * 4)
 	U.uB = gl.getUniformLocation(scene, 'uB[0]')
 	U.uBP = gl.getUniformLocation(scene, 'uBP[0]')
 	const TU = {}
@@ -1285,10 +1318,12 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		ROCKS.forEach((r, i) => {
 			rockArr.set(r.c, i * 4)
 			rockArr[i * 4 + 3] = r.r
-			rockSpin[i] = r.spin * p * 6.283
+			const a = r.spin * p * 6.283,
+				b = r.tumble * p * 6.283
+			rockSpin.set([Math.cos(a), Math.sin(a), Math.cos(b), Math.sin(b)], i * 4)
 		})
 		gl.uniform4fv(U.uRock, rockArr)
-		gl.uniform1fv(U.uRockSpin, rockSpin)
+		gl.uniform4fv(U.uRockSpin, rockSpin)
 		gl.disable(gl.BLEND)
 		gl.drawArrays(gl.TRIANGLES, 0, 6)
 
