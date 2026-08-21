@@ -94,8 +94,30 @@ export const ENTRY = {
 	cloudTravel: 0.2,
 	cloudFromVh: 110,
 	cloudToVh: -70,
-	cloudApproach: 5.2,
+	cloudApproach: 3.8,
 	cloudSpread: 1.1,
+	// The puff sprite itself: a cumulus in profile, drawn once per visit in a
+	// few variants and reused across the deck. Lit crown, shaded underside,
+	// dithered between tones — `sideLight` leans it toward the sun.
+	cloud: {
+		variants: 3,
+		spriteW: 68,
+		spriteH: 36,
+		// overlapping round lobes, which is what gives cumulus their bulbous top;
+		// a single arch just produces a pyramid
+		lobes: 5,
+		lobeRadius: [0.16, 0.3],
+		lobeHeight: [0.5, 1],
+		baseJitter: 2,
+		sideLight: 0.55,
+		shades: [
+			[150, 128, 128],
+			[176, 154, 152],
+			[200, 180, 176],
+			[220, 202, 197],
+			[236, 222, 216],
+		],
+	},
 	// A dense, staggered stream: the deck has to be thick enough through the
 	// takeover that the surface is gone before the sky is up. `flip` mirrors the
 	// puff so one sprite does not read as a repeat.
@@ -130,47 +152,55 @@ export const ENTRY = {
 	// cells below the crest, so the lit face hugs the ridge and the mass beneath
 	// it sinks into shadow. `ridgeLight` is the sun's side: -1 puts it stage
 	// left, matching the planet's key.
+	// Profile shape: ridged noise alone spikes off a flat plain, so it is blended
+	// with the rolling octaves — crests stay sharp, but they rise out of shoulders.
+	ridgeBlend: 0.62,
 	ridgeLight: -1,
 	ridgeSlopeSpan: 2,
 	ridgeDepthFade: 0.6,
 	// crag texture broken across the faces, so a slope is not one flat wash
-	ridgeRough: 0.2,
-	ridgeRoughFreq: 26,
+	ridgeRough: 0.26,
+	ridgeRoughFreq: 34,
 	far: {
 		revealAt: 0.56,
 		liftVh: 10,
 		heightVh: 34,
 		freq: 9,
-		base: 0.32,
-		amp: 0.5,
+		base: 0.3,
+		amp: 0.56,
 		seed: 11,
 		slopeGain: 40,
 		faceDepth: 22,
-		// dark → lit ramp, hard-banded like every other surface here
+		// dark → lit ramp. Aerial perspective: the far band sits closer to the
+		// sky's tone throughout, which is what pushes it into the distance.
 		shades: [
-			[54, 33, 32],
-			[74, 46, 43],
-			[96, 61, 55],
-			[122, 80, 69],
+			[62, 40, 38],
+			[78, 50, 46],
+			[95, 62, 55],
+			[113, 75, 65],
+			[133, 90, 77],
+			[154, 106, 90],
 		],
-		crest: [158, 104, 88],
+		crest: [178, 126, 104],
 	},
 	near: {
 		revealAt: 0.62,
 		liftVh: 16,
 		heightVh: 22,
 		freq: 5.5,
-		base: 0.3,
-		amp: 0.55,
+		base: 0.28,
+		amp: 0.62,
 		seed: 29,
 		slopeGain: 52,
 		faceDepth: 28,
 		shades: [
-			[22, 14, 15],
-			[33, 20, 20],
-			[45, 28, 27],
-			[61, 38, 35],
+			[20, 13, 14],
+			[29, 18, 18],
+			[39, 25, 24],
+			[51, 32, 30],
+			[65, 41, 37],
+			[82, 51, 45],
 		],
-		crest: [96, 58, 50],
+		crest: [104, 64, 55],
 	},
 }

@@ -8,7 +8,7 @@
 			v-for="(cloud, i) in ENTRY.clouds"
 			:key="i"
 			class="entry__cloud"
-			:style="cloudStyle(cloud)"
+			:style="cloudStyle(cloud, i)"
 		/>
 		<!-- inside the deck: cloud closes over the lens and hides the sky handoff -->
 		<div class="entry__deck" :style="deckStyle" />
@@ -21,6 +21,7 @@
 	import { computed, onMounted, ref } from 'vue'
 	import { ENTRY } from '@/constants/journey'
 	import { clamp01, smoothstep } from '@/js/math'
+	import { ditherIndex, fbm1, fbm2, hash1, ridged1 } from '@/js/pixelNoise'
 
 	const props = defineProps({
 		// approach progress: 0 → still in space, 1 → landed
@@ -51,7 +52,9 @@
 	// Each cloud rushes up past the camera inside its own window of the drop. It
 	// swells and fans away from centre as it closes — the perspective is what
 	// makes the deck read as something we are flying into rather than past.
-	function cloudStyle(cloud) {
+	function cloudStyle(cloud, i) {
+		// variants cycle by position in the deck, so no two neighbours match
+		const sprite = cloudSprites.value[i % ENTRY.cloud.variants]
 		const t = clamp01((props.progress - cloud.start) / ENTRY.cloudTravel)
 		const ease = t * t
 		const y = ENTRY.cloudFromVh - (ENTRY.cloudFromVh - ENTRY.cloudToVh) * ease
@@ -60,6 +63,7 @@
 		return {
 			left: `${cloud.left}vw`,
 			display: t > 0 && t < 1 ? null : 'none',
+			backgroundImage: sprite ? `url(${sprite})` : undefined,
 			// fade the last stretch so a puff never pops out at the frame edge
 			opacity: Math.min(1, (1 - t) / 0.15).toFixed(3),
 			transform:
@@ -82,33 +86,15 @@
 		}
 	}
 
-	// dependency-free 1D value noise for the ridgelines, seeded per visit
 	const farEl = ref(null)
 	const nearEl = ref(null)
-
-	function hash1(i, seed) {
-		let n = Math.imul(i, 374761393) ^ Math.imul(seed, 951274213)
-		n = Math.imul(n ^ (n >>> 13), 1274126177)
-		return ((n ^ (n >>> 16)) >>> 0) / 4294967295
-	}
-
-	function noise1(x, seed) {
-		const i = Math.floor(x)
-		return hash1(i, seed) + (hash1(i + 1, seed) - hash1(i, seed)) * smoothstep(x - i)
-	}
-
-	function fbm1(x, seed) {
-		return (
-			0.6 * noise1(x, seed) +
-			0.3 * noise1(x * 2.7, seed + 7) +
-			0.1 * noise1(x * 6.1, seed + 13)
-		)
-	}
+	// three cloud sprites drawn once per visit; each puff picks one by index
+	const cloudSprites = ref([])
 
 	// Shaded relief, drawn once per visit and upscaled pixelated by CSS. Each
 	// column is lit by the way its face turns, then darkened with depth into the
-	// mass, and the result is quantised onto the band's ramp — same trick the
-	// planet sprite uses, so the ridges gain volume without losing the pixel grid.
+	// mass, and the result is dithered onto the band's ramp — the same trick the
+	// planet sprite uses, so the ridges gain volume without leaving the grid.
 	function drawRidge(el, band, visitSeed) {
 		const w = ENTRY.ridgeRes
 		const h = Math.round(w * ENTRY.ridgeAspect)
@@ -122,7 +108,11 @@
 		// the whole profile first, so a column can be compared with its neighbour
 		const profile = new Array(w)
 		for (let x = 0; x < w; x++) {
-			profile[x] = band.base + fbm1((x / w) * band.freq, band.seed + visitSeed) * band.amp
+			const u = (x / w) * band.freq
+			const seed = band.seed + visitSeed
+			const shape =
+				ENTRY.ridgeBlend * ridged1(u, seed) + (1 - ENTRY.ridgeBlend) * fbm1(u, seed)
+			profile[x] = band.base + shape * band.amp
 		}
 
 		const put = (x, y, [r, g, b]) => {
@@ -142,16 +132,16 @@
 			const lo = profile[Math.max(0, x - span)]
 			const hi = profile[Math.min(w - 1, x + span)]
 			const slope = (hi - lo) / (2 * span)
-			// a little crag noise on top, so each face is rock rather than a wash
-			const rough =
-				(fbm1((x / w) * ENTRY.ridgeRoughFreq, band.seed + visitSeed + 5) - 0.5) *
-				ENTRY.ridgeRough
-			const face = clamp01(0.5 + slope * band.slopeGain * ENTRY.ridgeLight + rough)
+			const face = 0.5 + slope * band.slopeGain * ENTRY.ridgeLight
+			const rf = ENTRY.ridgeRoughFreq / w
 			for (let y = yTop; y < h; y++) {
 				// the face is a band under the crest; below it the mass goes dark
 				const depth = Math.min(1, (y - yTop) / band.faceDepth)
-				const lit = clamp01(face * (1 - depth * ENTRY.ridgeDepthFade))
-				put(x, y, band.shades[Math.min(levels - 1, Math.floor(lit * levels))])
+				// crag texture in 2D — sampled per column only, it stripes
+				const rough =
+					(fbm2(x * rf, y * rf, band.seed + visitSeed + 5) - 0.5) * ENTRY.ridgeRough
+				const lit = clamp01((face + rough) * (1 - depth * ENTRY.ridgeDepthFade))
+				put(x, y, band.shades[ditherIndex(lit, levels, x, y)])
 			}
 			// the sunlit rim along the very top of the ridge
 			put(x, yTop, band.crest)
@@ -160,10 +150,67 @@
 		ctx.putImageData(img, 0, 0)
 	}
 
+	// A cumulus in profile: a handful of overlapping round lobes for the bulbous
+	// crown, a flat-ish base, lit from above and from the sun's side, then
+	// dithered down into the underside. Beats a flat blob for the same few colours.
+	function drawCloud(seed) {
+		const cfg = ENTRY.cloud
+		const { spriteW: w, spriteH: h, shades } = cfg
+		const el = document.createElement('canvas')
+		el.width = w
+		el.height = h
+		const ctx = el.getContext('2d')
+		const img = ctx.createImageData(w, h)
+		const px = img.data
+		const levels = shades.length
+
+		// lobes spread across the width, each its own size — the silhouette is
+		// their upper envelope
+		const span = (lo, hi, r) => lo + (hi - lo) * r
+		const lobes = Array.from({ length: cfg.lobes }, (_, k) => ({
+			cx: (k + 0.5) / cfg.lobes + (hash1(k, seed) - 0.5) * 0.16,
+			r: span(...cfg.lobeRadius, hash1(k, seed + 11)),
+			h: span(...cfg.lobeHeight, hash1(k, seed + 23)),
+		}))
+
+		for (let x = 0; x < w; x++) {
+			const u = x / (w - 1)
+			let crown = 0
+			for (const l of lobes) {
+				const d = (u - l.cx) / l.r
+				if (d > -1 && d < 1) crown = Math.max(crown, l.h * Math.sqrt(1 - d * d))
+			}
+			if (crown <= 0) continue
+			const bottom = h - 1 - Math.round(fbm1(u * 2.3, seed + 41) * cfg.baseJitter)
+			const top = Math.round(bottom - crown * (h - 1))
+			if (top >= bottom) continue
+			const mass = bottom - top
+			for (let y = top; y <= bottom; y++) {
+				// crown catches the light, underside falls away; the sun's side
+				// adds the lateral tilt that keeps it from reading symmetrical
+				const depth = (y - top) / mass
+				const side = 0.5 + (0.5 - u) * cfg.sideLight * -ENTRY.ridgeLight
+				const lit = clamp01((1 - depth) * 0.72 + side * 0.38)
+				const [r, g, b] = shades[ditherIndex(lit, levels, x, y)]
+				const i = (y * w + x) * 4
+				px[i] = r
+				px[i + 1] = g
+				px[i + 2] = b
+				px[i + 3] = 255
+			}
+		}
+
+		ctx.putImageData(img, 0, 0)
+		return el.toDataURL()
+	}
+
 	onMounted(() => {
 		const visitSeed = Math.floor(Math.random() * 1e5) + 1
 		drawRidge(farEl.value, ENTRY.far, visitSeed)
 		drawRidge(nearEl.value, ENTRY.near, visitSeed)
+		cloudSprites.value = Array.from({ length: ENTRY.cloud.variants }, (_, i) =>
+			drawCloud(visitSeed + i * 137)
+		)
 	})
 </script>
 
@@ -179,40 +226,15 @@
 		background: linear-gradient(to top, $sky-horizon 0%, $sky-mid 42%, $sky-top 100%);
 	}
 
-	// pixel cloud puff: one base cell, box-shadow copies fan out the lumps
-	$cloud-px: 12px;
-
+	// pixel cloud puff: a procedural sprite (see drawCloud), upscaled blocky
 	.entry__cloud {
 		position: absolute;
 		top: 0;
-		width: $cloud-px;
-		height: $cloud-px;
-		background: rgba(226, 204, 196, 0.9);
-		box-shadow:
-			#{-$cloud-px * 5} 0 rgba(226, 204, 196, 0.75),
-			#{-$cloud-px * 4} 0 rgba(226, 204, 196, 0.9),
-			#{-$cloud-px * 3} 0 rgba(226, 204, 196, 0.9),
-			#{-$cloud-px * 2} 0 rgba(226, 204, 196, 0.9),
-			#{-$cloud-px} 0 rgba(226, 204, 196, 0.9),
-			#{$cloud-px} 0 rgba(226, 204, 196, 0.9),
-			#{$cloud-px * 2} 0 rgba(226, 204, 196, 0.9),
-			#{$cloud-px * 3} 0 rgba(226, 204, 196, 0.9),
-			#{$cloud-px * 4} 0 rgba(226, 204, 196, 0.75),
-			#{-$cloud-px * 3} #{-$cloud-px} rgba(226, 204, 196, 0.85),
-			#{-$cloud-px * 2} #{-$cloud-px} rgba(226, 204, 196, 0.9),
-			#{-$cloud-px} #{-$cloud-px} rgba(226, 204, 196, 0.85),
-			0 #{-$cloud-px} rgba(226, 204, 196, 0.9),
-			#{$cloud-px} #{-$cloud-px} rgba(226, 204, 196, 0.85),
-			#{$cloud-px * 2} #{-$cloud-px} rgba(226, 204, 196, 0.8),
-			#{-$cloud-px} #{-$cloud-px * 2} rgba(226, 204, 196, 0.8),
-			0 #{-$cloud-px * 2} rgba(226, 204, 196, 0.8),
-			#{-$cloud-px * 4} #{$cloud-px} rgba(226, 204, 196, 0.7),
-			#{-$cloud-px * 3} #{$cloud-px} rgba(226, 204, 196, 0.8),
-			#{-$cloud-px * 2} #{$cloud-px} rgba(226, 204, 196, 0.8),
-			#{-$cloud-px} #{$cloud-px} rgba(226, 204, 196, 0.8),
-			0 #{$cloud-px} rgba(226, 204, 196, 0.8),
-			#{$cloud-px} #{$cloud-px} rgba(226, 204, 196, 0.8),
-			#{$cloud-px * 2} #{$cloud-px} rgba(226, 204, 196, 0.7);
+		width: 100px;
+		aspect-ratio: 17 / 9;
+		background-repeat: no-repeat;
+		background-size: 100% 100%;
+		image-rendering: pixelated;
 	}
 
 	.entry__ridge {
