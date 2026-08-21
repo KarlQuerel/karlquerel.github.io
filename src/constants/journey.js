@@ -117,53 +117,58 @@ export const HERO_FLYBY = {
 // is what makes the two ends of the trip the same world-building, but cold instead of
 // warm: this is a night-side silhouette under starlight, not a dusk landscape.
 export const DEPARTURE_RIDGE = {
-	// Two bands, far behind near. The relief is the parallax between them: the far one
-	// climbs slower under the camera and answers the cursor less, which is what gives
-	// the opening frame depth rather than one flat cut-out.
+	// Two bands that read as two distances rather than two rims. The far one carries
+	// the mountains: tall and finely cut, so a narrow frame still crops several peaks
+	// out of it. The near one is the ground we are standing on — low, near-black and
+	// barely rimmed, because a flat band is only wrong when it is tall enough that the
+	// eye expects a mountain. That was the mobile fault: two similar rims, both lit
+	// hard enough to read as drawn contour lines rather than as lit edges.
+	//
+	// Crests sit close to the band's own top shade (the arrival's are 1.1x to 1.27x);
+	// a bigger jump than that stops being a lit edge and becomes an outline.
 	bands: [
 		{
-			// taller than the near band: further off, so its crests stand above them
-			heightVh: 46,
-			freq: 9,
-			base: 0.2,
-			amp: 0.4,
+			heightVh: 44,
+			freq: 15,
+			base: 0.18,
+			amp: 0.44,
 			seed: 47,
-			slopeGain: 0.7,
-			faceDepth: 20,
+			slopeGain: 0.55,
+			faceDepth: 22,
 			// share of the climb and of the cursor's travel (px), far → less of both
 			climb: 0.5,
 			depth: 7,
 			shades: [
 				[7, 8, 13],
-				[11, 13, 20],
-				[15, 18, 26],
-				[20, 23, 33],
-				[25, 29, 40],
-				[31, 36, 49],
+				[11, 13, 19],
+				[16, 19, 27],
+				[22, 26, 36],
+				[28, 33, 45],
+				[35, 41, 55],
 			],
-			crest: [54, 63, 84],
+			crest: [46, 54, 71],
 		},
 		{
-			// dark enough to stay a silhouette: at night a range this close is a shape
-			// with a rim, not a lit landscape — the arrival is where the ground has colour
-			heightVh: 28,
-			freq: 7,
-			base: 0.24,
-			amp: 0.52,
+			// the ground: dark enough to be a shape and not a landscape, and low enough
+			// that its long stretches read as level ground rather than as a wall
+			heightVh: 15,
+			freq: 5,
+			base: 0.3,
+			amp: 0.4,
 			seed: 83,
-			slopeGain: 0.9,
-			faceDepth: 26,
+			slopeGain: 0.8,
+			faceDepth: 14,
 			climb: 1,
 			depth: 20,
 			shades: [
-				[6, 7, 11],
-				[11, 13, 19],
-				[17, 20, 28],
-				[23, 27, 37],
-				[30, 35, 47],
-				[38, 44, 59],
+				[4, 5, 8],
+				[7, 8, 12],
+				[10, 12, 17],
+				[14, 16, 23],
+				[18, 21, 29],
+				[23, 27, 36],
 			],
-			crest: [66, 76, 100],
+			crest: [30, 35, 46],
 		},
 	],
 	// The climb, per world unit the flight covers: the horizon drops away and the
