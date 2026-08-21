@@ -158,7 +158,7 @@ export const ENTRY = {
 	// pixels of travel per layer, against the cursor. Depths are on the same
 	// scale as STAR_LAYERS so the two backdrops feel like one system. The sky
 	// and the deck wash stay put — they are the medium, not objects in it.
-	parallax: { stars: 4, cloud: 16, far: 10, near: 22 },
+	parallax: { stars: 4, cloud: 16, distant: 5, far: 11, near: 22 },
 
 	// First stars of the evening, out over the dark top of the sky once we have
 	// landed. A repeating tile (like the site starfield) so it scales to any
@@ -187,19 +187,49 @@ export const ENTRY = {
 	// Profile shape: ridged noise alone spikes off a flat plain, so it is blended
 	// with the rolling octaves — crests stay sharp, but they rise out of shoulders.
 	ridgeBlend: 0.62,
+	// A very low frequency swell over the whole range, scaling each stretch's
+	// amplitude. Without it every peak tops out at much the same height and the
+	// range marches; with it there are tall massifs and low passes between them.
+	ridgeMassifFreq: 1.7,
+	ridgeMassifDepth: 0.5,
+	// headroom so the tallest massif never clips flat against the sprite ceiling
+	ridgeCeiling: 0.95,
 	ridgeLight: -1,
 	ridgeSlopeSpan: 2,
 	ridgeDepthFade: 0.6,
 	// crag texture broken across the faces, so a slope is not one flat wash
 	ridgeRough: 0.26,
 	ridgeRoughFreq: 34,
+	// Furthest range, behind the other two: tallest silhouette but the least
+	// contrast, since aerial perspective washes distance toward the sky. Finer
+	// `freq` too — distance compresses the peaks together.
+	distant: {
+		revealAt: 0.52,
+		liftVh: 6,
+		heightVh: 58,
+		freq: 10,
+		base: 0.22,
+		amp: 0.42,
+		seed: 47,
+		slopeGain: 28,
+		faceDepth: 16,
+		shades: [
+			[96, 66, 60],
+			[105, 73, 65],
+			[114, 79, 70],
+			[123, 86, 76],
+			[132, 93, 81],
+			[142, 100, 87],
+		],
+		crest: [156, 112, 95],
+	},
 	far: {
 		revealAt: 0.56,
 		liftVh: 10,
-		heightVh: 34,
+		heightVh: 50,
 		freq: 9,
 		base: 0.3,
-		amp: 0.56,
+		amp: 0.44,
 		seed: 11,
 		slopeGain: 40,
 		faceDepth: 22,
@@ -218,10 +248,10 @@ export const ENTRY = {
 	near: {
 		revealAt: 0.62,
 		liftVh: 16,
-		heightVh: 22,
+		heightVh: 33,
 		freq: 5.5,
 		base: 0.28,
-		amp: 0.62,
+		amp: 0.46,
 		seed: 29,
 		slopeGain: 52,
 		faceDepth: 28,

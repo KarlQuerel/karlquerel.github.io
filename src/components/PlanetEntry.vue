@@ -14,6 +14,11 @@
 		<!-- inside the deck: cloud closes over the lens and hides the sky handoff -->
 		<div class="entry__deck" :style="deckStyle" />
 		<canvas
+			ref="distantEl"
+			class="entry__ridge"
+			:style="ridgeStyle(ENTRY.distant, ENTRY.parallax.distant)"
+		/>
+		<canvas
 			ref="farEl"
 			class="entry__ridge"
 			:style="ridgeStyle(ENTRY.far, ENTRY.parallax.far)"
@@ -111,6 +116,7 @@
 		}
 	}
 
+	const distantEl = ref(null)
 	const farEl = ref(null)
 	const nearEl = ref(null)
 	// three cloud sprites drawn once per visit; each puff picks one by index
@@ -151,7 +157,12 @@
 			const seed = band.seed + visitSeed
 			const shape =
 				ENTRY.ridgeBlend * ridged1(u, seed) + (1 - ENTRY.ridgeBlend) * fbm1(u, seed)
-			profile[x] = band.base + shape * band.amp
+			// the massif swell: tall clusters and low passes across the range
+			const massif =
+				1 -
+				ENTRY.ridgeMassifDepth +
+				ENTRY.ridgeMassifDepth * 2 * fbm1((x / w) * ENTRY.ridgeMassifFreq, seed + 71)
+			profile[x] = Math.min(ENTRY.ridgeCeiling, band.base + shape * band.amp * massif)
 		}
 
 		const put = (x, y, [r, g, b]) => {
@@ -304,6 +315,7 @@
 
 	onMounted(() => {
 		const visitSeed = Math.floor(Math.random() * 1e5) + 1
+		drawRidge(distantEl.value, ENTRY.distant, visitSeed)
 		drawRidge(farEl.value, ENTRY.far, visitSeed)
 		drawRidge(nearEl.value, ENTRY.near, visitSeed)
 		cloudSprites.value = Array.from({ length: ENTRY.cloud.variants }, (_, i) =>
