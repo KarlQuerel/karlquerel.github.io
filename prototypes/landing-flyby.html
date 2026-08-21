@@ -416,9 +416,16 @@ const float LEVELS = 22.0;
 // flattened onto a single plane: five bodies in one frame read as a diorama instead of as
 // depth. Near things are left alone, the falloff only opening past HAZE_NEAR, so the ridge
 // that owns the opening frame is untouched by it.
+// The far end is set by what the flight actually needs to hide rather than by anything
+// physical: a body past 170 units is one the reader has not been introduced to yet, and it
+// should read as a rumour, not as a second planet the same apparent size as the one they
+// are looking at. Moving the destination further out to buy that spacing does not work -
+// the gap and the size of its eventual reveal are the same ratio, so widening one shrinks
+// the other, and a ten-radii gap costs the arrival five degrees of the eight it has now.
+// The near end never moves: everything inside 30 units is a pass, and passes are the point.
 const float HAZE_NEAR = 30.0;
-const float HAZE_FAR = 230.0;
-const float HAZE_MAX = 0.85;
+const float HAZE_FAR = 175.0;
+const float HAZE_MAX = 0.93;
 const vec3 VOID_TINT = vec3(0.055, 0.062, 0.105);
 vec3 farOff(vec3 c, float d){
   return mix(c, VOID_TINT, smoothstep(HAZE_NEAR, HAZE_FAR, d)*HAZE_MAX);
