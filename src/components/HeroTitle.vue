@@ -55,25 +55,43 @@
 	// centre is an offset from the other, and the flight scales about it.
 	const emit = defineEmits(['axis'])
 
+	// The scale the flight currently has the lockup at.
+	//
+	// getBoundingClientRect() reports boxes AFTER ancestor transforms, and the pass
+	// scales this lockup up to HERO_FLYBY.nearScale. So any repaint landing while the
+	// page is scrolled past the hero — a window resize, or a phone hiding its URL bar
+	// mid-scroll — measured a six-times-inflated box and cut a sprite to match it. The
+	// title was then mismatched the moment you scrolled back to the top, which is
+	// exactly the "scroll to the end and back" break. offsetWidth is the untransformed
+	// layout width, so the ratio between them is the factor to divide back out.
+	function liveScale(el) {
+		const laid = el.offsetWidth
+		if (!laid) return 1
+		const k = el.getBoundingClientRect().width / laid
+		// at rest the ratio is 1 bar sub-pixel rounding; snap so the common case is exact
+		return Math.abs(k - 1) < 0.01 ? 1 : k
+	}
+
 	// Everything the paint needs comes off the laid-out text, so the stylesheet stays
 	// the one place the type is described — including whatever the breakpoints and any
-	// wrapping did to it.
-	function measure(el, bloom = false) {
+	// wrapping did to it. Every measured length divides by `k` back into layout space.
+	function measure(el, k, bloom = false) {
 		const box = textEl.value.getBoundingClientRect()
 		const own = el.getBoundingClientRect()
 		const style = getComputedStyle(el)
 		return {
-			x: own.left - box.left,
+			x: (own.left - box.left) / k,
 			// canvas draws from the alphabetic baseline; the line box's middle plus half
 			// the cap height is close enough for a face with no descenders in caps
-			mid: own.top - box.top + own.height / 2,
+			mid: (own.top - box.top + own.height / 2) / k,
 			size: parseFloat(style.fontSize),
 			spacing: parseFloat(style.letterSpacing) || 0,
 			family: style.fontFamily,
 			colour: style.color,
 			text: el.textContent.trim().toUpperCase(),
-			// the cue is meant to sit quietly under the name, so it takes the shadow
-			// that holds it off the sky but not the bloom the display type carries
+			// Only the role line carries the warm bloom. The name is white, and a
+			// yellow halo behind white type reads as the glow being the point; it
+			// holds the sky off itself with the keyline and the dark pass instead.
 			bloom,
 		}
 	}
@@ -105,8 +123,11 @@
 	function paint() {
 		const el = canvasEl.value
 		if (!el || !textEl.value) return
-		const box = textEl.value.getBoundingClientRect()
-		if (!box.width || !box.height) return
+		const k = liveScale(textEl.value)
+		const live = textEl.value.getBoundingClientRect()
+		if (!live.width || !live.height) return
+		// the box the type actually occupies, with any flight scale taken back out
+		const box = { width: live.width / k, height: live.height / k }
 		// One texel per device pixel at rest: crisp where it starts, chunky only once
 		// the flight has magnified it, which is the whole point of the sprite.
 		const dpr = Math.min(window.devicePixelRatio || 1, HERO_FLYBY.plateMaxDpr)
@@ -121,10 +142,10 @@
 		ctx.textAlign = 'left'
 
 		const runs = [
-			measure(firstEl.value, true),
-			measure(lastEl.value, true),
-			measure(roleEl.value, true),
-			measure(cueEl.value),
+			measure(firstEl.value, k),
+			measure(lastEl.value, k),
+			measure(roleEl.value, k, true),
+			measure(cueEl.value, k),
 		]
 
 		// The corridor: the gap between the two words, and vertically the middle of the
