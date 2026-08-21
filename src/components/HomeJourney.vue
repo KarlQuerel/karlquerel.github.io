@@ -163,6 +163,7 @@
 		const runwayPx = (ARRIVAL.runwayVh / 100) * vh
 		// the run from the top of the page to the WORK dock: the whole flight out
 		const dock = topOf(workRef.value) - vh
+		const lifeFoot = bottomOf(lifeRef.value) - vh / 2
 		const beat = JOURNEY.departure
 		camTrack.value = [
 			{ s: 0, ...cameras.rest },
@@ -180,6 +181,11 @@
 			},
 			{ s: topOf(lifeRef.value) - vh, ...cameras.life },
 			{ s: bottomOf(lifeRef.value) - vh / 2, ...cameras.lifeEnd },
+			// the turn onto the approach axis, well before the runway starts
+			{
+				s: lifeFoot + (arrivalTop - lifeFoot) * JOURNEY.lineUpAt,
+				...cameras.lineUp,
+			},
 			{ s: arrivalTop, ...cameras.approach },
 			{ s: arrivalTop + runwayPx * ARRIVAL.entryAt, ...cameras.entry },
 			{ s: arrivalTop + runwayPx * ARRIVAL.goneAt, ...cameras.gone },
