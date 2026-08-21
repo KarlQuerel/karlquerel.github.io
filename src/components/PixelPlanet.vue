@@ -15,6 +15,8 @@
 	} from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { smoothstep } from '@/js/math'
+	import { ditherIndex, ditherThreshold } from '@/js/pixelNoise'
+	import { PALETTE } from '@/constants/palette'
 	import { PLANET } from '@/constants/planet'
 	import { MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
 
@@ -29,20 +31,24 @@
 		// upper-left key light; the landing journey sweeps it so the terminator
 		// advances while you orbit.
 		lightYaw: { type: Number, default: 0 },
-		// Optional band-colour override ({ ocean, oceanShallow, land, highland,
-		// atmosphere }) — e.g. EARTH_PALETTE. Fixed at mount.
+		// Optional override of named PALETTE entries — e.g. EARTH_PALETTE, which walks
+		// the same ramps through a different set of colours. Fixed at mount.
 		palette: { type: Object, default: null },
 	})
 
-	// surface + halo colours resolved once, since the palette never changes live
-	const colors = {
-		ocean: PLANET.ocean,
-		oceanShallow: PLANET.oceanShallow,
-		land: PLANET.land,
-		highland: PLANET.highland,
-		atmosphere: PLANET.atmosphere,
-		...props.palette,
-	}
+	// The palette, and the ramps resolved out of it once — neither changes live. Every
+	// pixel the shader writes is one of these entries exactly: it picks a step, never
+	// a blend, which is what keeps the rendered planet on a countable palette.
+	const palette = { ...PALETTE, ...props.palette }
+	const RAMPS = PLANET.bands.map(([name]) => PLANET.ramps[name].map(c => palette[c]))
+	const CLOUD_RAMP = PLANET.cloudRamp.map(c => palette[c])
+	// every ramp is the same length; the light picks an index into it
+	const LEVELS = CLOUD_RAMP.length
+	const TOP = LEVELS - 1
+	// each band's upper elevation edge, as an absolute noise value
+	const EDGES = PLANET.bands.map(([, offset]) => PLANET.seaLevel + offset)
+	// the atmosphere's layers, resolved the same way
+	const SHELL = PLANET.shell.map(([name, alpha]) => [palette[name], alpha])
 
 	// grow from a vanishing-point dot to full size, settling slightly lower as it "lands"
 	const planetStyle = computed(() => ({
@@ -99,34 +105,24 @@
 		return sum
 	}
 
-	// Colour bands keyed by their upper noise edge, low → high elevation.
-	const bands = [
-		[colors.ocean, PLANET.seaLevel - 0.08],
-		[colors.oceanShallow, PLANET.seaLevel],
-		[colors.land, PLANET.seaLevel + 0.12],
-		[colors.highland, Infinity],
-	]
-
 	// fractal elevation over the sphere — the bands and the sea-glint mask read it
 	function elevation(px, py, pz) {
 		const s = PLANET.noiseScale
 		return fbm(px * s, py * s, pz * s)
 	}
 
-	// map an elevation to a surface colour, cross-fading band edges so coastlines
-	// don't shimmer
-	function bandColor(n) {
+	// Which band an elevation falls in. Across an edge the two bands are dithered
+	// against the pixel's own slot rather than cross-faded: a faded colour is one the
+	// palette does not contain, and a dithered coastline still stops the edge snapping
+	// as the globe turns, which is what the fade was there for.
+	function bandAt(n, thr) {
 		const bw = PLANET.bandBlend
-		for (let i = 0; i < bands.length - 1; i++) {
-			const edge = bands[i][1]
-			if (n < edge - bw) return bands[i][0]
-			if (n < edge + bw) {
-				const t = smoothstep((n - edge + bw) / (2 * bw))
-				const [a, b] = [bands[i][0], bands[i + 1][0]]
-				return [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)]
-			}
+		for (let i = 0; i < EDGES.length - 1; i++) {
+			const edge = EDGES[i]
+			if (n < edge - bw) return i
+			if (n < edge + bw) return (n - edge + bw) / (2 * bw) > thr ? i + 1 : i
 		}
-		return bands[bands.length - 1][0]
+		return EDGES.length - 1
 	}
 
 	const canvasEl = ref(null)
@@ -172,7 +168,6 @@
 		hvx /= hm
 		hvy /= hm
 		hvz /= hm
-		const [ar, ag, ab] = colors.atmosphere
 
 		for (let y = 0; y < res; y++) {
 			for (let x = 0; x < res; x++) {
@@ -181,23 +176,35 @@
 				const dy = (y + 0.5 - center) / radius
 				const d2 = dx * dx + dy * dy
 
-				// Outside the disc: a thin atmosphere halo fading into space.
+				// Outside the disc: the atmosphere, in stepped layers rather than one
+				// falloff, and lit the way the ground is — a bright crescent on the sun
+				// side thinning to a bare edge on the night limb. Layers with a
+				// measurable thickness are what give the globe a radius; a smooth glow
+				// only ever gives it a light.
 				if (d2 > 1) {
 					const dist = Math.sqrt(d2)
 					if (dist < haloReach) {
-						const t = 1 - (dist - 1) / PLANET.haloWidth
-						d[i] = ar
-						d[i + 1] = ag
-						d[i + 2] = ab
-						d[i + 3] = clampByte(t * t * PLANET.haloAlpha)
+						const up = (dist - 1) / PLANET.haloWidth
+						// floored, not dithered — see PLANET.shell
+						const at = (up * SHELL.length) | 0
+						const [col, alpha] = SHELL[at > SHELL.length - 1 ? SHELL.length - 1 : at]
+						// the shell's own normal is its direction from the centre
+						const inv = 1 / dist
+						const nl = Math.max(0, dx * inv * lx + dy * inv * light[1])
+						const night = PLANET.shellNight
+						d[i] = col[0]
+						d[i + 1] = col[1]
+						d[i + 2] = col[2]
+						d[i + 3] = clampByte(alpha * (night + (1 - night) * nl))
 					}
 					continue
 				}
 
 				const dz = Math.sqrt(1 - d2)
-				// Lighting uses the view-space normal against the yawed key light.
+				// The key light against the view-space normal. It picks a step on a ramp
+				// rather than scaling a colour, so the terminator lands as a hard pixel
+				// edge and the sun's yaw across the trip stays legible.
 				const diff = Math.max(0, dx * lx + dy * light[1] + dz * lz)
-				const shade = PLANET.ambient + (1 - PLANET.ambient) * diff
 
 				// rotate the normal into planet space so the surface turns under static lighting
 				const ny = dy * cosT - dz * sinT
@@ -205,45 +212,54 @@
 				const sx = dx * cosS + nz * sinS
 				const sz = -dx * sinS + nz * cosS
 				const n = elevation(sx, ny, sz)
-				const col = bandColor(n)
-				let r = col[0]
-				let g = col[1]
-				let b = col[2]
 
-				// lit cloud deck over the surface, edges as hard as the coastlines
+				// One dither slot for this pixel, shared by every decision below — which
+				// ramp we are on, and how far up it. Two grids would beat against each
+				// other and the surface would crawl.
+				const thr = ditherThreshold(x, y)
+
+				// The cloud shell picks the ramp rather than a colour to blend toward.
+				// Coverage short of 1 thins the deck by letting ground through in a
+				// dither, which is how a deck stays a deck once it is magnified.
 				const cn = fbm(
 					(dx * cosC + nz * sinC) * cl.scale + 41,
 					ny * cl.scale,
 					(-dx * sinC + nz * cosC) * cl.scale,
 					cl.octaves
 				)
-				let cloudA = 0
+				let cover = 0
 				if (cn > cl.cover - cl.blend) {
-					const t =
+					cover =
 						cn >= cl.cover + cl.blend
-							? 1
-							: smoothstep((cn - cl.cover + cl.blend) / (2 * cl.blend))
-					cloudA = t * cl.opacity
-					r += (cl.color[0] - r) * cloudA
-					g += (cl.color[1] - g) * cloudA
-					b += (cl.color[2] - b) * cloudA
+							? cl.opacity
+							: smoothstep((cn - cl.cover + cl.blend) / (2 * cl.blend)) * cl.opacity
 				}
+				const onCloud = cover > thr
+				const ramp = onCloud ? CLOUD_RAMP : RAMPS[bandAt(n, thr)]
 
-				// sun glint where the light mirrors off open water, under the clouds
-				let spec = 0
-				if (n < PLANET.seaLevel) {
+				// Relief modulates the catch before the step, so the band boundaries
+				// follow the terrain instead of ringing the globe in even circles.
+				const relief = 1 + (n - PLANET.seaLevel) * PLANET.relief
+				// The limb glow promotes the step instead of adding light on top: an
+				// additive term lands between palette entries, and since every ramp
+				// warms as it climbs, a promotion at the limb is the warm rim it wants.
+				let step =
+					ditherIndex(diff * relief, LEVELS, x, y) +
+					ditherIndex(d2 * d2 * diff, PLANET.rimLevels, x, y)
+
+				// open water mirroring the sun goes to the top of its ramp
+				if (!onCloud && n < PLANET.seaLevel) {
 					const sd = Math.max(0, dx * hvx + dy * hvy + dz * hvz)
 					const s2 = sd * sd
 					const s4 = s2 * s2
 					const s8 = s4 * s4
-					spec = s8 * s8 * PLANET.oceanGloss * (1 - cloudA) * 255
+					if (s8 * s8 * PLANET.oceanGloss > thr) step = TOP
 				}
 
-				// Brighten the lit limb for an atmospheric rim glow.
-				const rim = d2 * d2 * diff * PLANET.rimStrength
-				d[i] = clampByte(r * shade + ar * rim + spec)
-				d[i + 1] = clampByte(g * shade + ag * rim + spec)
-				d[i + 2] = clampByte(b * shade + ab * rim + spec * 0.9)
+				const col = ramp[step > TOP ? TOP : step]
+				d[i] = col[0]
+				d[i + 1] = col[1]
+				d[i + 2] = col[2]
 				d[i + 3] = 255
 			}
 		}

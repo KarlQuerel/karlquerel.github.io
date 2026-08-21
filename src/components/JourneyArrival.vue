@@ -3,6 +3,9 @@
 	     behind) flattens into a horizon while the contact portals surface. -->
 	<div class="arrival">
 		<PlanetEntry :progress="progress" />
+		<!-- the air rushing past on the way in: the same field the departure flies
+		     through, so the two ends of the trip read as one piece of motion -->
+		<FlightDust :travel="dustTravel" :fade="dustFade" />
 		<div class="arrival__content" :style="contentStyle">
 			<header class="arrival__head">
 				<PageTitle tag="h2" :lead="CONTACT_HEADING.lead" :accent="CONTACT_HEADING.accent" />
@@ -38,7 +41,8 @@
 	import { computed } from 'vue'
 	import { ARRIVAL } from '@/constants/journey'
 	import { BUG_REPORT, CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
-	import { clamp01 } from '@/js/math'
+	import { clamp01, smoothstep } from '@/js/math'
+	import FlightDust from './FlightDust.vue'
 	import PageTitle from './PageTitle.vue'
 	import PixelPortal from './PixelPortal.vue'
 	import PlanetEntry from './PlanetEntry.vue'
@@ -46,6 +50,20 @@
 	const props = defineProps({
 		// 0 → entry begins, 1 → landed (portals live)
 		progress: { type: Number, default: 0 },
+	})
+
+	// Travel is what turns a mote into a streak, so it climbs across the whole entry.
+	// The fade brings the field up as the descent bites and takes it out once we are
+	// under the deck — streaks past that point would read as still falling.
+	const dustTravel = computed(() => props.progress * ARRIVAL.dustTravel)
+	const dustFade = computed(() => {
+		const up = clamp01(
+			(props.progress - ARRIVAL.dustFrom) / (ARRIVAL.dustFull - ARRIVAL.dustFrom)
+		)
+		const out = clamp01(
+			(ARRIVAL.dustOut - props.progress) / (ARRIVAL.dustOut - ARRIVAL.dustFull)
+		)
+		return smoothstep(Math.min(up, out))
 	})
 
 	const contentT = computed(() =>

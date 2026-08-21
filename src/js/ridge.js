@@ -9,6 +9,7 @@
 // viewport simply gets fewer cells — same chunk size, same slopes, fewer peaks.
 
 import { ENTRY } from '../constants/journey.js'
+import { PALETTE } from '../constants/palette.js'
 import { clamp01 } from './math.js'
 import { ditherIndex, fbm1, fbm2, ridged1 } from './pixelNoise.js'
 
@@ -27,7 +28,10 @@ export function drawRidge(el, band, visitSeed, frame) {
 	const ctx = el.getContext('2d')
 	const img = ctx.createImageData(w, h)
 	const px = img.data
-	const levels = band.shades.length
+	// a band names its ramp; the colours themselves live in one place
+	const shades = band.shades.map(name => PALETTE[name])
+	const crest = PALETTE[band.crest]
+	const levels = shades.length
 
 	// the whole profile first, so a column can be compared with its neighbour
 	const profile = new Array(w)
@@ -74,10 +78,10 @@ export function drawRidge(el, band, visitSeed, frame) {
 			// crag texture in 2D — sampled per column only, it stripes
 			const rough = (fbm2(x * rf, y * rf, band.seed + visitSeed + 5) - 0.5) * ENTRY.ridgeRough
 			const lit = clamp01((face + rough) * (1 - depth * ENTRY.ridgeDepthFade))
-			put(x, y, band.shades[ditherIndex(lit, levels, x, y)])
+			put(x, y, shades[ditherIndex(lit, levels, x, y)])
 		}
 		// the lit rim along the very top of the ridge
-		put(x, yTop, band.crest)
+		put(x, yTop, crest)
 	}
 
 	ctx.putImageData(img, 0, 0)

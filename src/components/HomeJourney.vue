@@ -82,7 +82,7 @@
 	import { JOURNEY_STOPS } from '@/constants/navigation'
 	import { ABOUT_HEADINGS } from '@/data/about'
 	import { HOME_LANDING } from '@/data/heroLines'
-	import { clamp01, smoothstep } from '@/js/math'
+	import { clamp01, hermite, monotoneSlopes, smoothstep } from '@/js/math'
 	import { usePointerParallax } from '@/composables/usePointerParallax'
 	import { useScrollSections } from '@/composables/useScrollSections'
 	import AboutLife from './AboutLife.vue'
@@ -170,6 +170,9 @@
 		// the run from the top of the page to the WORK dock: the whole flight out
 		const dock = topOf(workRef.value) - vh
 		const lifeFoot = bottomOf(lifeRef.value) - vh / 2
+		const diveAt = (bottomOf(workRef.value) + topOf(lifeRef.value) - vh * 1.5) / 2
+		const lifeDock = topOf(lifeRef.value) - vh
+		const workHold = bottomOf(workRef.value) - vh / 2
 		const beat = JOURNEY.departure
 		camTrack.value = [
 			{ s: 0, ...cameras.rest },
@@ -179,13 +182,12 @@
 			{ s: dock * beat.orbitIn, ...cameras.orbitIn },
 			{ s: dock * beat.orbitOut, ...cameras.orbitOut },
 			{ s: dock, ...cameras.work },
-			{ s: bottomOf(workRef.value) - vh / 2, ...cameras.workEnd },
-			// the skim bottoms out mid-way through the long WORK → LIFE leg
-			{
-				s: (bottomOf(workRef.value) + topOf(lifeRef.value) - vh * 1.5) / 2,
-				...cameras.dive,
-			},
-			{ s: topOf(lifeRef.value) - vh, ...cameras.life },
+			{ s: workHold, ...cameras.workEnd },
+			// the skim bottoms out mid-way through the long WORK → LIFE leg, then holds
+			// at the deck while the ground streams past before climbing away
+			{ s: diveAt, ...cameras.dive },
+			{ s: diveAt + (lifeDock - diveAt) * JOURNEY.skimHoldAt, ...cameras.skim },
+			{ s: lifeDock, ...cameras.life },
 			{ s: bottomOf(lifeRef.value) - vh / 2, ...cameras.lifeEnd },
 			// the turn onto the approach axis, well before the runway starts
 			{
@@ -202,24 +204,48 @@
 
 	const scrolled = computed(() => progress.value * Math.max(0, dims.value.trackH - dims.value.vh))
 
-	// The camera: eased per-channel between the measured keyframes. A keyframe that
-	// leaves a channel out holds at the default here rather than reading NaN, which
-	// keeps `light` and `reveal` to the beats that actually use them.
+	// The camera: one cubic per channel through the measured keyframes. A keyframe
+	// that leaves a channel out holds at the default here rather than reading NaN,
+	// which keeps `light` and `reveal` to the beats that actually use them.
 	const CAM_CHANNELS = { x: 0, y: 0, scale: 1, fade: 1, roll: 0, tilt: 0, light: 0, reveal: 1 }
+
+	// Slopes for those cubics, rebuilt only when the track is re-measured. Easing
+	// each segment on its own (a smoothstep per leg) parked the camera at every one
+	// of the fifteen keyframes and pushed it off again, which is what made the middle
+	// of the flight read as fifteen separate moves. Monotone slopes carry the speed
+	// through a knot wherever a channel keeps heading the same way, and stop only
+	// where it genuinely turns around — without ever overshooting the keyframes,
+	// which `reveal`, `fade` and `scale` all depend on.
+	const camSlopes = computed(() => {
+		const pts = camTrack.value
+		if (pts.length < 2) return null
+		const xs = pts.map(p => p.s)
+		const slopes = {}
+		for (const [key, base] of Object.entries(CAM_CHANNELS)) {
+			slopes[key] = monotoneSlopes(
+				xs,
+				pts.map(p => p[key] ?? base)
+			)
+		}
+		return slopes
+	})
+
 	const cam = computed(() => {
 		const pts = camTrack.value
-		if (!pts.length) return { ...CAM_CHANNELS, ...CAMERA.rest }
+		const slopes = camSlopes.value
+		if (!slopes) return { ...CAM_CHANNELS, ...CAMERA.rest }
 		const s = scrolled.value
 		if (s <= pts[0].s) return { ...CAM_CHANNELS, ...pts[0] }
 		for (let i = 0; i < pts.length - 1; i++) {
 			const a = pts[i]
 			const b = pts[i + 1]
 			if (s <= b.s) {
-				const t = smoothstep((s - a.s) / (b.s - a.s || 1))
+				const h = b.s - a.s || 1
+				const t = (s - a.s) / h
 				const frame = {}
 				for (const [key, base] of Object.entries(CAM_CHANNELS)) {
-					const from = a[key] ?? base
-					frame[key] = from + ((b[key] ?? base) - from) * t
+					const m = slopes[key]
+					frame[key] = hermite(a[key] ?? base, b[key] ?? base, m[i], m[i + 1], h, t)
 				}
 				return frame
 			}
@@ -325,13 +351,14 @@
 
 	const progressStyle = computed(() => ({ height: `${(progress.value * 100).toFixed(1)}%` }))
 
-	// The way out goes away once you have arrived at it: the portals are right there on
-	// the surface, so it fades out over the same window they fade in.
+	// The way out goes away once the descent starts rather than once it ends: it is
+	// gone by the time the first clouds are in frame, so the last stretch is the
+	// atmosphere and nothing else. The portals it pointed at surface further down.
 	const ctaStyle = computed(() => {
 		const there = smoothstep(
 			clamp01(
-				(arrivalProgress.value - ARRIVAL.contactFadeStart) /
-					(ARRIVAL.contactFadeEnd - ARRIVAL.contactFadeStart)
+				(arrivalProgress.value - ARRIVAL.ctaFadeStart) /
+					(ARRIVAL.ctaFadeEnd - ARRIVAL.ctaFadeStart)
 			)
 		)
 		return {
@@ -374,7 +401,8 @@
 		pointer-events: none;
 	}
 
-	// the site's own chip chrome, moved from its usual bottom corner to the top ones
+	// the site's own chip chrome — backless, keyline-carried, see pinned-chip — moved
+	// from its usual bottom corner to the top ones
 	.journey__mark,
 	.journey__cta {
 		@include pinned-chip;
@@ -549,6 +577,23 @@
 		// the name — the rail's own HOME stop already anchors the top of the journey.
 		.journey__mark {
 			display: none;
+		}
+
+		// The stations run full-width here, so the chip rides straight over their copy.
+		// Small and dim it covers a fraction of what it did and reads as a quiet label;
+		// with no backing left it is the keyline that separates it from the prose behind.
+		.journey__cta {
+			padding: 0.45rem 0.65rem;
+			font-size: px8(1);
+			color: rgba($white, 0.62);
+		}
+
+		// the glyphs shrank, the tap target must not — grown past the chip the way the
+		// rail grows its stops
+		.journey__cta::after {
+			content: '';
+			position: absolute;
+			inset: -0.55rem -0.6rem;
 		}
 
 		.journey__station--work {

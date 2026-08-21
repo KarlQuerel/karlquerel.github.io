@@ -18,6 +18,7 @@
 <script setup>
 	import { computed } from 'vue'
 	import { JOURNEY } from '@/constants/journey'
+	import { PALETTE } from '@/constants/palette'
 	import { PLANET } from '@/constants/planet'
 	import PixelPlanet from './PixelPlanet.vue'
 
@@ -33,10 +34,11 @@
 		haze: { type: Number, default: 0 },
 	})
 
-	// the haze borrows the planet's atmosphere colour, so entry matches the limb; the
-	// globe takes its share of the cursor's lean, published on the journey root
+	// the haze borrows the planet's atmosphere colour out of the shared palette, so the
+	// entry matches the limb; the globe takes its share of the cursor's lean, published
+	// on the journey root
 	const stageStyle = {
-		'--atmosphere': PLANET.atmosphere.join(', '),
+		'--atmosphere': PALETTE[PLANET.atmosphere].join(', '),
 		'--depth': JOURNEY.parallax.planet,
 	}
 

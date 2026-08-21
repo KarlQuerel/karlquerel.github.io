@@ -54,13 +54,19 @@ const BAYER4 = [
 	[15, 7, 13, 5],
 ]
 
+// This pixel's slot on the dither grid, 0..1. Exposed because a scene that dithers
+// more than one decision per pixel — which ramp, and how far up it — has to make both
+// against the same threshold, or the two patterns beat against each other.
+export function ditherThreshold(x, y) {
+	return (BAYER4[y & 3][x & 3] + 0.5) / 16
+}
+
 // Pick an index into a `levels`-long ramp for brightness `lit` (0..1), dithering
 // between the two nearest steps by pixel position.
 export function ditherIndex(lit, levels, x, y) {
 	const v = lit * (levels - 1)
 	const i = Math.floor(v)
-	const threshold = (BAYER4[y & 3][x & 3] + 0.5) / 16
-	const step = v - i > threshold ? 1 : 0
+	const step = v - i > ditherThreshold(x, y) ? 1 : 0
 	return Math.max(0, Math.min(levels - 1, i + step))
 }
 

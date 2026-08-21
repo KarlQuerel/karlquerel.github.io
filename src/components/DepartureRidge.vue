@@ -20,6 +20,7 @@
 	import { computed, onBeforeUnmount, onMounted } from 'vue'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { DEPARTURE_RIDGE as RIDGE, ENTRY } from '@/constants/journey'
+	import { PALETTE } from '@/constants/palette'
 	import { clamp01, smoothstep } from '@/js/math'
 	import { drawRidge } from '@/js/ridge'
 
@@ -55,11 +56,13 @@
 	}
 
 	// The air rides with the ground rather than the frame, so it stays the range's
-	// own atmosphere as the horizon drops away.
+	// own atmosphere as the horizon drops away. Its colour is a palette entry with an
+	// alpha, since a wash over the scene is the one thing that is not a sprite pixel.
+	const air = `rgba(${PALETTE[RIDGE.air.colour].join(',')}, ${RIDGE.air.alpha})`
 	const airStyle = computed(() => ({
 		height: `${RIDGE.airVh}vh`,
 		transform: `translate3d(0, ${(RIDGE.dropVhPerUnit * props.travel).toFixed(1)}vh, 0)`,
-		background: `linear-gradient(to top, transparent 0%, ${RIDGE.air} ${RIDGE.airFrom * 100}%, transparent ${RIDGE.airTo * 100}%)`,
+		background: `linear-gradient(to top, transparent 0%, ${air} ${RIDGE.airFrom * 100}%, transparent ${RIDGE.airTo * 100}%)`,
 	}))
 
 	// one seed per visit, so a reshape re-cuts the same ridges rather than new ones

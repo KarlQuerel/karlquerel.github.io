@@ -48,21 +48,25 @@
 	text-transform: uppercase;
 	text-decoration: none;
 	padding: 0.5rem 0.9rem;
-	text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
-	@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.55));
+	@include void-button($lift: -2px, $bg: transparent);
 
-	// borderless chip: drop the void frame and its hover/active inset ring, keep the glow
+	// No backing and no frame. A filled box pinned over the scene reads as a panel
+	// floating in front of it, which is the fault the station headings and the arrival
+	// heading both refuse a scrim to avoid; the keyline is what they carry instead, so
+	// these words sit in the scene the same way. px units, not em — a fraction of an em
+	// at this size rounds away to nothing. The padding stays: with no box left to draw,
+	// it is the only thing holding the tap target open.
 	& {
 		border: 0;
+		@include pixel-keyline($unit: 1px, $halo: 6px);
 	}
 
+	// Hover is the colour and the lift void-button already gives. Its glow goes with the
+	// box: a soft rectangle of light with nothing inside it is just a haze on the scene.
 	&:hover,
-	&:focus-visible {
-		box-shadow: 0 0 28px rgba(variables.$yellow, 0.18);
-	}
-
+	&:focus-visible,
 	&:active {
-		box-shadow: 0 0 16px rgba(variables.$yellow, 0.12);
+		box-shadow: none;
 	}
 }
 

@@ -9,8 +9,10 @@ export const JOURNEY = {
 	// through the name, the void beyond it, the planet coming up dead ahead and the
 	// camera coming around it — before the first station docks.
 	heroLegVh: 165,
-	// The WORK → LIFE leg is longer: it carries the low-orbit surface skim.
-	diveLegVh: 150,
+	// The longest leg: it carries the low-orbit surface skim and the held pass where the
+	// ground streams past. Kept long — at 150 the drop and the hold had about one
+	// viewport between them, which is not enough for two beats to read as two.
+	diveLegVh: 240,
 	// Baseline longitude turned across the whole journey; the camera track's
 	// `roll` channel adds ground rush on top during the skim and the entry.
 	turns: 0.45,
@@ -33,6 +35,13 @@ export const JOURNEY = {
 	// (HERO_FLYBY.runVh, which is in viewports) so the planet stays out of the frame
 	// until the words have gone — that is the whole point of the beat.
 	departure: { void: 0.3, dot: 0.38, close: 0.48, orbitIn: 0.58, orbitOut: 0.88 },
+	// Where the held stretch of the surface skim ends, as a fraction of the run from
+	// the dive's apex to the LIFE dock. The apex alone was an in-and-out: the camera
+	// dropped toward the deck and pulled straight back up, so the whole beat was the
+	// planet swelling and shrinking. Holding position for a stretch while `roll` keeps
+	// ripping is what converts it into speed — a surface streaming past a horizon that
+	// barely moves is how the eye works out that the thing is enormous.
+	skimHoldAt: 0.45,
 	// Where the camera finishes turning onto the approach axis, as a fraction of the
 	// leg from the foot of LIFE to the pinned runway. Early on purpose: the descent
 	// has to start from a frame that is already lined up, or the last thing before the
@@ -99,6 +108,7 @@ export const HERO_FLYBY = {
 	plateKeylineEm: 0.08,
 	plateShadow: 'rgba(0, 0, 0, 0.85)',
 	plateShadowBlur: 12,
+	// the role line's warm bloom — the name takes the dark pass and the keyline only
 	plateGlow: 'rgba(255, 189, 46, 0.34)',
 	plateGlowBlur: 26,
 	plateDepth: 26,
@@ -125,8 +135,12 @@ export const HERO_FLYBY = {
 // warm: this is a night-side silhouette under starlight, not a dusk landscape.
 export const DEPARTURE_RIDGE = {
 	// Two bands that read as two distances rather than two rims. The far one carries
-	// the mountains: tall and finely cut, so a narrow frame still crops several peaks
-	// out of it. The near one is the ground we are standing on — low, near-black and
+	// the mountains: tall, and cut fine enough that a narrow frame still crops several
+	// peaks out of it — but no finer. At freq 15 against a slopeGain of 0.55 the peaks
+	// came out as a comb of narrow towers with flat, evenly striped faces, which the
+	// eye read as a city skyline rather than a range. The arrival's own distant band
+	// (freq 10) is the reference, and the steeper gain is what turns those flat faces
+	// back into lit slopes. The near one is the ground we are standing on — low, near-black and
 	// barely rimmed, because a flat band is only wrong when it is tall enough that the
 	// eye expects a mountain. That was the mobile fault: two similar rims, both lit
 	// hard enough to read as drawn contour lines rather than as lit edges.
@@ -136,24 +150,20 @@ export const DEPARTURE_RIDGE = {
 	bands: [
 		{
 			heightVh: 44,
-			freq: 15,
+			freq: 10,
 			base: 0.18,
 			amp: 0.44,
 			seed: 47,
-			slopeGain: 0.55,
-			faceDepth: 22,
+			slopeGain: 0.82,
+			faceDepth: 26,
 			// share of the climb and of the cursor's travel (px), far → less of both
 			climb: 0.5,
 			depth: 7,
-			shades: [
-				[7, 8, 13],
-				[11, 13, 19],
-				[16, 19, 27],
-				[22, 26, 36],
-				[28, 33, 45],
-				[35, 41, 55],
-			],
-			crest: [46, 54, 71],
+			// PALETTE's night ramp, with steps repeated to compress the contrast —
+			// aerial perspective on a range this far off, and the same trick the
+			// arrival's distant band uses.
+			shades: ['void', 'pitch', 'iron', 'iron', 'zinc', 'zinc'],
+			crest: 'frost',
 		},
 		{
 			// the ground: dark enough to be a shape and not a landscape, and low enough
@@ -167,15 +177,9 @@ export const DEPARTURE_RIDGE = {
 			faceDepth: 14,
 			climb: 1,
 			depth: 20,
-			shades: [
-				[4, 5, 8],
-				[7, 8, 12],
-				[10, 12, 17],
-				[14, 16, 23],
-				[18, 21, 29],
-				[23, 27, 36],
-			],
-			crest: [30, 35, 46],
+			// darker still: the ground underfoot is a shape, not a landscape
+			shades: ['void', 'void', 'pitch', 'pitch', 'iron', 'iron'],
+			crest: 'zinc',
 		},
 	],
 	// The climb, per world unit the flight covers: the horizon drops away and the
@@ -193,7 +197,7 @@ export const DEPARTURE_RIDGE = {
 	airVh: 42,
 	airFrom: 0.28,
 	airTo: 0.92,
-	air: 'rgba(96, 116, 160, 0.34)',
+	air: { colour: 'frost', alpha: 0.34 },
 }
 
 // Camera keyframes: where the planet sits at each beat, as its centre's offset
@@ -233,16 +237,19 @@ export const CAMERA = {
 	work: { x: -52, y: -4, scale: 1.35, fade: 1, roll: 0.22, tilt: -2, light: 0.1 },
 	workEnd: { x: -50, y: -10, scale: 1.48, fade: 1, roll: 0.26, tilt: -1, light: 0.1 },
 	dive: { x: 6, y: 58, scale: 3.4, fade: 1, roll: 0.62, tilt: 5, light: 0.1 },
-	life: { x: 56, y: 2, scale: 1.7, fade: 1, roll: 0.72, tilt: 2, light: 0.1 },
-	lifeEnd: { x: 53, y: -2, scale: 1.82, fade: 1, roll: 0.76, tilt: 1, light: 0.1 },
+	// Held at the deck: x, y and scale barely move while roll gains a quarter turn.
+	// Nothing about the frame changes except the ground going past.
+	skim: { x: 10, y: 57, scale: 3.45, fade: 1, roll: 0.86, tilt: 4, light: 0.1 },
+	life: { x: 56, y: 2, scale: 1.7, fade: 1, roll: 0.94, tilt: 2, light: 0.1 },
+	lifeEnd: { x: 53, y: -2, scale: 1.82, fade: 1, roll: 0.98, tilt: 1, light: 0.1 },
 	// turning onto the approach axis: from here in it is a straight run down
-	lineUp: { x: 0, y: 26, scale: 1.9, fade: 1, roll: 0.79, tilt: 0, light: 0.1 },
+	lineUp: { x: 0, y: 26, scale: 1.9, fade: 1, roll: 1.01, tilt: 0, light: 0.1 },
 	// the descent: horizon at pin start, then the globe swells hard enough that
 	// its crest leaves the top of the frame — from there the screen is nothing but
 	// surface, which is what lets the sky take over without reading as a dissolve
-	approach: { x: 0, y: 62, scale: 2.0, fade: 1, roll: 0.82, tilt: 0, light: 0.1 },
-	entry: { x: 0, y: 100, scale: 8, fade: 1, roll: 1.17, tilt: 0, light: 0.1 },
-	gone: { x: 0, y: 115, scale: 11, fade: 0, roll: 1.47, tilt: 0, light: 0.1 },
+	approach: { x: 0, y: 62, scale: 2.0, fade: 1, roll: 1.04, tilt: 0, light: 0.1 },
+	entry: { x: 0, y: 100, scale: 8, fade: 1, roll: 1.39, tilt: 0, light: 0.1 },
+	gone: { x: 0, y: 115, scale: 11, fade: 0, roll: 1.69, tilt: 0, light: 0.1 },
 }
 
 // Portrait screens: vmin is the narrow side, so the same scales render a far
@@ -257,12 +264,13 @@ export const CAMERA_PORTRAIT = {
 	work: { x: -55, y: -6, scale: 1.6, fade: 1, roll: 0.22, tilt: -2, light: 0.1 },
 	workEnd: { x: -53, y: -11, scale: 1.72, fade: 1, roll: 0.26, tilt: -1, light: 0.1 },
 	dive: { x: 4, y: 46, scale: 4.4, fade: 1, roll: 0.62, tilt: 5, light: 0.1 },
-	life: { x: 55, y: 0, scale: 2.0, fade: 1, roll: 0.72, tilt: 2, light: 0.1 },
-	lifeEnd: { x: 52, y: -3, scale: 2.12, fade: 1, roll: 0.76, tilt: 1, light: 0.1 },
-	lineUp: { x: 0, y: 18, scale: 2.3, fade: 1, roll: 0.79, tilt: 0, light: 0.1 },
-	approach: { x: 0, y: 42, scale: 2.6, fade: 1, roll: 0.82, tilt: 0, light: 0.1 },
-	entry: { x: 0, y: 58, scale: 19, fade: 1, roll: 1.17, tilt: 0, light: 0.1 },
-	gone: { x: 0, y: 66, scale: 25, fade: 0, roll: 1.47, tilt: 0, light: 0.1 },
+	skim: { x: 8, y: 45, scale: 4.45, fade: 1, roll: 0.86, tilt: 4, light: 0.1 },
+	life: { x: 55, y: 0, scale: 2.0, fade: 1, roll: 0.94, tilt: 2, light: 0.1 },
+	lifeEnd: { x: 52, y: -3, scale: 2.12, fade: 1, roll: 0.98, tilt: 1, light: 0.1 },
+	lineUp: { x: 0, y: 18, scale: 2.3, fade: 1, roll: 1.01, tilt: 0, light: 0.1 },
+	approach: { x: 0, y: 42, scale: 2.6, fade: 1, roll: 1.04, tilt: 0, light: 0.1 },
+	entry: { x: 0, y: 58, scale: 19, fade: 1, roll: 1.39, tilt: 0, light: 0.1 },
+	gone: { x: 0, y: 66, scale: 25, fade: 0, roll: 1.69, tilt: 0, light: 0.1 },
 }
 
 // The final approach: horizon → limb blowout → atmosphere → surface. All
@@ -276,6 +284,22 @@ export const ARRIVAL = {
 	// Contact heading + portals fade in across this window — on the surface.
 	contactFadeStart: 0.66,
 	contactFadeEnd: 0.88,
+	// The flight's own way-out chip leaves far earlier, on its own window: gone before
+	// the first clouds are in frame (see ENTRY.clouds), so nothing from the trip is
+	// still pinned over the atmosphere while we are descending through it. The portals
+	// below surface later, on the window above.
+	ctaFadeStart: 0.14,
+	ctaFadeEnd: 0.22,
+	// The entry's speed lines: the same mote field the departure flies through
+	// (FlightDust), so arriving is told in the language leaving was told in. Fractions
+	// of the runway, except `travel` — that is world units across the whole entry, and
+	// since a mote's streak length *is* its speed it has to climb hard to read as a
+	// descent rather than as drift. Out before the deck clears: past that we are under
+	// the cloud base and slowing, and streaks would read as still falling.
+	dustFrom: 0.12,
+	dustFull: 0.28,
+	dustOut: 0.66,
+	dustTravel: 30,
 	// Orbital haze over the early approach; the entry sky takes over from it.
 	hazeStart: 0.05,
 	hazeEnd: 0.4,
@@ -287,15 +311,22 @@ export const ARRIVAL = {
 export const ENTRY = {
 	// The sky only starts once the limb has cleared the frame (see CAMERA.entry)
 	// and the deck has closed over, so it never reads as a dissolve.
-	skyStart: 0.32,
-	skyFull: 0.52,
+	skyStart: 0.42,
+	skyFull: 0.6,
 	// the whiteout while the camera is inside the deck — this is the cover the
 	// sky handoff happens behind
-	deck: { start: 0.28, peak: 0.42, end: 0.6, max: 0.92 },
-	// each cloud rushes up past the camera inside its own slice of the drop,
-	// swelling (`cloudApproach`) and fanning off centre (`cloudSpread`) as it
-	// closes, so the deck has depth rather than sliding past as a flat layer
-	cloudTravel: 0.2,
+	deck: { start: 0.38, peak: 0.5, end: 0.68, max: 0.92 },
+	// Each cloud rushes up past the camera inside its own slice of the drop, swelling
+	// (`cloudApproach`) and fanning off centre (`cloudSpread`) as it closes, so the deck
+	// has depth rather than sliding past as a flat layer.
+	//
+	// The stream now begins at the whiteout's peak rather than ahead of it, so the flash
+	// *reveals* the clouds as it clears instead of the clouds arriving first and the
+	// flash landing on top of them. That inverts the physical order — you would meet the
+	// deck before you were inside it — but it reads far better as a beat: hit the
+	// atmosphere, flash, come out in cloud. Travel is shorter to match, so the stream
+	// still clears before the portals surface.
+	cloudTravel: 0.15,
 	cloudFromVh: 110,
 	cloudToVh: -70,
 	cloudApproach: 3.8,
@@ -326,36 +357,30 @@ export const ENTRY = {
 		minNeighbours: 3,
 		shadeDepth: 9,
 		sideLight: 0.5,
-		shades: [
-			[150, 128, 128],
-			[176, 154, 152],
-			[200, 180, 176],
-			[220, 202, 197],
-			[236, 222, 216],
-		],
+		shades: ['stone', 'bone', 'chalk', 'cream', 'linen'],
 	},
 
 	// A dense, staggered stream: the deck has to be thick enough through the
 	// takeover that the surface is gone before the sky is up.
 	clouds: [
-		{ left: 18, scale: 0.5, start: 0.22 },
-		{ left: 74, scale: 0.42, start: 0.24 },
-		{ left: 44, scale: 0.6, start: 0.26 },
-		{ left: 8, scale: 0.72, start: 0.28 },
-		{ left: 62, scale: 0.66, start: 0.3 },
-		{ left: 32, scale: 0.85, start: 0.32 },
-		{ left: 88, scale: 0.78, start: 0.34 },
-		{ left: 52, scale: 1.5, start: 0.36 },
-		{ left: 14, scale: 1.4, start: 0.38 },
-		{ left: 70, scale: 1.7, start: 0.4 },
-		{ left: 38, scale: 1.6, start: 0.42 },
-		{ left: 84, scale: 1.35, start: 0.44 },
-		{ left: 24, scale: 1.7, start: 0.46 },
-		{ left: 58, scale: 1.55, start: 0.48 },
-		{ left: 6, scale: 1.0, start: 0.5 },
-		{ left: 78, scale: 1.25, start: 0.52 },
-		{ left: 42, scale: 1.15, start: 0.55 },
-		{ left: 66, scale: 0.95, start: 0.58 },
+		{ left: 18, scale: 0.5, start: 0.5 },
+		{ left: 74, scale: 0.42, start: 0.511 },
+		{ left: 44, scale: 0.6, start: 0.522 },
+		{ left: 8, scale: 0.72, start: 0.533 },
+		{ left: 62, scale: 0.66, start: 0.544 },
+		{ left: 32, scale: 0.85, start: 0.555 },
+		{ left: 88, scale: 0.78, start: 0.566 },
+		{ left: 52, scale: 1.5, start: 0.577 },
+		{ left: 14, scale: 1.4, start: 0.588 },
+		{ left: 70, scale: 1.7, start: 0.599 },
+		{ left: 38, scale: 1.6, start: 0.61 },
+		{ left: 84, scale: 1.35, start: 0.621 },
+		{ left: 24, scale: 1.7, start: 0.632 },
+		{ left: 58, scale: 1.55, start: 0.643 },
+		{ left: 6, scale: 1.0, start: 0.654 },
+		{ left: 78, scale: 1.25, start: 0.665 },
+		{ left: 42, scale: 1.15, start: 0.676 },
+		{ left: 66, scale: 0.95, start: 0.687 },
 	],
 
 	// Mouse parallax on the surface, same mechanism as the starfield backdrop:
@@ -364,17 +389,181 @@ export const ENTRY = {
 	// and the deck wash stay put — they are the medium, not objects in it.
 	parallax: { stars: 4, cloud: 16, distant: 5, far: 11, near: 22 },
 
-	// First stars of the evening, out over the dark top of the sky once we have
-	// landed. A repeating tile (like the site starfield) so it scales to any
-	// viewport, masked off before the horizon glow — you cannot see stars against
-	// a bright horizon.
+	// The dusk sky itself, dark top to bright horizon, dithered onto the same grid the
+	// ranges are cut on. It was a CSS gradient — the last smooth surface in the scene
+	// once the planet, the ranges, the decks and the hull were all stepped, and it
+	// showed: a soft wash sitting directly on top of hard-dithered rock. `gamma` bends
+	// the ramp so the bright band hugs the horizon rather than spreading up the frame.
+	sky: ['void', 'ink', 'basalt', 'rust', 'ochre', 'clay', 'haze', 'sand'],
+	skyGamma: 1.45,
+
+	// The sun, drawn into the sky's own canvas so it shares the grid and the palette
+	// and the ranges (separate canvases, in front) occlude it. It goes stage left
+	// because that is where the light already comes from — ridgeLight is -1 and every
+	// crest in the scene is lit from the left, so until now the picture had lighting
+	// with no light source in it.
+	//
+	// `x`/`y` are fractions of the frame; `y` sits it on the distant range's crest line
+	// so the range cuts across it. `r` is in grid cells. The corona brightens by
+	// climbing the sky ramp rather than by adding light, exactly as the planet's limb
+	// does — an additive glow would land between palette entries.
+	sun: {
+		x: 0.19,
+		y: 0.66,
+		r: 13,
+		coronaR: 4,
+		coronaLift: 5,
+		disc: 'glow',
+		rim: 'sand',
+	},
+
+	// First stars of the evening, out over the dark top of the sky, masked off before
+	// the horizon glow — you cannot see stars against a bright horizon.
+	//
+	// Two layers at coprime tile sizes. One 150px tile was repeating about 58 times
+	// across a desktop frame, on a grid tight enough that the eye read wallpaper rather
+	// than randomness; 359 is prime and 512 is a power of two, so the combined pattern
+	// only truly repeats at their least common multiple — some 183,000px, which is past
+	// any viewport there will ever be. Density is matched to the site starfield
+	// (constants/starfield.js) instead of the 15x it used to be, and the two layers
+	// take different rungs on the parallax ladder so they part under the cursor.
 	stars: {
-		tile: 150,
-		count: 30,
 		appearStart: 0.52,
 		appearEnd: 0.76,
 		maxOpacity: 0.9,
-		colors: ['#ffffff', '#ffffff', '#f4e6dc', '#ffd9a8', '#d3d3d3'],
+		colors: ['star', 'star', 'linen', 'glow', 'chalk'],
+		layers: [
+			{ tile: 359, count: 14, depth: 4 },
+			{ tile: 512, count: 18, depth: 8 },
+		],
+		// A handful breathe and the rest hold still: twinkling the whole field reads as
+		// noise. Motion on its own clock, so it is stepped by house rule.
+		twinkle: { count: 4, periodMs: 2600, spreadVh: 34 },
+	},
+
+	// Traffic across the dusk sky — meteors and flocks, both on the shared spawner
+	// (composables/useSkySpawner): a random gap, then the element removes itself.
+	//
+	// The sky itself holds still, which is the whole reason these read as travelling.
+	// Drifting the star field instead would say the camera is still moving, and the
+	// arrival has just spent three hundred viewports establishing that it is not.
+	//
+	// Rarer than the site starfield's comets, which fire every 3-8s because out there
+	// you are crossing a whole sky. Three a minute over a landscape reads as a meteor
+	// shower rather than as an evening.
+	meteor: {
+		gapMs: [9000, 22000],
+		// the band of sky it crosses, and where it enters across the frame
+		y: [3, 28],
+		x: [-8, 55],
+		angle: [14, 48],
+		len: [34, 62],
+		travelVw: [70, 105],
+		durMs: [900, 1700],
+		peak: [0.55, 0.9],
+		tints: ['star', 'linen', 'glow'],
+	},
+	// Flying things, as authored frames rather than noise — '#' is a cell, anything else
+	// is empty. At this size a bird is purely a silhouette against a lit sky, so one
+	// colour is all it needs and the shape carries the whole read. Deliberately generic:
+	// no Earth detail, so it says "something flies here" rather than "seagull".
+	//
+	// Every frame is left-right symmetric, which means a flock can cross in either
+	// direction without ever needing to mirror the sprite.
+	bird: {
+		w: 13,
+		h: 9,
+		// A gull, four frames: wings high, swept level, arched down, level again — so the
+		// cycle reads as one beat rather than snapping back. Drawn at 13x9 rather than
+		// the 7x5 chevron it replaces, which is what buys the shape any character at all:
+		// a tapered body with its mass forward, and wings swept back and thickened at the
+		// shoulder. A wingspan about three times the body is what makes a silhouette read
+		// as a bird and not as a blob.
+		frames: [
+			[
+				'..##.....##..',
+				'...##...##...',
+				'....##.##....',
+				'.....###.....',
+				'....######...',
+				'......###....',
+				'.............',
+				'.............',
+				'.............',
+			],
+			[
+				'.............',
+				'.............',
+				'.##.......##.',
+				'..###...###..',
+				'....######...',
+				'......###....',
+				'.............',
+				'.............',
+				'.............',
+			],
+			[
+				'.............',
+				'.............',
+				'.............',
+				'.............',
+				'....######...',
+				'..###...###..',
+				'.##.......##.',
+				'.............',
+				'.............',
+			],
+			[
+				'.............',
+				'.............',
+				'.##.......##.',
+				'..###...###..',
+				'....######...',
+				'......###....',
+				'.............',
+				'.............',
+				'.............',
+			],
+		],
+		// One tone on purpose. At this size a second shade reads as noise rather than as
+		// form — the silhouette is the whole drawing, so the shape has to carry it.
+		colour: 'void',
+	},
+	// A flock crosses rarely and slowly, low enough to be silhouetted against the bright
+	// band of sky and sometimes across the sun. It doubles as a scale cue: birds are a
+	// size everyone knows, so a range behind them gets its own size for free.
+	flock: {
+		// Rare and small: a pair or a trio going somewhere, not a migration. A flock
+		// every half-minute or so is enough to make the sky feel inhabited; any more and
+		// it stops being something you notice and becomes wallpaper with wings.
+		gapMs: [26000, 62000],
+		// Inclusive, and picked as a flat integer rather than by rounding a float — that
+		// rounding put half of all flocks at exactly two birds. One bird on its own is
+		// worth having in the mix: a lone gull reads as different weather to a trio.
+		count: [1, 3],
+		// The band matters more than the size did. At 34-64% most of a flock was crossing
+		// the dark top of the sky, where a dark silhouette has nothing to be a silhouette
+		// against — they were rendering perfectly and reading as nothing. Down here they
+		// cross the lit half, and skim close enough to the crests to lend the ranges a
+		// size while they do it.
+		y: [50, 66],
+		durMs: [16000, 27000],
+		travelVw: [112, 128],
+		driftVh: [-5, 3],
+		// Sprite magnification. Whole steps only — a fractional scale lands the sprite's
+		// cells on half pixels and the whole point of it is that they do not. One scale
+		// per flock, so the group reads as being at one distance.
+		scale: [3, 5],
+		// The gap to the next bird along, rolled fresh for every one of them. This used
+		// to be a single roll multiplied by the bird's index, which kept every gap in a
+		// flock in step with the others — the spacing varied between flocks but was even
+		// within one, and an even formation reads as a machine rather than as birds.
+		gapPx: [16, 66],
+		// Vertical scatter, also per bird, so no two ride at the same height.
+		jitterPx: [-24, 24],
+		// wingbeat; each bird takes its own phase so the flock never flaps in unison
+		flapMs: [420, 700],
+		peak: [0.72, 0.92],
 	},
 
 	// Procedural ridgelines. The grid and the world are both at a fixed scale, so
@@ -434,15 +623,10 @@ export const ENTRY = {
 		seed: 47,
 		slopeGain: 0.3,
 		faceDepth: 16,
-		shades: [
-			[96, 66, 60],
-			[105, 73, 65],
-			[114, 79, 70],
-			[123, 86, 76],
-			[132, 93, 81],
-			[142, 100, 87],
-		],
-		crest: [156, 112, 95],
+		// highest up the ramp and hardest compressed: distance washes a range toward
+		// the sky, which in a limited palette is fewer steps, not paler paint
+		shades: ['ochre', 'ochre', 'clay', 'clay', 'clay', 'amber'],
+		crest: 'amber',
 	},
 	far: {
 		revealAt: 0.56,
@@ -456,15 +640,8 @@ export const ENTRY = {
 		faceDepth: 22,
 		// dark → lit ramp. Aerial perspective: the far band sits closer to the
 		// sky's tone throughout, which is what pushes it into the distance.
-		shades: [
-			[62, 40, 38],
-			[78, 50, 46],
-			[95, 62, 55],
-			[113, 75, 65],
-			[133, 90, 77],
-			[154, 106, 90],
-		],
-		crest: [178, 126, 104],
+		shades: ['basalt', 'rust', 'ochre', 'clay', 'amber', 'amber'],
+		crest: 'sand',
 	},
 	near: {
 		revealAt: 0.62,
@@ -476,14 +653,9 @@ export const ENTRY = {
 		seed: 29,
 		slopeGain: 0.98,
 		faceDepth: 28,
-		shades: [
-			[20, 13, 14],
-			[29, 18, 18],
-			[39, 25, 24],
-			[51, 32, 30],
-			[65, 41, 37],
-			[82, 51, 45],
-		],
-		crest: [104, 64, 55],
+		// the full ramp, shadow end included: the nearest range is the one with
+		// contrast to spare, and its dark end is where the cool of the sky shows
+		shades: ['void', 'ink', 'basalt', 'rust', 'ochre', 'clay'],
+		crest: 'amber',
 	},
 }
