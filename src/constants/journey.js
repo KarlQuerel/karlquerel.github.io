@@ -112,12 +112,14 @@ export const CAMERA = {
 	rest: { x: 0, y: 0, scale: 0.05, fade: 1, roll: 0, tilt: 0, reveal: 0 },
 	void: { x: 0, y: 0, scale: 0.06, fade: 1, roll: 0, tilt: 0, reveal: 0 },
 	dot: { x: 0, y: 0, scale: 0.09, fade: 1, roll: 0, tilt: 0, reveal: 1 },
-	close: { x: 0, y: 6, scale: 0.42, fade: 1, roll: 0.02, tilt: 0, light: 0.01 },
-	// The circle. Going around a world turns the face it shows you and swings the
-	// sun by the same angle, so `roll` and `light` advance together here — that
-	// pair, under a globe holding its distance as it crosses, is the orbit.
-	orbitIn: { x: 24, y: 2, scale: 0.55, fade: 1, roll: 0.06, tilt: 3, light: 0.03 },
-	orbitOut: { x: -24, y: -2, scale: 0.62, fade: 1, roll: 0.16, tilt: -3, light: 0.1 },
+	close: { x: -4, y: 6, scale: 0.42, fade: 1, roll: 0.02, tilt: 0, light: 0.01 },
+	// The circle. Going around a world turns the face it shows you and swings the sun
+	// by the same angle, so `roll` and `light` advance together here — that pair,
+	// under a globe holding its distance, is the orbit. The lateral run stays one-way
+	// all the way to the dock: a body you are going around does not change direction
+	// in the frame, and an out-and-back reads as a wobble rather than a circle.
+	orbitIn: { x: -14, y: 2, scale: 0.55, fade: 1, roll: 0.06, tilt: -2, light: 0.03 },
+	orbitOut: { x: -32, y: -2, scale: 0.62, fade: 1, roll: 0.16, tilt: -3, light: 0.1 },
 	work: { x: -52, y: -4, scale: 1.35, fade: 1, roll: 0.22, tilt: -2, light: 0.1 },
 	workEnd: { x: -50, y: -10, scale: 1.48, fade: 1, roll: 0.26, tilt: -1, light: 0.1 },
 	dive: { x: 6, y: 58, scale: 3.4, fade: 1, roll: 0.62, tilt: 5, light: 0.1 },
@@ -137,9 +139,9 @@ export const CAMERA_PORTRAIT = {
 	rest: { x: 0, y: 0, scale: 0.07, fade: 1, roll: 0, tilt: 0, reveal: 0 },
 	void: { x: 0, y: 0, scale: 0.08, fade: 1, roll: 0, tilt: 0, reveal: 0 },
 	dot: { x: 0, y: 0, scale: 0.12, fade: 1, roll: 0, tilt: 0, reveal: 1 },
-	close: { x: 0, y: 6, scale: 0.6, fade: 1, roll: 0.02, tilt: 0, light: 0.01 },
-	orbitIn: { x: 22, y: 2, scale: 0.7, fade: 1, roll: 0.06, tilt: 3, light: 0.03 },
-	orbitOut: { x: -22, y: -2, scale: 0.78, fade: 1, roll: 0.16, tilt: -3, light: 0.1 },
+	close: { x: -4, y: 6, scale: 0.6, fade: 1, roll: 0.02, tilt: 0, light: 0.01 },
+	orbitIn: { x: -14, y: 2, scale: 0.7, fade: 1, roll: 0.06, tilt: -2, light: 0.03 },
+	orbitOut: { x: -32, y: -2, scale: 0.78, fade: 1, roll: 0.16, tilt: -3, light: 0.1 },
 	work: { x: -55, y: -6, scale: 1.6, fade: 1, roll: 0.22, tilt: -2, light: 0.1 },
 	workEnd: { x: -53, y: -11, scale: 1.72, fade: 1, roll: 0.26, tilt: -1, light: 0.1 },
 	dive: { x: 4, y: 46, scale: 4.4, fade: 1, roll: 0.62, tilt: 5, light: 0.1 },
