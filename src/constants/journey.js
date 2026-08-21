@@ -75,6 +75,19 @@ export const HERO_FLYBY = {
 	// The field wakes with the engines rather than on load, and is gone by the time the
 	// planet is up: past that we are in orbit, not running anywhere. Fractions of the
 	// pass, so it can outlast it.
+	// The title sprite (HeroTitle). Scaling live text re-rasterises every glyph on
+	// every scrolled frame — measured at 43ms p95 against 19ms with it hidden — so the
+	// name and the role are painted once and magnified. One texel per device pixel at
+	// rest keeps it crisp where it starts; the cap stops a 3x screen from cutting a
+	// texture three times the size it needs. The two blurred passes stand in for the
+	// text-shadows the live type carried, and `plateDepth` is its share of the cursor's
+	// lean — more than either ridge band, since the plane is the nearest thing there is.
+	plateMaxDpr: 2,
+	plateShadow: 'rgba(0, 0, 0, 0.85)',
+	plateShadowBlur: 12,
+	plateGlow: 'rgba(255, 189, 46, 0.34)',
+	plateGlowBlur: 26,
+	plateDepth: 26,
 	// The chrome holds back until the hero has gone by — the opening frame is meant to
 	// be the name and nothing else — then rides the rest of the flight.
 	chromeFrom: 0.85,
@@ -88,12 +101,6 @@ export const HERO_FLYBY = {
 	// than while they still read as a title.
 	nearScale: 6,
 	fadeFromScale: 2.6,
-	// The camera's axis is the corridor, not the middle of the frame: two words of
-	// different lengths put the gap off the row's centre, and it is the gap the
-	// pass has to hold. Press Start 2P is monospaced, so that offset is exact —
-	// half the difference in their lengths, in advances of 1em plus this spacing.
-	// Keep in step with `letter-spacing` on .journey__name.
-	letterSpacingEm: 0.1,
 }
 
 // The ground we leave from: one near ridge across the foot of the opening frame, so

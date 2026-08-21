@@ -3,7 +3,7 @@
 	     frame, dropping away as the camera lifts over them. Scroll owns the climb, the
 	     cursor owns the lean. Decorative — the same cut as the arrival's range, see
 	     js/ridge.js. -->
-	<div class="ridge" :style="pointerStyle" aria-hidden="true">
+	<div class="ridge" :style="ridgeStyle" aria-hidden="true">
 		<!-- behind the silhouettes, so the ridges mask the half of it below the crests -->
 		<div class="ridge__air" :style="airStyle" />
 		<canvas
@@ -17,11 +17,9 @@
 </template>
 
 <script setup>
-	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
+	import { computed, onBeforeUnmount, onMounted } from 'vue'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { DEPARTURE_RIDGE as RIDGE, ENTRY } from '@/constants/journey'
-	import { FINE_POINTER_QUERY } from '@/constants/viewport'
 	import { clamp01, smoothstep } from '@/js/math'
 	import { drawRidge } from '@/js/ridge'
 
@@ -32,24 +30,12 @@
 		pass: { type: Number, default: 0 },
 	})
 
-	// Mouse parallax, the same contract the arrival and the starfield use: axes
-	// normalised to -1..1 and negated, published as --mx/--my, and each band
-	// multiplies them by its own --depth. It rides the CSS `translate` property so it
-	// never collides with the scroll-scrubbed `transform` on the same element.
-	const pointer = ref({ x: 0, y: 0 })
-	const pointerStyle = computed(() => ({
-		'--mx': pointer.value.x,
-		'--my': pointer.value.y,
+	// --mx/--my come from the flight container (usePointerParallax); each band takes
+	// its own share of them through --depth, and that difference is the relief.
+	const ridgeStyle = computed(() => ({
 		display: gone.value < 1 ? null : 'none',
 		opacity: (1 - gone.value).toFixed(3),
 	}))
-
-	const onPointerMove = useRafThrottle(event => {
-		pointer.value = {
-			x: -((event.clientX / window.innerWidth - 0.5) * 2),
-			y: -((event.clientY / window.innerHeight - 0.5) * 2),
-		}
-	})
 
 	const gone = computed(() =>
 		smoothstep(clamp01((props.pass - RIDGE.goneFrom) / (RIDGE.goneTo - RIDGE.goneFrom)))
@@ -100,16 +86,9 @@
 		visitSeed = Math.floor(Math.random() * 1e5) + 1
 		cut()
 		window.addEventListener('resize', onResize, { passive: true })
-		// no cursor on touch devices, and their drag-scrolls fire pointermove
-		if (!prefersReducedMotion() && window.matchMedia(FINE_POINTER_QUERY).matches) {
-			window.addEventListener('pointermove', onPointerMove, { passive: true })
-		}
 	})
 
-	onBeforeUnmount(() => {
-		window.removeEventListener('resize', onResize)
-		window.removeEventListener('pointermove', onPointerMove)
-	})
+	onBeforeUnmount(() => window.removeEventListener('resize', onResize))
 </script>
 
 <style scoped lang="scss">

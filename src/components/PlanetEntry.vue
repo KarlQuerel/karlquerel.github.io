@@ -2,7 +2,7 @@
 	<!-- Atmospheric entry: a cloud deck rushes up and closes over the camera,
 	     the dusk sky takes over behind it, and the surface ridgelines settle in —
 	     the journey ends standing on the planet. All scroll-scrubbed. -->
-	<div class="entry" :style="pointerStyle" aria-hidden="true">
+	<div class="entry" :style="parallaxStyle" aria-hidden="true">
 		<div class="entry__sky" :style="skyStyle" />
 		<div class="entry__stars" :style="starStyle" />
 		<div
@@ -26,10 +26,9 @@
 
 <script setup>
 	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
+	import { usePointerParallax } from '@/composables/usePointerParallax'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { ENTRY } from '@/constants/journey'
-	import { FINE_POINTER_QUERY } from '@/constants/viewport'
 	import { clamp01, smoothstep } from '@/js/math'
 	import { ditherIndex, fbm1, fbm2, hash1 } from '@/js/pixelNoise'
 	import { drawRidge } from '@/js/ridge'
@@ -39,19 +38,8 @@
 		progress: { type: Number, default: 0 },
 	})
 
-	// Mouse parallax, the same contract the starfield uses: axes normalised to
-	// -1..1 and negated, published as --mx/--my, and each layer multiplies them
-	// by its own --depth. It rides the CSS `translate` property so it never
-	// collides with the scroll-scrubbed `transform` on the same elements.
-	const pointer = ref({ x: 0, y: 0 })
-	const pointerStyle = computed(() => ({ '--mx': pointer.value.x, '--my': pointer.value.y }))
-
-	const onPointerMove = useRafThrottle(event => {
-		pointer.value = {
-			x: -((event.clientX / window.innerWidth - 0.5) * 2),
-			y: -((event.clientY / window.innerHeight - 0.5) * 2),
-		}
-	})
+	// the shared lean: see usePointerParallax for the contract these layers follow
+	const { parallaxStyle } = usePointerParallax()
 
 	// inside the deck the view goes to cloud, which is what the sky handoff hides
 	// behind. Plain triangular envelope, eased both sides.
@@ -276,16 +264,9 @@
 		)
 		starTile.value = drawStarTile(visitSeed)
 		window.addEventListener('resize', onResize, { passive: true })
-		// no cursor on touch devices, and their drag-scrolls fire pointermove
-		if (!prefersReducedMotion() && window.matchMedia(FINE_POINTER_QUERY).matches) {
-			window.addEventListener('pointermove', onPointerMove, { passive: true })
-		}
 	})
 
-	onBeforeUnmount(() => {
-		window.removeEventListener('pointermove', onPointerMove)
-		window.removeEventListener('resize', onResize)
-	})
+	onBeforeUnmount(() => window.removeEventListener('resize', onResize))
 </script>
 
 <style scoped lang="scss">

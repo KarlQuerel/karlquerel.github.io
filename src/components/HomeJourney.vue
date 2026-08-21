@@ -29,17 +29,15 @@
 				<!-- the ground we leave from, dropping away as the flight lifts over it -->
 				<DepartureRidge :travel="travel" :pass="pass" />
 				<div class="journey__lockup" :style="flybyStyle">
-					<h1 class="journey__name">
-						<span>{{ firstWords }}</span>
-						<!-- a real space, so the heading still reads as the name: the
-						     template's own whitespace is condensed away, and flex skips a
-						     blank text run -->
-						{{ ' ' }}
-						<span>{{ lastWord }}</span>
-					</h1>
+					<HeroTitle
+						:name="HOME_LANDING.name"
+						:first-words="firstWords"
+						:last-word="lastWord"
+						:role="HOME_LANDING.label"
+						@axis="onAxis"
+					/>
 					<!-- under the corridor, so the same pass carries it out of frame -->
 					<div class="journey__cue">
-						<p class="journey__label">{{ HOME_LANDING.label }}</p>
 						<div class="journey__hint" :style="hintStyle" aria-hidden="true">
 							<span>{{ HOME_LANDING.scrollHint }}</span>
 							<PixelArrow />
@@ -91,11 +89,13 @@
 	import { ABOUT_HEADINGS } from '@/data/about'
 	import { HOME_LANDING } from '@/data/heroLines'
 	import { clamp01, smoothstep } from '@/js/math'
+	import { usePointerParallax } from '@/composables/usePointerParallax'
 	import { useScrollSections } from '@/composables/useScrollSections'
 	import AboutLife from './AboutLife.vue'
 	import AboutWork from './AboutWork.vue'
 	import DepartureRidge from './DepartureRidge.vue'
 	import FlightDust from './FlightDust.vue'
+	import HeroTitle from './HeroTitle.vue'
 	import JourneyArrival from './JourneyArrival.vue'
 	import JourneyRail from './JourneyRail.vue'
 	import PageTitle from './PageTitle.vue'
@@ -111,6 +111,7 @@
 	const lifeRef = ref(null)
 	const arrivalRef = ref(null)
 
+	const { parallaxStyle } = usePointerParallax()
 	const { progress, sync } = useScrollSections(trackRef)
 	const { progress: arrivalProgress, sync: syncArrival } = useScrollSections(arrivalRef)
 
@@ -131,14 +132,13 @@
 	const nameWords = HOME_LANDING.name.split(' ')
 	const firstWords = nameWords.slice(0, -1).join(' ')
 	const lastWord = nameWords.at(-1)
-	// Where the gap's centre sits relative to the row's, in the name's own em: half
-	// the difference in the words' lengths, less the trailing spacing the first word
-	// carries into the gap. The pass scales about that point, so the corridor is
-	// what holds still on the axis while everything else sweeps off it.
-	const corridorEm =
-		((firstWords.length - lastWord.length) * (1 + HERO_FLYBY.letterSpacingEm) -
-			HERO_FLYBY.letterSpacingEm) /
-		2
+	// Where the corridor sits relative to the lockup's centre, in px, both axes —
+	// HeroTitle measures it off its own laid-out text and hands it up, so the numbers
+	// hold whatever the breakpoints and any wrapping did. The pass scales about that
+	// point and shifts it onto the frame's centre, which is where the mote field's
+	// vanishing point is and where the planet comes up.
+	const axis = ref({ x: 0, y: 0 })
+	const onAxis = next => (axis.value = next)
 
 	// camera keyframes in scrolled-px space, measured from the real section layout
 	const dims = ref({ trackH: 0, vh: 0 })
@@ -248,11 +248,11 @@
 			(scale - HERO_FLYBY.fadeFromScale) / (HERO_FLYBY.nearScale - HERO_FLYBY.fadeFromScale)
 		)
 		return {
-			// the origin is the corridor: the gap's centre, not the row's
-			transformOrigin: `calc(50% + ${corridorEm.toFixed(2)}em) 50%`,
-			// and the shift puts that corridor on the frame's centre, where the star
-			// tunnel's vanishing point is and where the planet will come up
-			transform: `translateX(${(-corridorEm).toFixed(2)}em) scale(${scale.toFixed(3)})`,
+			// its share of the cursor's lean, for the sprite inside
+			'--depth': HERO_FLYBY.plateDepth,
+			// the origin is the corridor, and the shift puts it on the frame's centre
+			transformOrigin: `calc(50% + ${axis.value.x.toFixed(1)}px) calc(50% + ${axis.value.y.toFixed(1)}px)`,
+			transform: `translate(${(-axis.value.x).toFixed(1)}px, ${(-axis.value.y).toFixed(1)}px) scale(${scale.toFixed(3)})`,
 			opacity: (1 - smoothstep(gone)).toFixed(3),
 			// past the pass it is a frame-filling layer with nothing in it
 			visibility: gone < 1 ? null : 'hidden',
@@ -277,7 +277,8 @@
 		const t = smoothstep(clamp01(pass.value))
 		const x = (t * HERO_FLYBY.driftVw).toFixed(2)
 		const y = (t * HERO_FLYBY.driftVh).toFixed(2)
-		return { transform: `translate3d(${x}vw, ${y}vh, 0)` }
+		// the flight also carries the cursor's lean for everything inside it
+		return { transform: `translate3d(${x}vw, ${y}vh, 0)`, ...parallaxStyle.value }
 	})
 
 	// The mote field: up as the flight starts, on through the pass, out again as the
@@ -446,31 +447,9 @@
 		position: relative;
 		z-index: 2;
 		padding: 0 1rem;
-		// the name's own size, so the corridor offset (set in JS, in em) measures in
-		// character advances
+		// the name's own size — HeroTitle's own type inherits it
 		font-size: px8(4);
 		text-align: center;
-	}
-
-	// the gap between the words is the corridor: the two of them are what the
-	// camera goes between, so the space is load-bearing, not styling
-	.journey__name {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: center;
-		// a real space's advance: the corridor is the gap the name always had
-		gap: 1.1em;
-		margin: 0;
-		font-family: $font-pixel;
-		font-size: inherit;
-		line-height: 1.3;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-		color: $white;
-		text-shadow:
-			0 2px 12px rgba(0, 0, 0, 0.85),
-			0 0 28px rgba($yellow, 0.3);
 	}
 
 	// under the corridor and out of flow: the pass scales it away from the axis
@@ -483,18 +462,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 3.5rem;
-		padding-top: 1.3rem;
-	}
-
-	.journey__label {
-		margin: 0;
-		font-family: $font-pixel;
-		font-size: px8(2);
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
-		color: $yellow;
-		text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85);
+		padding-top: 2.6rem;
 	}
 
 	// A hero should dominate on a big screen; whole steps, so it stays on-pixel. The
@@ -503,10 +471,6 @@
 		.journey__lockup,
 		.journey__station-head :deep(.page-heading) {
 			font-size: px8(8);
-		}
-
-		.journey__label {
-			font-size: px8(5);
 		}
 	}
 
