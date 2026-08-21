@@ -4,6 +4,7 @@
 	     the journey ends standing on the planet. All scroll-scrubbed. -->
 	<div class="entry" aria-hidden="true">
 		<div class="entry__sky" :style="skyStyle" />
+		<div class="entry__stars" :style="starStyle" />
 		<div
 			v-for="(cloud, i) in ENTRY.clouds"
 			:key="i"
@@ -68,10 +69,7 @@
 			opacity: Math.min(1, (1 - t) / 0.15).toFixed(3),
 			transform:
 				`translate3d(${drift.toFixed(1)}vw, ${y.toFixed(1)}vh, 0)` +
-				` scale(${scale.toFixed(2)})` +
-				// mirrored puffs: cheap variety across a deck this dense. Last in
-				// the list, so it flips the sprite and not the drift.
-				(cloud.flip ? ' scaleX(-1)' : ''),
+				` scale(${scale.toFixed(2)})`,
 		}
 	}
 
@@ -90,6 +88,19 @@
 	const nearEl = ref(null)
 	// three cloud sprites drawn once per visit; each puff picks one by index
 	const cloudSprites = ref([])
+	const starTile = ref('')
+
+	// the first stars come out once the sky has settled, over the dark top of it
+	const starStyle = computed(() => {
+		const { appearStart, appearEnd, maxOpacity, tile } = ENTRY.stars
+		const t = clamp01((props.progress - appearStart) / (appearEnd - appearStart))
+		return {
+			opacity: (smoothstep(t) * maxOpacity).toFixed(3),
+			display: t > 0 && starTile.value ? null : 'none',
+			backgroundImage: `url(${starTile.value})`,
+			backgroundSize: `${tile}px ${tile}px`,
+		}
+	})
 
 	// Shaded relief, drawn once per visit and upscaled pixelated by CSS. Each
 	// column is lit by the way its face turns, then darkened with depth into the
@@ -150,9 +161,11 @@
 		ctx.putImageData(img, 0, 0)
 	}
 
-	// A cumulus in profile: a handful of overlapping round lobes for the bulbous
-	// crown, a flat-ish base, lit from above and from the sun's side, then
-	// dithered down into the underside. Beats a flat blob for the same few colours.
+	// A cumulus as a union of irregular lobes with a noise-warped boundary. Lobes
+	// alone scallop into clip art; noise alone drifts into an amoeba. Together
+	// the shape stays readable while the edge stays believable. Each lobe then
+	// shades under its own crown, so the sprite has volume rather than a flat
+	// top-to-bottom ramp.
 	function drawCloud(seed) {
 		const cfg = ENTRY.cloud
 		const { spriteW: w, spriteH: h, shades } = cfg
@@ -163,34 +176,69 @@
 		const img = ctx.createImageData(w, h)
 		const px = img.data
 		const levels = shades.length
+		const span = ([lo, hi], r) => lo + (hi - lo) * r
 
-		// lobes spread across the width, each its own size — the silhouette is
-		// their upper envelope
-		const span = (lo, hi, r) => lo + (hi - lo) * r
-		const lobes = Array.from({ length: cfg.lobes }, (_, k) => ({
-			cx: (k + 0.5) / cfg.lobes + (hash1(k, seed) - 0.5) * 0.16,
-			r: span(...cfg.lobeRadius, hash1(k, seed + 11)),
-			h: span(...cfg.lobeHeight, hash1(k, seed + 23)),
-		}))
+		// lobes sit along the base, biggest toward the middle
+		const lobes = Array.from({ length: cfg.lobes }, (_, k) => {
+			const centre = 1 - Math.abs((k + 0.5) / cfg.lobes - 0.5) * 2
+			return {
+				cx: 0.12 + 0.76 * ((k + 0.5) / cfg.lobes) + (hash1(k, seed) - 0.5) * cfg.lobeJitter,
+				cy: cfg.baseAt - span(cfg.lobeRise, hash1(k, seed + 11)) * (0.4 + centre),
+				rx: span(cfg.lobeRx, hash1(k, seed + 23)) * (0.6 + 0.6 * centre),
+				ry: span(cfg.lobeRy, hash1(k, seed + 37)) * (0.6 + 0.6 * centre),
+			}
+		})
+
+		// signed field: > 0 inside the cloud
+		const mask = new Uint8Array(w * h)
+		for (let y = 0; y < h; y++) {
+			const t = y / (h - 1)
+			for (let x = 0; x < w; x++) {
+				const u = x / (w - 1)
+				let d = -1
+				for (const l of lobes) {
+					const dx = (u - l.cx) / l.rx
+					const dy = (t - l.cy) / l.ry
+					d = Math.max(d, 1 - Math.hypot(dx, dy))
+				}
+				d += (fbm2(u * cfg.warpFreq, t * cfg.warpFreq, seed) - 0.5) * cfg.warp
+				// flat cumulus underside, ruffled just enough to not be a ruler line
+				const base = cfg.baseAt + (fbm1(u * 3, seed + 61) - 0.5) * cfg.baseRuffle
+				if (t > base) d -= (t - base) * 12
+				const i = y * w + x
+				if (d > 0) mask[i] = 1
+				else if (d > -cfg.feather) mask[i] = ditherIndex(1 + d / cfg.feather, 2, x, y)
+			}
+		}
+
+		// despeckle: the dithered edge strands lone pixels that read as dirt
+		const solidAt = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : mask[y * w + x])
+		const cleaned = Uint8Array.from(mask)
+		for (let y = 0; y < h; y++) {
+			for (let x = 0; x < w; x++) {
+				if (!mask[y * w + x]) continue
+				let n = 0
+				for (let dy = -1; dy <= 1; dy++) {
+					for (let dx = -1; dx <= 1; dx++) if (dx || dy) n += solidAt(x + dx, y + dy)
+				}
+				if (n < cfg.minNeighbours) cleaned[y * w + x] = 0
+			}
+		}
 
 		for (let x = 0; x < w; x++) {
 			const u = x / (w - 1)
-			let crown = 0
-			for (const l of lobes) {
-				const d = (u - l.cx) / l.r
-				if (d > -1 && d < 1) crown = Math.max(crown, l.h * Math.sqrt(1 - d * d))
-			}
-			if (crown <= 0) continue
-			const bottom = h - 1 - Math.round(fbm1(u * 2.3, seed + 41) * cfg.baseJitter)
-			const top = Math.round(bottom - crown * (h - 1))
-			if (top >= bottom) continue
-			const mass = bottom - top
-			for (let y = top; y <= bottom; y++) {
-				// crown catches the light, underside falls away; the sun's side
-				// adds the lateral tilt that keeps it from reading symmetrical
-				const depth = (y - top) / mass
+			// distance below this column's current crown, so light dies away
+			// under each lobe separately instead of ramping the whole sprite
+			let depth = -1
+			for (let y = 0; y < h; y++) {
+				if (!cleaned[y * w + x]) {
+					depth = -1
+					continue
+				}
+				depth = depth < 0 ? 0 : depth + 1
+				const crown = clamp01(1 - depth / cfg.shadeDepth)
 				const side = 0.5 + (0.5 - u) * cfg.sideLight * -ENTRY.ridgeLight
-				const lit = clamp01((1 - depth) * 0.72 + side * 0.38)
+				const lit = clamp01(crown * 0.7 + side * 0.3)
 				const [r, g, b] = shades[ditherIndex(lit, levels, x, y)]
 				const i = (y * w + x) * 4
 				px[i] = r
@@ -204,6 +252,28 @@
 		return el.toDataURL()
 	}
 
+	// One repeating tile of first-evening stars, so it scales to any viewport
+	// the way the site starfield does.
+	function drawStarTile(seed) {
+		const { tile, count, colors } = ENTRY.stars
+		const el = document.createElement('canvas')
+		el.width = tile
+		el.height = tile
+		const ctx = el.getContext('2d')
+		for (let i = 0; i < count; i++) {
+			const x = Math.floor(hash1(i, seed) * tile)
+			const y = Math.floor(hash1(i, seed + 101) * tile)
+			const pick = hash1(i, seed + 202)
+			const bright = hash1(i, seed + 303)
+			ctx.globalAlpha = 0.35 + bright * 0.65
+			ctx.fillStyle = colors[Math.floor(pick * colors.length)]
+			// a couple of the brightest read as two cells; the rest are single
+			const size = bright > 0.92 ? 2 : 1
+			ctx.fillRect(x, y, size, size)
+		}
+		return el.toDataURL()
+	}
+
 	onMounted(() => {
 		const visitSeed = Math.floor(Math.random() * 1e5) + 1
 		drawRidge(farEl.value, ENTRY.far, visitSeed)
@@ -211,6 +281,7 @@
 		cloudSprites.value = Array.from({ length: ENTRY.cloud.variants }, (_, i) =>
 			drawCloud(visitSeed + i * 137)
 		)
+		starTile.value = drawStarTile(visitSeed)
 	})
 </script>
 
@@ -226,12 +297,23 @@
 		background: linear-gradient(to top, $sky-horizon 0%, $sky-mid 42%, $sky-top 100%);
 	}
 
+	// Stars only over the dark upper sky — masked out well before the horizon
+	// glow, since a bright horizon washes them out.
+	.entry__stars {
+		position: absolute;
+		inset: 0;
+		background-repeat: repeat;
+		image-rendering: pixelated;
+		-webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 24%, transparent 58%);
+		mask-image: linear-gradient(to bottom, #000 0%, #000 24%, transparent 58%);
+	}
+
 	// pixel cloud puff: a procedural sprite (see drawCloud), upscaled blocky
 	.entry__cloud {
 		position: absolute;
 		top: 0;
 		width: 100px;
-		aspect-ratio: 17 / 9;
+		aspect-ratio: 9 / 5;
 		background-repeat: no-repeat;
 		background-size: 100% 100%;
 		image-rendering: pixelated;

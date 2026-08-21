@@ -96,20 +96,32 @@ export const ENTRY = {
 	cloudToVh: -70,
 	cloudApproach: 3.8,
 	cloudSpread: 1.1,
-	// The puff sprite itself: a cumulus in profile, drawn once per visit in a
-	// few variants and reused across the deck. Lit crown, shaded underside,
-	// dithered between tones — `sideLight` leans it toward the sun.
+	// The puff sprite. A union of irregular lobes gives a shape that still reads
+	// as a cloud; the noise warp on the boundary is what keeps it from reading as
+	// clip art. Pure lobes come out as scalloped clip art, pure noise comes out
+	// as an amoeba — it needs both.
+	//   lobe*     spread, radii and how far each lobe rides above the base
+	//   warp      noise pushed into the boundary, with `warpFreq` its scale
+	//   baseAt    flat cumulus underside, `baseRuffle` keeps it off dead straight
+	//   feather   band either side of the edge that gets dithered
+	//   shadeDepth  how far light reaches below a crown, so lobes self-shadow
 	cloud: {
 		variants: 3,
-		spriteW: 68,
-		spriteH: 36,
-		// overlapping round lobes, which is what gives cumulus their bulbous top;
-		// a single arch just produces a pyramid
+		spriteW: 72,
+		spriteH: 40,
 		lobes: 5,
-		lobeRadius: [0.16, 0.3],
-		lobeHeight: [0.5, 1],
-		baseJitter: 2,
-		sideLight: 0.55,
+		lobeRx: [0.11, 0.21],
+		lobeRy: [0.16, 0.34],
+		lobeRise: [0.04, 0.26],
+		lobeJitter: 0.18,
+		warp: 0.34,
+		warpFreq: 6,
+		baseAt: 0.8,
+		baseRuffle: 0.05,
+		feather: 0.1,
+		minNeighbours: 3,
+		shadeDepth: 9,
+		sideLight: 0.5,
 		shades: [
 			[150, 128, 128],
 			[176, 154, 152],
@@ -118,29 +130,43 @@ export const ENTRY = {
 			[236, 222, 216],
 		],
 	},
+
 	// A dense, staggered stream: the deck has to be thick enough through the
-	// takeover that the surface is gone before the sky is up. `flip` mirrors the
-	// puff so one sprite does not read as a repeat.
+	// takeover that the surface is gone before the sky is up.
 	clouds: [
 		{ left: 18, scale: 0.5, start: 0.22 },
-		{ left: 74, scale: 0.42, start: 0.24, flip: true },
+		{ left: 74, scale: 0.42, start: 0.24 },
 		{ left: 44, scale: 0.6, start: 0.26 },
-		{ left: 8, scale: 0.72, start: 0.28, flip: true },
+		{ left: 8, scale: 0.72, start: 0.28 },
 		{ left: 62, scale: 0.66, start: 0.3 },
-		{ left: 32, scale: 0.85, start: 0.32, flip: true },
+		{ left: 32, scale: 0.85, start: 0.32 },
 		{ left: 88, scale: 0.78, start: 0.34 },
-		{ left: 52, scale: 1.5, start: 0.36, flip: true },
+		{ left: 52, scale: 1.5, start: 0.36 },
 		{ left: 14, scale: 1.4, start: 0.38 },
-		{ left: 70, scale: 1.7, start: 0.4, flip: true },
+		{ left: 70, scale: 1.7, start: 0.4 },
 		{ left: 38, scale: 1.6, start: 0.42 },
-		{ left: 84, scale: 1.35, start: 0.44, flip: true },
+		{ left: 84, scale: 1.35, start: 0.44 },
 		{ left: 24, scale: 1.7, start: 0.46 },
-		{ left: 58, scale: 1.55, start: 0.48, flip: true },
+		{ left: 58, scale: 1.55, start: 0.48 },
 		{ left: 6, scale: 1.0, start: 0.5 },
-		{ left: 78, scale: 1.25, start: 0.52, flip: true },
+		{ left: 78, scale: 1.25, start: 0.52 },
 		{ left: 42, scale: 1.15, start: 0.55 },
-		{ left: 66, scale: 0.95, start: 0.58, flip: true },
+		{ left: 66, scale: 0.95, start: 0.58 },
 	],
+
+	// First stars of the evening, out over the dark top of the sky once we have
+	// landed. A repeating tile (like the site starfield) so it scales to any
+	// viewport, masked off before the horizon glow — you cannot see stars against
+	// a bright horizon.
+	stars: {
+		tile: 150,
+		count: 30,
+		appearStart: 0.52,
+		appearEnd: 0.76,
+		maxOpacity: 0.9,
+		colors: ['#ffffff', '#ffffff', '#f4e6dc', '#ffd9a8', '#d3d3d3'],
+	},
+
 	// Procedural ridgelines: sprite width in cells, height as a width fraction,
 	// and how much of the runway each band spends settling into place.
 	ridgeRes: 256,
