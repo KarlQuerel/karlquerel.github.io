@@ -5,10 +5,10 @@
 export const JOURNEY = {
 	// Empty flight legs between stations (vh) — the travel that sells the approach.
 	legVh: 85,
-	// The departure leg is the longest: it is the only stretch where the planet
-	// grows from a distant world to a wall, and that has to read as a slow
-	// approach rather than a zoom.
-	heroLegVh: 115,
+	// The departure leg is the longest: it carries the whole flight out — the pass
+	// through the name, the void beyond it, the planet coming up dead ahead and the
+	// camera coming around it — before the first station docks.
+	heroLegVh: 165,
 	// The WORK → LIFE leg is longer: it carries the low-orbit surface skim.
 	diveLegVh: 150,
 	// Progress at which the hero's scroll hint has fully faded.
@@ -17,8 +17,15 @@ export const JOURNEY = {
 	// `roll` channel adds ground rush on top during the skim and the entry.
 	turns: 0.45,
 	// How far the sun swings around the planet over the trip (turns) — the
-	// terminator advances as you orbit, and the landing arrives at dusk.
-	sunTurns: 0.22,
+	// terminator advances as you orbit, and the landing arrives at dusk. The
+	// camera's `light` channel spends part of this during the orbit, where the
+	// sweep is the point; the two together still land the arrival at 0.22.
+	sunTurns: 0.12,
+	// Where the departure's beats land, as fractions of the run from the top of the
+	// page to the WORK dock. `void` has to sit past the end of the pass
+	// (HERO_FLYBY.runVh, which is in viewports) so the planet stays out of the frame
+	// until the words have gone — that is the whole point of the beat.
+	departure: { void: 0.3, dot: 0.38, close: 0.48, orbitIn: 0.58, orbitOut: 0.88 },
 }
 
 // The departure flyby: the camera's axis runs through the gap between the two
@@ -28,10 +35,14 @@ export const JOURNEY = {
 // same factor. Nothing else is needed: the role line and the cue hang below the
 // corridor, so the same scale carries them out of the bottom of frame.
 export const HERO_FLYBY = {
-	// where the corridor sits in the frame (vh from the top): the camera's axis
-	aimVh: 26,
-	// scroll the pass takes, in viewports
-	runVh: 0.7,
+	// scroll the pass takes, in viewports — a flight, so it is over quickly
+	runVh: 0.45,
+	// The star tunnel behind it (HyperspaceWarp): up as the flight starts, hard on
+	// through the pass, and out again as the planet comes up — the deceleration
+	// into orbit. Fractions of the pass, so it can outlast it.
+	warpIn: 0.08,
+	warpFull: 0.45,
+	warpOut: 1.5,
 	// How near the words get by the end. They never clear the frame edges — their
 	// inner edges are only half a corridor off the axis — so the pass has to end
 	// in a dissolve, and it has to happen while they are big and rushing rather
@@ -48,49 +59,66 @@ export const HERO_FLYBY = {
 
 // Camera keyframes: where the planet sits at each beat, as its centre's offset
 // from the viewport centre (vw / vh) plus the scale of the base 84vmin globe.
-// The track eases between them — dock before a station enters, hold while it
-// reads, swing across the screen during the empty legs. `fade` is the globe's
+// The track eases between them — fly out empty, come around the planet, then dock
+// before a station enters and hold while it reads. `fade` is the globe's
 // opacity — solid the whole way, dropping to 0 only at `gone`, where the entry
 // scene takes the sky over. The stations carry their own panels, so the world
 // behind them never needs dimming.
 // Extra channels beyond position/scale/fade:
-//   roll  — cumulative extra longitude (turns) on top of JOURNEY.turns; ramping
-//           it through the skim and the entry makes the ground rush past
-//   tilt  — camera bank (deg): the world leans into the turns
-// `swing` arcs the approach; `workEnd`/`lifeEnd` keep the holds drifting slowly
-// so the trajectory never fully stops; `dive` is the low-orbit surface skim.
-// `rest` is the world seen from far out, not a speck: near enough to read as a
-// destination, and close enough to `swing` that the departure leg grows it at a
-// steady, unhurried rate instead of tripling it on the first flick of the wheel.
+//   roll   — cumulative extra longitude (turns) on top of JOURNEY.turns; ramping
+//            it through the skim and the entry makes the ground rush past
+//   tilt   — camera bank (deg): the world leans into the turns
+//   light  — extra sun yaw (turns) on top of JOURNEY.sunTurns: swinging it while
+//            the globe holds its distance is what reads as circling the thing
+//   reveal — 0 keeps the planet out of the frame entirely (it is not even drawn);
+//            crossing to 1 is it coming into being, growing out of a point
+// A keyframe can leave any channel out and it holds at that channel's default.
+// `orbitIn`/`orbitOut` are the circle: the globe keeps its distance and crosses
+// the frame while its surface streams past and the terminator sweeps. `workEnd`/
+// `lifeEnd` keep the holds drifting slowly so the trajectory never fully stops;
+// `dive` is the low-orbit surface skim.
 export const CAMERA = {
-	rest: { x: 0, y: 20, scale: 0.2, fade: 1, roll: 0, tilt: 0 },
-	swing: { x: -26, y: 6, scale: 0.42, fade: 1, roll: 0.05, tilt: -4 },
-	work: { x: -52, y: -4, scale: 1.35, fade: 1, roll: 0.1, tilt: -2 },
-	workEnd: { x: -50, y: -10, scale: 1.48, fade: 1, roll: 0.14, tilt: -1 },
-	dive: { x: 6, y: 58, scale: 3.4, fade: 1, roll: 0.5, tilt: 5 },
-	life: { x: 56, y: 2, scale: 1.7, fade: 1, roll: 0.6, tilt: 2 },
-	lifeEnd: { x: 53, y: -2, scale: 1.82, fade: 1, roll: 0.64, tilt: 1 },
+	// The departure is empty space: nothing in the frame but the name we are flying
+	// at. The planet comes afterwards, up out of the gap the flight went through.
+	rest: { x: 0, y: 0, scale: 0.05, fade: 1, roll: 0, tilt: 0, reveal: 0 },
+	void: { x: 0, y: 0, scale: 0.06, fade: 1, roll: 0, tilt: 0, reveal: 0 },
+	dot: { x: 0, y: 0, scale: 0.09, fade: 1, roll: 0, tilt: 0, reveal: 1 },
+	close: { x: 0, y: 6, scale: 0.42, fade: 1, roll: 0.02, tilt: 0, light: 0.01 },
+	// The circle. Going around a world turns the face it shows you and swings the
+	// sun by the same angle, so `roll` and `light` advance together here — that
+	// pair, under a globe holding its distance as it crosses, is the orbit.
+	orbitIn: { x: 24, y: 2, scale: 0.55, fade: 1, roll: 0.06, tilt: 3, light: 0.03 },
+	orbitOut: { x: -24, y: -2, scale: 0.62, fade: 1, roll: 0.16, tilt: -3, light: 0.1 },
+	work: { x: -52, y: -4, scale: 1.35, fade: 1, roll: 0.22, tilt: -2, light: 0.1 },
+	workEnd: { x: -50, y: -10, scale: 1.48, fade: 1, roll: 0.26, tilt: -1, light: 0.1 },
+	dive: { x: 6, y: 58, scale: 3.4, fade: 1, roll: 0.62, tilt: 5, light: 0.1 },
+	life: { x: 56, y: 2, scale: 1.7, fade: 1, roll: 0.72, tilt: 2, light: 0.1 },
+	lifeEnd: { x: 53, y: -2, scale: 1.82, fade: 1, roll: 0.76, tilt: 1, light: 0.1 },
 	// the descent: horizon at pin start, then the globe swells hard enough that
 	// its crest leaves the top of the frame — from there the screen is nothing but
 	// surface, which is what lets the sky take over without reading as a dissolve
-	approach: { x: 0, y: 62, scale: 2.0, fade: 1, roll: 0.7, tilt: 0 },
-	entry: { x: 0, y: 100, scale: 8, fade: 1, roll: 1.05, tilt: 0 },
-	gone: { x: 0, y: 115, scale: 11, fade: 0, roll: 1.35, tilt: 0 },
+	approach: { x: 0, y: 62, scale: 2.0, fade: 1, roll: 0.82, tilt: 0, light: 0.1 },
+	entry: { x: 0, y: 100, scale: 8, fade: 1, roll: 1.17, tilt: 0, light: 0.1 },
+	gone: { x: 0, y: 115, scale: 11, fade: 0, roll: 1.47, tilt: 0, light: 0.1 },
 }
 
 // Portrait screens: vmin is the narrow side, so the same scales render a far
 // smaller globe — push in closer to keep the limb and horizon in frame.
 export const CAMERA_PORTRAIT = {
-	rest: { x: 0, y: 18, scale: 0.3, fade: 1, roll: 0, tilt: 0 },
-	swing: { x: -28, y: 6, scale: 0.55, fade: 1, roll: 0.05, tilt: -4 },
-	work: { x: -55, y: -6, scale: 1.6, fade: 1, roll: 0.1, tilt: -2 },
-	workEnd: { x: -53, y: -11, scale: 1.72, fade: 1, roll: 0.14, tilt: -1 },
-	dive: { x: 4, y: 46, scale: 4.4, fade: 1, roll: 0.5, tilt: 5 },
-	life: { x: 55, y: 0, scale: 2.0, fade: 1, roll: 0.6, tilt: 2 },
-	lifeEnd: { x: 52, y: -3, scale: 2.12, fade: 1, roll: 0.64, tilt: 1 },
-	approach: { x: 0, y: 42, scale: 2.6, fade: 1, roll: 0.7, tilt: 0 },
-	entry: { x: 0, y: 58, scale: 19, fade: 1, roll: 1.05, tilt: 0 },
-	gone: { x: 0, y: 66, scale: 25, fade: 0, roll: 1.35, tilt: 0 },
+	rest: { x: 0, y: 0, scale: 0.07, fade: 1, roll: 0, tilt: 0, reveal: 0 },
+	void: { x: 0, y: 0, scale: 0.08, fade: 1, roll: 0, tilt: 0, reveal: 0 },
+	dot: { x: 0, y: 0, scale: 0.12, fade: 1, roll: 0, tilt: 0, reveal: 1 },
+	close: { x: 0, y: 6, scale: 0.6, fade: 1, roll: 0.02, tilt: 0, light: 0.01 },
+	orbitIn: { x: 22, y: 2, scale: 0.7, fade: 1, roll: 0.06, tilt: 3, light: 0.03 },
+	orbitOut: { x: -22, y: -2, scale: 0.78, fade: 1, roll: 0.16, tilt: -3, light: 0.1 },
+	work: { x: -55, y: -6, scale: 1.6, fade: 1, roll: 0.22, tilt: -2, light: 0.1 },
+	workEnd: { x: -53, y: -11, scale: 1.72, fade: 1, roll: 0.26, tilt: -1, light: 0.1 },
+	dive: { x: 4, y: 46, scale: 4.4, fade: 1, roll: 0.62, tilt: 5, light: 0.1 },
+	life: { x: 55, y: 0, scale: 2.0, fade: 1, roll: 0.72, tilt: 2, light: 0.1 },
+	lifeEnd: { x: 52, y: -3, scale: 2.12, fade: 1, roll: 0.76, tilt: 1, light: 0.1 },
+	approach: { x: 0, y: 42, scale: 2.6, fade: 1, roll: 0.82, tilt: 0, light: 0.1 },
+	entry: { x: 0, y: 58, scale: 19, fade: 1, roll: 1.17, tilt: 0, light: 0.1 },
+	gone: { x: 0, y: 66, scale: 25, fade: 0, roll: 1.47, tilt: 0, light: 0.1 },
 }
 
 // The final approach: horizon → limb blowout → atmosphere → surface. All

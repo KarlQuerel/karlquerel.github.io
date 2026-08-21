@@ -6,7 +6,9 @@
 		<!-- the faintest colour depth behind everything — space isn't pure black -->
 		<div class="stage__nebula" />
 		<div class="stage__planet" :style="planetStyle">
-			<PixelPlanet :reveal="cam.fade > 0 ? 1 : 0" :spin="spin" :light-yaw="lightYaw" />
+			<!-- reveal is the camera's own channel: 0 through the departure, so the
+			     planet is not drawn at all until it comes up out of the corridor -->
+			<PixelPlanet :reveal="cam.reveal ?? 1" :spin="spin" :light-yaw="lightYaw" />
 		</div>
 		<!-- atmosphere on entry: haze rising from the horizon, in the planet's tint -->
 		<div class="stage__haze" :style="hazeStyle" />
@@ -19,7 +21,8 @@
 	import PixelPlanet from './PixelPlanet.vue'
 
 	const props = defineProps({
-		// planet centre offset from the viewport centre (vw / vh) and globe scale
+		// planet centre offset from the viewport centre (vw / vh), globe scale, and
+		// `reveal` — whether it is in the frame at all yet
 		cam: { type: Object, required: true },
 		// longitude in radians — scroll owns it
 		spin: { type: Number, default: 0 },

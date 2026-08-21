@@ -7,20 +7,26 @@
 		     camera's axis runs through the gap between the two words, and the first
 		     stretch of scroll flies it through. -->
 		<header class="journey__hero">
-			<div class="journey__lockup" :style="flybyStyle">
-				<h1 class="journey__name">
-					<span>{{ firstWords }}</span>
-					<!-- a real space, so the heading still reads as the name: the template's
-					     own whitespace is condensed away, and flex skips a blank text run -->
-					{{ ' ' }}
-					<span>{{ lastWord }}</span>
-				</h1>
-				<!-- under the corridor, so the same pass carries it out of frame -->
-				<div class="journey__cue">
-					<p class="journey__label">{{ HOME_LANDING.label }}</p>
-					<div class="journey__hint" :style="hintStyle" aria-hidden="true">
-						<span>{{ HOME_LANDING.scrollHint }}</span>
-						<PixelArrow />
+			<!-- the flight: the star tunnel streams past behind the name, and both
+			     share the frame's centre as their vanishing point -->
+			<div class="journey__flight">
+				<HyperspaceWarp :intensity="warp" />
+				<div class="journey__lockup" :style="flybyStyle">
+					<h1 class="journey__name">
+						<span>{{ firstWords }}</span>
+						<!-- a real space, so the heading still reads as the name: the
+						     template's own whitespace is condensed away, and flex skips a
+						     blank text run -->
+						{{ ' ' }}
+						<span>{{ lastWord }}</span>
+					</h1>
+					<!-- under the corridor, so the same pass carries it out of frame -->
+					<div class="journey__cue">
+						<p class="journey__label">{{ HOME_LANDING.label }}</p>
+						<div class="journey__hint" :style="hintStyle" aria-hidden="true">
+							<span>{{ HOME_LANDING.scrollHint }}</span>
+							<PixelArrow />
+						</div>
 					</div>
 				</div>
 			</div>
@@ -66,6 +72,7 @@
 	import { useScrollSections } from '@/composables/useScrollSections'
 	import AboutLife from './AboutLife.vue'
 	import AboutWork from './AboutWork.vue'
+	import HyperspaceWarp from './HyperspaceWarp.vue'
 	import JourneyArrival from './JourneyArrival.vue'
 	import JourneyRail from './JourneyRail.vue'
 	import PageTitle from './PageTitle.vue'
@@ -90,7 +97,6 @@
 		'--leg-hero': `${JOURNEY.heroLegVh}vh`,
 		'--leg-dive': `${JOURNEY.diveLegVh}vh`,
 		'--arrival-runway': `${ARRIVAL.runwayVh}vh`,
-		'--hero-aim': `${HERO_FLYBY.aimVh}vh`,
 	}
 
 	// The two words the camera flies between: everything but the last, then the
@@ -123,15 +129,22 @@
 		// portrait renders the vmin-sized globe far smaller — push the camera in
 		const cameras = vh > track.clientWidth ? CAMERA_PORTRAIT : CAMERA
 		dims.value = { trackH: track.offsetHeight, vh }
-		// dock before a station enters, hold while it reads, swing during the legs;
-		// inside the pinned runway the limb blows out and hands off to the entry
+		// the departure flies out empty, the planet comes up dead ahead, the camera
+		// comes around it, then stations dock as they enter; inside the pinned runway
+		// the limb blows out and hands off to the entry
 		const arrivalTop = topOf(arrivalRef.value)
 		const runwayPx = (ARRIVAL.runwayVh / 100) * vh
+		// the run from the top of the page to the WORK dock: the whole flight out
+		const dock = topOf(workRef.value) - vh
+		const beat = JOURNEY.departure
 		camTrack.value = [
 			{ s: 0, ...cameras.rest },
-			// mid-way through the hero → WORK run, so the approach arcs in
-			{ s: (topOf(workRef.value) - vh) / 2, ...cameras.swing },
-			{ s: topOf(workRef.value) - vh, ...cameras.work },
+			{ s: dock * beat.void, ...cameras.void },
+			{ s: dock * beat.dot, ...cameras.dot },
+			{ s: dock * beat.close, ...cameras.close },
+			{ s: dock * beat.orbitIn, ...cameras.orbitIn },
+			{ s: dock * beat.orbitOut, ...cameras.orbitOut },
+			{ s: dock, ...cameras.work },
 			{ s: bottomOf(workRef.value) - vh / 2, ...cameras.workEnd },
 			// the skim bottoms out mid-way through the long WORK → LIFE leg
 			{
@@ -150,20 +163,25 @@
 
 	const scrolled = computed(() => progress.value * Math.max(0, dims.value.trackH - dims.value.vh))
 
-	// the camera: eased per-channel between the measured keyframes
-	const CAM_CHANNELS = ['x', 'y', 'scale', 'fade', 'roll', 'tilt']
+	// The camera: eased per-channel between the measured keyframes. A keyframe that
+	// leaves a channel out holds at the default here rather than reading NaN, which
+	// keeps `light` and `reveal` to the beats that actually use them.
+	const CAM_CHANNELS = { x: 0, y: 0, scale: 1, fade: 1, roll: 0, tilt: 0, light: 0, reveal: 1 }
 	const cam = computed(() => {
 		const pts = camTrack.value
-		if (!pts.length) return CAMERA.rest
+		if (!pts.length) return { ...CAM_CHANNELS, ...CAMERA.rest }
 		const s = scrolled.value
-		if (s <= pts[0].s) return pts[0]
+		if (s <= pts[0].s) return { ...CAM_CHANNELS, ...pts[0] }
 		for (let i = 0; i < pts.length - 1; i++) {
 			const a = pts[i]
 			const b = pts[i + 1]
 			if (s <= b.s) {
 				const t = smoothstep((s - a.s) / (b.s - a.s || 1))
 				const frame = {}
-				for (const key of CAM_CHANNELS) frame[key] = a[key] + (b[key] - a[key]) * t
+				for (const [key, base] of Object.entries(CAM_CHANNELS)) {
+					const from = a[key] ?? base
+					frame[key] = from + ((b[key] ?? base) - from) * t
+				}
 				return frame
 			}
 		}
@@ -174,8 +192,16 @@
 	// channel piles ground rush on top through the skim and the entry
 	const spin = computed(() => (progress.value * JOURNEY.turns + cam.value.roll) * Math.PI * 2)
 
-	// the sun holds still in the world while you orbit — the terminator advances
-	const lightYaw = computed(() => progress.value * JOURNEY.sunTurns * Math.PI * 2)
+	// The sun holds still in the world while you orbit — the terminator advances.
+	// The camera's `light` channel swings it faster through the beats where going
+	// around the planet is the point, which is what makes the circle read.
+	const lightYaw = computed(
+		() => (progress.value * JOURNEY.sunTurns + cam.value.light) * Math.PI * 2
+	)
+
+	// how far through the pass we are; past 1 the words are gone but the flight
+	// carries on into the void
+	const pass = computed(() => scrolled.value / ((dims.value.vh || 1) * HERO_FLYBY.runVh))
 
 	// Departure: the pass through the corridor. z falls at a steady rate, so the
 	// spread accelerates hyperbolically the way a real approach does — and since
@@ -183,19 +209,30 @@
 	// corridor is the whole move. The words go on out past the frame edges; the
 	// dissolve is what ends the pass.
 	const flybyStyle = computed(() => {
-		const t = clamp01(scrolled.value / ((dims.value.vh || 1) * HERO_FLYBY.runVh))
-		const scale = 1 / (1 - (1 - 1 / HERO_FLYBY.nearScale) * t)
+		const scale = 1 / (1 - (1 - 1 / HERO_FLYBY.nearScale) * clamp01(pass.value))
 		const gone = clamp01(
 			(scale - HERO_FLYBY.fadeFromScale) / (HERO_FLYBY.nearScale - HERO_FLYBY.fadeFromScale)
 		)
 		return {
 			// the origin is the corridor: the gap's centre, not the row's
 			transformOrigin: `calc(50% + ${corridorEm.toFixed(2)}em) 50%`,
-			transform: `scale(${scale.toFixed(3)})`,
+			// and the shift puts that corridor on the frame's centre, where the star
+			// tunnel's vanishing point is and where the planet will come up
+			transform: `translateX(${(-corridorEm).toFixed(2)}em) scale(${scale.toFixed(3)})`,
 			opacity: (1 - smoothstep(gone)).toFixed(3),
 			// past the pass it is a frame-filling layer with nothing in it
 			visibility: gone < 1 ? null : 'hidden',
 		}
+	})
+
+	// The star tunnel: up as the flight starts, hard on through the pass, out again
+	// as the planet comes up. Measured on the pass's clock, past 1, so it outlasts
+	// the words and covers the empty stretch before the planet.
+	const warp = computed(() => {
+		const t = pass.value
+		const up = clamp01((t - HERO_FLYBY.warpIn) / (HERO_FLYBY.warpFull - HERO_FLYBY.warpIn))
+		const out = clamp01((HERO_FLYBY.warpOut - t) / (HERO_FLYBY.warpOut - HERO_FLYBY.warpFull))
+		return smoothstep(Math.min(up, out))
 	})
 
 	// atmosphere thickens across the entry window
@@ -256,23 +293,32 @@
 		min-height: 100vh;
 	}
 
-	// Fixed, so the corridor holds still on the camera's axis while the world moves
-	// past it — and so the frame-filling letters of the pass clip at the frame
-	// edges instead of widening the page. Its box is the name row alone (the cue
-	// hangs out of flow beneath), which puts the scale's origin on the corridor.
-	.journey__lockup {
+	// The flight rides the viewport, not the page: the corridor has to hold still on
+	// the camera's axis while the world moves past it, and the frame-filling letters
+	// of the pass have to clip at the frame edges instead of widening the page. The
+	// axis is the frame's centre — where the tunnel's vanishing point is, and where
+	// the planet comes up out of the gap once the words have gone.
+	.journey__flight {
 		position: fixed;
-		top: var(--hero-aim);
-		left: 0;
-		right: 0;
+		inset: 0;
+		z-index: 2;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		// decorative once it is moving, and never in the way of the chrome
+		pointer-events: none;
+	}
+
+	// its box is the name row alone (the cue hangs out of flow beneath), which puts
+	// the corridor on the box's own centre line
+	.journey__lockup {
+		position: relative;
 		z-index: 2;
 		padding: 0 1rem;
 		// the name's own size, so the corridor offset (set in JS, in em) measures in
 		// character advances
 		font-size: px8(4);
 		text-align: center;
-		// decorative once it is moving, and never in the way of the chrome
-		pointer-events: none;
 	}
 
 	// the gap between the words is the corridor: the two of them are what the
