@@ -2,7 +2,7 @@
 	<!-- Atmospheric entry: a cloud deck rushes up and closes over the camera,
 	     the dusk sky takes over behind it, and the surface ridgelines settle in —
 	     the journey ends standing on the planet. All scroll-scrubbed. -->
-	<div class="entry" aria-hidden="true">
+	<div class="entry" :style="pointerStyle" aria-hidden="true">
 		<div class="entry__sky" :style="skyStyle" />
 		<div class="entry__stars" :style="starStyle" />
 		<div
@@ -13,20 +13,45 @@
 		/>
 		<!-- inside the deck: cloud closes over the lens and hides the sky handoff -->
 		<div class="entry__deck" :style="deckStyle" />
-		<canvas ref="farEl" class="entry__ridge" :style="ridgeStyle(ENTRY.far)" />
-		<canvas ref="nearEl" class="entry__ridge" :style="ridgeStyle(ENTRY.near)" />
+		<canvas
+			ref="farEl"
+			class="entry__ridge"
+			:style="ridgeStyle(ENTRY.far, ENTRY.parallax.far)"
+		/>
+		<canvas
+			ref="nearEl"
+			class="entry__ridge"
+			:style="ridgeStyle(ENTRY.near, ENTRY.parallax.near)"
+		/>
 	</div>
 </template>
 
 <script setup>
-	import { computed, onMounted, ref } from 'vue'
+	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
+	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { ENTRY } from '@/constants/journey'
+	import { FINE_POINTER_QUERY } from '@/constants/viewport'
 	import { clamp01, smoothstep } from '@/js/math'
 	import { ditherIndex, fbm1, fbm2, hash1, ridged1 } from '@/js/pixelNoise'
 
 	const props = defineProps({
 		// approach progress: 0 → still in space, 1 → landed
 		progress: { type: Number, default: 0 },
+	})
+
+	// Mouse parallax, the same contract the starfield uses: axes normalised to
+	// -1..1 and negated, published as --mx/--my, and each layer multiplies them
+	// by its own --depth. It rides the CSS `translate` property so it never
+	// collides with the scroll-scrubbed `transform` on the same elements.
+	const pointer = ref({ x: 0, y: 0 })
+	const pointerStyle = computed(() => ({ '--mx': pointer.value.x, '--my': pointer.value.y }))
+
+	const onPointerMove = useRafThrottle(event => {
+		pointer.value = {
+			x: -((event.clientX / window.innerWidth - 0.5) * 2),
+			y: -((event.clientY / window.innerHeight - 0.5) * 2),
+		}
 	})
 
 	// inside the deck the view goes to cloud, which is what the sky handoff hides
@@ -67,6 +92,7 @@
 			backgroundImage: sprite ? `url(${sprite})` : undefined,
 			// fade the last stretch so a puff never pops out at the frame edge
 			opacity: Math.min(1, (1 - t) / 0.15).toFixed(3),
+			'--depth': ENTRY.parallax.cloud,
 			transform:
 				`translate3d(${drift.toFixed(1)}vw, ${y.toFixed(1)}vh, 0)` +
 				` scale(${scale.toFixed(2)})`,
@@ -74,10 +100,11 @@
 	}
 
 	// each ridge band lifts into place on its own beat — the two-plane parallax
-	function ridgeStyle(band) {
+	function ridgeStyle(band, depth) {
 		const t = smoothstep(clamp01((props.progress - band.revealAt) / ENTRY.ridgeSettle))
 		return {
 			display: t > 0 ? null : 'none',
+			'--depth': depth,
 			opacity: t.toFixed(3),
 			height: `${band.heightVh}vh`,
 			transform: `translate3d(0, ${((1 - t) * band.liftVh).toFixed(1)}vh, 0)`,
@@ -97,6 +124,7 @@
 		return {
 			opacity: (smoothstep(t) * maxOpacity).toFixed(3),
 			display: t > 0 && starTile.value ? null : 'none',
+			'--depth': ENTRY.parallax.stars,
 			backgroundImage: `url(${starTile.value})`,
 			backgroundSize: `${tile}px ${tile}px`,
 		}
@@ -282,7 +310,13 @@
 			drawCloud(visitSeed + i * 137)
 		)
 		starTile.value = drawStarTile(visitSeed)
+		// no cursor on touch devices, and their drag-scrolls fire pointermove
+		if (!prefersReducedMotion() && window.matchMedia(FINE_POINTER_QUERY).matches) {
+			window.addEventListener('pointermove', onPointerMove, { passive: true })
+		}
 	})
+
+	onBeforeUnmount(() => window.removeEventListener('pointermove', onPointerMove))
 </script>
 
 <style scoped lang="scss">
@@ -299,9 +333,19 @@
 
 	// Stars only over the dark upper sky — masked out well before the horizon
 	// glow, since a bright horizon washes them out.
+	// Mouse parallax rides `translate`, leaving `transform` to the scroll-scrubbed
+	// motion on the same elements. Each layer bleeds by its own depth so the
+	// shift can never uncover an edge.
+	.entry__stars,
+	.entry__cloud,
+	.entry__ridge {
+		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
+			calc(var(--my, 0) * var(--depth, 0) * 1px);
+	}
+
 	.entry__stars {
 		position: absolute;
-		inset: 0;
+		inset: calc(var(--depth, 0) * -1px);
 		background-repeat: repeat;
 		image-rendering: pixelated;
 		-webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 24%, transparent 58%);
@@ -321,9 +365,9 @@
 
 	.entry__ridge {
 		position: absolute;
-		bottom: 0;
-		left: 0;
-		width: 100%;
+		bottom: calc(var(--depth, 0) * -1px);
+		left: calc(var(--depth, 0) * -1px);
+		width: calc(100% + var(--depth, 0) * 2px);
 		// hard-edged silhouettes, like the rest of the sprite work
 		image-rendering: pixelated;
 	}

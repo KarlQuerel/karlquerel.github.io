@@ -154,6 +154,12 @@ export const ENTRY = {
 		{ left: 66, scale: 0.95, start: 0.58 },
 	],
 
+	// Mouse parallax on the surface, same mechanism as the starfield backdrop:
+	// pixels of travel per layer, against the cursor. Depths are on the same
+	// scale as STAR_LAYERS so the two backdrops feel like one system. The sky
+	// and the deck wash stay put — they are the medium, not objects in it.
+	parallax: { stars: 4, cloud: 16, far: 10, near: 22 },
+
 	// First stars of the evening, out over the dark top of the sky once we have
 	// landed. A repeating tile (like the site starfield) so it scales to any
 	// viewport, masked off before the horizon glow — you cannot see stars against
