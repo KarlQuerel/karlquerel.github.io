@@ -13,20 +13,13 @@
 		/>
 		<!-- inside the deck: cloud closes over the lens and hides the sky handoff -->
 		<div class="entry__deck" :style="deckStyle" />
+		<!-- far → near; each band is cut to the box it fills, so redraws on reshape -->
 		<canvas
-			ref="distantEl"
+			v-for="(band, i) in bands"
+			:key="band.key"
+			:ref="el => (ridgeEls[i] = el)"
 			class="entry__ridge"
-			:style="ridgeStyle(ENTRY.distant, ENTRY.parallax.distant)"
-		/>
-		<canvas
-			ref="farEl"
-			class="entry__ridge"
-			:style="ridgeStyle(ENTRY.far, ENTRY.parallax.far)"
-		/>
-		<canvas
-			ref="nearEl"
-			class="entry__ridge"
-			:style="ridgeStyle(ENTRY.near, ENTRY.parallax.near)"
+			:style="ridgeStyle(band)"
 		/>
 	</div>
 </template>
@@ -105,20 +98,38 @@
 	}
 
 	// each ridge band lifts into place on its own beat — the two-plane parallax
-	function ridgeStyle(band, depth) {
+	function ridgeStyle(band) {
 		const t = smoothstep(clamp01((props.progress - band.revealAt) / ENTRY.ridgeSettle))
 		return {
 			display: t > 0 ? null : 'none',
-			'--depth': depth,
+			'--depth': band.depth,
 			opacity: t.toFixed(3),
-			height: `${band.heightVh}vh`,
+			height: `${band.heightVh.toFixed(1)}vh`,
 			transform: `translate3d(0, ${((1 - t) * band.liftVh).toFixed(1)}vh, 0)`,
 		}
 	}
 
-	const distantEl = ref(null)
-	const farEl = ref(null)
-	const nearEl = ref(null)
+	// The bands as this frame renders them: a narrow frame gets shorter ranges
+	// with broader peaks, so the silhouette keeps the slope it was authored with
+	// instead of stretching into spikes (see ENTRY.ridgeFrameAspect). Held in a
+	// ref rather than read live from the window, so the sprites and the boxes they
+	// fill can only ever change shape together, on a redraw.
+	const RIDGE_BANDS = ['distant', 'far', 'near']
+	const frame = ref({ w: 1, h: 1 })
+	const ridgeEls = []
+
+	const bands = computed(() => {
+		const follow = Math.min(1, frame.value.w / frame.value.h / ENTRY.ridgeFrameAspect)
+		const heightK = follow ** ENTRY.ridgeHeightFollow
+		const freqK = follow ** ENTRY.ridgeFreqFollow
+		return RIDGE_BANDS.map(key => ({
+			...ENTRY[key],
+			key,
+			depth: ENTRY.parallax[key],
+			heightVh: ENTRY[key].heightVh * heightK,
+			freq: ENTRY[key].freq * freqK,
+		}))
+	})
 	// three cloud sprites drawn once per visit; each puff picks one by index
 	const cloudSprites = ref([])
 	const starTile = ref('')
@@ -142,7 +153,11 @@
 	// planet sprite uses, so the ridges gain volume without leaving the grid.
 	function drawRidge(el, band, visitSeed) {
 		const w = ENTRY.ridgeRes
-		const h = Math.round(w * ENTRY.ridgeAspect)
+		// cut to the shape of the box, so a cell is square on any viewport
+		const box = ((band.heightVh / 100) * frame.value.h) / frame.value.w
+		const h = Math.max(2, Math.round(w * box))
+		// cell-count tunables were authored at ridgeAspect — hold their share
+		const faceDepth = (band.faceDepth * h) / (w * ENTRY.ridgeAspect)
 		el.width = w
 		el.height = h
 		const ctx = el.getContext('2d')
@@ -186,7 +201,7 @@
 			const rf = ENTRY.ridgeRoughFreq / w
 			for (let y = yTop; y < h; y++) {
 				// the face is a band under the crest; below it the mass goes dark
-				const depth = Math.min(1, (y - yTop) / band.faceDepth)
+				const depth = Math.min(1, (y - yTop) / faceDepth)
 				// crag texture in 2D — sampled per column only, it stripes
 				const rough =
 					(fbm2(x * rf, y * rf, band.seed + visitSeed + 5) - 0.5) * ENTRY.ridgeRough
@@ -313,22 +328,42 @@
 		return el.toDataURL()
 	}
 
+	// one seed per visit: a reshape re-cuts the same range, it never rolls a new one
+	let visitSeed = 1
+
+	function cutRidges() {
+		frame.value = { w: window.innerWidth, h: window.innerHeight }
+		bands.value.forEach((band, i) => {
+			if (ridgeEls[i]) drawRidge(ridgeEls[i], band, visitSeed)
+		})
+	}
+
+	// only when the frame really changed shape (see ENTRY.ridgeReshape)
+	const onResize = useRafThrottle(() => {
+		const reshaped =
+			window.innerWidth !== frame.value.w ||
+			Math.abs(window.innerHeight / frame.value.h - 1) > ENTRY.ridgeReshape
+		if (reshaped) cutRidges()
+	})
+
 	onMounted(() => {
-		const visitSeed = Math.floor(Math.random() * 1e5) + 1
-		drawRidge(distantEl.value, ENTRY.distant, visitSeed)
-		drawRidge(farEl.value, ENTRY.far, visitSeed)
-		drawRidge(nearEl.value, ENTRY.near, visitSeed)
+		visitSeed = Math.floor(Math.random() * 1e5) + 1
+		cutRidges()
 		cloudSprites.value = Array.from({ length: ENTRY.cloud.variants }, (_, i) =>
 			drawCloud(visitSeed + i * 137)
 		)
 		starTile.value = drawStarTile(visitSeed)
+		window.addEventListener('resize', onResize, { passive: true })
 		// no cursor on touch devices, and their drag-scrolls fire pointermove
 		if (!prefersReducedMotion() && window.matchMedia(FINE_POINTER_QUERY).matches) {
 			window.addEventListener('pointermove', onPointerMove, { passive: true })
 		}
 	})
 
-	onBeforeUnmount(() => window.removeEventListener('pointermove', onPointerMove))
+	onBeforeUnmount(() => {
+		window.removeEventListener('pointermove', onPointerMove)
+		window.removeEventListener('resize', onResize)
+	})
 </script>
 
 <style scoped lang="scss">

@@ -77,6 +77,7 @@
 	// layout constants exposed to the stylesheet, so SCSS carries no hardcoded twins
 	const trackStyle = {
 		'--leg': `${JOURNEY.legVh}vh`,
+		'--leg-hero': `${JOURNEY.heroLegVh}vh`,
 		'--leg-dive': `${JOURNEY.diveLegVh}vh`,
 		'--arrival-runway': `${ARRIVAL.runwayVh}vh`,
 	}
@@ -295,7 +296,9 @@
 		text-align: center;
 	}
 
+	// the long departure leg: the whole approach from distant world to wall
 	.journey__station--work {
+		margin-top: var(--leg-hero);
 		// shared reading column for the timeline (AboutWork reads these vars)
 		--about-column: #{$about-column};
 		--about-gutter: #{$about-gutter};

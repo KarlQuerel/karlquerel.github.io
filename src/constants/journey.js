@@ -5,6 +5,10 @@
 export const JOURNEY = {
 	// Empty flight legs between stations (vh) — the travel that sells the approach.
 	legVh: 85,
+	// The departure leg is the longest: it is the only stretch where the planet
+	// grows from a distant world to a wall, and that has to read as a slow
+	// approach rather than a zoom.
+	heroLegVh: 115,
 	// The WORK → LIFE leg is longer: it carries the low-orbit surface skim.
 	diveLegVh: 150,
 	// Progress at which the hero's scroll hint has fully faded.
@@ -30,9 +34,12 @@ export const JOURNEY = {
 //   tilt  — camera bank (deg): the world leans into the turns
 // `swing` arcs the approach; `workEnd`/`lifeEnd` keep the holds drifting slowly
 // so the trajectory never fully stops; `dive` is the low-orbit surface skim.
+// `rest` is the world seen from far out, not a speck: near enough to read as a
+// destination, and close enough to `swing` that the departure leg grows it at a
+// steady, unhurried rate instead of tripling it on the first flick of the wheel.
 export const CAMERA = {
-	rest: { x: 0, y: 20, scale: 0.14, fade: 1, roll: 0, tilt: 0 },
-	swing: { x: -26, y: 6, scale: 0.6, fade: 1, roll: 0.05, tilt: -4 },
+	rest: { x: 0, y: 20, scale: 0.2, fade: 1, roll: 0, tilt: 0 },
+	swing: { x: -26, y: 6, scale: 0.42, fade: 1, roll: 0.05, tilt: -4 },
 	work: { x: -52, y: -4, scale: 1.35, fade: 1, roll: 0.1, tilt: -2 },
 	workEnd: { x: -50, y: -10, scale: 1.48, fade: 1, roll: 0.14, tilt: -1 },
 	dive: { x: 6, y: 58, scale: 3.4, fade: 1, roll: 0.5, tilt: 5 },
@@ -49,8 +56,8 @@ export const CAMERA = {
 // Portrait screens: vmin is the narrow side, so the same scales render a far
 // smaller globe — push in closer to keep the limb and horizon in frame.
 export const CAMERA_PORTRAIT = {
-	rest: { x: 0, y: 18, scale: 0.16, fade: 1, roll: 0, tilt: 0 },
-	swing: { x: -28, y: 6, scale: 0.7, fade: 1, roll: 0.05, tilt: -4 },
+	rest: { x: 0, y: 18, scale: 0.3, fade: 1, roll: 0, tilt: 0 },
+	swing: { x: -28, y: 6, scale: 0.55, fade: 1, roll: 0.05, tilt: -4 },
 	work: { x: -55, y: -6, scale: 1.6, fade: 1, roll: 0.1, tilt: -2 },
 	workEnd: { x: -53, y: -11, scale: 1.72, fade: 1, roll: 0.14, tilt: -1 },
 	dive: { x: 4, y: 46, scale: 4.4, fade: 1, roll: 0.5, tilt: 5 },
@@ -173,11 +180,33 @@ export const ENTRY = {
 		colors: ['#ffffff', '#ffffff', '#f4e6dc', '#ffd9a8', '#d3d3d3'],
 	},
 
-	// Procedural ridgelines: sprite width in cells, height as a width fraction,
-	// and how much of the runway each band spends settling into place.
+	// Procedural ridgelines: sprite width in cells, and how much of the runway
+	// each band spends settling into place. A band is drawn to the shape of the
+	// box it fills, so its cells stay square whatever the viewport — `ridgeAspect`
+	// is only the reference shape the cell-count tunables below (`faceDepth`) were
+	// authored against, and they keep their share of the band's height.
 	ridgeRes: 256,
 	ridgeAspect: 0.36,
 	ridgeSettle: 0.16,
+	// Band shapes follow the frame. Every profile below is authored for a wide
+	// landscape frame; a narrower one renders the same profile far steeper — its
+	// boxes go from wide-and-shallow to nearly square, which is what turned the
+	// phone range into a comb of spikes. On-screen slope scales with
+	// freq * heightVh / frame aspect, so these two exponents split the correction
+	// between shorter bands and broader peaks. Mostly height: dropping the peak
+	// count instead flattens the profile into smooth lumps, and a range has to
+	// stay jagged to read as one. They sum well short of 1 on purpose — summing to
+	// 1 would hold the slope exactly, and a phone would land with a low fringe
+	// instead of a skyline, so it keeps about half again the reference steepness
+	// and the mass that comes with it. Only narrow frames are corrected; anything
+	// wider than the reference renders as authored.
+	ridgeFrameAspect: 1.6,
+	ridgeHeightFollow: 0.4,
+	ridgeFreqFollow: 0.2,
+	// Redraw threshold: mobile browsers fire resize as the URL bar hides, and
+	// re-cutting three sprites mid-scroll for a few percent of height is not
+	// worth the hitch. Width changes (rotation, a resized window) always redraw.
+	ridgeReshape: 0.2,
 	// Relief shading. Each column is lit by which way its face turns (`slopeGain`
 	// per band), measured across `ridgeSlopeSpan` cells so facets come out broad
 	// rather than one-column stripes. The light then dies off over `faceDepth`
