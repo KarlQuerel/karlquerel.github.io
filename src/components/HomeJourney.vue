@@ -34,15 +34,9 @@
 						:first-words="firstWords"
 						:last-word="lastWord"
 						:role="HOME_LANDING.label"
+						:cue="HOME_LANDING.scrollHint"
 						@axis="onAxis"
 					/>
-					<!-- under the corridor, so the same pass carries it out of frame -->
-					<div class="journey__cue">
-						<div class="journey__hint" :style="hintStyle" aria-hidden="true">
-							<span>{{ HOME_LANDING.scrollHint }}</span>
-							<PixelArrow />
-						</div>
-					</div>
 				</div>
 			</div>
 		</header>
@@ -99,7 +93,6 @@
 	import JourneyArrival from './JourneyArrival.vue'
 	import JourneyRail from './JourneyRail.vue'
 	import PageTitle from './PageTitle.vue'
-	import PixelArrow from './PixelArrow.vue'
 	import PlanetStage from './PlanetStage.vue'
 
 	// named so App.vue's <KeepAlive> keeps the built page (planet canvas, photo
@@ -335,10 +328,6 @@
 		}
 	})
 
-	const hintStyle = computed(() => ({
-		'--hint-opacity': Math.max(0, 1 - progress.value / JOURNEY.hintFadeEnd),
-	}))
-
 	onMounted(() => {
 		measure()
 		window.addEventListener('resize', measure, { passive: true })
@@ -452,19 +441,6 @@
 		text-align: center;
 	}
 
-	// under the corridor and out of flow: the pass scales it away from the axis
-	// along with everything else, and the lockup's box stays the name row
-	.journey__cue {
-		position: absolute;
-		top: 100%;
-		left: 0;
-		right: 0;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding-top: 2.6rem;
-	}
-
 	// A hero should dominate on a big screen; whole steps, so it stays on-pixel. The
 	// stations take the same size as the name — one display size for the whole flight.
 	@media (min-width: #{$breakpoint-desktop}) {
@@ -472,22 +448,6 @@
 		.journey__station-head :deep(.page-heading) {
 			font-size: px8(8);
 		}
-	}
-
-	.journey__hint {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1.4rem;
-		font-family: $font-pixel;
-		font-size: px8(2);
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
-		color: $yellow;
-		text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85);
-		// scroll-driven fade (set in JS); decorative, never intercepts input
-		opacity: var(--hint-opacity, 1);
-		pointer-events: none;
 	}
 
 	// the leg margins are the empty travel between stations; the head and the body
@@ -582,10 +542,6 @@
 		// the name — the rail's own HOME stop already anchors the top of the journey.
 		.journey__mark {
 			display: none;
-		}
-
-		.journey__cue {
-			gap: 2.5rem;
 		}
 
 		.journey__station--work {

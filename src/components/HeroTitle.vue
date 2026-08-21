@@ -12,7 +12,15 @@
 				<span ref="firstEl">{{ firstWords }}</span>
 				<span ref="lastEl">{{ lastWord }}</span>
 			</span>
-			<span ref="roleEl" class="title__role">{{ role }}</span>
+			<!-- the inner spans are inline on purpose: their boxes are the text's own, so
+			     the sprite is drawn where the glyphs actually sit whatever the block
+			     around them is aligned to -->
+			<span class="title__role"
+				><span ref="roleEl">{{ role }}</span></span
+			>
+			<span class="title__cue"
+				><span ref="cueEl">{{ cue }}</span></span
+			>
 		</div>
 		<h1 class="sr-only">{{ name }} — {{ role }}</h1>
 		<canvas ref="canvasEl" class="title__plate" aria-hidden="true" />
@@ -30,12 +38,15 @@
 		firstWords: { type: String, required: true },
 		lastWord: { type: String, required: true },
 		role: { type: String, required: true },
+		// the scroll cue, on the plate with the rest so it flies with it
+		cue: { type: String, required: true },
 	})
 
 	const textEl = ref(null)
 	const firstEl = ref(null)
 	const lastEl = ref(null)
 	const roleEl = ref(null)
+	const cueEl = ref(null)
 	const canvasEl = ref(null)
 
 	// Where the corridor sits relative to the sprite's own centre, in px, both axes —
@@ -47,7 +58,7 @@
 	// Everything the paint needs comes off the laid-out text, so the stylesheet stays
 	// the one place the type is described — including whatever the breakpoints and any
 	// wrapping did to it.
-	function measure(el) {
+	function measure(el, bloom = false) {
 		const box = textEl.value.getBoundingClientRect()
 		const own = el.getBoundingClientRect()
 		const style = getComputedStyle(el)
@@ -61,6 +72,9 @@
 			family: style.fontFamily,
 			colour: style.color,
 			text: el.textContent.trim().toUpperCase(),
+			// the cue is meant to sit quietly under the name, so it takes the shadow
+			// that holds it off the sky but not the bloom the display type carries
+			bloom,
 		}
 	}
 
@@ -94,17 +108,22 @@
 		ctx.textBaseline = 'middle'
 		ctx.textAlign = 'left'
 
-		const runs = [measure(firstEl.value), measure(lastEl.value), measure(roleEl.value)]
+		const runs = [
+			measure(firstEl.value, true),
+			measure(lastEl.value, true),
+			measure(roleEl.value, true),
+			measure(cueEl.value),
+		]
 		// Shadow and bloom as their own passes, then the letters crisp on top: what the
 		// live type got from its text-shadows. Blurring under the per-glyph loop instead
 		// would stack each glyph's shadow on the next and smear the lot.
-		for (const [colour, blur] of [
-			[HERO_FLYBY.plateShadow, HERO_FLYBY.plateShadowBlur],
-			[HERO_FLYBY.plateGlow, HERO_FLYBY.plateGlowBlur],
+		for (const [colour, blur, bloomOnly] of [
+			[HERO_FLYBY.plateShadow, HERO_FLYBY.plateShadowBlur, false],
+			[HERO_FLYBY.plateGlow, HERO_FLYBY.plateGlowBlur, true],
 		]) {
 			ctx.shadowColor = colour
 			ctx.shadowBlur = blur * dpr
-			for (const run of runs) drawRun(ctx, run, dpr)
+			for (const run of runs) if (run.bloom || !bloomOnly) drawRun(ctx, run, dpr)
 		}
 		ctx.shadowBlur = 0
 		ctx.shadowColor = 'transparent'
@@ -171,6 +190,18 @@
 		color: $yellow;
 	}
 
+	// Quiet: the smallest step on the grid, widely tracked, and dim enough to read as
+	// an instruction rather than as part of the lockup.
+	.title__cue {
+		display: block;
+		margin-top: 2.4rem;
+		font-family: $font-pixel;
+		font-size: px8(1);
+		letter-spacing: 0.34em;
+		text-transform: uppercase;
+		color: rgba($white, 0.42);
+	}
+
 	// Over the text it was measured from, and leaning with the cursor on the shared
 	// --mx/--my contract.
 	.title__plate {
@@ -185,6 +216,10 @@
 	@media (min-width: #{$breakpoint-desktop}) {
 		.title__role {
 			font-size: px8(5);
+		}
+
+		.title__cue {
+			font-size: px8(2);
 		}
 	}
 </style>

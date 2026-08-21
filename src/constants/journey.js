@@ -11,8 +11,6 @@ export const JOURNEY = {
 	heroLegVh: 165,
 	// The WORK → LIFE leg is longer: it carries the low-orbit surface skim.
 	diveLegVh: 150,
-	// Progress at which the hero's scroll hint has fully faded.
-	hintFadeEnd: 0.04,
 	// Baseline longitude turned across the whole journey; the camera track's
 	// `roll` channel adds ground rush on top during the skim and the entry.
 	turns: 0.45,
