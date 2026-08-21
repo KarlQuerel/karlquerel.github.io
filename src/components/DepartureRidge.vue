@@ -1,18 +1,27 @@
 <template>
-	<!-- The ground the flight leaves from: a near ridge across the foot of the opening
-	     frame, dropping away as the camera lifts over it. Scroll owns the climb.
-	     Decorative — the same cut as the arrival's range, see js/ridge.js. -->
-	<div class="ridge" :style="ridgeStyle">
-		<!-- behind the silhouette, so the ridge masks the half of it below the crests -->
+	<!-- The ground the flight leaves from: two ranges across the foot of the opening
+	     frame, dropping away as the camera lifts over them. Scroll owns the climb, the
+	     cursor owns the lean. Decorative — the same cut as the arrival's range, see
+	     js/ridge.js. -->
+	<div class="ridge" :style="pointerStyle" aria-hidden="true">
+		<!-- behind the silhouettes, so the ridges mask the half of it below the crests -->
 		<div class="ridge__air" :style="airStyle" />
-		<canvas ref="canvasEl" class="ridge__band" />
+		<canvas
+			v-for="(band, i) in RIDGE.bands"
+			:key="i"
+			:ref="el => (bandEls[i] = el)"
+			class="ridge__band"
+			:style="bandStyle(band)"
+		/>
 	</div>
 </template>
 
 <script setup>
 	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { DEPARTURE_RIDGE as RIDGE, ENTRY } from '@/constants/journey'
+	import { FINE_POINTER_QUERY } from '@/constants/viewport'
 	import { clamp01, smoothstep } from '@/js/math'
 	import { drawRidge } from '@/js/ridge'
 
@@ -23,35 +32,60 @@
 		pass: { type: Number, default: 0 },
 	})
 
-	const canvasEl = ref(null)
+	// Mouse parallax, the same contract the arrival and the starfield use: axes
+	// normalised to -1..1 and negated, published as --mx/--my, and each band
+	// multiplies them by its own --depth. It rides the CSS `translate` property so it
+	// never collides with the scroll-scrubbed `transform` on the same element.
+	const pointer = ref({ x: 0, y: 0 })
+	const pointerStyle = computed(() => ({
+		'--mx': pointer.value.x,
+		'--my': pointer.value.y,
+		display: gone.value < 1 ? null : 'none',
+		opacity: (1 - gone.value).toFixed(3),
+	}))
 
-	// It swells as we close on it and drops as we climb: one is the perspective, the
-	// other is the camera rising, and both come off the same travel.
-	const ridgeStyle = computed(() => {
-		const gone = smoothstep(
-			clamp01((props.pass - RIDGE.goneFrom) / (RIDGE.goneTo - RIDGE.goneFrom))
-		)
-		const swell = 1 + RIDGE.swellPerUnit * props.travel
-		const drop = RIDGE.dropVhPerUnit * props.travel
-		return {
-			display: gone < 1 ? null : 'none',
-			height: `${RIDGE.heightVh}vh`,
-			opacity: (1 - gone).toFixed(3),
-			transform: `translate3d(0, ${drop.toFixed(1)}vh, 0) scale(${swell.toFixed(3)})`,
+	const onPointerMove = useRafThrottle(event => {
+		pointer.value = {
+			x: -((event.clientX / window.innerWidth - 0.5) * 2),
+			y: -((event.clientY / window.innerHeight - 0.5) * 2),
 		}
 	})
 
-	const airStyle = {
-		background: `linear-gradient(to top, transparent 0%, ${RIDGE.air} ${RIDGE.airFrom * 100}%, transparent ${RIDGE.airTo * 100}%)`,
+	const gone = computed(() =>
+		smoothstep(clamp01((props.pass - RIDGE.goneFrom) / (RIDGE.goneTo - RIDGE.goneFrom)))
+	)
+
+	// A band swells as we close on it and drops as we climb: one is the perspective,
+	// the other is the camera rising, and both come off the same travel — scaled by the
+	// band's own share of it, which is the parallax that reads as relief.
+	function bandStyle(band) {
+		const swell = 1 + RIDGE.swellPerUnit * band.climb * props.travel
+		const drop = RIDGE.dropVhPerUnit * band.climb * props.travel
+		return {
+			'--depth': band.depth,
+			height: `${band.heightVh}vh`,
+			transform: `translate3d(0, ${drop.toFixed(1)}vh, 0) scale(${swell.toFixed(3)})`,
+		}
 	}
 
-	// one seed per visit, so a reshape re-cuts the same ridge rather than a new one
+	// The air rides with the ground rather than the frame, so it stays the range's
+	// own atmosphere as the horizon drops away.
+	const airStyle = computed(() => ({
+		height: `${RIDGE.airVh}vh`,
+		transform: `translate3d(0, ${(RIDGE.dropVhPerUnit * props.travel).toFixed(1)}vh, 0)`,
+		background: `linear-gradient(to top, transparent 0%, ${RIDGE.air} ${RIDGE.airFrom * 100}%, transparent ${RIDGE.airTo * 100}%)`,
+	}))
+
+	// one seed per visit, so a reshape re-cuts the same ridges rather than new ones
 	let visitSeed = 1
 	let frame = { w: 0, h: 0 }
+	const bandEls = []
 
 	function cut() {
 		frame = { w: window.innerWidth, h: window.innerHeight }
-		if (canvasEl.value) drawRidge(canvasEl.value, RIDGE, visitSeed, frame)
+		RIDGE.bands.forEach((band, i) => {
+			if (bandEls[i]) drawRidge(bandEls[i], band, visitSeed + i * 31, frame)
+		})
 	}
 
 	// only when the frame really changed shape (see ENTRY.ridgeReshape)
@@ -66,35 +100,44 @@
 		visitSeed = Math.floor(Math.random() * 1e5) + 1
 		cut()
 		window.addEventListener('resize', onResize, { passive: true })
+		// no cursor on touch devices, and their drag-scrolls fire pointermove
+		if (!prefersReducedMotion() && window.matchMedia(FINE_POINTER_QUERY).matches) {
+			window.addEventListener('pointermove', onPointerMove, { passive: true })
+		}
 	})
 
-	onBeforeUnmount(() => window.removeEventListener('resize', onResize))
+	onBeforeUnmount(() => {
+		window.removeEventListener('resize', onResize)
+		window.removeEventListener('pointermove', onPointerMove)
+	})
 </script>
 
 <style scoped lang="scss">
-	// Anchored to the foot of the frame and grown from there, so the swell pushes the
-	// crests up rather than sliding the whole band around.
 	.ridge {
 		position: absolute;
-		bottom: 0;
-		left: 0;
-		width: 100%;
-		z-index: 2;
-		transform-origin: bottom center;
+		inset: 0;
 		pointer-events: none;
 	}
 
 	.ridge__air {
 		position: absolute;
-		inset: 0;
+		bottom: 0;
+		left: 0;
+		right: 0;
 	}
 
+	// Anchored to the foot of the frame and grown from there, so the swell pushes the
+	// crests up rather than sliding the whole band around. Each bleeds past the edges
+	// by its own depth, so the cursor's lean can never uncover one.
 	.ridge__band {
 		position: absolute;
-		inset: 0;
+		bottom: calc(var(--depth, 0) * -1px);
+		left: calc(var(--depth, 0) * -1px);
+		width: calc(100% + var(--depth, 0) * 2px);
 		display: block;
-		width: 100%;
-		height: 100%;
+		transform-origin: bottom center;
+		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
+			calc(var(--my, 0) * var(--depth, 0) * 1px);
 		// hard-edged silhouette, like the rest of the sprite work
 		image-rendering: pixelated;
 	}

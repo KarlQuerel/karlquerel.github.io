@@ -26,6 +26,11 @@ export const JOURNEY = {
 	// (HERO_FLYBY.runVh, which is in viewports) so the planet stays out of the frame
 	// until the words have gone — that is the whole point of the beat.
 	departure: { void: 0.3, dot: 0.38, close: 0.48, orbitIn: 0.58, orbitOut: 0.88 },
+	// Where the camera finishes turning onto the approach axis, as a fraction of the
+	// leg from the foot of LIFE to the pinned runway. Early on purpose: the descent
+	// has to start from a frame that is already lined up, or the last thing before the
+	// dive reads as the planet sliding into place rather than as us going in.
+	lineUpAt: 0.55,
 }
 
 // The departure flyby: the camera's axis runs through the gap between the two
@@ -98,24 +103,55 @@ export const HERO_FLYBY = {
 // is what makes the two ends of the trip the same world-building, but cold instead of
 // warm: this is a night-side silhouette under starlight, not a dusk landscape.
 export const DEPARTURE_RIDGE = {
-	heightVh: 34,
-	freq: 7,
-	base: 0.24,
-	amp: 0.52,
-	seed: 83,
-	slopeGain: 0.9,
-	faceDepth: 26,
-	// dark enough to stay a silhouette: at night a range this close is a shape with a
-	// rim, not a lit landscape — the arrival is where the ground gets its colour
-	shades: [
-		[6, 7, 11],
-		[11, 13, 19],
-		[17, 20, 28],
-		[23, 27, 37],
-		[30, 35, 47],
-		[38, 44, 59],
+	// Two bands, far behind near. The relief is the parallax between them: the far one
+	// climbs slower under the camera and answers the cursor less, which is what gives
+	// the opening frame depth rather than one flat cut-out.
+	bands: [
+		{
+			// taller than the near band: further off, so its crests stand above them
+			heightVh: 46,
+			freq: 9,
+			base: 0.2,
+			amp: 0.4,
+			seed: 47,
+			slopeGain: 0.7,
+			faceDepth: 20,
+			// share of the climb and of the cursor's travel (px), far → less of both
+			climb: 0.5,
+			depth: 7,
+			shades: [
+				[7, 8, 13],
+				[11, 13, 20],
+				[15, 18, 26],
+				[20, 23, 33],
+				[25, 29, 40],
+				[31, 36, 49],
+			],
+			crest: [54, 63, 84],
+		},
+		{
+			// dark enough to stay a silhouette: at night a range this close is a shape
+			// with a rim, not a lit landscape — the arrival is where the ground has colour
+			heightVh: 28,
+			freq: 7,
+			base: 0.24,
+			amp: 0.52,
+			seed: 83,
+			slopeGain: 0.9,
+			faceDepth: 26,
+			climb: 1,
+			depth: 20,
+			shades: [
+				[6, 7, 11],
+				[11, 13, 19],
+				[17, 20, 28],
+				[23, 27, 37],
+				[30, 35, 47],
+				[38, 44, 59],
+			],
+			crest: [66, 76, 100],
+		},
 	],
-	crest: [66, 76, 100],
 	// The climb, per world unit the flight covers: the horizon drops away and the
 	// crests swell as we lift over them. Both come off the flight's own travel, so
 	// the ridge, the motes and the name are all one movement. Kept slow — a range
@@ -126,8 +162,9 @@ export const DEPARTURE_RIDGE = {
 	// gone by this much of the pass — from here on the frame is open space
 	goneFrom: 0.55,
 	goneTo: 0.85,
-	// Air stacked over the range, behind the silhouette so the ridge masks its own
+	// Air stacked over the range, behind the silhouettes so the ridges mask their own
 	// half of it: the ground meets the sky with atmosphere rather than a hard cut.
+	airVh: 42,
 	airFrom: 0.28,
 	airTo: 0.92,
 	air: 'rgba(96, 116, 160, 0.34)',
@@ -172,6 +209,8 @@ export const CAMERA = {
 	dive: { x: 6, y: 58, scale: 3.4, fade: 1, roll: 0.62, tilt: 5, light: 0.1 },
 	life: { x: 56, y: 2, scale: 1.7, fade: 1, roll: 0.72, tilt: 2, light: 0.1 },
 	lifeEnd: { x: 53, y: -2, scale: 1.82, fade: 1, roll: 0.76, tilt: 1, light: 0.1 },
+	// turning onto the approach axis: from here in it is a straight run down
+	lineUp: { x: 0, y: 26, scale: 1.9, fade: 1, roll: 0.79, tilt: 0, light: 0.1 },
 	// the descent: horizon at pin start, then the globe swells hard enough that
 	// its crest leaves the top of the frame — from there the screen is nothing but
 	// surface, which is what lets the sky take over without reading as a dissolve
@@ -194,6 +233,7 @@ export const CAMERA_PORTRAIT = {
 	dive: { x: 4, y: 46, scale: 4.4, fade: 1, roll: 0.62, tilt: 5, light: 0.1 },
 	life: { x: 55, y: 0, scale: 2.0, fade: 1, roll: 0.72, tilt: 2, light: 0.1 },
 	lifeEnd: { x: 52, y: -3, scale: 2.12, fade: 1, roll: 0.76, tilt: 1, light: 0.1 },
+	lineUp: { x: 0, y: 18, scale: 2.3, fade: 1, roll: 0.79, tilt: 0, light: 0.1 },
 	approach: { x: 0, y: 42, scale: 2.6, fade: 1, roll: 0.82, tilt: 0, light: 0.1 },
 	entry: { x: 0, y: 58, scale: 19, fade: 1, roll: 1.17, tilt: 0, light: 0.1 },
 	gone: { x: 0, y: 66, scale: 25, fade: 0, roll: 1.47, tilt: 0, light: 0.1 },
