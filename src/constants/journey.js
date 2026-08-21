@@ -180,39 +180,32 @@ export const ENTRY = {
 		colors: ['#ffffff', '#ffffff', '#f4e6dc', '#ffd9a8', '#d3d3d3'],
 	},
 
-	// Procedural ridgelines: sprite width in cells, and how much of the runway
-	// each band spends settling into place. A band is drawn to the shape of the
-	// box it fills, so its cells stay square whatever the viewport — `ridgeAspect`
-	// is only the reference shape the cell-count tunables below (`faceDepth`) were
-	// authored against, and they keep their share of the band's height.
-	ridgeRes: 256,
-	ridgeAspect: 0.36,
+	// Procedural ridgelines. The grid and the world are both at a fixed scale, so
+	// a band is a window onto the range rather than the whole range squeezed into
+	// the frame: `ridgeCellPx` is how big one cell lands on screen, and the noise
+	// is walked at `ridgeRefCells` cells per `freq` cycle. A narrow viewport gets
+	// fewer cells, so it shows a narrower crop — same chunk size, same slopes,
+	// fewer peaks. Squeezing instead is what turned the phone range into a comb of
+	// fine spikes: three times the peaks at a third of the cell size.
+	ridgeCellPx: 5.6,
+	ridgeRefCells: 256,
+	// A cut costs a cell, so a very wide frame would pay for it on load. Past this
+	// many cells the grid scales up instead — the whole sprite zooms, world and
+	// all, which is how pixel art is supposed to meet a bigger screen.
+	ridgeMaxCells: 400,
 	ridgeSettle: 0.16,
-	// Band shapes follow the frame. Every profile below is authored for a wide
-	// landscape frame; a narrower one renders the same profile far steeper — its
-	// boxes go from wide-and-shallow to nearly square, which is what turned the
-	// phone range into a comb of spikes. On-screen slope scales with
-	// freq * heightVh / frame aspect, so these two exponents split the correction
-	// between shorter bands and broader peaks. Mostly height: dropping the peak
-	// count instead flattens the profile into smooth lumps, and a range has to
-	// stay jagged to read as one. They sum well short of 1 on purpose — summing to
-	// 1 would hold the slope exactly, and a phone would land with a low fringe
-	// instead of a skyline, so it keeps about half again the reference steepness
-	// and the mass that comes with it. Only narrow frames are corrected; anything
-	// wider than the reference renders as authored.
-	ridgeFrameAspect: 1.6,
-	ridgeHeightFollow: 0.4,
-	ridgeFreqFollow: 0.2,
 	// Redraw threshold: mobile browsers fire resize as the URL bar hides, and
 	// re-cutting three sprites mid-scroll for a few percent of height is not
 	// worth the hitch. Width changes (rotation, a resized window) always redraw.
 	ridgeReshape: 0.2,
-	// Relief shading. Each column is lit by which way its face turns (`slopeGain`
-	// per band), measured across `ridgeSlopeSpan` cells so facets come out broad
-	// rather than one-column stripes. The light then dies off over `faceDepth`
-	// cells below the crest, so the lit face hugs the ridge and the mass beneath
-	// it sinks into shadow. `ridgeLight` is the sun's side: -1 puts it stage
-	// left, matching the planet's key.
+	// Relief shading. Each column is lit by which way its face turns — its slope
+	// in cells, which is its slope on screen, times the band's `slopeGain` (so 0.5
+	// means a 45° face swings the light half a step). It is measured across
+	// `ridgeSlopeSpan` cells so facets come out broad rather than one-column
+	// stripes. The light then dies off over `faceDepth` cells below the crest, so
+	// the lit face hugs the ridge and the mass beneath it sinks into shadow.
+	// `ridgeLight` is the sun's side: -1 puts it stage left, matching the planet's
+	// key.
 	// Profile shape: ridged noise alone spikes off a flat plain, so it is blended
 	// with the rolling octaves — crests stay sharp, but they rise out of shoulders.
 	ridgeBlend: 0.62,
@@ -226,9 +219,11 @@ export const ENTRY = {
 	ridgeLight: -1,
 	ridgeSlopeSpan: 2,
 	ridgeDepthFade: 0.6,
-	// crag texture broken across the faces, so a slope is not one flat wash
+	// crag texture broken across the faces, so a slope is not one flat wash;
+	// its scale is in cells, so the crags stay the same size as the grid they
+	// are cut on
 	ridgeRough: 0.26,
-	ridgeRoughFreq: 34,
+	ridgeRoughCells: 7.5,
 	// Furthest range, behind the other two: tallest silhouette but the least
 	// contrast, since aerial perspective washes distance toward the sky. Finer
 	// `freq` too — distance compresses the peaks together.
@@ -240,7 +235,7 @@ export const ENTRY = {
 		base: 0.22,
 		amp: 0.42,
 		seed: 47,
-		slopeGain: 28,
+		slopeGain: 0.3,
 		faceDepth: 16,
 		shades: [
 			[96, 66, 60],
@@ -260,7 +255,7 @@ export const ENTRY = {
 		base: 0.3,
 		amp: 0.44,
 		seed: 11,
-		slopeGain: 40,
+		slopeGain: 0.5,
 		faceDepth: 22,
 		// dark → lit ramp. Aerial perspective: the far band sits closer to the
 		// sky's tone throughout, which is what pushes it into the distance.
@@ -282,7 +277,7 @@ export const ENTRY = {
 		base: 0.28,
 		amp: 0.46,
 		seed: 29,
-		slopeGain: 52,
+		slopeGain: 0.98,
 		faceDepth: 28,
 		shades: [
 			[20, 13, 14],

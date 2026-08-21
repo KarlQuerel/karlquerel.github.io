@@ -104,32 +104,21 @@
 			display: t > 0 ? null : 'none',
 			'--depth': band.depth,
 			opacity: t.toFixed(3),
-			height: `${band.heightVh.toFixed(1)}vh`,
+			height: `${band.heightVh}vh`,
 			transform: `translate3d(0, ${((1 - t) * band.liftVh).toFixed(1)}vh, 0)`,
 		}
 	}
 
-	// The bands as this frame renders them: a narrow frame gets shorter ranges
-	// with broader peaks, so the silhouette keeps the slope it was authored with
-	// instead of stretching into spikes (see ENTRY.ridgeFrameAspect). Held in a
-	// ref rather than read live from the window, so the sprites and the boxes they
-	// fill can only ever change shape together, on a redraw.
-	const RIDGE_BANDS = ['distant', 'far', 'near']
-	const frame = ref({ w: 1, h: 1 })
+	// far → near, each with its parallax depth
+	const bands = ['distant', 'far', 'near'].map(key => ({
+		...ENTRY[key],
+		key,
+		depth: ENTRY.parallax[key],
+	}))
 	const ridgeEls = []
-
-	const bands = computed(() => {
-		const follow = Math.min(1, frame.value.w / frame.value.h / ENTRY.ridgeFrameAspect)
-		const heightK = follow ** ENTRY.ridgeHeightFollow
-		const freqK = follow ** ENTRY.ridgeFreqFollow
-		return RIDGE_BANDS.map(key => ({
-			...ENTRY[key],
-			key,
-			depth: ENTRY.parallax[key],
-			heightVh: ENTRY[key].heightVh * heightK,
-			freq: ENTRY[key].freq * freqK,
-		}))
-	})
+	// the frame the sprites were last cut for — read only while cutting, so the
+	// canvases can never disagree with each other about what viewport this is
+	let frame = { w: 0, h: 0 }
 	// three cloud sprites drawn once per visit; each puff picks one by index
 	const cloudSprites = ref([])
 	const starTile = ref('')
@@ -152,12 +141,11 @@
 	// mass, and the result is dithered onto the band's ramp — the same trick the
 	// planet sprite uses, so the ridges gain volume without leaving the grid.
 	function drawRidge(el, band, visitSeed) {
-		const w = ENTRY.ridgeRes
-		// cut to the shape of the box, so a cell is square on any viewport
-		const box = ((band.heightVh / 100) * frame.value.h) / frame.value.w
-		const h = Math.max(2, Math.round(w * box))
-		// cell-count tunables were authored at ridgeAspect — hold their share
-		const faceDepth = (band.faceDepth * h) / (w * ENTRY.ridgeAspect)
+		// One cell is the same size on every viewport, so the grid the range is
+		// quantised onto never changes — a narrow frame just gets fewer cells.
+		const cell = Math.max(ENTRY.ridgeCellPx, frame.w / ENTRY.ridgeMaxCells)
+		const w = Math.max(8, Math.round(frame.w / cell))
+		const h = Math.max(2, Math.round(((band.heightVh / 100) * frame.h) / cell))
 		el.width = w
 		el.height = h
 		const ctx = el.getContext('2d')
@@ -168,11 +156,15 @@
 		// the whole profile first, so a column can be compared with its neighbour
 		const profile = new Array(w)
 		for (let x = 0; x < w; x++) {
-			const u = (x / w) * band.freq
+			// walked at a fixed rate per cell: the crop shows as much of the range
+			// as it has room for, at the size the range is drawn everywhere else
+			const u = (x / ENTRY.ridgeRefCells) * band.freq
 			const seed = band.seed + visitSeed
 			const shape =
 				ENTRY.ridgeBlend * ridged1(u, seed) + (1 - ENTRY.ridgeBlend) * fbm1(u, seed)
-			// the massif swell: tall clusters and low passes across the range
+			// The massif swell: tall clusters and low passes. Spans the frame rather
+			// than the range, so however narrow the crop there is still a tall
+			// stretch and a pass in view.
 			const massif =
 				1 -
 				ENTRY.ridgeMassifDepth +
@@ -196,12 +188,14 @@
 			const span = ENTRY.ridgeSlopeSpan
 			const lo = profile[Math.max(0, x - span)]
 			const hi = profile[Math.min(w - 1, x + span)]
-			const slope = (hi - lo) / (2 * span)
+			// rise over run in cells — which is the slope on screen, the cells
+			// being square — so a band shades the same however it was cropped
+			const slope = ((hi - lo) / (2 * span)) * h
 			const face = 0.5 + slope * band.slopeGain * ENTRY.ridgeLight
-			const rf = ENTRY.ridgeRoughFreq / w
+			const rf = 1 / ENTRY.ridgeRoughCells
 			for (let y = yTop; y < h; y++) {
 				// the face is a band under the crest; below it the mass goes dark
-				const depth = Math.min(1, (y - yTop) / faceDepth)
+				const depth = Math.min(1, (y - yTop) / band.faceDepth)
 				// crag texture in 2D — sampled per column only, it stripes
 				const rough =
 					(fbm2(x * rf, y * rf, band.seed + visitSeed + 5) - 0.5) * ENTRY.ridgeRough
@@ -332,8 +326,8 @@
 	let visitSeed = 1
 
 	function cutRidges() {
-		frame.value = { w: window.innerWidth, h: window.innerHeight }
-		bands.value.forEach((band, i) => {
+		frame = { w: window.innerWidth, h: window.innerHeight }
+		bands.forEach((band, i) => {
 			if (ridgeEls[i]) drawRidge(ridgeEls[i], band, visitSeed)
 		})
 	}
@@ -341,8 +335,8 @@
 	// only when the frame really changed shape (see ENTRY.ridgeReshape)
 	const onResize = useRafThrottle(() => {
 		const reshaped =
-			window.innerWidth !== frame.value.w ||
-			Math.abs(window.innerHeight / frame.value.h - 1) > ENTRY.ridgeReshape
+			window.innerWidth !== frame.w ||
+			Math.abs(window.innerHeight / frame.h - 1) > ENTRY.ridgeReshape
 		if (reshaped) cutRidges()
 	})
 
