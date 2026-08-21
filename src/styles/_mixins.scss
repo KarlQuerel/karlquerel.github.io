@@ -66,6 +66,25 @@
 	}
 }
 
+// A keyline the whole way round rather than a drop shadow. Display type sitting over
+// the world — a lit limb, a dusk sky, a ridge — has to be held off it from every side,
+// which one-directional shadows cannot do. `$unit` is one unit of the glyph's own grid:
+// in em so it stays a keyline at any size instead of becoming a smear, or in px for
+// type small enough that a fraction of an em would round away to nothing. The canvas
+// title paints the same thing by hand, see HeroTitle.vue.
+@mixin pixel-keyline($unit: 0.08em, $halo: 0.4em) {
+	text-shadow:
+		#{$unit} #{$unit} 0 variables.$black,
+		-#{$unit} #{$unit} 0 variables.$black,
+		#{$unit} -#{$unit} 0 variables.$black,
+		-#{$unit} -#{$unit} 0 variables.$black,
+		0 #{$unit} 0 variables.$black,
+		0 -#{$unit} 0 variables.$black,
+		#{$unit} 0 0 variables.$black,
+		-#{$unit} 0 0 variables.$black,
+		0 0 #{$halo} rgba(0, 0, 0, 0.9);
+}
+
 // Dark radial wash that lifts text off the starfield without drawing a panel edge.
 // Move $at to wherever the text actually sits so the densest part sits under it.
 @mixin void-scrim($size: 85% 130%, $at: 50% 50%) {

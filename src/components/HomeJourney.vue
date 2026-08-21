@@ -492,21 +492,10 @@
 		z-index: 1;
 	}
 
-	// A keyline the whole way round rather than a drop shadow: crossing a lit limb the
-	// letters need holding off the background from every side. Set in em, so it stays
-	// a keyline at any size instead of becoming a smear.
+	// crossing a lit limb, the letters need holding off it from every side
 	.journey__station-head :deep(.page-heading) {
 		font-size: px8(4);
-		text-shadow:
-			0.08em 0.08em 0 $black,
-			-0.08em 0.08em 0 $black,
-			0.08em -0.08em 0 $black,
-			-0.08em -0.08em 0 $black,
-			0 0.08em 0 $black,
-			0 -0.08em 0 $black,
-			0.08em 0 0 $black,
-			-0.08em 0 0 $black,
-			0 0 0.4em rgba(0, 0, 0, 0.9);
+		@include pixel-keyline;
 	}
 
 	// the beat's number and name, small against the display size above it
@@ -517,11 +506,8 @@
 		letter-spacing: 0.22em;
 		text-transform: uppercase;
 		color: $yellow;
-		text-shadow:
-			1px 1px 0 $black,
-			-1px 1px 0 $black,
-			1px -1px 0 $black,
-			-1px -1px 0 $black;
+		// px, not em: a fraction of an em at this size rounds away to nothing
+		@include pixel-keyline($unit: 1px, $halo: 6px);
 	}
 
 	// the long departure leg: the whole approach from distant world to wall

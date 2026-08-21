@@ -85,11 +85,16 @@
 		padding: $page-pad-top 1rem 0;
 	}
 
-	// no page-head scrim here: its dark box edges harshly against the light dusk
-	// sky — the heading's own text-shadow carries the contrast on the surface
+	// No page-head scrim here: its dark box edges harshly against the light dusk sky.
+	// The keyline carries the contrast instead — over a bright horizon and a lit ridge,
+	// the words need holding off the scene from every side.
 	.arrival__head {
 		margin: 0 auto;
 		padding: 1.75rem 1.5rem 2rem;
+	}
+
+	.arrival__head :deep(.page-heading) {
+		@include pixel-keyline;
 	}
 
 	.arrival__channels {

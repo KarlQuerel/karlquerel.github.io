@@ -90,6 +90,13 @@ export const HERO_FLYBY = {
 	// text-shadows the live type carried, and `plateDepth` is its share of the cursor's
 	// lean — more than either ridge band, since the plane is the nearest thing there is.
 	plateMaxDpr: 2,
+	// A keyline the whole way round, painted by hand as eight offsets: the same
+	// treatment the station headings carry (see the pixel-keyline mixin), in units of
+	// the glyph's own grid so it holds at any magnification. Over a lit limb or a
+	// cloud deck this is what keeps white and yellow words legible; the blurred
+	// passes behind it are the glow the live type used to carry.
+	plateKeyline: '#000000',
+	plateKeylineEm: 0.08,
 	plateShadow: 'rgba(0, 0, 0, 0.85)',
 	plateShadowBlur: 12,
 	plateGlow: 'rgba(255, 189, 46, 0.34)',

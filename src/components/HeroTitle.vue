@@ -81,14 +81,26 @@
 	// Press Start 2P is monospaced, so a run of caps is just the advance repeated —
 	// drawing glyph by glyph reproduces the CSS tracking exactly, on any engine, and
 	// lands every letter on a whole texel.
-	function drawRun(ctx, run, dpr) {
+	function drawRun(ctx, run, dpr, colour = run.colour, dx = 0, dy = 0) {
 		ctx.font = `${run.size * dpr}px ${run.family}`
-		ctx.fillStyle = run.colour
+		ctx.fillStyle = colour
 		const advance = (run.size + run.spacing) * dpr
 		for (let i = 0; i < run.text.length; i++) {
-			ctx.fillText(run.text[i], run.x * dpr + i * advance, run.mid * dpr)
+			ctx.fillText(run.text[i], run.x * dpr + i * advance + dx, run.mid * dpr + dy)
 		}
 	}
+
+	// the eight ways round a glyph, for the keyline
+	const RING = [
+		[-1, -1],
+		[0, -1],
+		[1, -1],
+		[-1, 0],
+		[1, 0],
+		[-1, 1],
+		[0, 1],
+		[1, 1],
+	]
 
 	function paint() {
 		const el = canvasEl.value
@@ -134,9 +146,11 @@
 		// off-centre. Its width is exact rather than measured: monospaced caps.
 		cue.x =
 			box.width / 2 + axis.x - (cue.text.length * (cue.size + cue.spacing) - cue.spacing) / 2
-		// Shadow and bloom as their own passes, then the letters crisp on top: what the
-		// live type got from its text-shadows. Blurring under the per-glyph loop instead
-		// would stack each glyph's shadow on the next and smear the lot.
+		// Halo and bloom as their own passes — blurring under the per-glyph loop instead
+		// would stack each glyph's shadow on the next and smear the lot — then the
+		// keyline, then the letters crisp on top. The keyline is the one that carries
+		// legibility once the words are crossing a lit limb or a cloud deck; the blurred
+		// passes are the glow the live type used to get from its text-shadows.
 		for (const [colour, blur, bloomOnly] of [
 			[HERO_FLYBY.plateShadow, HERO_FLYBY.plateShadowBlur, false],
 			[HERO_FLYBY.plateGlow, HERO_FLYBY.plateGlowBlur, true],
@@ -147,6 +161,12 @@
 		}
 		ctx.shadowBlur = 0
 		ctx.shadowColor = 'transparent'
+		for (const run of runs) {
+			const off = HERO_FLYBY.plateKeylineEm * run.size * dpr
+			for (const [dx, dy] of RING) {
+				drawRun(ctx, run, dpr, HERO_FLYBY.plateKeyline, dx * off, dy * off)
+			}
+		}
 		for (const run of runs) drawRun(ctx, run, dpr)
 
 		emit('axis', axis)
