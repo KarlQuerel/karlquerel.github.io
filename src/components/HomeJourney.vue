@@ -35,25 +35,28 @@
 		</header>
 
 		<section id="work" ref="workRef" class="journey__station journey__station--work">
+			<!-- the heading sits in the scene: the planet's limb crosses it -->
 			<header class="journey__station-head">
+				<p class="journey__kicker">{{ kicker(1) }}</p>
 				<PageTitle
 					tag="h2"
 					:lead="ABOUT_HEADINGS.work.lead"
 					:accent="ABOUT_HEADINGS.work.accent"
 				/>
 			</header>
-			<AboutWork />
+			<div class="journey__station-body"><AboutWork /></div>
 		</section>
 
 		<section id="life" ref="lifeRef" class="journey__station journey__station--life">
 			<header class="journey__station-head">
+				<p class="journey__kicker">{{ kicker(2) }}</p>
 				<PageTitle
 					tag="h2"
 					:lead="ABOUT_HEADINGS.life.lead"
 					:accent="ABOUT_HEADINGS.life.accent"
 				/>
 			</header>
-			<AboutLife />
+			<div class="journey__station-body"><AboutLife /></div>
 		</section>
 
 		<!-- Arrival: entry over the horizon carries the contact portals. -->
@@ -68,6 +71,7 @@
 <script setup>
 	import { computed, onActivated, onBeforeUnmount, onMounted, ref } from 'vue'
 	import { ARRIVAL, CAMERA, CAMERA_PORTRAIT, HERO_FLYBY, JOURNEY } from '@/constants/journey'
+	import { JOURNEY_STOPS } from '@/constants/navigation'
 	import { ABOUT_HEADINGS } from '@/data/about'
 	import { HOME_LANDING } from '@/data/heroLines'
 	import { clamp01, smoothstep } from '@/js/math'
@@ -101,6 +105,10 @@
 		'--leg-dive': `${JOURNEY.diveLegVh}vh`,
 		'--arrival-runway': `${ARRIVAL.runwayVh}vh`,
 	}
+
+	// A station announces itself the way the rail counts it — its number and the label
+	// the rail already carries, so the beat is named without inventing a name for it.
+	const kicker = i => `${String(i).padStart(2, '0')} · ${JOURNEY_STOPS[i].label}`
 
 	// The two words the camera flies between: everything but the last, then the
 	// last. The corridor is the gap between them, and the lockup hangs from it.
@@ -306,9 +314,12 @@
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
+	// Isolated so a station heading can sit at a negative z-index and land behind the
+	// planet stage rather than behind the page itself.
 	.journey {
 		position: relative;
 		width: 100%;
+		isolation: isolate;
 	}
 
 	// Departure viewport: the destination planet (PlanetStage) waits in the lower
@@ -391,9 +402,11 @@
 		text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85);
 	}
 
-	// a hero should dominate on a big screen; whole steps, so it stays on-pixel
+	// A hero should dominate on a big screen; whole steps, so it stays on-pixel. The
+	// stations take the same size as the name — one display size for the whole flight.
 	@media (min-width: #{$breakpoint-desktop}) {
-		.journey__lockup {
+		.journey__lockup,
+		.journey__station-head :deep(.page-heading) {
 			font-size: px8(8);
 		}
 
@@ -418,21 +431,64 @@
 		pointer-events: none;
 	}
 
-	// stations float over the planet stage (z 0); the leg margins are the empty
-	// travel between them
+	// the leg margins are the empty travel between stations; the head and the body
+	// take their own depths, one behind the planet stage and one in front of it
 	.journey__station {
 		position: relative;
-		z-index: 3;
 		margin-top: var(--leg);
 		// anchored jumps (#work, #life) land the heading at the usual title height,
 		// well clear of the star chrome
 		scroll-margin-top: $page-pad-top;
 	}
 
+	// In the scene rather than over it: behind the stage, so the planet's limb crosses
+	// the words. No scrim — a dark box behind type sitting on a lit limb reads as a
+	// panel floating in space, which is why the arrival heading carries none either.
 	.journey__station-head {
-		@include page-head;
-		margin-bottom: 2.5rem;
+		position: relative;
+		z-index: -1;
+		max-width: min(64rem, 92vw);
+		margin: 0 auto 2.5rem;
+		padding: 1.75rem 1.5rem 2rem;
 		text-align: center;
+	}
+
+	// the reading matter stays in front of the world
+	.journey__station-body {
+		position: relative;
+		z-index: 1;
+	}
+
+	// A keyline the whole way round rather than a drop shadow: crossing a lit limb the
+	// letters need holding off the background from every side. Set in em, so it stays
+	// a keyline at any size instead of becoming a smear.
+	.journey__station-head :deep(.page-heading) {
+		font-size: px8(4);
+		text-shadow:
+			0.08em 0.08em 0 $black,
+			-0.08em 0.08em 0 $black,
+			0.08em -0.08em 0 $black,
+			-0.08em -0.08em 0 $black,
+			0 0.08em 0 $black,
+			0 -0.08em 0 $black,
+			0.08em 0 0 $black,
+			-0.08em 0 0 $black,
+			0 0 0.4em rgba(0, 0, 0, 0.9);
+	}
+
+	// the beat's number and name, small against the display size above it
+	.journey__kicker {
+		margin: 0 0 1.2rem;
+		font-family: $font-pixel;
+		font-size: px8(1);
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: $yellow;
+		text-shadow:
+			1px 1px 0 $black,
+			-1px 1px 0 $black,
+			1px -1px 0 $black,
+			-1px -1px 0 $black;
 	}
 
 	// the long departure leg: the whole approach from distant world to wall
