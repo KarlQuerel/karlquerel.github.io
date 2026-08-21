@@ -17,6 +17,7 @@
 
 <script setup>
 	import { computed } from 'vue'
+	import { JOURNEY } from '@/constants/journey'
 	import { PLANET } from '@/constants/planet'
 	import PixelPlanet from './PixelPlanet.vue'
 
@@ -32,8 +33,12 @@
 		haze: { type: Number, default: 0 },
 	})
 
-	// the haze borrows the planet's atmosphere colour, so entry matches the limb
-	const stageStyle = { '--atmosphere': PLANET.atmosphere.join(', ') }
+	// the haze borrows the planet's atmosphere colour, so entry matches the limb; the
+	// globe takes its share of the cursor's lean, published on the journey root
+	const stageStyle = {
+		'--atmosphere': PLANET.atmosphere.join(', '),
+		'--depth': JOURNEY.parallax.planet,
+	}
 
 	const planetStyle = computed(() => ({
 		// tilt banks the world into the turns; rotation pivots on the globe's centre
@@ -69,9 +74,14 @@
 			radial-gradient(55% 45% at 80% 74%, rgba(122, 64, 52, 0.09) 0%, transparent 70%);
 	}
 
+	// The keyframed camera owns `transform`; the cursor's lean rides `translate`, the
+	// same contract every other layer in the scene follows. A world answers least of
+	// the things in front of you, so its depth is small (see JOURNEY.parallax).
 	.stage__planet {
 		position: absolute;
 		inset: 0;
+		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
+			calc(var(--my, 0) * var(--depth, 0) * 1px);
 		will-change: transform;
 	}
 

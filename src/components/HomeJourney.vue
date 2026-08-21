@@ -1,5 +1,5 @@
 <template>
-	<section id="top" ref="trackRef" class="journey" :style="trackStyle">
+	<section id="top" ref="trackRef" class="journey" :style="[trackStyle, parallaxStyle]">
 		<PlanetStage :cam="cam" :spin="spin" :light-yaw="lightYaw" :haze="haze" />
 		<JourneyRail :active="activeStop" />
 
@@ -43,7 +43,7 @@
 
 		<section id="work" ref="workRef" class="journey__station journey__station--work">
 			<!-- the heading sits in the scene: the planet's limb crosses it -->
-			<header class="journey__station-head">
+			<header class="journey__station-head" :style="headingLean">
 				<p class="journey__kicker">{{ kicker(1) }}</p>
 				<PageTitle
 					tag="h2"
@@ -55,7 +55,7 @@
 		</section>
 
 		<section id="life" ref="lifeRef" class="journey__station journey__station--life">
-			<header class="journey__station-head">
+			<header class="journey__station-head" :style="headingLean">
 				<p class="journey__kicker">{{ kicker(2) }}</p>
 				<PageTitle
 					tag="h2"
@@ -130,6 +130,10 @@
 	// hold whatever the breakpoints and any wrapping did. The pass scales about that
 	// point and shifts it onto the frame's centre, which is where the mote field's
 	// vanishing point is and where the planet comes up.
+	// the headings are in the scene, so they answer the cursor with it — less than the
+	// planet in front of them (see JOURNEY.parallax)
+	const headingLean = { '--depth': JOURNEY.parallax.heading }
+
 	const axis = ref({ x: 0, y: 0 })
 	const onAxis = next => (axis.value = next)
 
@@ -270,8 +274,7 @@
 		const t = smoothstep(clamp01(pass.value))
 		const x = (t * HERO_FLYBY.driftVw).toFixed(2)
 		const y = (t * HERO_FLYBY.driftVh).toFixed(2)
-		// the flight also carries the cursor's lean for everything inside it
-		return { transform: `translate3d(${x}vw, ${y}vh, 0)`, ...parallaxStyle.value }
+		return { transform: `translate3d(${x}vw, ${y}vh, 0)` }
 	})
 
 	// The mote field: up as the flight starts, on through the pass, out again as the
@@ -466,6 +469,8 @@
 	.journey__station-head {
 		position: relative;
 		z-index: -1;
+		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
+			calc(var(--my, 0) * var(--depth, 0) * 1px);
 		max-width: min(64rem, 92vw);
 		margin: 0 auto 2.5rem;
 		padding: 1.75rem 1.5rem 2rem;
