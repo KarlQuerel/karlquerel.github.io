@@ -4,15 +4,17 @@
 
 export const JOURNEY = {
 	// Empty flight legs between stations (vh) — the travel that sells the approach.
-	legVh: 85,
+	// All trimmed ~20% from their first cut (85/165/240): the flight read as travel,
+	// but stretches with no words on screen outstayed the read.
+	legVh: 70,
 	// The departure leg is the longest: it carries the whole flight out — the pass
 	// through the name, the void beyond it, the planet coming up dead ahead and the
 	// camera coming around it — before the first station docks.
-	heroLegVh: 165,
+	heroLegVh: 130,
 	// The longest leg: it carries the low-orbit surface skim and the held pass where the
 	// ground streams past. Kept long — at 150 the drop and the hold had about one
 	// viewport between them, which is not enough for two beats to read as two.
-	diveLegVh: 240,
+	diveLegVh: 195,
 	// Baseline longitude turned across the whole journey; the camera track's
 	// `roll` channel adds ground rush on top during the skim and the entry.
 	turns: 0.45,
@@ -279,8 +281,9 @@ export const CAMERA_PORTRAIT = {
 // The final approach: horizon → limb blowout → atmosphere → surface. All
 // fractions are of the approach runway.
 export const ARRIVAL = {
-	// Scroll runway on top of the one viewport the pin holds for (vh).
-	runwayVh: 300,
+	// Scroll runway on top of the one viewport the pin holds for (vh). 300 first;
+	// trimmed with the legs so the descent plays at the same quickened pace.
+	runwayVh: 240,
 	// Camera keyframe positions along the runway (see CAMERA.entry / .gone).
 	entryAt: 0.45,
 	goneAt: 0.52,
@@ -537,9 +540,9 @@ export const ENTRY = {
 	// size everyone knows, so a range behind them gets its own size for free.
 	flock: {
 		// Rare and small: a pair or a trio going somewhere, not a migration. A flock
-		// every half-minute or so is enough to make the sky feel inhabited; any more and
+		// every minute or so is enough to make the sky feel inhabited; any more and
 		// it stops being something you notice and becomes wallpaper with wings.
-		gapMs: [26000, 62000],
+		gapMs: [36000, 84000],
 		// Inclusive, and picked as a flat integer rather than by rounding a float — that
 		// rounding put half of all flocks at exactly two birds. One bird on its own is
 		// worth having in the mix: a lone gull reads as different weather to a trio.
