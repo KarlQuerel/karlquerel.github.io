@@ -148,17 +148,21 @@
 			measure(cueEl.value, k),
 		]
 
-		// The corridor: the gap between the two words, and vertically the middle of the
-		// row they sit on — which is not the sprite's middle, since the role and the cue
-		// hang below them. Stacked into two rows on a narrow frame the corridor becomes a
-		// horizontal band instead, so across it is simply the centre and down it is the
-		// space between the rows: the same two lines of code either way.
+		// The corridor: through the counter of the Q — the one glyph with a porthole,
+		// and by luck of the name dead on its centre (glyph six of eleven). Vertically
+		// the middle of the row it sits on — which is not the sprite's middle, since
+		// the role and the cue hang below. Stacked into two rows on a narrow frame
+		// there is no single letter to thread, so the corridor stays the horizontal
+		// band between the rows, as before.
 		const [first, last, , cue] = runs
 		const stacked = Math.abs(first.mid - last.mid) > 1
-		const gapFrom = first.x + first.text.length * (first.size + first.spacing) - first.spacing
+		const qMid = last.x + last.size / 2 + HERO_FLYBY.qAxis.x * last.size
 		const axis = {
-			x: stacked ? 0 : gapFrom + (last.x - gapFrom) / 2 - box.width / 2,
-			y: (first.mid + last.mid) / 2 - box.height / 2,
+			x: stacked ? 0 : qMid - box.width / 2,
+			y:
+				(first.mid + last.mid) / 2 +
+				(stacked ? 0 : HERO_FLYBY.qAxis.y * last.size) -
+				box.height / 2,
 		}
 
 		// The cue goes on the axis rather than on the block. The flight puts the corridor

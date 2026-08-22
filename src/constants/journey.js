@@ -124,12 +124,17 @@ export const HERO_FLYBY = {
 	dustIn: 0.05,
 	dustFull: 0.4,
 	dustOut: 1.6,
-	// How near the words get by the end. They never clear the frame edges — their
-	// inner edges are only half a corridor off the axis — so the pass has to end
-	// in a dissolve, and it has to happen while they are big and rushing rather
-	// than while they still read as a title.
-	nearScale: 6,
-	fadeFromScale: 2.6,
+	// How near the words get by the end. The pass flies into the Q: its counter has
+	// to swallow the frame, which against a hole a few glyph-units wide takes an
+	// order more magnification than flying past the words did (6 then). The ring
+	// reads as a gate on the way in; the dissolve rides only the last stretch and
+	// finishes the exit once the bowl's stroke is past the frame edges.
+	nearScale: 34,
+	fadeFromScale: 18,
+	// Where the Q's counter sits inside its glyph box, in em of the glyph size —
+	// the tail pushes the bowl off the box's own centre. Small numbers, big stakes:
+	// at nearScale an em of error at rest is a frame of error at the end.
+	qAxis: { x: -0.07, y: -0.19 },
 }
 
 // The ground we leave from: one near ridge across the foot of the opening frame, so

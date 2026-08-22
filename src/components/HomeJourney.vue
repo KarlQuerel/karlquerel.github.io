@@ -295,12 +295,19 @@
 	})
 
 	// How far down the corridor the camera has run, in world units — the one number
-	// the whole flight comes from. Distance under constant acceleration for the first
-	// stretch, then constant speed, normalised so the pass still ends where it did.
+	// the whole flight comes from. Spool up from a standstill, then close the gap so
+	// the zoom multiplies at a constant rate per scrolled px: at constant world speed
+	// perspective is a hyperbola, and the whole gate transit — most of nearScale —
+	// landed in the last few percent of the pass. Past the plane the old constant
+	// rate takes over on the same line as before, so the run to the void, the dust
+	// fades and the departure beats all keep their distances — and punching out of
+	// the gate back to speed is the beat the brake was setting up.
 	function flown(p) {
 		const h = HERO_FLYBY.spoolUp
 		const d = p < h ? (p * p) / (2 * h) : p - h / 2
-		return (HERO_FLYBY.titleZ * (1 - 1 / HERO_FLYBY.nearScale) * d) / (1 - h / 2)
+		const t = d / (1 - h / 2)
+		const run = HERO_FLYBY.titleZ * (1 - 1 / HERO_FLYBY.nearScale)
+		return t <= 1 ? HERO_FLYBY.titleZ * (1 - HERO_FLYBY.nearScale ** -t) : run * t
 	}
 
 	// the motes ride this; past the end of the pass it carries on into the void
