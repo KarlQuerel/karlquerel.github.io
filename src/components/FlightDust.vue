@@ -17,6 +17,8 @@
 		travel: { type: Number, default: 0 },
 		// 0 → the field is off, and the canvas drops out of the compositor entirely
 		fade: { type: Number, default: 0 },
+		// the cursor's lean in the --mx/--my convention (usePointerParallax's pointer)
+		lean: { type: Object, default: () => ({ x: 0, y: 0 }) },
 	})
 
 	const canvasEl = ref(null)
@@ -66,7 +68,7 @@
 	// we are going, so length is speed rather than blur.
 	function draw() {
 		if (!ctx || props.fade <= 0.01) return
-		const { moteBox: box, moteTail, moteNear } = HERO_FLYBY
+		const { moteBox: box, moteTail, moteNear, moteLean } = HERO_FLYBY
 		resize()
 		ctx.clearRect(0, 0, w, h)
 		// over black, motes add up rather than paint over each other
@@ -77,14 +79,18 @@
 		const cy = h / 2
 		// clip x is a half-width and clip y a half-height, so both project on h / 2
 		const unit = h / 2
+		// the lean as a camera pan, projected with each mote rather than slid over the
+		// frame: near motes take more of it than far ones, same relief as the CSS layers
+		const lx = props.lean.x * moteLean
+		const ly = props.lean.y * moteLean
 		for (const m of motes) {
 			// the wrap: depth relative to a camera that has run `travel` down the box
 			const z = ((((m.z - props.travel) % box) + box) % box) - box * 0.5
 			if (z < moteNear) continue
 			const zTail = z + moteTail * m.tail
 			const k = (FOCAL * unit) / z
-			const x = cx + m.x * k
-			const y = cy - m.y * k
+			const x = cx + (m.x + lx) * k
+			const y = cy - (m.y - ly) * k
 			// off frame with its tail: nothing to draw, and no stroke to pay for
 			if (x < -unit || x > w + unit || y < -unit || y > h + unit) continue
 			const kt = (FOCAL * unit) / zTail
@@ -95,7 +101,7 @@
 			ctx.globalAlpha = clamp01(near * far * m.glow * props.fade)
 			ctx.beginPath()
 			ctx.moveTo(x, y)
-			ctx.lineTo(cx + m.x * kt, cy - m.y * kt)
+			ctx.lineTo(cx + (m.x + lx) * kt, cy - (m.y - ly) * kt)
 			ctx.stroke()
 		}
 		ctx.globalAlpha = 1
@@ -103,7 +109,7 @@
 
 	const redraw = useRafThrottle(draw)
 
-	watch(() => [props.travel, props.fade], redraw)
+	watch(() => [props.travel, props.fade, props.lean], redraw)
 
 	onMounted(() => {
 		if (prefersReducedMotion()) return

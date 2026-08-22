@@ -7,6 +7,8 @@ import { FINE_POINTER_QUERY, POINTER_EASE } from '@/constants/viewport'
 // multiplies them by its own --depth. Layers ride the CSS `translate` property with
 // it, which keeps the lean off `transform` — that belongs to the scroll-scrubbed
 // motion. Nearer layers take a bigger depth; the parallax between them is the relief.
+// Canvas layers (FlightDust) take the same numbers through `pointer` instead, and
+// project them per element rather than sliding the frame as one sheet.
 //
 // Touch devices have no cursor and their drag-scrolls fire pointermove, so they skip
 // it entirely, as does reduced motion: the style then stays at a resting 0.
@@ -55,5 +57,5 @@ export function usePointerParallax() {
 		if (frame) cancelAnimationFrame(frame)
 	})
 
-	return { parallaxStyle }
+	return { parallaxStyle, pointer }
 }

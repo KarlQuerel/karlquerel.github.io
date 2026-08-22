@@ -25,7 +25,7 @@
 			<!-- the flight: the mote field runs past behind the name, both projected
 			     from the same camera, both vanishing at the frame's centre -->
 			<div class="journey__flight" :style="flightStyle">
-				<FlightDust :travel="travel" :fade="dust" />
+				<FlightDust :travel="travel" :fade="dust" :lean="pointer" />
 				<!-- the ground we leave from, dropping away as the flight lifts over it -->
 				<DepartureRidge :travel="travel" :pass="pass" />
 				<div class="journey__lockup" :style="flybyStyle">
@@ -51,7 +51,7 @@
 					:accent="ABOUT_HEADINGS.work.accent"
 				/>
 			</header>
-			<div class="journey__station-body"><AboutWork /></div>
+			<div class="journey__station-body" :style="bodyStyle"><AboutWork /></div>
 		</section>
 
 		<section id="life" ref="lifeRef" class="journey__station journey__station--life">
@@ -63,7 +63,7 @@
 					:accent="ABOUT_HEADINGS.life.accent"
 				/>
 			</header>
-			<div class="journey__station-body"><AboutLife /></div>
+			<div class="journey__station-body" :style="bodyStyle"><AboutLife /></div>
 		</section>
 
 		<!-- Arrival: entry over the horizon carries the contact portals. -->
@@ -104,7 +104,7 @@
 	const lifeRef = ref(null)
 	const arrivalRef = ref(null)
 
-	const { parallaxStyle } = usePointerParallax()
+	const { parallaxStyle, pointer } = usePointerParallax()
 	const { progress, sync } = useScrollSections(trackRef)
 	const { progress: arrivalProgress, sync: syncArrival } = useScrollSections(arrivalRef)
 
@@ -141,6 +141,9 @@
 		'--depth': JOURNEY.parallax.heading,
 		zIndex: portrait.value ? 1 : -1,
 	}))
+
+	// the prose leans too, as the nearest layer bar the title plate
+	const bodyStyle = { '--depth': JOURNEY.parallax.body }
 
 	const axis = ref({ x: 0, y: 0 })
 	const onAxis = next => (axis.value = next)
@@ -496,7 +499,7 @@
 		position: relative;
 		margin-top: var(--leg);
 		// anchored jumps (#work, #life) land the heading at the usual title height,
-		// well clear of the star chrome
+		// well clear of the corner chrome
 		scroll-margin-top: $page-pad-top;
 	}
 
@@ -518,6 +521,8 @@
 	.journey__station-body {
 		position: relative;
 		z-index: 1;
+		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
+			calc(var(--my, 0) * var(--depth, 0) * 1px);
 	}
 
 	// crossing a lit limb, the letters need holding off it from every side
