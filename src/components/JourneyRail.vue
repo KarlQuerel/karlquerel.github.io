@@ -125,7 +125,8 @@
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
 		white-space: nowrap;
-		text-shadow: 0 1px 4px rgba($black, 0.9);
+		// keyline, not a drop shadow: the labels cross the planet's lit limb
+		@include pixel-keyline($unit: 1px, $halo: 4px);
 		opacity: 0.55;
 		transition:
 			opacity 0.2s steps(3, end),

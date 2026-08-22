@@ -33,6 +33,6 @@ Driver pattern: `fetch /json/version` → connect `WebSocket` to `webSocketDebug
 ## Flows worth driving
 
 - Hero: `window.scrollTo(0, document.documentElement.scrollHeight)` rides the crawl to the planet reveal (`.planet` becomes visible, rAF ~60/s).
-- Navigation is user-driven only: `.nav-toggle` button → `a.site-chrome-link[href=...]`. `/sport` is only linked from About → LIFE portal (`.portal`) → `a[href="/sport"]`.
+- Navigation is user-driven only. On `/` the journey navigates itself (`.rail__stop` anchors + corner chips); the `.nav-toggle` star → `a.site-chrome-link[href=...]` overlay exists only on `/terminal`, `/preview`, and 404. `/sport` is only linked from About → LIFE portal (`.portal`) → `a[href="/sport"]`.
 - Sport accordion: `.session-head` click opens a card (`.card.is-open`), `.exercise` click reveals `.meta-list`.
 - Direct-load `/sport` also works (vite preview SPA fallback).

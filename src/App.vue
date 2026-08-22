@@ -17,7 +17,7 @@
 				</keep-alive>
 			</router-view>
 		</main>
-		<NavToggle v-if="showChrome" :open="navOpen" @toggle="navOpen = !navOpen" />
+		<NavToggle v-if="showToggle" :open="navOpen" @toggle="navOpen = !navOpen" />
 	</div>
 </template>
 
@@ -34,6 +34,10 @@
 	// the text, no MENU toggle over it. Reached by URL, so nothing to navigate from.
 	const BARE_PATHS = ['/sport']
 
+	// The journey carries its own navigation — the rail and the corner chips — so
+	// the star toggle stays out of its sky instead of duplicating them over the prose.
+	const SELF_NAV_PATHS = ['/']
+
 	// Component names (see defineOptions) kept mounted across navigation.
 	const KEPT_ALIVE_VIEWS = ['HeroIntro', 'HomeJourney']
 
@@ -41,9 +45,18 @@
 	const normalizedPath = () => route.path.replace(/\/$/, '') || '/'
 	const isPageScrollable = computed(() => SCROLLABLE_PATHS.includes(normalizedPath()))
 	const showChrome = computed(() => !BARE_PATHS.includes(normalizedPath()))
+	const showToggle = computed(
+		() => showChrome.value && !SELF_NAV_PATHS.includes(normalizedPath())
+	)
 
 	// modal overlay; links emit `close` so it never lands over the next page
 	const navOpen = ref(false)
+
+	// arriving on a self-navigating page any other way (e.g. browser back) would
+	// strand an open overlay with no toggle to dismiss it
+	watch(showToggle, shown => {
+		if (!shown) navOpen.value = false
+	})
 
 	watch(
 		isPageScrollable,
