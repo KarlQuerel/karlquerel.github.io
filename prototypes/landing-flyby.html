@@ -399,10 +399,15 @@ uniform vec3  uCamPos, uRight, uUp, uFwd;
 uniform float uFocal, uEntry, uProg;
 uniform vec2  uLook;    // pointer deflection, for the layers drawn in screen space
 uniform vec3  uSun;
-uniform vec4  uB[4];    // center.xyz, radius
-uniform vec4  uBP[4];   // paletteId, spin, ringInner, ringOuter
+// Eight slots, of which four carry the flight and four are only ever scenery. A body
+// costs one ray-sphere test on a ray that misses it - three flops - and the marching,
+// which is all the cost, still only runs for the one that ends up nearest. So the budget
+// buys spread rather than frame time.
+const int NB = 12;
+uniform vec4  uB[NB];   // center.xyz, radius
+uniform vec4  uBP[NB];  // paletteId, spin, ringInner, ringOuter
 uniform vec3  uRingN;
-const int NR = 2;       // rocks on the corridor, always marched, never gated
+const int NR = 3;       // rocks on the corridor, always marched, never gated
 uniform vec4  uRock[NR];    // centre.xyz, radius
 uniform vec4  uRockSpin[NR];  // (cos,sin) of the spin, then of the tumble
 
@@ -542,10 +547,38 @@ void palette(float pid, out vec3 c1, out vec3 c2, out vec3 c3, out vec3 c4, out 
     c1 = vec3(26,26,30); c2 = vec3(58,58,64); c3 = vec3(92,92,98);
     c4 = vec3(134,134,140); c5 = vec3(186,186,192);
     sea = 0.46; ocean = 0.0;
-  } else {                   // the corridor moon: iron, colder and darker than that one -
+  } else if (pid < 3.5){     // the corridor moon: iron, colder and darker than that one -
     c1 = vec3(16,19,26); c2 = vec3(38,44,58); c3 = vec3(66,74,92);   // it has to read as
     c4 = vec3(98,106,124); c5 = vec3(142,150,168);                   // its own body, not
     sea = 0.46; ocean = 0.0;                                         // as the ridge again
+  // The scenery worlds. Four of the five bodies the flight actually touches are grey or
+  // rust, which is the other half of why the system read as one object repeated: same
+  // hue, same size, one behind the other. These are the ones that are only ever looked
+  // at, so they are the ones that can afford to be a different colour.
+  } else if (pid < 4.5){     // pale ice: the one bright body in the flight
+    c1 = vec3(58,72,96); c2 = vec3(104,126,156); c3 = vec3(158,182,206);
+    c4 = vec3(206,224,238); c5 = vec3(240,248,255);
+    sea = 0.44; ocean = 0.0;
+  } else if (pid < 5.5){     // the far giant: banded ochre. ocean=1 buys the latitude
+    c1 = vec3(72,44,26); c2 = vec3(126,84,40); c3 = vec3(186,140,66);  // banding and the
+    c4 = vec3(224,188,120); c5 = vec3(246,228,186);                    // cloud shell, which
+    sea = 0.47; ocean = 1.0;                                           // is what a gas
+  } else if (pid < 6.5){     // deep rust, well below the corridor          giant is
+    c1 = vec3(30,14,14); c2 = vec3(74,30,26); c3 = vec3(122,52,38);
+    c4 = vec3(160,84,54); c5 = vec3(198,140,102);
+    sea = 0.47; ocean = 0.0;
+  } else if (pid < 7.5){     // verdigris rock: cold green, nothing else in the scene is
+    c1 = vec3(18,30,28); c2 = vec3(40,66,58); c3 = vec3(70,104,88);
+    c4 = vec3(108,146,120); c5 = vec3(158,190,166);
+    sea = 0.46; ocean = 0.0;
+  } else if (pid < 8.5){     // blue-grey ice giant, for the ones far enough out that the
+    c1 = vec3(22,34,52); c2 = vec3(46,72,104); c3 = vec3(84,122,158);   // haze has most of
+    c4 = vec3(130,168,198); c5 = vec3(184,212,232);                     // them anyway
+    sea = 0.48; ocean = 1.0;
+  } else {                   // warm tan: dust and old rock, the plainest body out here
+    c1 = vec3(34,28,22); c2 = vec3(78,64,48); c3 = vec3(124,104,78);
+    c4 = vec3(166,144,110); c5 = vec3(206,190,158);
+    sea = 0.46; ocean = 0.0;
   }
   c1/=255.0; c2/=255.0; c3/=255.0; c4/=255.0; c5/=255.0;
 }
@@ -618,7 +651,7 @@ void main(){
 
   // --- nearest sphere
   float best = 1e9; int hit = -1;
-  for (int i = 0; i < 4; i++){
+  for (int i = 0; i < NB; i++){
     if (uB[i].w <= 0.0) continue;
     vec3 oc = ro - uB[i].xyz;
     float b = dot(oc, rd);
@@ -660,7 +693,7 @@ void main(){
   if (hit >= 0){
     int H = hit;
     vec3 c = vec3(0.0); float rad = 0.0; vec4 pp = vec4(0.0);
-    for (int i = 0; i < 4; i++){ if (i == H){ c = uB[i].xyz; rad = uB[i].w; pp = uBP[i]; } }
+    for (int i = 0; i < NB; i++){ if (i == H){ c = uB[i].xyz; rad = uB[i].w; pp = uBP[i]; } }
 
     vec3 p = ro + rd*best;
     vec3 n = normalize(p - c);
@@ -932,6 +965,37 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		// and not a rock: rockRadius bulges 30%, so a marched rock passed this close would
 		// put the camera inside its own silhouette.
 		{ c: [8.55, -1.17, -148.2], r: 3.68, pid: 3, spin: 0.16, ring: [0, 0] },
+		// --- the rest of the system. The four above are a chain and have to be: an occlusion
+		// reveal needs the occluder on the sightline to what it hides. Everything else used to
+		// be placed by asking "where can this hide on the opening frame", which is not a
+		// question a solar system has ever answered, and it showed - the bodies were scattered
+		// in a shell around a scene that plainly has a plane. The ring says where that plane
+		// is; measured, the four above sit within 22 units of it and the old scenery sat 30 to
+		// 173 units off it. Half the scene obeyed a grammar the other half ignored, and that
+		// contradiction is what read as wrong. Not the randomness - the inconsistency.
+		//
+		// So these are placed on that plane instead, within 18 degrees of it, and they are
+		// allowed to be seen at rest as long as they are faint: under a degree across and 93%
+		// hazed, which is a smudge among the stars. A photograph of space has distant worlds in
+		// it. Only the three scripted reveals are still protected - the ridge over the
+		// corridor, and the two eclipses of the destination.
+		// Every one of them also sits at a phase angle between 55 and 125 degrees, so it has a
+		// terminator across it. Four of the old set sat under 50 and rendered as flat lit discs,
+		// which is most of what made them look pasted on.
+		{ c: [1.39, 36.34, -142.55], r: 1.42, pid: 4, spin: 0.27, ring: [0, 0] },
+		{ c: [43.16, -10.62, -199.15], r: 1.16, pid: 7, spin: 0.33, ring: [0, 0] },
+		{ c: [-29.96, 82.6, -472.12], r: 3.17, pid: 8, spin: 0.06, ring: [0, 0] },
+		{ c: [21.98, 59.1, -334.99], r: 3.04, pid: 9, spin: 0.09, ring: [0, 0] },
+		{ c: [73.69, 5.31, -229.16], r: 2.18, pid: 6, spin: 0.14, ring: [0, 0] },
+		// Moons. The cheapest thing in the scene that reads as a system: the eye sees a pair
+		// and supplies the orbit. They are also the only near-field bodies that come hidden for
+		// free - whatever covers the primary covers them - and on the plane for free, because
+		// the primary is. Each is a fifth to a third of its planet, three to six radii out, and
+		// none may sit on the destination during either scripted reveal: a moon crossing its
+		// own planet is worth having, a moon crossing the beat is not.
+		{ c: [6.31, 4.61, -47.39], r: 0.56, pid: 2, spin: 0.41, ring: [0, 0] },
+		{ c: [6.18, 2.27, -169.66], r: 1.08, pid: 4, spin: 0.35, ring: [0, 0] },
+		{ c: [18.36, 13.33, -218.77], r: 2.07, pid: 2, spin: 0.19, ring: [0, 0] },
 	]
 	// Rocks down the corridor, each marched in the scene shader so they occlude the
 	// scene, each other, and get occluded in turn. Sizes and offsets all differ: a
@@ -943,8 +1007,20 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	// spin and tumble are turns per full scroll, about the vertical and end over end. The
 	// rates are deliberately not multiples of each other: a rock that returns to the same
 	// face reads as a prop on a turntable.
+	// Rates are turns per full scroll and are all raised from where they were: at 1.4 and
+	// 2.3 a rock turned about a third of a revolution while it was actually in shot, which
+	// is a rock that looks like it is being carried past rather than tumbling. No pair of
+	// them divides into another, so no rock ever returns to the same face on a beat.
 	const ROCKS = [
-		{ c: [4.2, -1.6, -104.5], r: 1.3, spin: 2.3, tumble: 1.4 },
+		{ c: [4.2, -1.6, -104.5], r: 1.3, spin: 3.1, tumble: 1.9 },
+		// Third rock, and the only one that goes over the top: it clears the camera at 30
+		// degrees of elevation while the other two pass low, so the corridor stops being a
+		// row of things at eye level. Peaks at 34 degrees across at s=0.415, two thirds of
+		// a bulged radius off the hull, and nineteen units clear of anything else in the
+		// scene. Solved under the same rule as the other two - never on the sightline to
+		// the destination or the ringed world, so it can be threaded and never blocks a
+		// reveal it was not meant to.
+		{ c: [3.2, 4.86, -83.17], r: 1.24, spin: 4.3, tumble: 2.9 },
 		// Its own stretch of corridor, and the only thing in the flight that passes on the
 		// left. It used to sit two radii off the corridor moon - close enough that the two
 		// read as one lumpy object - while everything else worth looking at is right of the
@@ -953,7 +1029,7 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		// entirely, so what matters is how big it gets while still inside it. Ten degrees at
 		// s=0.51, low and left, against the moon high and right - and it is six radii clear
 		// of everything else in the scene.
-		{ c: [-1, -2, -125], r: 1.9, spin: 1.7, tumble: 2.6 },
+		{ c: [-1, -2, -125], r: 1.9, spin: 2.3, tumble: 3.7 },
 	]
 	// what the camera can be asked to watch. The rocks are not on the list any more:
 	// they sweep through frame on their own, which is what passing something looks like.
@@ -1017,12 +1093,60 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	const WAKE_START = 0.03
 	const WAKE_SPAN = 0.09
 	// how far the camera rolls into a turn, in radians, how hard it reacts, and how
-	// wide a slice of path it reads
-	// Rolling the horizon is what makes this kind of thing tiring to watch, so the bank
-	// is kept to a lean you can feel rather than a manoeuvre you have to brace for.
-	const BANK_MAX = 0.045
+	// wide a slice of path it reads. This is the lean the path earns on its own; the
+	// scripted roll below is separate and much larger.
+	const BANK_MAX = 0.1
 	const BANK_GAIN = 1.0
 	const BANK_SPAN = 0.06
+	const DEG = Math.PI / 180
+	// The roll the flight is flown, as opposed to the bank the path earns. A quarter turn,
+	// and the quarter is solved rather than chosen: the counter of the Q is a tall narrow
+	// slot - one design pixel by three - and the frame is wide and short. Left upright the
+	// slot is 24 degrees tall in a 31-degree frame, so it runs very nearly floor to ceiling
+	// and the letter reads as two bars with a gap between them. Turned on its side it lies
+	// across the frame instead, 24 wide in 52 and 8 tall in 31, with letterform closing it
+	// on all four sides. That is the difference between going between two things and
+	// threading one, and threading is the whole reason the flight aims at a letter.
+	// It ratchets rather than unwinding. Each quarter turn is spent on a beat and then held
+	// through the stretch after it, so the horizon the reader is given is the one the last
+	// manoeuvre left them with. A roll that returns to level says there is an up out here
+	// and the flight keeps finding it; a roll that sticks says there is not, which is both
+	// truer and the reason the field stops reading as a row of things at eye level - the
+	// same bodies arrive along the frame's long axis, then its short one, then the other
+	// way up.
+	// Four quarters, not one turn: it still ends level, because the atmosphere at the far
+	// end is drawn in screen space with its ground at the bottom of the frame, and arriving
+	// at a planet upside down would put the horizon on the ceiling. The last quarter is
+	// spent before ENTRY_START for exactly that reason.
+	// Nothing rolls before 0.12. The name is at its biggest and most readable just before
+	// the bank starts, and the opening frame is meant to look like a photograph - a
+	// photograph that is already banking has given the game away.
+	// Angles in degrees because they are read as angles, not as fractions of a turn. None
+	// of them is a right angle and none of the steps is the same size - 68, then 83, 98,
+	// 111 - because four equal quarters is a machine indexing round a jig, not something
+	// flying. They grow, so the flight winds up rather than ticking over.
+	// 68 at the letter rather than 90: the slot only has to lie across the frame, not
+	// square to it. Tilted, its bounding box is 25 by 20 degrees against a 52 by 31 frame,
+	// so it still sits inside with ink all round - anything past about 55 keeps that, and a
+	// diagonal thread looks like flying where a square one looks like a diagram.
+	const ROLL = [
+		{ s: 0.0, r: 0 },
+		{ s: 0.12, r: 0 },
+		{ s: 0.1777, r: 68 * DEG }, // laid across the slot where the Q is threaded
+		{ s: 0.31, r: 68 * DEG }, // and it stays there, over the ridge and the reveal
+		{ s: 0.405, r: 151 * DEG }, // across the ring pass
+		{ s: 0.49, r: 151 * DEG },
+		{ s: 0.605, r: 249 * DEG }, // across the close pass
+		{ s: 0.71, r: 249 * DEG },
+		{ s: 0.845, r: 360 * DEG }, // level again, with the atmosphere still ahead
+		{ s: 1.0, r: 360 * DEG },
+	]
+	function rollAt(s) {
+		let i = 0
+		while (i < ROLL.length - 2 && s > ROLL[i + 1].s) i++
+		const t = smooth(clamp01((s - ROLL[i].s) / (ROLL[i + 1].s - ROLL[i].s || 1)))
+		return lerp(ROLL[i].r, ROLL[i + 1].r, t)
+	}
 	// How much path the heading averages over. Short windows make the camera track every
 	// kink in the spline; a long one flies it like something with mass, which is the
 	// difference between looking around and going somewhere.
@@ -1196,18 +1320,20 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		const [first, last] = TITLE.name
 		line(first, size, block, nameY)
 		line(last, size, block + first.length * size + gap, nameY)
-		// Centred on the corridor rather than on the name, which puts its own word space
-		// on the flight line: everything the camera aims at is a hole. Rounded to a whole
-		// texel because it is a bitmap face: the role has an odd character count, so this
-		// lands on a half texel whenever exactly one of gap and roleSize is odd - true on
-		// four of six common grids, including 1366x768, 4K and mobile - and half a texel
-		// puts every glyph through the antialiaser, which NEAREST then magnifies on the way
-		// past. Round the centre once here rather than per glyph: the words themselves are
-		// drawn as whole strings, so the font's own advance keeps the tracking exact.
+		// Centred under the name now, not on the word space. It used to straddle the gap
+		// because the gap was the hole the flight went through; the flight goes through the
+		// Q instead, so the space is free to be a space and the role is free to be centred.
+		// Rounded to a whole texel because it is a bitmap face: the role has an odd
+		// character count, so this lands on a half texel whenever exactly one of the name
+		// width and roleSize is odd, and half a texel puts every glyph through the
+		// antialiaser, which NEAREST then magnifies on the way past. Round the centre once
+		// here rather than per glyph: the words themselves are drawn as whole strings, so
+		// the font's own advance keeps the tracking exact.
+		const nameW = TITLE.name.join('').length * size + gap
 		line(
 			TITLE.role,
 			roleSize,
-			Math.round(block + first.length * size + gap / 2 - (TITLE.role.length * roleSize) / 2),
+			Math.round(block + nameW / 2 - (TITLE.role.length * roleSize) / 2),
 			roleY
 		)
 		gl.bindTexture(gl.TEXTURE_2D, titleTex)
@@ -1243,7 +1369,10 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		// the texture that adapts. This is the width that made one texel one pixel on the
 		// 560-tall grid it was tuned against.
 		w: 8.05,
-		gap: 88, // the corridor between the words: what the camera flies down
+		// A word space, not a corridor. It was 88 - 2.2 ems - because the flight had to fit
+		// between the words; the flight goes through the Q now, so this is free to be half
+		// an em and the name reads as one name again.
+		gap: 20,
 		nameY: 46,
 		roleY: 94,
 		tex: [512, 128],
@@ -1251,7 +1380,7 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		edge: '#05070e',
 		// Where on the flight it stands. The plane used to hang above the corridor, so the
 		// name slid off the top of the frame and the pass never happened; sitting it on
-		// the path is what makes the gap something you go through.
+		// the path is what makes the letter something you go through.
 		at: 0.1777,
 		// Square-on to the resting camera rather than aimed at its centre: aligning to the
 		// view plane is what keeps the letters free of keystone. These are that camera's
@@ -1262,13 +1391,19 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	// Everything below follows from the numbers above; none of it is tuned by hand.
 	TITLE.pos = camAt(TITLE.at)
 	TITLE.rest = Math.hypot(...sub(TITLE.pos, PATH[0].p))
-	// The middle of the corridor, in uv: the plane's anchor, and the point the flight
-	// pierces it - the name row's own centre line. Measured off the layout as quoted;
-	// buildTitle re-lays it out for whatever grid it gets and lands within a texel.
+	// The counter of the Q - the enclosed hole in the letter - in ems from the glyph's pen
+	// origin, with y measured off the middle baseline the name is drawn on. Read off the
+	// face itself at 16 device pixels per design pixel rather than eyeballed: Press Start
+	// 2P draws Q on an 8x8 grid with a 3x5 counter, and the keyline eats one design pixel
+	// off each side of it, so what the flight actually threads is 1x3 design pixels.
+	const Q_COUNTER = [0.4128, -0.1081]
+	// The plane's anchor, and the point the flight pierces it. Everything the camera aims
+	// at is a hole; this one just happens to be inside a letter instead of between two.
 	const refBlock = (TITLE.tex[0] - (TITLE.name.join('').length * TITLE.size + TITLE.gap)) / 2
+	const refQ = refBlock + TITLE.name[0].length * TITLE.size + TITLE.gap
 	TITLE.anchor = [
-		(refBlock + TITLE.name[0].length * TITLE.size + TITLE.gap / 2) / TITLE.tex[0],
-		TITLE.nameY / TITLE.tex[1],
+		(refQ + Q_COUNTER[0] * TITLE.size) / TITLE.tex[0],
+		(TITLE.nameY + Q_COUNTER[1] * TITLE.size) / TITLE.tex[1],
 	]
 	TITLE.wide = Math.max(TITLE.anchor[0], 1 - TITLE.anchor[0]) // the anchor's long side
 	const TITLE_REF = TITLE.tex[0] // the width the layout constants above are quoted in
@@ -1507,9 +1642,22 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 			c1 = norm(sub(camAt(bEnd), camAt(bMid)))
 		const turn = dot(sub(c1, c0), norm(cross(fwd, UP)))
 		const bank = BANK_MAX * Math.tanh((turn * BANK_GAIN) / BANK_MAX)
-		let up = norm([Math.sin(-bank), Math.cos(bank), 0])
-		let right = norm(cross(fwd, up))
-		up = cross(right, fwd)
+		// Rotate the frame about the way we are pointing. Tilting world up and rebuilding
+		// from it - which is what this did - is only a roll while the angle is small: past
+		// a quarter turn the axis it actually rotates about is the world's, not the
+		// camera's, and a barrel roll through the name came out as a lurch.
+		let right = norm(cross(fwd, UP))
+		let up = cross(right, fwd)
+		// The scripted roll is the one piece of this the reader did not ask for by scrolling,
+		// so it is also the one piece that answers prefers-reduced-motion. The bank the path
+		// earns stays: it is a couple of degrees and it follows the flight.
+		const roll = bank + (still ? 0 : rollAt(p))
+		if (roll !== 0) {
+			const cr = Math.cos(roll),
+				sr = Math.sin(roll)
+			right = norm(add(mul(right, cr), mul(up, sr)))
+			up = cross(right, fwd)
+		}
 
 		const entry = clamp01((p - ENTRY_START) / (1 - ENTRY_START))
 		// shake while the shield is hot
@@ -1562,14 +1710,19 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		gl.drawArrays(gl.TRIANGLES, 0, 6)
 
 		// The title plane, over the scene: nothing else is ever nearer than it is. One
-		// dissolve for the whole plane rather than per corner - the words are metres wide
-		// by the time we are between them, and a per-vertex fade leaves the far end of the
-		// name hanging on as a pale slab while the near end has gone. It has to be solid
-		// while the two words sweep out past the frame edges and gone a hair later, or the
-		// last letter lies across the frame as a grey wedge on the way out.
+		// dissolve for the whole plane rather than per corner - the letter is metres wide
+		// by the time we are inside it, and a per-vertex fade leaves the far end of the
+		// name hanging on as a pale slab while the near end has gone.
+		// Held much later than it used to be. Threading the gap only needed the words solid
+		// until they cleared the frame edges; threading the Q needs the letter solid while
+		// it is the frame - at tz=0.7 its ink spans 46 degrees against a 52-degree frame,
+		// and the counter the flight goes through is a 7-degree slot floor to ceiling. The
+		// floor is not a taste call: the vertex shader drops any corner nearer than z=0.3,
+		// so the plane has to be gone before then or it vanishes in one frame instead of
+		// dissolving.
 		const trel = sub(TITLE.pos, eye)
 		const tz = dot(trel, fwd)
-		const tfade = smooth(clamp01((tz - 0.75) / 1.35))
+		const tfade = smooth(clamp01((tz - 0.34) / 0.36))
 		if (tfade > 0.01) {
 			gl.useProgram(title)
 			gl.bindBuffer(gl.ARRAY_BUFFER, titleQuad)
