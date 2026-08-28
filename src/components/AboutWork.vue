@@ -284,8 +284,11 @@
 	.ztl-detail {
 		// 64ch of text plus the hanging chevron; the About column caps this well before it bites
 		max-width: calc(64ch + #{$chevron});
-		// the card's flex gap is tuned for pixel type; the caption wants a touch more air
-		margin: 0.35rem 0 0;
+		// Set off from the stack above rather than spaced like another line of it: title,
+		// institution and location are one block answering what and where, and this is
+		// the sentence that says why it mattered. At the card's own 0.3rem gap it read as
+		// a fourth label on the pile.
+		margin: 0.85rem 0 0;
 		font-family: $font-terminal;
 		// A step below the LIFE prose rather than half of it. This caption is the line
 		// that carries the story for its milestone, and at the 11px floor it was the
