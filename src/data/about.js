@@ -12,9 +12,9 @@ export const ABOUT_HEADINGS = {
 // flags the present role (gold); `emblem` is the sprite on the rail; `detail` is an
 // optional one-line caption on it, kept to the milestones that carry the story — bare
 // rows read as the run-up between them.
-// `chapter` opens an act: a divider above the card, and every row under it belongs to
-// that act until the next one. They are what turn eight milestones into a story with
-// movements rather than a list — so name the arc, not the employer.
+// `chapter` adds a divider above the card. Kept to the one turn in the whole run that
+// is worth calling out: sprinkled over the schools and the desks as well, it stopped
+// marking the pivot and just became furniture between rows.
 // Jobs: career-defining roles only. `from`/`to` are the rail's tick labels: a `to` that
 // matches the next entry's `from` is drawn once, so keep contiguous periods exact.
 export const CAREER_TIMELINE = [
@@ -22,7 +22,6 @@ export const CAREER_TIMELINE = [
 		type: 'study',
 		from: '2003',
 		to: '2010',
-		chapter: 'Beirut',
 		title: 'French Baccalauréat in Economics',
 		place: 'Grand Lycée Franco-Libanais',
 		location: 'Beirut, Lebanon',
@@ -33,7 +32,6 @@ export const CAREER_TIMELINE = [
 		type: 'study',
 		from: '2010',
 		to: '2013',
-		chapter: 'Business school',
 		title: 'Bachelor of Business Administration',
 		place: 'University of Geneva (HEC)',
 		location: 'Geneva, Switzerland',
@@ -66,7 +64,6 @@ export const CAREER_TIMELINE = [
 		type: 'job',
 		from: '2017',
 		to: '2018',
-		chapter: 'Commodities',
 		title: 'Sales Associate',
 		place: 'Cedar Europe',
 		location: 'Madrid, Spain',
