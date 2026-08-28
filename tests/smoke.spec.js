@@ -11,6 +11,9 @@ const ROUTES = [
 	{ path: '/sport', title: 'Sport • Karl Querel' },
 	// the hero cinematic — the heaviest component, and the one the game work builds on
 	{ path: '/preview', title: 'Preview • Karl Querel' },
+	// the WebGL flyby — its shaders only ever compile at runtime, so this is what
+	// catches a GLSL error (the renderer logs compile failures to the console)
+	{ path: '/lab', title: 'Lab • Karl Querel' },
 	{ path: '/terminal', title: 'Terminal • Karl Querel' },
 	{ path: '/game', title: 'Signal Lost • Karl Querel' },
 	{ path: '/definitely-not-a-page', title: '404 • Karl Querel' },

@@ -19,6 +19,13 @@ const routes = [
 		meta: { title: 'Preview' },
 	},
 	{
+		// the WebGL landing flyby, in development. Unlisted like /preview and /game:
+		// reachable by URL, never linked, and deliberately not prerendered.
+		path: '/lab',
+		component: () => import('./components/lab/LabPage.vue'),
+		meta: { title: 'Lab' },
+	},
+	{
 		path: '/terminal',
 		component: () => import('./components/Terminal.vue'),
 		meta: { title: 'Terminal' },

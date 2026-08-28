@@ -28,11 +28,13 @@
 	import SiteNavbar from './components/SiteNavbar.vue'
 	import NavToggle from './components/NavToggle.vue'
 
-	const SCROLLABLE_PATHS = ['/', '/preview', '/sport']
+	const SCROLLABLE_PATHS = ['/', '/preview', '/sport', '/lab']
 
-	// Unlisted personal pages: no site chrome at all — no drifting starfield behind
-	// the text, no MENU toggle over it. Reached by URL, so nothing to navigate from.
-	const BARE_PATHS = ['/sport']
+	// Unlisted pages with no site chrome at all — no drifting starfield behind the
+	// text, no MENU toggle over it. Reached by URL, so nothing to navigate from.
+	// /lab is here for a different reason than /sport: it paints its own sky in a
+	// shader and carries its own chrome, so the site's would only be drawn underneath.
+	const BARE_PATHS = ['/sport', '/lab']
 
 	// The journey carries its own navigation — the rail and the corner chips — so
 	// the star toggle stays out of its sky instead of duplicating them over the prose.
