@@ -57,7 +57,3 @@ export function hermite(y0, y1, m0, m1, h, t) {
 		(t3 - t2) * h * m1
 	)
 }
-
-// Ease-out that overshoots its target before settling — the pop at the end of a
-// reveal. `s` is how far it goes past 1.
-export const backOut = (t, s = 2.2) => 1 + (s + 1) * (t - 1) ** 3 + s * (t - 1) ** 2

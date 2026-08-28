@@ -7,7 +7,7 @@
 		     through, so the two ends of the trip read as one piece of motion -->
 		<FlightDust :travel="dustTravel" :fade="dustFade" />
 		<div class="arrival__content">
-			<header class="arrival__head" :style="revealStyle(0)">
+			<header class="arrival__head arrival__reveal" :class="{ 'is-up': revealed(0) }">
 				<PageTitle tag="h2" :lead="CONTACT_HEADING.lead" :accent="CONTACT_HEADING.accent" />
 			</header>
 
@@ -15,7 +15,8 @@
 				<li
 					v-for="(channel, i) in CONTACT_CHANNELS"
 					:key="channel.key"
-					:style="revealStyle(i + 1)"
+					class="arrival__reveal"
+					:class="{ 'is-up': revealed(i + 1) }"
 				>
 					<PixelPortal
 						:label="channel.label"
@@ -28,8 +29,8 @@
 
 			<!-- secondary action, pinned to the pin (not the page): only present at the planet -->
 			<a
-				class="arrival__report"
-				:style="revealStyle(REPORT_INDEX)"
+				class="arrival__report arrival__reveal"
+				:class="{ 'is-up': revealed(REPORT_INDEX) }"
 				:href="BUG_REPORT.issueUrl"
 				:aria-label="BUG_REPORT.ariaLabel"
 				target="_blank"
@@ -44,10 +45,9 @@
 
 <script setup>
 	import { computed } from 'vue'
-	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { ARRIVAL } from '@/constants/journey'
 	import { BUG_REPORT, CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
-	import { backOut, clamp01, smoothstep } from '@/js/math'
+	import { clamp01, smoothstep } from '@/js/math'
 	import FlightDust from './FlightDust.vue'
 	import PageTitle from './PageTitle.vue'
 	import PixelPortal from './PixelPortal.vue'
@@ -75,24 +75,12 @@
 	// The chip is the last thing out, behind the heading and every portal.
 	const REPORT_INDEX = CONTACT_CHANNELS.length + 1
 
-	const still = prefersReducedMotion()
-
-	// One item's slice of the surface window, by its place in the queue: it fades up
-	// while it rises and springs out of its squash, so the row lands tile by tile.
-	function revealStyle(index) {
-		const start = ARRIVAL.contactFadeStart + index * ARRIVAL.contactStagger
-		const t = clamp01((props.progress - start) / ARRIVAL.contactItemSpan)
-		// hidden (not just transparent) before its turn, so a tile still off-stage
-		// can't catch a click or a tab stop
-		if (t <= 0) return { visibility: 'hidden' }
-		// reduced motion keeps the fade and drops the travel: pop pinned at its target
-		const pop = still ? 1 : backOut(t)
-		return {
-			opacity: smoothstep(t).toFixed(3),
-			translate: `0 ${((1 - pop) * ARRIVAL.contactRise).toFixed(2)}px`,
-			scale: (ARRIVAL.contactSquash + (1 - ARRIVAL.contactSquash) * pop).toFixed(3),
-		}
-	}
+	// One item's place in the queue: it is up once the surface window reaches it. Only
+	// the trigger is scrolled — the pop itself runs on its own clock in the stylesheet,
+	// so it always plays whole. Scrubbed off scroll, a fast flick through the runway
+	// played the entire reveal inside one frame and a slow one parked a tile half-risen.
+	const revealed = index =>
+		props.progress > ARRIVAL.contactFadeStart + index * ARRIVAL.contactStagger
 </script>
 
 <style scoped lang="scss">
@@ -122,6 +110,51 @@
 	.arrival__channels li,
 	.arrival__report {
 		pointer-events: auto;
+	}
+
+	// The surface content lands tile by tile, each on its own clock once its threshold
+	// is crossed. Stepped, because motion running on its own clock is stepped here —
+	// and the steps are what make the landing read as a landing rather than a fade.
+	// Long, at nearly half a second: this is the last thing the flight does, and a
+	// scroll fast enough to cross every threshold at once should still see five pops.
+	$pop-rise: 40px;
+	$pop-squash: 0.72;
+	$pop-span: 0.45s;
+	$pop-steps: 5;
+
+	.arrival__reveal {
+		// hidden, not just transparent, before its turn: a tile still off-stage must not
+		// catch a click or a tab stop
+		visibility: hidden;
+		opacity: 0;
+		translate: 0 $pop-rise;
+		scale: $pop-squash;
+	}
+
+	// An animation rather than a transition, the same way the LIFE cards reveal: the
+	// report chip is a pinned-chip, and that mixin's own hover transition would win the
+	// `transition` property off a rule of equal specificity declared above it. An
+	// animation cannot be overridden that way, and leaves the chip's hover intact.
+	.arrival__reveal.is-up {
+		visibility: visible;
+		animation: arrival-pop $pop-span steps($pop-steps, end) forwards;
+	}
+
+	@keyframes arrival-pop {
+		to {
+			opacity: 1;
+			translate: none;
+			scale: 1;
+		}
+	}
+
+	// keeps the fade, drops the travel: with no offset to start from, the same
+	// keyframes animate opacity alone
+	@media (prefers-reduced-motion: reduce) {
+		.arrival__reveal {
+			translate: none;
+			scale: 1;
+		}
 	}
 
 	// No page-head scrim here: its dark box edges harshly against the light dusk sky.

@@ -10,11 +10,11 @@ export const JOURNEY = {
 	// The departure leg is the longest: it carries the whole flight out — the pass
 	// through the name, the void beyond it, the planet coming up dead ahead and the
 	// camera coming around it — before the first station docks.
-	heroLegVh: 130,
+	heroLegVh: 103,
 	// The longest leg: it carries the low-orbit surface skim and the held pass where the
 	// ground streams past. Kept long — at 150 the drop and the hold had about one
 	// viewport between them, which is not enough for two beats to read as two.
-	diveLegVh: 195,
+	diveLegVh: 175,
 	// Baseline longitude turned across the whole journey; the camera track's
 	// `roll` channel adds ground rush on top during the skim and the entry.
 	turns: 0.45,
@@ -35,14 +35,14 @@ export const JOURNEY = {
 	// page to the WORK dock. `void` has to sit past the end of the pass
 	// (HERO_FLYBY.runVh, which is in viewports) so the planet stays out of the frame
 	// until the words have gone — that is the whole point of the beat.
-	departure: { void: 0.3, dot: 0.38, close: 0.48, orbitIn: 0.58, orbitOut: 0.88 },
+	departure: { void: 0.38, dot: 0.48, close: 0.61, orbitIn: 0.7, orbitOut: 0.85 },
 	// Where the held stretch of the surface skim ends, as a fraction of the run from
 	// the dive's apex to the LIFE dock. The apex alone was an in-and-out: the camera
 	// dropped toward the deck and pulled straight back up, so the whole beat was the
 	// planet swelling and shrinking. Holding position for a stretch while `roll` keeps
 	// ripping is what converts it into speed — a surface streaming past a horizon that
 	// barely moves is how the eye works out that the thing is enormous.
-	skimHoldAt: 0.45,
+	skimHoldAt: 0.62,
 	// Where the camera finishes turning onto the approach axis, as a fraction of the
 	// leg from the foot of LIFE to the pinned runway. Early on purpose: the descent
 	// has to start from a frame that is already lined up, or the last thing before the
@@ -288,21 +288,17 @@ export const CAMERA_PORTRAIT = {
 export const ARRIVAL = {
 	// Scroll runway on top of the one viewport the pin holds for (vh). 300 first;
 	// trimmed with the legs so the descent plays at the same quickened pace.
-	runwayVh: 240,
+	runwayVh: 215,
 	// Camera keyframe positions along the runway (see CAMERA.entry / .gone).
-	entryAt: 0.45,
-	goneAt: 0.52,
-	// The surface content arrives one piece at a time: heading, then each portal,
-	// then the report chip. Item n opens `contactStagger` after n-1 and takes
-	// `contactItemSpan` to land, so the last of the five is up by 0.90 — with the
-	// tail of the runway left over, since landing on the last pixel of it is a miss.
+	entryAt: 0.29,
+	goneAt: 0.36,
+	// The surface content arrives one piece at a time: heading, then each portal, then
+	// the report chip. Item n crosses its threshold `contactStagger` after n-1, so the
+	// last of the five is triggered by 0.88 — with the tail of the runway left over,
+	// since landing on the last pixel of it is a miss. Only the trigger is here: the
+	// pop each tile then plays is time-based, in JourneyArrival's own stylesheet.
 	contactFadeStart: 0.66,
-	contactStagger: 0.04,
-	contactItemSpan: 0.08,
-	// The pop itself: a tile starts this small and this far down (px), then
-	// overshoots slightly past both on the way in.
-	contactSquash: 0.82,
-	contactRise: 26,
+	contactStagger: 0.055,
 	// The flight's own way-out chip leaves far earlier, on its own window: gone before
 	// the first clouds are in frame (see ENTRY.clouds), so nothing from the trip is
 	// still pinned over the atmosphere while we are descending through it. The portals
