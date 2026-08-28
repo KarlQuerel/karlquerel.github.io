@@ -3,8 +3,8 @@
 // what comes out of here.
 
 import { camAt } from './flybyPath.js'
-import { sub } from './vec3.js'
-import { FOCAL, PATH, Q_COUNTER, TITLE, TITLE_FLOOR } from '../constants/flyby.js'
+import { cross, norm, sub } from './vec3.js'
+import { FOCAL, HEADING_SPAN, PATH, Q_COUNTER, TITLE, TITLE_FLOOR, UP } from '../constants/flyby.js'
 
 // the width the layout constants in TITLE are quoted in
 const TITLE_REF = TITLE.tex[0]
@@ -19,12 +19,22 @@ const anchor = [
 	(TITLE.nameY + Q_COUNTER[1] * TITLE.size) / TITLE.tex[1],
 ]
 
+// Square-on to the resting camera rather than aimed at its centre: aligning to the view
+// plane is what keeps the letters free of keystone. Read off the path rather than copied
+// in, so curving the run-in to the letter can never leave the plane keystoned against a
+// camera that has moved. This is the basis sampleFlight builds at p=0, where the focus
+// pull is zero and there is no roll yet.
+const restFwd = norm(sub(camAt(HEADING_SPAN), camAt(0)))
+const restRight = norm(cross(restFwd, UP))
+
 // Derived from the numbers in TITLE; none of it is tuned by hand.
 export const TITLE_PLANE = {
 	pos,
 	rest: Math.hypot(...sub(pos, PATH[0].p)),
 	anchor,
 	wide: Math.max(anchor[0], 1 - anchor[0]), // the anchor's long side
+	right: restRight,
+	up: cross(restRight, restFwd),
 }
 
 // Hold the title inside the frame on narrow viewports. Screen x is

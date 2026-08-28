@@ -115,7 +115,14 @@ export const TARGETS = [BODIES[0], BODIES[1]]
 export const PATH = [
 	{ s: 0.0, p: [9.0, 2.6, 24] },
 	{ s: 0.123, p: [8.8, 3.4, 18] }, // still frame ends here, engines light
-	{ s: 0.194, p: [8.4, 6.0, 4] }, // climbing: the ridge starts to drop away
+	// Held out to the right so the run-in to the letter is a turn rather than a straight
+	// line. The roll is a coordinated turn now, so the only way to bank through the title
+	// is to actually fly a curve there - this earns about 11 degrees at s=0.1777 and then
+	// carries straight on into the ridge turn, so the two read as one manoeuvre instead of
+	// a tilt that arrives from nowhere. Measured: it leaves the occlusion chain alone
+	// (ridge holds the destination to 0.209, ringed world 0.131..0.310, moon 0.302..0.623)
+	// and the ridge is still passed at 1.20 radii.
+	{ s: 0.194, p: [9.6, 6.0, 4] }, // climbing: the ridge starts to drop away
 	{ s: 0.255, p: [7.8, 8.6, -20] }, // up and over it, and the system is just there
 	{ s: 0.306, p: [6.9, 6.4, -44] }, // settling back onto the corridor
 	{ s: 0.356, p: [3.8, 4.4, -61.2] }, // through the ring plane, near its outer edge
@@ -264,11 +271,6 @@ export const TITLE = {
 	// name slid off the top of the frame and the pass never happened; sitting it on
 	// the path is what makes the letter something you go through.
 	at: 0.1777,
-	// Square-on to the resting camera rather than aimed at its centre: aligning to the
-	// view plane is what keeps the letters free of keystone. These are that camera's
-	// own axes - re-derive them from the basis at s=0 if the first leg of PATH moves.
-	right: [0.9994, 0.0036, -0.0351],
-	up: [0.0003, 0.9941, 0.1084],
 }
 
 // The counter of the Q - the enclosed hole in the letter - in ems from the glyph's pen
@@ -297,8 +299,30 @@ export const DUST_BOX = 22
 // world, puts 61 of its 96 rocks in shot at some point and about twenty-two on screen at
 // once, and is at most 0.57 degrees across on the opening frame - ten art pixels, where
 // the haze already has 93% of it.
+// Where the field lies along the corridor, as depth out from the camera's start. It used
+// to run 125..285, which straddled the destination at 186 and put more than half the rocks
+// behind the thing they were meant to be seen in front of. 85..182 puts all of it in front
+// of the green world, over the stretch the camera actually flies (z=-105 at s=0.48 out to
+// -179 at the end), so the reader passes through the field on the way in rather than
+// looking at it from outside.
+export const BELT_Z_NEAR = 85
+export const BELT_Z_SPAN = 97
+// How far off the corridor's centre line the rocks sit. The floor is the safety margin -
+// nothing may come nearer the hull than this - and the field is weighted toward it, since
+// most of a belt is the near gravel you actually pass. Flattened on y so it reads as a
+// belt seen near edge-on instead of a tube the camera is inside.
+export const BELT_RADIUS_MIN = 7
+export const BELT_RADIUS_MAX = 46
+export const BELT_FLATTEN = 0.42
+
 export const BELT_SEED = 777
-export const BELT_MAX = 96
+// Measured, at 640x400 under a software rasteriser so the absolute numbers mean nothing
+// but the slope is real: the scene costs ~445ms before the belt and ~8.1ms per rock after
+// it, dead linear. 96 rocks was already 63% of the shader; 180 is 78%, and 500 would be
+// 91%. So this is the one number that decides what the page costs - raise it and the
+// frame gets proportionally dearer, and on a weak GPU the art-grid ladder answers by
+// dropping a rung, which is blockier pixels rather than dropped frames.
+export const BELT_MAX = 180
 // Each belt rock is a vec4 of fragment uniform and the rest of the scene already spends
 // about forty of them; WebGL1 only promises sixteen in total, and while no real device
 // ships that few, plenty of phones stop at sixty-four. So ask the GPU, keep this margin,
