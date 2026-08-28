@@ -22,7 +22,7 @@ import {
 	BELT_SPIN,
 	BELT_UNIFORM_BUDGET,
 	BODIES,
-	BOOT_STEPS,
+	BOOT_WEIGHTS,
 	DUST_BOX,
 	FOCAL,
 	FONT_WAIT_MAX,
@@ -86,9 +86,10 @@ export function useFlyby(canvasRef) {
 	// A browser with no WebGL still gets the copy: the page degrades to its own text
 	// rather than throwing on a null context.
 	const supported = ref(true)
-	// What the boot actually did, in order, with the real wall time of each step. The
-	// loader renders this; nothing in it is invented.
-	const bootLog = ref([])
+	// How far the boot has genuinely got, 0..1, and the value it will reach when the step
+	// currently in flight lands. The loader shows the first and creeps toward the second.
+	const bootProgress = ref(0)
+	const bootCeiling = ref(BOOT_WEIGHTS.context)
 	const booting = ref(true)
 	const progress = ref(0)
 	const leg = ref(LEGS[0][1])
@@ -436,11 +437,16 @@ export function useFlyby(canvasRef) {
 		// Put the loader on screen before anything that blocks — compiling the scene
 		// shader is a few hundred milliseconds of frozen main thread on a slow GPU.
 		await paint()
-		let mark = performance.now()
-		const step = async label => {
-			bootLog.value = [...bootLog.value, { label, ms: Math.round(performance.now() - mark) }]
+		const order = Object.keys(BOOT_WEIGHTS)
+		let done = 0
+		const step = async key => {
+			done += BOOT_WEIGHTS[key]
+			bootProgress.value = done
+			bootCeiling.value = Math.min(
+				1,
+				done + (BOOT_WEIGHTS[order[order.indexOf(key) + 1]] ?? 0)
+			)
 			await paint()
-			mark = performance.now()
 			return !disposed
 		}
 
@@ -454,10 +460,10 @@ export function useFlyby(canvasRef) {
 		)
 		const sceneFrag = sceneFragSrc.replace('__BELT_COUNT__', String(beltCount))
 		shaderLines.value = sceneFrag.trim().split('\n').length
-		if (!(await step(BOOT_STEPS.context))) return
+		if (!(await step('context'))) return
 
 		scene = compile(sceneVert, sceneFrag)
-		if (!(await step(BOOT_STEPS.scene))) return
+		if (!(await step('scene'))) return
 
 		dust = compile(dustVert, dustFrag)
 		title = compile(titleVert, titleFrag)
@@ -479,7 +485,7 @@ export function useFlyby(canvasRef) {
 			seed: gl.getAttribLocation(dust, 'aSeed'),
 			tail: gl.getAttribLocation(dust, 'aTail'),
 		}
-		if (!(await step(BOOT_STEPS.programs))) return
+		if (!(await step('programs'))) return
 
 		const seeds = new Float32Array(MOTES * 6)
 		const tails = new Float32Array(MOTES * 2)
@@ -502,12 +508,12 @@ export function useFlyby(canvasRef) {
 			gl.useProgram(scene)
 			gl.uniform4fv(U.uBelt, buildBelt(beltCount))
 		}
-		if (!(await step(BOOT_STEPS.field))) return
+		if (!(await step('field'))) return
 
 		// before the first title upload, so the name is drawn in the real face rather
 		// than fallback monospace that pops a frame later
 		await fontReady()
-		if (!(await step(BOOT_STEPS.typeface))) return
+		if (!(await step('typeface'))) return
 
 		titleTex = gl.createTexture()
 		resize()
@@ -519,13 +525,18 @@ export function useFlyby(canvasRef) {
 		window.addEventListener('resize', onResize, { passive: true })
 		if (!still) window.addEventListener('pointermove', onPointerMove, { passive: true })
 		draw(performance.now())
-		// draw() only queues work; the GPU may not have started it. A one-pixel read
-		// blocks until it has, which makes this step the time until there are pixels
-		// rather than the time to submit commands - and, more to the point, keeps the
-		// loader up until the flight is actually on screen instead of hiding it a few
-		// hundred milliseconds early and uncovering a blank canvas.
+		// draw() only queues work, so the step cannot end here or the cover comes off a
+		// canvas the GPU has not filled yet. This one-pixel read blocks until it has.
+		//
+		// It does block the main thread, which freezes the loader's own animation for the
+		// length of the frame - the five steps above take ~160ms of yields, so the loader
+		// is already on screen by the time it happens, and it resumes at 100%. That is the
+		// right trade on real hardware, where a first frame is tens of milliseconds. Under
+		// a software rasteriser it is seconds and the freeze is obvious. The proper fix is
+		// a WebGL2 fenceSync polled from rAF, which is non-blocking; WebGL1 has no such
+		// thing, and asking for a WebGL2 context is a bigger change than this route needs.
 		gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4))
-		if (!(await step(BOOT_STEPS.frame))) return
+		if (!(await step('frame'))) return
 
 		booting.value = false
 		raf = requestAnimationFrame(loop)
@@ -549,5 +560,17 @@ export function useFlyby(canvasRef) {
 	onMounted(setup)
 	onBeforeUnmount(teardown)
 
-	return { supported, booting, bootLog, progress, leg, wake, hint, arrive, markOn, shaderLines }
+	return {
+		supported,
+		booting,
+		bootProgress,
+		bootCeiling,
+		progress,
+		leg,
+		wake,
+		hint,
+		arrive,
+		markOn,
+		shaderLines,
+	}
 }

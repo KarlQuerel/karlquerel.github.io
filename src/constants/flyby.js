@@ -359,23 +359,32 @@ export const PERF_SLOW_MS = 30
 export const PERF_FAST_MS = 20
 
 // ---------------------------------------------------------------- boot
-// The loader reports what the flight is actually doing, in the order it does it, with
-// the real wall time each step took. Nothing here is a fake progress bar: the scene
-// shader is 580-odd lines and compiling it genuinely blocks, the belt is genuinely
-// generated, and the typeface genuinely has to land before the name can be drawn into
-// the scene - so the honest thing and the atmospheric thing are the same thing.
-export const BOOT_STEPS = {
-	context: 'render context',
-	scene: 'scene shader',
-	programs: 'title + dust',
-	field: 'rock field',
-	typeface: 'typeface',
-	frame: 'first frame',
+// What each boot step is worth, as a share of the whole. Weighted rather than six equal
+// sixths because they are nothing like equal: the first frame is about half the wait on
+// every machine measured, so equal steps would race to 83% and then sit there for the
+// entire GPU stall, which is the exact behaviour that makes loaders feel like lies.
+// These are checkpoints and they are true - the percentage only passes one when the work
+// behind it is genuinely done. Between them the bar creeps toward the next checkpoint
+// without ever reaching it, which is an estimate, and is the one part of this that is.
+export const BOOT_WEIGHTS = {
+	context: 0.04,
+	scene: 0.22,
+	programs: 0.1,
+	field: 0.06,
+	typeface: 0.08,
+	frame: 0.5,
 }
-// Don't flash. Under this and the loader never appears; once it has appeared it stays
-// long enough to be read rather than blinking out mid-word.
-export const BOOT_SHOW_AFTER = 150
-export const BOOT_MIN_SHOW = 700
+// How fast the displayed figure closes the gap to the next checkpoint, in seconds.
+export const BOOT_EASE_TAU = 0.9
+// How long the cover stays up once it is up, so it reads as a beat rather than a blink.
+// There is deliberately no "only show if the boot is slow" threshold. That was tried and
+// cannot work here: the boot's own steps take about 100ms of yielding, and the expensive
+// part - waiting for the GPU to finish the first frame - blocks the main thread, so a
+// timer set to fire during it never runs. Any threshold is therefore either below the
+// CPU phase (always shows) or above it (never shows, including on the slow devices it
+// existed for). Given the cover also stops the reader seeing an unpainted canvas, always
+// showing it briefly is the honest simplification.
+export const BOOT_MIN_SHOW = 600
 // The name is drawn into a texture with the pixel font. Waiting for the face means the
 // first frame has the real letters instead of fallback monospace that pops a moment
 // later - but a font that never arrives must not hold the flight hostage.

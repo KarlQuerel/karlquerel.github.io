@@ -4,7 +4,7 @@
 
 		<!-- covers the gap between mount and the first frame; reports what the boot
 		     actually did rather than animating a guess -->
-		<LabBoot :log="bootLog" :done="!booting" />
+		<LabBoot :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
 
 		<!-- Fixed chrome. Two things the flight was missing as a portfolio: the name is
 		     gone from about 17% of the scroll, where the title passes the camera, and the
@@ -81,8 +81,18 @@
 	const PORTAL_STAGGER = 0.15
 
 	const canvas = ref(null)
-	const { supported, booting, bootLog, leg, wake, hint, arrive, markOn, shaderLines } =
-		useFlyby(canvas)
+	const {
+		supported,
+		booting,
+		bootProgress,
+		bootCeiling,
+		leg,
+		wake,
+		hint,
+		arrive,
+		markOn,
+		shaderLines,
+	} = useFlyby(canvas)
 
 	// Counted, not claimed: the shader is right there in the bundle, so measure it.
 	const spec = computed(() => `webgl1 · ${shaderLines.value}-line shader · 0 deps`)
