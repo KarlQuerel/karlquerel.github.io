@@ -22,8 +22,10 @@ import {
 	BELT_SPIN,
 	BELT_UNIFORM_BUDGET,
 	BODIES,
+	BOOT_STEPS,
 	DUST_BOX,
 	FOCAL,
+	FONT_WAIT_MAX,
 	HUD_CELLS,
 	LEGS,
 	MOTES,
@@ -84,6 +86,10 @@ export function useFlyby(canvasRef) {
 	// A browser with no WebGL still gets the copy: the page degrades to its own text
 	// rather than throwing on a null context.
 	const supported = ref(true)
+	// What the boot actually did, in order, with the real wall time of each step. The
+	// loader renders this; nothing in it is invented.
+	const bootLog = ref([])
+	const booting = ref(true)
 	const progress = ref(0)
 	const leg = ref(LEGS[0][1])
 	const wake = ref(0)
@@ -94,6 +100,9 @@ export function useFlyby(canvasRef) {
 
 	let gl = null
 	let raf = 0
+	// setup yields to the browser between steps so the loader can paint, which means the
+	// route can unmount half way through it
+	let disposed = false
 	let scene, title, dust
 	let quad, titleQuad, dustSeeds, dustTails, titleTex
 	let U, TU, DU, aScene, aTitle, aDust
@@ -399,14 +408,41 @@ export function useFlyby(canvasRef) {
 		my = (e.clientY / window.innerHeight) * 2 - 1
 	}
 
-	function setup() {
+	// Let the browser actually paint. Two frames: the first schedules the change, the
+	// second happens after it has been composited.
+	const paint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
+
+	// The face the title is drawn in. Waiting on this one rather than document.fonts.ready
+	// asks for exactly what is needed, and the race means a font that never arrives costs
+	// the flight FONT_WAIT_MAX and not the whole visit.
+	function fontReady() {
+		if (!document.fonts) return Promise.resolve()
+		return Promise.race([
+			document.fonts.load('40px "Press Start 2P"').catch(() => {}),
+			new Promise(r => setTimeout(r, FONT_WAIT_MAX)),
+		])
+	}
+
+	async function setup() {
 		const canvas = canvasRef.value
 		gl = canvas && canvas.getContext('webgl', { antialias: false, alpha: false })
 		if (!gl) {
 			supported.value = false
+			booting.value = false
 			return
 		}
 		still = prefersReducedMotion()
+
+		// Put the loader on screen before anything that blocks — compiling the scene
+		// shader is a few hundred milliseconds of frozen main thread on a slow GPU.
+		await paint()
+		let mark = performance.now()
+		const step = async label => {
+			bootLog.value = [...bootLog.value, { label, ms: Math.round(performance.now() - mark) }]
+			await paint()
+			mark = performance.now()
+			return !disposed
+		}
 
 		// How many belt rocks this GPU can afford — see BELT_UNIFORM_BUDGET.
 		beltCount = Math.max(
@@ -418,29 +454,16 @@ export function useFlyby(canvasRef) {
 		)
 		const sceneFrag = sceneFragSrc.replace('__BELT_COUNT__', String(beltCount))
 		shaderLines.value = sceneFrag.trim().split('\n').length
+		if (!(await step(BOOT_STEPS.context))) return
 
 		scene = compile(sceneVert, sceneFrag)
+		if (!(await step(BOOT_STEPS.scene))) return
+
 		dust = compile(dustVert, dustFrag)
 		title = compile(titleVert, titleFrag)
-
 		quad = buffer(new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]))
 		// Two triangles carrying UVs; the plane's world corners are built in the shader.
 		titleQuad = buffer(new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]))
-
-		const seeds = new Float32Array(MOTES * 6)
-		const tails = new Float32Array(MOTES * 2)
-		for (let i = 0; i < MOTES; i++) {
-			const s = [Math.random(), Math.random(), Math.random()]
-			for (let k = 0; k < 2; k++) {
-				seeds[i * 6 + k * 3] = s[0]
-				seeds[i * 6 + k * 3 + 1] = s[1]
-				seeds[i * 6 + k * 3 + 2] = s[2]
-				tails[i * 2 + k] = k * 0.38 // tail sits behind the head in travel space
-			}
-		}
-		dustSeeds = buffer(seeds)
-		dustTails = buffer(tails)
-
 		U = locations(scene, SCENE_UNIFORMS)
 		U.uRock = gl.getUniformLocation(scene, 'uRock[0]')
 		U.uRockSpin = gl.getUniformLocation(scene, 'uRockSpin[0]')
@@ -456,7 +479,21 @@ export function useFlyby(canvasRef) {
 			seed: gl.getAttribLocation(dust, 'aSeed'),
 			tail: gl.getAttribLocation(dust, 'aTail'),
 		}
+		if (!(await step(BOOT_STEPS.programs))) return
 
+		const seeds = new Float32Array(MOTES * 6)
+		const tails = new Float32Array(MOTES * 2)
+		for (let i = 0; i < MOTES; i++) {
+			const s = [Math.random(), Math.random(), Math.random()]
+			for (let k = 0; k < 2; k++) {
+				seeds[i * 6 + k * 3] = s[0]
+				seeds[i * 6 + k * 3 + 1] = s[1]
+				seeds[i * 6 + k * 3 + 2] = s[2]
+				tails[i * 2 + k] = k * 0.38 // tail sits behind the head in travel space
+			}
+		}
+		dustSeeds = buffer(seeds)
+		dustTails = buffer(tails)
 		BODIES.forEach((b, i) => {
 			bodyArr.set(b.c.concat([b.r]), i * 4)
 			bodyP.set([b.pid, 0, b.ring[0], b.ring[1]], i * 4)
@@ -465,19 +502,37 @@ export function useFlyby(canvasRef) {
 			gl.useProgram(scene)
 			gl.uniform4fv(U.uBelt, buildBelt(beltCount))
 		}
+		if (!(await step(BOOT_STEPS.field))) return
+
+		// before the first title upload, so the name is drawn in the real face rather
+		// than fallback monospace that pops a frame later
+		await fontReady()
+		if (!(await step(BOOT_STEPS.typeface))) return
 
 		titleTex = gl.createTexture()
 		resize()
 		uploadTitle()
-		// the pixel font may still be loading; redraw the plane once it lands
-		if (document.fonts) document.fonts.ready.then(() => gl && uploadTitle()).catch(() => {})
-
+		// belt and braces: if the face lost the race above, redraw the plane when it lands
+		if (document.fonts) {
+			document.fonts.ready.then(() => !disposed && gl && uploadTitle()).catch(() => {})
+		}
 		window.addEventListener('resize', onResize, { passive: true })
 		if (!still) window.addEventListener('pointermove', onPointerMove, { passive: true })
+		draw(performance.now())
+		// draw() only queues work; the GPU may not have started it. A one-pixel read
+		// blocks until it has, which makes this step the time until there are pixels
+		// rather than the time to submit commands - and, more to the point, keeps the
+		// loader up until the flight is actually on screen instead of hiding it a few
+		// hundred milliseconds early and uncovering a blank canvas.
+		gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4))
+		if (!(await step(BOOT_STEPS.frame))) return
+
+		booting.value = false
 		raf = requestAnimationFrame(loop)
 	}
 
 	function teardown() {
+		disposed = true
 		cancelAnimationFrame(raf)
 		window.removeEventListener('resize', onResize)
 		window.removeEventListener('pointermove', onPointerMove)
@@ -494,5 +549,5 @@ export function useFlyby(canvasRef) {
 	onMounted(setup)
 	onBeforeUnmount(teardown)
 
-	return { supported, progress, leg, wake, hint, arrive, markOn, shaderLines }
+	return { supported, booting, bootLog, progress, leg, wake, hint, arrive, markOn, shaderLines }
 }

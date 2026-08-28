@@ -2,6 +2,10 @@
 	<div class="flyby" :class="{ 'flyby--flat': !supported }">
 		<canvas ref="canvas" class="flyby__canvas" aria-hidden="true" />
 
+		<!-- covers the gap between mount and the first frame; reports what the boot
+		     actually did rather than animating a guess -->
+		<LabBoot :log="bootLog" :done="!booting" />
+
 		<!-- Fixed chrome. Two things the flight was missing as a portfolio: the name is
 		     gone from about 17% of the scroll, where the title passes the camera, and the
 		     only way to reach Karl was ten screens away at the end. -->
@@ -68,6 +72,7 @@
 <script setup>
 	import { computed, ref } from 'vue'
 	import { useFlyby } from '@/composables/useFlyby'
+	import LabBoot from '@/components/lab/LabBoot.vue'
 	import { LAB_BEATS, LAB_SOURCE_URL, LAB_TITLE } from '@/data/labBeats'
 	import { CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
 
@@ -76,7 +81,8 @@
 	const PORTAL_STAGGER = 0.15
 
 	const canvas = ref(null)
-	const { supported, leg, wake, hint, arrive, markOn, shaderLines } = useFlyby(canvas)
+	const { supported, booting, bootLog, leg, wake, hint, arrive, markOn, shaderLines } =
+		useFlyby(canvas)
 
 	// Counted, not claimed: the shader is right there in the bundle, so measure it.
 	const spec = computed(() => `webgl1 · ${shaderLines.value}-line shader · 0 deps`)
@@ -100,26 +106,13 @@
 </script>
 
 <style scoped lang="scss">
-	// The flyby's own palette. Deliberately local rather than in _variables.scss: it is
-	// sampled against this shader's output, not the site's void system, and the lab is
-	// where that look is being tried out.
-	$ink: #d7e3ef;
-	$dim: #7f93a8;
-	$hot: #ffb454;
-	$void: #0b0d14;
-	$faint: #55607a;
-	// a one-pixel hard outline: what 8-bit games did to keep text on a busy field
-	$outline:
-		-1px -1px 0 $black,
-		1px -1px 0 $black,
-		-1px 1px 0 $black,
-		1px 1px 0 $black;
+	@use '@/styles/flyby' as *;
 
 	.flyby {
 		// Sampled off the opening frame: on a slow GPU the first paint is this gradient
 		// rather than a black card, and the canvas lands on top of something close.
-		background: $void linear-gradient(180deg, #08080f, #1a1a2c 45%, #24243d 62%, #141420) fixed;
-		color: $ink;
+		background: $flyby-ground;
+		color: $flyby-ink;
 		font-family: $font-pixel;
 		// `#app` centres text site-wide; the flight's copy column is read down the left
 		// edge, so it opts out the way SportPage does
@@ -190,10 +183,10 @@
 			z-index: -1;
 			background: linear-gradient(
 				90deg,
-				rgba($void, 0.94) 0 46%,
-				rgba($void, 0.75) 46% 70%,
-				rgba($void, 0.4) 70% 86%,
-				rgba($void, 0) 86%
+				rgba($flyby-void, 0.94) 0 46%,
+				rgba($flyby-void, 0.75) 46% 70%,
+				rgba($flyby-void, 0.4) 70% 86%,
+				rgba($flyby-void, 0) 86%
 			);
 			// fade the shade out top and bottom too, or it reads as a black box on the
 			// opening frame where there is nothing behind it that needs covering
@@ -213,11 +206,11 @@
 	.kicker {
 		font-size: 8px;
 		letter-spacing: 2px;
-		color: $hot;
+		color: $flyby-hot;
 		margin-bottom: 12px;
 		text-shadow:
 			2px 2px 0 $black,
-			$outline;
+			$flyby-outline;
 	}
 
 	h1 {
@@ -225,7 +218,7 @@
 		line-height: 1.5;
 		text-shadow:
 			3px 3px 0 $black,
-			$outline;
+			$flyby-outline;
 	}
 
 	h2 {
@@ -233,11 +226,11 @@
 		line-height: 1.6;
 		text-shadow:
 			3px 3px 0 $black,
-			$outline;
+			$flyby-outline;
 
 		em {
 			font-style: normal;
-			color: $hot;
+			color: $flyby-hot;
 		}
 	}
 
@@ -246,12 +239,12 @@
 	p {
 		font-size: 11px;
 		line-height: 2;
-		color: $dim;
+		color: $flyby-dim;
 		margin-top: 16px;
 		text-align: left;
 		text-shadow:
 			2px 2px 0 $black,
-			$outline;
+			$flyby-outline;
 	}
 
 	.hint {
@@ -260,17 +253,17 @@
 		bottom: 6vh;
 		transform: translateX(-50%);
 		font-size: 8px;
-		color: $dim;
+		color: $flyby-dim;
 		z-index: 3;
 		text-align: center;
 		text-shadow:
 			2px 2px 0 $black,
-			$outline;
+			$flyby-outline;
 
 		b {
 			display: block;
 			margin-top: 8px;
-			color: $hot;
+			color: $flyby-hot;
 		}
 	}
 
@@ -302,10 +295,10 @@
 		display: block;
 		padding: 14px 18px;
 		font-size: 9px;
-		color: $ink;
+		color: $flyby-ink;
 		text-decoration: none;
 		background: rgba(#111826, 0.8);
-		border: 3px solid $ink;
+		border: 3px solid $flyby-ink;
 		box-shadow: 5px 5px 0 $black;
 		transform: translateY(14px);
 		opacity: 0;
@@ -322,15 +315,15 @@
 
 		&:hover,
 		&:focus-visible {
-			color: $hot;
-			border-color: $hot;
+			color: $flyby-hot;
+			border-color: $flyby-hot;
 			outline: none;
 		}
 
 		&:focus-visible {
 			box-shadow:
 				5px 5px 0 $black,
-				0 0 0 3px $hot;
+				0 0 0 3px $flyby-hot;
 		}
 	}
 
@@ -356,17 +349,17 @@
 		border: 0;
 		background: none;
 		font: inherit;
-		color: $dim;
+		color: $flyby-dim;
 		text-decoration: none;
 		cursor: pointer;
 		text-shadow:
 			2px 2px 0 $black,
-			$outline;
+			$flyby-outline;
 		transition: color 0.1s steps(2);
 
 		&:hover,
 		&:focus-visible {
-			color: $hot;
+			color: $flyby-hot;
 			outline: none;
 		}
 	}
@@ -405,7 +398,7 @@
 	// The claim the page is making, in counted numbers rather than adjectives - the
 	// shader line count is read off the shader at runtime, so it cannot drift.
 	.chrome__spec {
-		color: $faint;
+		color: $flyby-faint;
 		text-shadow: 2px 2px 0 $black;
 	}
 
@@ -416,11 +409,11 @@
 		z-index: 5;
 		margin: 0;
 		font-size: 8px;
-		color: $dim;
+		color: $flyby-dim;
 		white-space: pre;
 		text-shadow:
 			2px 2px 0 $black,
-			$outline;
+			$flyby-outline;
 		pointer-events: none;
 	}
 
@@ -449,9 +442,9 @@
 		.card::before {
 			background: linear-gradient(
 				90deg,
-				rgba($void, 0.95) 0 76%,
-				rgba($void, 0.8) 76% 92%,
-				rgba($void, 0) 92%
+				rgba($flyby-void, 0.95) 0 76%,
+				rgba($flyby-void, 0.8) 76% 92%,
+				rgba($flyby-void, 0) 92%
 			);
 		}
 		p {

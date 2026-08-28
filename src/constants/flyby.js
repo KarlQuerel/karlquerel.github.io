@@ -358,6 +358,29 @@ export const PERF_WINDOW = 45
 export const PERF_SLOW_MS = 30
 export const PERF_FAST_MS = 20
 
+// ---------------------------------------------------------------- boot
+// The loader reports what the flight is actually doing, in the order it does it, with
+// the real wall time each step took. Nothing here is a fake progress bar: the scene
+// shader is 580-odd lines and compiling it genuinely blocks, the belt is genuinely
+// generated, and the typeface genuinely has to land before the name can be drawn into
+// the scene - so the honest thing and the atmospheric thing are the same thing.
+export const BOOT_STEPS = {
+	context: 'render context',
+	scene: 'scene shader',
+	programs: 'title + dust',
+	field: 'rock field',
+	typeface: 'typeface',
+	frame: 'first frame',
+}
+// Don't flash. Under this and the loader never appears; once it has appeared it stays
+// long enough to be read rather than blinking out mid-word.
+export const BOOT_SHOW_AFTER = 150
+export const BOOT_MIN_SHOW = 700
+// The name is drawn into a texture with the pixel font. Waiting for the face means the
+// first frame has the real letters instead of fallback monospace that pops a moment
+// later - but a font that never arrives must not hold the flight hostage.
+export const FONT_WAIT_MAX = 1500
+
 // ---------------------------------------------------------------- readout
 // Where the reader is, in the flight's own terms. RING PASS and CLOSE PASS are the
 // card kickers; the other four are placeholders for Karl's wording.

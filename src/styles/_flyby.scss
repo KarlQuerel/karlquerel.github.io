@@ -1,0 +1,24 @@
+// The lab flyby's own palette, deliberately separate from the site's void tokens in
+// _variables.scss: it is sampled against this shader's output rather than the site's
+// design system, and the lab is where that look is being tried out. Shared by LabPage
+// and LabBoot so the loader and the page it uncovers cannot drift apart.
+
+@use 'variables';
+
+$flyby-ink: #d7e3ef;
+$flyby-dim: #7f93a8;
+$flyby-hot: #ffb454;
+$flyby-void: #0b0d14;
+$flyby-faint: #55607a;
+
+// a one-pixel hard outline: what 8-bit games did to keep text on a busy field
+$flyby-outline:
+	-1px -1px 0 variables.$black,
+	1px -1px 0 variables.$black,
+	-1px 1px 0 variables.$black,
+	1px 1px 0 variables.$black;
+
+// Sampled off the opening frame: on a slow GPU the first paint is this gradient rather
+// than a black card, and the canvas lands on top of something close. The loader sits on
+// the same ground, so uncovering the flight is not a change of backdrop.
+$flyby-ground: $flyby-void linear-gradient(180deg, #08080f, #1a1a2c 45%, #24243d 62%, #141420) fixed;
