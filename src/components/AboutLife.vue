@@ -1,69 +1,87 @@
 <template>
 	<div class="life">
 		<!-- no accent dot — reads as the header above the themed cards -->
-		<section v-reveal class="life-card reveal-block">
-			<h2 class="life-card__title">ABOUT ME</h2>
-			<p v-for="(line, i) in ABOUT_ME" :key="i" class="life-card__line">{{ line }}</p>
-		</section>
+		<div class="life-slot">
+			<section v-reveal class="life-card reveal-block">
+				<h2 class="life-card__title">ABOUT ME</h2>
+				<p
+					v-for="(line, i) in ABOUT_ME"
+					:key="i"
+					class="life-card__line"
+					:class="{ 'life-card__lede': i === 0 }"
+				>
+					{{ line }}
+				</p>
+			</section>
+		</div>
 
-		<section v-reveal class="life-card reveal-block" data-section="dogs">
-			<h2 class="life-card__title"><span class="life-card__dot" aria-hidden="true" />DOGS</h2>
-			<p v-for="(line, i) in DOG_LINES" :key="i" class="life-card__line">{{ line }}</p>
-			<div class="dogs" @mouseenter="stopTimer" @mouseleave="startTimer">
-				<!-- photo deck: offset cards peek out behind the frame to hint there's more;
+		<div class="life-slot">
+			<section v-reveal class="life-card reveal-block" data-section="dogs">
+				<h2 class="life-card__title">
+					<span class="life-card__dot" aria-hidden="true" />DOGS
+				</h2>
+				<p
+					v-for="(line, i) in DOG_LINES"
+					:key="i"
+					class="life-card__line"
+					:class="{ 'life-card__lede': i === 0 }"
+				>
+					{{ line }}
+				</p>
+				<div class="dogs" @mouseenter="stopTimer" @mouseleave="startTimer">
+					<!-- photo deck: offset cards peek out behind the frame to hint there's more;
 				     photos auto-cycle (paused while hovered), click / tap skips ahead -->
-				<figure v-for="dog in DOGS" :key="dog.name" class="dog">
-					<button
-						type="button"
-						class="dog__stack"
-						:aria-label="`Next photo of ${dog.name}`"
-						@click="skip(dog)"
-					>
+					<figure v-for="dog in DOGS" :key="dog.name" class="dog">
+						<button
+							type="button"
+							class="dog__stack"
+							:aria-label="`Next photo of ${dog.name}`"
+							@click="skip(dog)"
+						>
+							<img
+								v-for="(photo, i) in dog.photos"
+								:key="photo"
+								:src="photo"
+								:alt="i === activeIndex(dog) ? `Photo of ${dog.name}` : ''"
+								:aria-hidden="i === activeIndex(dog) ? null : 'true'"
+								class="dog__photo"
+								:class="{ 'is-active': i === activeIndex(dog) }"
+								loading="lazy"
+								decoding="async"
+							/>
+						</button>
+						<figcaption class="dog__name">
+							{{ dog.name }}<span class="dog__years">{{ dog.years }}</span>
+						</figcaption>
+					</figure>
+				</div>
+			</section>
+		</div>
+
+		<div v-for="section in LIFE_SECTIONS" :key="section.id" class="life-slot">
+			<section v-reveal class="life-card reveal-block" :data-section="section.id">
+				<h2 class="life-card__title">
+					<span class="life-card__dot" aria-hidden="true" />{{ section.title }}
+				</h2>
+				<template v-for="(line, i) in section.lines" :key="i">
+					<picture v-if="section.media?.beforeLine === i" class="life-card__media">
+						<source
+							:srcset="section.media.still"
+							media="(prefers-reduced-motion: reduce)"
+						/>
 						<img
-							v-for="(photo, i) in dog.photos"
-							:key="photo"
-							:src="photo"
-							:alt="i === activeIndex(dog) ? `Photo of ${dog.name}` : ''"
-							:aria-hidden="i === activeIndex(dog) ? null : 'true'"
-							class="dog__photo"
-							:class="{ 'is-active': i === activeIndex(dog) }"
+							:src="section.media.src"
+							:alt="section.media.alt"
 							loading="lazy"
 							decoding="async"
 						/>
-					</button>
-					<figcaption class="dog__name">
-						{{ dog.name }}<span class="dog__years">{{ dog.years }}</span>
-					</figcaption>
-				</figure>
-			</div>
-		</section>
-
-		<section
-			v-for="section in LIFE_SECTIONS"
-			:key="section.id"
-			v-reveal
-			class="life-card reveal-block"
-			:data-section="section.id"
-		>
-			<h2 class="life-card__title">
-				<span class="life-card__dot" aria-hidden="true" />{{ section.title }}
-			</h2>
-			<template v-for="(line, i) in section.lines" :key="i">
-				<picture v-if="section.media?.beforeLine === i" class="life-card__media">
-					<source
-						:srcset="section.media.still"
-						media="(prefers-reduced-motion: reduce)"
-					/>
-					<img
-						:src="section.media.src"
-						:alt="section.media.alt"
-						loading="lazy"
-						decoding="async"
-					/>
-				</picture>
-				<p class="life-card__line">{{ line }}</p>
-			</template>
-		</section>
+					</picture>
+					<p class="life-card__line" :class="{ 'life-card__lede': i === 0 }">
+						{{ line }}
+					</p>
+				</template>
+			</section>
+		</div>
 	</div>
 </template>
 
@@ -126,10 +144,31 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 2rem;
 		width: min(64rem, 94vw);
 		margin: 0 auto;
 		text-align: left;
+	}
+
+	// One screen per section. The slot carries the height and the card floats in the
+	// middle of it, so the dark wash still hugs its own copy instead of ballooning
+	// into a viewport-tall panel — and the sections can be wildly different heights
+	// (DOGS runs past a screen, MUSIC is a fifth of one) without any of them sharing
+	// the frame with a neighbour. vh, not dvh: a dvh that resizes as a phone's URL bar
+	// slides would re-fire the journey's ResizeObserver and re-measure the camera.
+	//
+	// The height alone carries the rhythm — deliberately no scroll-snap. Snapping these
+	// measured ~500px of scroll dragged backwards across one wheel run: every tick ends
+	// a gesture, so the snap re-settles against the reader's hand. The camera is scrubbed
+	// off scroll position here, so that tug is not just a scroll artefact, it is the
+	// whole scene stuttering with it.
+	.life-slot {
+		display: grid;
+		place-items: center;
+		width: 100%;
+		min-height: 100vh;
+		// keeps a card off the fixed corner chrome; inside the 100vh for every card
+		// that fits, so those still centre on the frame exactly as they would without it
+		padding-block: $chrome-clearance;
 	}
 
 	.life-card {
@@ -186,6 +225,29 @@
 		margin-bottom: 0;
 	}
 
+	// The way into the card. Departure Mono is crisp only at 11px and 22px, so a lede
+	// cannot be sized up without going soft — the hierarchy comes from a brighter white,
+	// the section's own accent as a margin rule, and the extra air under it instead.
+	.life-card__lede {
+		position: relative;
+		margin-bottom: 1.3rem;
+		padding-left: 0.9rem;
+		color: $white;
+	}
+
+	// the accent again, as a rule rather than a dot — colouring the sentence itself
+	// would put a whole line of prose in $purple on black, which is unreadable
+	.life-card__lede::before {
+		content: '';
+		position: absolute;
+		top: 0.2em;
+		bottom: 0.2em;
+		left: 0;
+		width: 3px;
+		background: $light-gray;
+		box-shadow: 0 0 8px 1px rgba($light-gray, 0.5);
+	}
+
 	// section art floated into the prose, so the paragraphs after it wrap alongside.
 	// Framed like the dog photos: the art carries its own dark backdrop, so without
 	// the void border its rectangle reads as an accident rather than a picture.
@@ -210,22 +272,26 @@
 	}
 
 	// per-section accents from the shared palette so LIFE stays in the site's system
-	[data-section='dogs'] .life-card__dot {
+	[data-section='dogs'] .life-card__dot,
+	[data-section='dogs'] .life-card__lede::before {
 		background: $light-red;
 		box-shadow: 0 0 8px 1px rgba($light-red, 0.55);
 	}
 
-	[data-section='sports'] .life-card__dot {
+	[data-section='sports'] .life-card__dot,
+	[data-section='sports'] .life-card__lede::before {
 		background: $phosphor-green;
 		box-shadow: 0 0 8px 1px rgba($phosphor-green, 0.55);
 	}
 
-	[data-section='music'] .life-card__dot {
+	[data-section='music'] .life-card__dot,
+	[data-section='music'] .life-card__lede::before {
 		background: $purple;
 		box-shadow: 0 0 8px 1px rgba($purple, 0.6);
 	}
 
-	[data-section='games'] .life-card__dot {
+	[data-section='games'] .life-card__dot,
+	[data-section='games'] .life-card__lede::before {
 		background: $light-blue;
 		box-shadow: 0 0 8px 1px rgba($light-blue, 0.55);
 	}

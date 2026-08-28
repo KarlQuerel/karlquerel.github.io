@@ -1,5 +1,9 @@
 // Drives the journey's LIFE station (AboutLife.vue). One entry per paragraph;
-// a `\n` inside an entry breaks the line without opening a paragraph gap.
+// a `\n` inside an entry breaks the line without opening a paragraph gap — it joins
+// beats meant to be read in one breath, so keep it for those and give anything past
+// ~45 words its own entry instead, or it sets as a slab with nowhere to rest.
+// The first entry of every section is its lede: keep it a short topic sentence, since
+// AboutLife sets it apart as the way into the card.
 export const ABOUT_ME = [
 	'I come from a multicultural background.',
 	'Born in France to a Lebanese mother, I spent my teenage years in Lebanon before coming back to Europe.',
@@ -8,7 +12,9 @@ export const ABOUT_ME = [
 
 // Intro copy shown above the dog photos on the DOGS card.
 export const DOG_LINES = [
-	'I always loved animals, especially dogs.\nI adopted my first one, Lesko, from the streets of Grenoble while I was still a student. He was aggressive towards other dogs, and it took us two full years of discipline and hard work to heal his traumas. I learned everything I know about dogs training him.\nTwo years later, in Lebanon, he ate rat poison and died shortly after. His sudden and brutal death shattered me… I was lost, confused, and angry.',
+	'I always loved animals, especially dogs.',
+	'I adopted my first one, Lesko, from the streets of Grenoble while I was still a student. He was aggressive towards other dogs, and it took us two full years of discipline and hard work to heal his traumas. I learned everything I know about dogs training him.',
+	'Two years later, in Lebanon, he ate rat poison and died shortly after. His sudden and brutal death shattered me… I was lost, confused, and angry.',
 	"Less than a week later, fate handed me baby Yako. He was three weeks old, not even weaned. I couldn't grasp the idea of adopting another dog, let alone be ready for it. But Yako taught me that life goes on, no matter what.",
 	"For almost a decade now I've dog-sat in my free time, and Yako has seen a lot of dogs come through his home.",
 	"To me, a home isn't a home without an animal. And dogs hold the values that speak to me most: loyalty, playfulness, and living in the present (alongside a bottomless stomach).",
@@ -77,8 +83,10 @@ export const LIFE_SECTIONS = [
 		},
 		lines: [
 			'For as long as I can remember, I’ve been fascinated by video games.',
-			'My first real dive was Final Fantasy VII, where I was completely amazed by the visuals, music, and story, even if I was too young to fully grasp it all.\nThen came our first home PC, and with it Heroes of Might and Magic IV and Age of Mythology. That was the spark.',
-			'Years later I got into the amazing but addictive World of Warcraft. I ended up playing it for 13 years, ran a Twitch channel, and led teams of more than 20 players on Discord.\nEventually realizing how much of my life it was consuming, I deleted my account and stepped away entirely.',
+			'My first real dive was Final Fantasy VII, where I was completely amazed by the visuals, music, and story, even if I was too young to fully grasp it all.',
+			'Then came our first home PC, and with it Heroes of Might and Magic IV and Age of Mythology. That was the spark.',
+			'Years later I got into the amazing but addictive World of Warcraft. I ended up playing it for 13 years, ran a Twitch channel, and led teams of more than 20 players on Discord.',
+			'Eventually realizing how much of my life it was consuming, I deleted my account and stepped away entirely.',
 			'Today I only dabble in short single-player masterpieces like This War of Mine, Outer Wilds, or Return of the Obra Dinn.',
 			'Coding has since replaced that screen obsession, and this time, it gives back as much as I put in.',
 		],
