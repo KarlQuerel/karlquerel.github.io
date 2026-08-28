@@ -1,0 +1,363 @@
+// The landing flyby: every tuned number the flight is made of. The GL plumbing in
+// useFlyby.js reads these and never hard-codes any of them, so this file is the one
+// to open when changing what the flight does.
+
+import { norm } from '../js/vec3.js'
+
+const DEG = Math.PI / 180
+
+// ---------------------------------------------------------------- scene
+// Two worlds: a ringed one to thread, and the one we are heading home to.
+// Radius 1 = ~Earth. Both strung along -Z so the camera flies a corridor.
+export const BODIES = [
+	// The ringed world. Its y is solved, not chosen: it has to take the destination off
+	// the ridge with no gap (the ridge lets go of it at s=0.197) and hold it until the
+	// ridge reveal has finished landing, so the destination coming out from behind this
+	// limb is its own beat rather than a detail inside a bigger one. Hides it
+	// s=0.196..0.241, clear of it by 0.318. One unit lower and the two beats collide.
+	{ c: [10.15, 4.0, -60], r: 3.0, pid: 0, spin: 0.9, ring: [4.3, 7.2] },
+	{ c: [14, -3.0, -186], r: 6.0, pid: 1, spin: 0.2, ring: [0, 0] }, // the destination
+	// The ridge. It sits squarely between the camera and everything else, so at rest
+	// the page is a grey horizon under stars and nothing else exists. It hides the
+	// corridor by blocking it, not by the camera looking away - which is why the
+	// reveal is parallax as we climb over it, and needs no camera trick at all.
+	{ c: [6.5, -6, -25], r: 12.0, pid: 2, spin: 0.12, ring: [0, 0] },
+	// The corridor moon: the ridge's trick again, but spent on one body instead of the
+	// whole scene. It takes the destination back after the first look at it and holds
+	// it to s=0.527, so the arrival happens at 8.2 degrees across instead of 2.4 - the
+	// flight closes a third of the remaining distance while it is out of sight.
+	// Solved the same way the ridge was: on the sightline to the destination, sized to
+	// cover it with margin, far enough off the route to clear its surface by a third of
+	// a radius (the ridge is passed at 1.29, this at 1.36). It has to be a smooth body
+	// and not a rock: rockRadius bulges 30%, so a marched rock passed this close would
+	// put the camera inside its own silhouette.
+	{ c: [8.55, -1.17, -148.2], r: 3.68, pid: 3, spin: 0.16, ring: [0, 0] },
+	// --- the rest of the system. The four above are a chain and have to be: an occlusion
+	// reveal needs the occluder on the sightline to what it hides. Everything else used to
+	// be placed by asking "where can this hide on the opening frame", which is not a
+	// question a solar system has ever answered, and it showed - the bodies were scattered
+	// in a shell around a scene that plainly has a plane. The ring says where that plane
+	// is; measured, the four above sit within 22 units of it and the old scenery sat 30 to
+	// 173 units off it. Half the scene obeyed a grammar the other half ignored, and that
+	// contradiction is what read as wrong. Not the randomness - the inconsistency.
+	//
+	// So these are placed on that plane instead, within 18 degrees of it, and they are
+	// allowed to be seen at rest as long as they are faint: under a degree across and 93%
+	// hazed, which is a smudge among the stars. A photograph of space has distant worlds in
+	// it. Only the three scripted reveals are still protected - the ridge over the
+	// corridor, and the two eclipses of the destination.
+	// Every one of them also sits at a phase angle between 55 and 125 degrees, so it has a
+	// terminator across it. Four of the old set sat under 50 and rendered as flat lit discs,
+	// which is most of what made them look pasted on.
+	{ c: [1.39, 36.34, -142.55], r: 1.42, pid: 4, spin: 0.27, ring: [0, 0] },
+	{ c: [43.16, -10.62, -199.15], r: 1.16, pid: 7, spin: 0.33, ring: [0, 0] },
+	{ c: [-29.96, 82.6, -472.12], r: 3.17, pid: 8, spin: 0.06, ring: [0, 0] },
+	{ c: [21.98, 59.1, -334.99], r: 3.04, pid: 9, spin: 0.09, ring: [0, 0] },
+	{ c: [73.69, 5.31, -229.16], r: 2.18, pid: 6, spin: 0.14, ring: [0, 0] },
+	// Moons. The cheapest thing in the scene that reads as a system: the eye sees a pair
+	// and supplies the orbit. They are also the only near-field bodies that come hidden for
+	// free - whatever covers the primary covers them - and on the plane for free, because
+	// the primary is. Each is a fifth to a third of its planet, three to six radii out, and
+	// none may sit on the destination during either scripted reveal: a moon crossing its
+	// own planet is worth having, a moon crossing the beat is not.
+	{ c: [6.31, 4.61, -47.39], r: 0.56, pid: 2, spin: 0.41, ring: [0, 0] },
+	{ c: [6.18, 2.27, -169.66], r: 1.08, pid: 4, spin: 0.35, ring: [0, 0] },
+	{ c: [18.36, 13.33, -218.77], r: 2.07, pid: 2, spin: 0.19, ring: [0, 0] },
+]
+
+// Rocks down the corridor, each marched in the scene shader so they occlude the
+// scene, each other, and get occluded in turn. Sizes and offsets all differ: a
+// field of one rock repeated is worse than no field at all.
+// Deliberately NOT on the sightline to the destination. Anything that fully covers
+// what is dead ahead has to be dead ahead itself, and we fly into it - measured at
+// -0.33 clearance before this was reverted. Occlusion reveals need an occluder the
+// route passes to one side of, which is what the ridge and the ringed world are.
+// spin and tumble are turns per full scroll, about the vertical and end over end. The
+// rates are deliberately not multiples of each other: a rock that returns to the same
+// face reads as a prop on a turntable.
+// Rates are turns per full scroll and are all raised from where they were: at 1.4 and
+// 2.3 a rock turned about a third of a revolution while it was actually in shot, which
+// is a rock that looks like it is being carried past rather than tumbling. No pair of
+// them divides into another, so no rock ever returns to the same face on a beat.
+export const ROCKS = [
+	{ c: [4.2, -1.6, -104.5], r: 1.3, spin: 3.1, tumble: 1.9 },
+	// Third rock, and the only one that goes over the top: it clears the camera at 30
+	// degrees of elevation while the other two pass low, so the corridor stops being a
+	// row of things at eye level. Peaks at 34 degrees across at s=0.415, two thirds of
+	// a bulged radius off the hull, and nineteen units clear of anything else in the
+	// scene. Solved under the same rule as the other two - never on the sightline to
+	// the destination or the ringed world, so it can be threaded and never blocks a
+	// reveal it was not meant to.
+	{ c: [3.2, 4.86, -83.17], r: 1.24, spin: 4.3, tumble: 2.9 },
+	// Its own stretch of corridor, and the only thing in the flight that passes on the
+	// left. It used to sit two radii off the corridor moon - close enough that the two
+	// read as one lumpy object - while everything else worth looking at is right of the
+	// flight line. Placed for presence rather than proximity: a rock passed at two radii
+	// is at its largest when it is ninety degrees off the axis, which is off the frame
+	// entirely, so what matters is how big it gets while still inside it. Ten degrees at
+	// s=0.51, low and left, against the moon high and right - and it is six radii clear
+	// of everything else in the scene.
+	{ c: [-1, -2, -125], r: 1.9, spin: 2.3, tumble: 3.7 },
+]
+
+// what the camera can be asked to watch. The rocks are not on the list any more:
+// they sweep through frame on their own, which is what passing something looks like.
+export const TARGETS = [BODIES[0], BODIES[1]]
+
+// ---------------------------------------------------------------- flight path
+// Camera waypoints: s = scroll progress, p = world position. One long arc - x eases
+// in for the ring pass and back out to the destination, y and z never reverse, so
+// the flight reads as one curve rather than a series of corrections.
+//
+// The s values are the speed profile. The first leg covers six units across a tenth
+// of the scroll: from eighty units out that is no visible motion at all, so the page
+// opens as a still frame and only admits it is 3D once you have scrolled past it.
+export const PATH = [
+	{ s: 0.0, p: [9.0, 2.6, 24] },
+	{ s: 0.123, p: [8.8, 3.4, 18] }, // still frame ends here, engines light
+	{ s: 0.194, p: [8.4, 6.0, 4] }, // climbing: the ridge starts to drop away
+	{ s: 0.255, p: [7.8, 8.6, -20] }, // up and over it, and the system is just there
+	{ s: 0.306, p: [6.9, 6.4, -44] }, // settling back onto the corridor
+	{ s: 0.356, p: [3.8, 4.4, -61.2] }, // through the ring plane, near its outer edge
+	{ s: 0.415, p: [3.4, 2.4, -78] }, // wider and slower: a close pass sweeps the frame
+	{ s: 0.475, p: [3.0, 1.2, -103] }, // faster than the eye wants to follow
+	{ s: 0.519, p: [2.6, -0.1, -118] },
+	{ s: 0.6, p: [2.8, -0.7, -136] }, // the low point; from here it only opens out
+	{ s: 0.7, p: [4.6, -1.1, -158] },
+	{ s: 0.78, p: [8.0, -1.5, -168] }, // lining up on the approach axis
+	{ s: 0.86, p: [11.6, -2.2, -174] },
+	{ s: 0.93, p: [13.4, -2.8, -176.5] }, // from here it is a straight run in
+	{ s: 1.0, p: [14.0, -3.0, -179.1] }, // dead radial, into the atmosphere
+]
+
+// which world the camera turns to watch, and how hard, across the trip
+// b = world to watch, w = how hard the camera turns to hold it
+export const FOCUS = [
+	// Straight down the corridor at first - the ridge does the hiding, so the camera
+	// need not point anywhere clever. Weights stay low the whole way: anything we
+	// merely pass should sweep through frame on its own, and every degree the camera
+	// turns is a degree the reader's eye has to follow.
+	{ s: 0.0, b: 0, w: 0 },
+	{ s: 0.24, b: 0, w: 0.08 },
+	// A lean into the approach, and then let go. The weight has to be back to zero by
+	// the closest pass at s=0.349: hold any of it past there and the camera is turning
+	// to keep in view something it has already gone by, which it can never manage. It
+	// used to carry 0.15 to s=0.35 and reach zero only at 0.40, and so swung 15 degrees
+	// off the direction of travel at s=0.36 - peaking after the ringed world was behind
+	// the camera, which is the worst possible moment for it. This peaks at 4 degrees at
+	// s=0.31, while the thing is still ahead and worth a look, and is straight again
+	// before the pass. It is big enough by then to fill the frame without being
+	// followed, which was always the intent.
+	{ s: 0.3, b: 0, w: 0.24 },
+	{ s: 0.345, b: 0, w: 0 },
+	{ s: 0.78, b: 1, w: 0.25 }, // then nothing but the destination, dead centre
+	{ s: 0.88, b: 1, w: 0.45 },
+	{ s: 1.0, b: 1, w: 0.55 },
+]
+
+// The roll the flight is flown, as opposed to the bank the path earns. A quarter turn,
+// and the quarter is solved rather than chosen: the counter of the Q is a tall narrow
+// slot - one design pixel by three - and the frame is wide and short. Left upright the
+// slot is 24 degrees tall in a 31-degree frame, so it runs very nearly floor to ceiling
+// and the letter reads as two bars with a gap between them. Turned on its side it lies
+// across the frame instead, 24 wide in 52 and 8 tall in 31, with letterform closing it
+// on all four sides. That is the difference between going between two things and
+// threading one, and threading is the whole reason the flight aims at a letter.
+// It ratchets rather than unwinding. Each quarter turn is spent on a beat and then held
+// through the stretch after it, so the horizon the reader is given is the one the last
+// manoeuvre left them with. A roll that returns to level says there is an up out here
+// and the flight keeps finding it; a roll that sticks says there is not, which is both
+// truer and the reason the field stops reading as a row of things at eye level - the
+// same bodies arrive along the frame's long axis, then its short one, then the other
+// way up.
+// Four quarters, not one turn: it still ends level, because the atmosphere at the far
+// end is drawn in screen space with its ground at the bottom of the frame, and arriving
+// at a planet upside down would put the horizon on the ceiling. The last quarter is
+// spent before ENTRY_START for exactly that reason.
+// Nothing rolls before 0.12. The name is at its biggest and most readable just before
+// the bank starts, and the opening frame is meant to look like a photograph - a
+// photograph that is already banking has given the game away.
+// Angles in degrees because they are read as angles, not as fractions of a turn.
+// This used to ratchet in four held steps, and it turned too fast to watch: the holds
+// ate 0.46 of the scroll between them, which left every step crammed into a tenth of
+// the page. Measured, the first one turned 22 degrees per hundred pixels of scrolling -
+// about four wheel notches for a quarter turn, which is where the dizziness came from.
+// Rotation rate is what matters, not rotation. So there is one hold left, on the beat
+// that earns it - the ridge letting go of the system, which wants a steady horizon -
+// and the rest is a single long turn with two thirds of the page to make it in. Worst
+// case is now 10.5 degrees per hundred pixels, a little under half what it was, and no
+// segment starts abruptly because smoothstep leaves each one at zero rate.
+// It starts at 0.06 rather than 0.12. The still frame is only really still at s=0 - the
+// dust and the instrument both wake at 0.03 - so there is room to begin the turn before
+// the letter arrives, and beginning earlier is most of what buys the lower rate.
+// 62 at the letter rather than 90: the slot only has to lie across the frame, not square
+// to it. Tilted, it measures 19 degrees against a 31-degree frame, so there is still
+// letterform above and below it, and a diagonal thread looks like flying where a square
+// one looks like a diagram.
+// It banks both ways. A turn that only ever goes one way is a barrel roll however slowly
+// it is flown - the horizon keeps going round and never comes back, and there is nothing
+// for the eye to settle against. Banking over, through level, out the other side and
+// back is what an aircraft does, and it reads as flying rather than as spinning.
+// The amplitudes fall as it goes - 62, then 72, then 28 - so it settles rather than
+// stopping dead, and it ends level for the atmosphere.
+export const ROLL = [
+	{ s: 0.0, r: 0 },
+	{ s: 0.06, r: 0 },
+	{ s: 0.1777, r: 62 * DEG }, // over to the right, laid across the slot in the Q
+	{ s: 0.3, r: 62 * DEG }, // held, so the ridge hands the system over on a steady horizon
+	{ s: 0.55, r: -72 * DEG }, // through level and out the other way for the close pass
+	{ s: 0.72, r: 28 * DEG }, // back again, shallower
+	{ s: 0.845, r: 0 }, // level, with the atmosphere still ahead
+	{ s: 1.0, r: 0 },
+]
+
+export const UP = [0, 1, 0]
+export const SUN = norm([0.82, 0.3, 0.48])
+// The system's plane. Doubles as the ring's normal and as the plane the belt is
+// scattered on, so the two can never drift apart.
+export const RING_NORMAL = norm([0.2, 1.0, 0.13])
+
+// A 58-degree lens. Note the frame is half this off-axis: the shader builds its ray
+// as uv.y*uUp + uFocal*uFwd with uv.y spanning -0.5..0.5, so FOCAL is the cotangent
+// of the HALF angle and the vertical field of view is 58 degrees end to end.
+export const FOCAL = 1 / Math.tan((58 * Math.PI) / 360)
+
+export const ENTRY_START = 0.87
+// the dust wakes up with the engines, not on load: streaks past the camera are a
+// depth cue, and the opening frame is meant to give nothing away
+export const WAKE_START = 0.03
+export const WAKE_SPAN = 0.09
+// how far the camera rolls into a turn, in radians, how hard it reacts, and how
+// wide a slice of path it reads. This is the lean the path earns on its own; the
+// scripted roll above is separate and much larger.
+export const BANK_MAX = 0.1
+export const BANK_GAIN = 1.0
+export const BANK_SPAN = 0.06
+// How much path the heading averages over. Short windows make the camera track every
+// kink in the spline; a long one flies it like something with mass, which is the
+// difference between looking around and going somewhere.
+export const HEADING_SPAN = 0.045
+// A few degrees of look, driven by the pointer. Enough to feel the depth, far too
+// little to steer with - the flight is still entirely the reader's scroll.
+export const LOOK_MAX = 0.055
+export const LOOK_EASE = 0.055
+// Rotation aims the camera; it turns the ridge and the stars through the same angle,
+// so nothing appears to move against anything. Sliding the eye a little is what makes
+// a near thing travel further than a far one - the ridge is 38 units off at rest and
+// the stars are at infinity, so half a unit of slide is nine pixels of ridge against a
+// fixed sky. Spent on the opening, where the ridge is the whole frame, and gone by
+// SWAY_FADE: from there the camera has a gap in the name to thread, exactly.
+export const SWAY_MAX = 0.5
+export const SWAY_FADE = 0.14
+// a wheel notch is a jump; the camera glides to it instead of snapping
+export const SCROLL_EASE = 0.085
+
+// ---------------------------------------------------------------- title plane
+// Drawn at the size it occupies on screen at rest, so it is crisp there and goes
+// chunky as you close on it - which is the right direction for pixel art.
+export const TITLE = {
+	name: ['Karl', 'Querel'], // two words, so the flight can go between them
+	role: 'Software Engineer',
+	// Layout in texels. Sizes are multiples of 8 - Press Start 2P's own design grid,
+	// one em per glyph - so every pixel of every letter lands on a whole texel and the
+	// keyline stays one design pixel wide.
+	size: 40,
+	roleSize: 16,
+	// The plane's world width, fixed. The title is a thing standing in the scene, not
+	// something laid over it, so it must not change size when the art grid does: it is
+	// the texture that adapts. This is the width that made one texel one pixel on the
+	// 560-tall grid it was tuned against.
+	w: 8.05,
+	// A word space, not a corridor. It was 88 - 2.2 ems - because the flight had to fit
+	// between the words; the flight goes through the Q now, so this is free to be half
+	// an em and the name reads as one name again.
+	gap: 20,
+	nameY: 46,
+	roleY: 94,
+	tex: [512, 128],
+	ink: '#f4f8ff',
+	edge: '#05070e',
+	// Where on the flight it stands. The plane used to hang above the corridor, so the
+	// name slid off the top of the frame and the pass never happened; sitting it on
+	// the path is what makes the letter something you go through.
+	at: 0.1777,
+	// Square-on to the resting camera rather than aimed at its centre: aligning to the
+	// view plane is what keeps the letters free of keystone. These are that camera's
+	// own axes - re-derive them from the basis at s=0 if the first leg of PATH moves.
+	right: [0.9994, 0.0036, -0.0351],
+	up: [0.0003, 0.9941, 0.1084],
+}
+
+// The counter of the Q - the enclosed hole in the letter - in ems from the glyph's pen
+// origin, with y measured off the middle baseline the name is drawn on. Read off the
+// face itself at 16 device pixels per design pixel rather than eyeballed: Press Start
+// 2P draws Q on an 8x8 grid with a 3x5 counter, and the keyline eats one design pixel
+// off each side of it, so what the flight actually threads is 1x3 design pixels.
+export const Q_COUNTER = [0.4128, -0.1081]
+// never author the name below 25px: it has to survive the pass
+export const TITLE_FLOOR = 320
+
+// ---------------------------------------------------------------- dust
+// dust motes: two verts per mote (head + tail) drawn as speed streaks
+export const MOTES = 900
+// World units the motes wrap inside. Streaks run along travel, so a mote near the
+// vanishing point has no length to show - keep the box tight and the near field
+// dense, or almost every mote lands where it cannot read as motion.
+export const DUST_BOX = 22
+
+// ---------------------------------------------------------------- belt
+// Generated from a fixed seed rather than written out: fifty positions is not a design
+// decision worth fifty lines, and a seeded generator gives every reader the same field.
+// The seed is not arbitrary either - it was picked by checking whole fields against the
+// flight, judged on the ellipsoids' long axis rather than the nominal radius. This one
+// clears the hull by 11 units at its closest, never covers the destination or the ringed
+// world, puts 61 of its 96 rocks in shot at some point and about twenty-two on screen at
+// once, and is at most 0.57 degrees across on the opening frame - ten art pixels, where
+// the haze already has 93% of it.
+export const BELT_SEED = 777
+export const BELT_MAX = 96
+// Each belt rock is a vec4 of fragment uniform and the rest of the scene already spends
+// about forty of them; WebGL1 only promises sixteen in total, and while no real device
+// ships that few, plenty of phones stop at sixty-four. So ask the GPU, keep this margin,
+// and let the belt be the thing that shrinks - it is texture, and the flight does not
+// depend on any single rock in it.
+export const BELT_UNIFORM_BUDGET = 52
+// Most of a real belt belongs to a family - the debris of the same break-up, still
+// travelling together - and scattering every rock independently is what makes a field
+// read as confetti thrown at the screen rather than as something with a history.
+export const BELT_FAMILIES = 14
+// the belt turns with the scroll like everything else
+export const BELT_SPIN = 1.7
+
+// ---------------------------------------------------------------- render grid
+// The art grid we aim for, in pixels tall. Fine enough that it reads as detail rather
+// than as blocks; the perf ladder coarsens it if the GPU chokes.
+// What resize() actually solves for is whole device pixels per art pixel. A fractional
+// upscale - 560 tall stretched over a 900px window, say - shows up as every edge on
+// screen changing width by a pixel whenever anything moves, because each art pixel
+// lands on one device pixel or two depending on where it sits. On hard-edged letters
+// that reads as the name chattering under the pointer look.
+export const ART_TARGET = 560
+export const ART_RUNGS = 3
+// Watch this many back-to-back rendered frames and move the grid to suit. Both ways:
+// one slow moment used to coarsen the rest of the session for good, which on a page
+// whose argument is that it was built carefully is the wrong thing to be permanent.
+// What keeps it from oscillating is the gap between the thresholds - it takes worse
+// than SLOW to drop a rung and better than FAST to win one back, so a window sitting
+// anywhere between the two leaves the grid alone.
+export const PERF_WINDOW = 45
+export const PERF_SLOW_MS = 30
+export const PERF_FAST_MS = 20
+
+// ---------------------------------------------------------------- readout
+// Where the reader is, in the flight's own terms. RING PASS and CLOSE PASS are the
+// card kickers; the other four are placeholders for Karl's wording.
+export const LEGS = [
+	[0.12, 'standing by'],
+	[0.27, 'climb out'],
+	[0.4, 'ring pass'],
+	[0.66, 'close pass'],
+	[0.87, 'approach'],
+	[2, 'entry'],
+]
+export const HUD_CELLS = 10
