@@ -155,38 +155,6 @@ export const FOCUS = [
 	{ s: 1.0, b: 1, w: 0.55 },
 ]
 
-// The roll the flight is flown, as opposed to the bank the path earns. It banks both
-// ways: a turn that only ever goes one way is a barrel roll however slowly it is flown -
-// the horizon keeps going round and never comes back, and there is nothing for the eye
-// to settle against. Over, through level, out the other side and back is what an
-// aircraft does, and it reads as flying rather than as spinning.
-// It ends level, because the atmosphere at the far end is drawn in screen space with its
-// ground at the bottom of the frame, and arriving at a planet upside down would put the
-// horizon on the ceiling. The last of it is spent before ENTRY_START for that reason.
-// Nothing rolls before 0.06: the still frame is only really still at s=0 - the dust and
-// the instrument both wake at 0.03 - and an opening frame that is already banking has
-// given away that it was ever 3D.
-// Amplitudes fall as it goes, so it settles rather than stopping dead.
-// Angles in degrees because they are read as angles, not as fractions of a turn.
-//
-// Rotation rate is what matters, not rotation, and these are a third of what they were:
-// the worst segment now turns about 3.4 degrees per hundred pixels of scrolling, down
-// from 10.5. No segment starts abruptly - smoothstep leaves each one at zero rate.
-// The cost is paid at the letter. 62 degrees laid the Q's counter across the frame, so
-// the flight threaded a slot rather than passing a gap; at 20 the slot stays near
-// upright and most of that composition is gone. The flight still goes through the same
-// hole either way - roll turns the frame, never the path.
-export const ROLL = [
-	{ s: 0.0, r: 0 },
-	{ s: 0.06, r: 0 },
-	{ s: 0.1777, r: 20 * DEG }, // over to the right as the Q arrives
-	{ s: 0.3, r: 20 * DEG }, // held, so the ridge hands the system over on a steady horizon
-	{ s: 0.55, r: -24 * DEG }, // through level and out the other way for the close pass
-	{ s: 0.72, r: 9 * DEG }, // back again, shallower
-	{ s: 0.845, r: 0 }, // level, with the atmosphere still ahead
-	{ s: 1.0, r: 0 },
-]
-
 export const UP = [0, 1, 0]
 export const SUN = norm([0.82, 0.3, 0.48])
 // The system's plane. Doubles as the ring's normal and as the plane the belt is
@@ -203,12 +171,51 @@ export const ENTRY_START = 0.87
 // depth cue, and the opening frame is meant to give nothing away
 export const WAKE_START = 0.03
 export const WAKE_SPAN = 0.09
-// how far the camera rolls into a turn, in radians, how hard it reacts, and how
-// wide a slice of path it reads. This is the lean the path earns on its own; the
-// scripted roll above is separate and much larger.
-export const BANK_MAX = 0.1
-export const BANK_GAIN = 1.0
+// --- the roll, as a coordinated turn.
+// An aircraft banks because it turns: the bank angle is whatever puts the lift vector
+// where it cancels the sideways acceleration, atan(a_lat / g). So the horizon here is
+// never scripted - it is read back off the flight path, and every degree of it is
+// caused by something the reader can see the camera doing. There used to be a keyframed
+// ROLL table doing this by hand at ten times the amplitude the path earned, which is
+// why the motion read as arbitrary: the biggest rotation on screen had no relationship
+// to where the camera was going.
+// Measured over this path, |a_lat| peaks at about 470 world units per scroll squared,
+// on the long swing onto the approach axis around s=0.70. The ridge climb reaches -372
+// and the ring pass +290, and the first fifth of the flight is straight enough to sit
+// at zero - so the opening frame stays level without being told to, and so does the
+// arrival, which matters because the atmosphere is drawn with its ground at the bottom
+// of the frame.
+// BANK_GRAVITY is the only amplitude dial: it is the `g` in that formula, so a bigger
+// number is a heavier aircraft that refuses to lean. 1500 puts the peak at 17 degrees.
+export const BANK_GRAVITY = 1500
+// A ceiling, not a shape. atan already saturates, so this only catches a path edit that
+// asks for something absurd; at the current gravity it never binds.
+export const BANK_MAX = 30 * DEG
+// Reduced motion keeps the bank - it follows the flight and only moves when the reader
+// scrolls - but not this much of it.
+export const BANK_MAX_STILL = 6 * DEG
+// How much path the turn rate is measured over. Wide enough that the horizon leans
+// through a whole turn instead of twitching at every wiggle in the spline.
 export const BANK_SPAN = 0.06
+// Roll leads the turn, because a pilot rolls in before the nose comes round. Worth
+// about a fifth of a turn's width at this path's feature scale.
+export const BANK_LEAD = 0.025
+// Roll inertia. The bank above is a pure function of scroll, so on its own it snaps to
+// its target with no lag going in and no settle coming out. Running it through a
+// second-order response gives an airframe that takes time to roll: understeer entering
+// the turn, a small overshoot leaving it. Slightly underdamped on purpose - critically
+// damped is correct and reads as dead.
+// In radians/second and a damping ratio, so this is wall-clock rather than scroll: an
+// airframe takes about as long to roll however fast the page is being scrubbed.
+export const ROLL_FREQ = 9
+export const ROLL_DAMPING = 0.7
+// A tab left in the background hands back one enormous frame; integrating it whole
+// would fling the spring. Seconds.
+export const MAX_FRAME_DT = 0.05
+// When the spring counts as arrived, in radians and radians/second. Both are an order
+// of magnitude below what one art pixel of horizon tilt would be, so the frame loop can
+// stop redrawing without the horizon visibly stopping short.
+export const ROLL_REST = 2e-4
 // How much path the heading averages over. Short windows make the camera track every
 // kink in the spline; a long one flies it like something with mass, which is the
 // difference between looking around and going somewhere.

@@ -5,7 +5,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { clamp01, smoothstep } from '../js/math.js'
 import { dot, mul, sub } from '../js/vec3.js'
-import { sampleFlight } from '../js/flybyPath.js'
+import { createRollState, sampleFlight } from '../js/flybyPath.js'
 import { buildBelt } from '../js/flybyBelt.js'
 import { TITLE_PLANE, drawTitleCanvas, planeWidth, textureSize } from '../js/flybyTitle.js'
 import { prefersReducedMotion } from './usePrefersReducedMotion.js'
@@ -106,6 +106,10 @@ export function useFlyby(canvasRef) {
 	// scroll position the camera is easing toward, and the one it last drew
 	let eased = null
 	let drawn = -1
+	// the airframe's roll carries momentum between frames; owned here so a remount
+	// starts level rather than inheriting the last visit's horizon
+	const rollState = createRollState()
+	let lastT = 0
 	// pointer target and its eased follower
 	let mx = 0
 	let my = 0
@@ -199,7 +203,9 @@ export function useFlyby(canvasRef) {
 
 	// One frame. Returns false when nothing moved, so the perf ladder only ever
 	// measures frames that actually did work.
-	function draw() {
+	function draw(t) {
+		const dt = lastT ? (t - lastT) / 1000 : 1 / 60
+		lastT = t
 		const doc = document.documentElement
 		const max = doc.scrollHeight - window.innerHeight
 		const target = clamp01(max > 0 ? window.scrollY / max : 0)
@@ -210,11 +216,14 @@ export function useFlyby(canvasRef) {
 
 		mxs += (mx - mxs) * 0.055
 		mys += (my - mys) * 0.055
-		const settling = Math.abs(mx - mxs) > 0.0008 || Math.abs(my - mys) > 0.0008
+		// the roll keeps moving after the scroll stops, so it gets a say in whether
+		// this frame can be skipped
+		const settling =
+			Math.abs(mx - mxs) > 0.0008 || Math.abs(my - mys) > 0.0008 || !rollState.settled
 		if (Math.abs(p - drawn) < 0.00002 && !settling) return false
 		drawn = p
 
-		const cam = sampleFlight(p, mxs, mys, still)
+		const cam = sampleFlight(p, mxs, mys, still, rollState, dt)
 
 		// spins accumulate with scroll, never on a clock
 		BODIES.forEach((b, i) => (bodyP[i * 4 + 1] = b.spin * p * TURN))
@@ -356,7 +365,7 @@ export function useFlyby(canvasRef) {
 	const perf = { start: 0, frames: 0 }
 
 	function loop(t) {
-		const drew = draw()
+		const drew = draw(t)
 		raf = requestAnimationFrame(loop)
 		if (!drew) {
 			perf.start = 0

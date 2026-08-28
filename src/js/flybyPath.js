@@ -1,19 +1,27 @@
-// The flight, as pure maths: scroll position in, camera basis out. Nothing here
-// touches WebGL or the DOM, so the whole flight can be reasoned about — and
-// re-tuned — without going near the renderer.
+// The flight: scroll position in, camera basis out. Nothing here touches WebGL or the
+// DOM, so the whole flight can be reasoned about — and re-tuned — without going near
+// the renderer. All of it is pure except the roll, which carries a second-order
+// response and so needs somewhere to keep its velocity between frames; the caller owns
+// that state (see createRollState) rather than this module holding a global, so a
+// remount starts level instead of inheriting the last visit's horizon.
 
 import { clamp01, hermite, smoothstep } from './math.js'
 import { add, cross, dot, lerp, mul, norm, slerp, sub } from './vec3.js'
 import {
-	BANK_GAIN,
+	BANK_GRAVITY,
+	BANK_LEAD,
 	BANK_MAX,
+	BANK_MAX_STILL,
 	BANK_SPAN,
 	ENTRY_START,
 	FOCUS,
 	HEADING_SPAN,
 	LOOK_MAX,
+	MAX_FRAME_DT,
 	PATH,
-	ROLL,
+	ROLL_DAMPING,
+	ROLL_FREQ,
+	ROLL_REST,
 	SWAY_FADE,
 	SWAY_MAX,
 	TARGETS,
@@ -57,16 +65,48 @@ function focusAt(s) {
 	return { b0: FOCUS[i].b, b1: FOCUS[i + 1].b, w0: FOCUS[i].w, w1: FOCUS[i + 1].w, t }
 }
 
-function rollAt(s) {
-	const i = segment(ROLL, s)
-	const t = smoothstep(clamp01((s - ROLL[i].s) / (ROLL[i + 1].s - ROLL[i].s || 1)))
-	return lerp(ROLL[i].r, ROLL[i + 1].r, t)
+// The chord across the heading window, and the two things read off it. Clamping the
+// ends rather than sliding the window keeps s=1 from producing a zero-length chord,
+// which would flip the horizon on the last frame of the scroll.
+const chordAt = s => sub(camAt(Math.min(1, s + HEADING_SPAN)), camAt(Math.max(0, s - HEADING_SPAN)))
+const headingAt = s => norm(chordAt(s))
+const speedAt = s => Math.hypot(...chordAt(s)) / (2 * HEADING_SPAN)
+
+// The bank a coordinated turn asks for at scroll `s`. Yaw rate is how fast the heading
+// swings about the vertical; multiplied by speed that is the sideways acceleration the
+// turn is producing, and atan of it over BANK_GRAVITY is the angle that puts the lift
+// vector where it cancels that. Speed is half the point: the same turn rate flown twice
+// as fast needs twice the bank, and this path's speed varies twenty-fold end to end.
+function bankAt(s, still) {
+	const level = norm(cross(headingAt(s), UP))
+	const dh = sub(headingAt(Math.min(1, s + BANK_SPAN)), headingAt(Math.max(0, s - BANK_SPAN)))
+	const yawRate = dot(dh, level) / (2 * BANK_SPAN)
+	const cap = still ? BANK_MAX_STILL : BANK_MAX
+	return Math.max(-cap, Math.min(cap, Math.atan((speedAt(s) * yawRate) / BANK_GRAVITY)))
+}
+
+// Roll velocity lives between frames, so the caller holds it. One per mounted flight.
+export const createRollState = () => ({ angle: 0, vel: 0, settled: true })
+
+// Semi-implicit Euler on a damped spring — stable at the frame rates this runs at, and
+// the velocity it carries is exactly the lag and overshoot an airframe has.
+function stepRoll(state, target, dt) {
+	const step = Math.min(dt, MAX_FRAME_DT)
+	const acc =
+		ROLL_FREQ * ROLL_FREQ * (target - state.angle) - 2 * ROLL_DAMPING * ROLL_FREQ * state.vel
+	state.vel += acc * step
+	state.angle += state.vel * step
+	// the frame loop stops drawing when the scroll stops, so it has to be told that the
+	// horizon is still moving under its own momentum
+	state.settled = Math.abs(state.vel) < ROLL_REST && Math.abs(target - state.angle) < ROLL_REST
+	return state.angle
 }
 
 // Full camera state at scroll `p`. `lookX/lookY` are the eased pointer position in
-// -1..1; `still` is prefers-reduced-motion, which drops the scripted roll and the
-// pointer look but never the flight itself — that is the reader's own scrolling.
-export function sampleFlight(p, lookX, lookY, still) {
+// -1..1; `still` is prefers-reduced-motion, which drops the pointer look and most of
+// the bank but never the flight itself — that is the reader's own scrolling.
+// `rollState` is from createRollState and is advanced in place by `dt` seconds.
+export function sampleFlight(p, lookX, lookY, still, rollState, dt) {
 	// how far out of the still frame we are: drives the dust and the pointer look
 	const wake = smoothstep(clamp01((p - WAKE_START) / WAKE_SPAN))
 
@@ -102,35 +142,25 @@ export function sampleFlight(p, lookX, lookY, still) {
 		fwd = norm(add(fwd, add(mul(rref, lookX * amt), mul(cross(rref, fwd), -lookY * amt))))
 	}
 
-	// Roll into the turn, from how far the path bends across the frame. Saturating
-	// rather than clamped, so a hard turn eases over instead of hitting a stop and
-	// kinking there - unbounded, this reached 80 degrees and cartwheeled the horizon.
-	// Read over a wider span than the heading uses: the horizon should lean through
-	// a whole turn, not twitch at every wiggle in the path. The window slides but
-	// never shrinks - clamping its ends instead leaves a zero-length chord at s=1,
-	// which flips the horizon on the last frame of the scroll.
-	const bEnd = Math.min(1, Math.max(2 * BANK_SPAN, p + BANK_SPAN))
-	const bMid = bEnd - BANK_SPAN
-	const c0 = norm(sub(camAt(bMid), camAt(bMid - BANK_SPAN)))
-	const c1 = norm(sub(camAt(bEnd), camAt(bMid)))
-	const turn = dot(sub(c1, c0), norm(cross(fwd, UP)))
-	const bank = BANK_MAX * Math.tanh((turn * BANK_GAIN) / BANK_MAX)
-	// Rotate the frame about the way we are pointing. Tilting world up and rebuilding
-	// from it - which is what this did - is only a roll while the angle is small: past
-	// a quarter turn the axis it actually rotates about is the world's, not the
-	// camera's, and a barrel roll through the name came out as a lurch.
-	let right = norm(cross(fwd, UP))
+	// Roll, read forward: a pilot rolls into a turn before the nose comes round, so the
+	// bank is sampled a little ahead of where the flight actually is. The spring then
+	// takes its own time to arrive, handing some of that lead back as lag - which is the
+	// airframe, and the two together are what anticipation feels like.
+	const roll = stepRoll(rollState, bankAt(Math.min(1, p + BANK_LEAD), still), dt)
+
+	// Roll about the axis the flight is travelling down, not the one the camera happens
+	// to be looking down. An airframe rolls about its own length; by the arrival the
+	// focus pull has the gaze better than half way off the velocity vector, and rolling
+	// about that turned the horizon around an axis nothing was moving along.
+	const rt = norm(cross(travel, UP))
+	const ut = cross(rt, travel)
+	const cr = Math.cos(roll)
+	const sr = Math.sin(roll)
+	const horizon = cross(norm(add(mul(rt, cr), mul(ut, sr))), travel)
+	// then hang the camera's own frame off that horizon, aimed wherever it is aimed
+	const across = cross(fwd, horizon)
+	let right = Math.hypot(...across) > 1e-4 ? norm(across) : norm(cross(fwd, UP))
 	let up = cross(right, fwd)
-	// The scripted roll is the one piece of this the reader did not ask for by scrolling,
-	// so it is also the one piece that answers prefers-reduced-motion. The bank the path
-	// earns stays: it is a couple of degrees and it follows the flight.
-	const roll = bank + (still ? 0 : rollAt(p))
-	if (roll !== 0) {
-		const cr = Math.cos(roll)
-		const sr = Math.sin(roll)
-		right = norm(add(mul(right, cr), mul(up, sr)))
-		up = cross(right, fwd)
-	}
 
 	const entry = clamp01((p - ENTRY_START) / (1 - ENTRY_START))
 	// shake while the shield is hot
