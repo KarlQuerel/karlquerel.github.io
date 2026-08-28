@@ -155,58 +155,34 @@ export const FOCUS = [
 	{ s: 1.0, b: 1, w: 0.55 },
 ]
 
-// The roll the flight is flown, as opposed to the bank the path earns. A quarter turn,
-// and the quarter is solved rather than chosen: the counter of the Q is a tall narrow
-// slot - one design pixel by three - and the frame is wide and short. Left upright the
-// slot is 24 degrees tall in a 31-degree frame, so it runs very nearly floor to ceiling
-// and the letter reads as two bars with a gap between them. Turned on its side it lies
-// across the frame instead, 24 wide in 52 and 8 tall in 31, with letterform closing it
-// on all four sides. That is the difference between going between two things and
-// threading one, and threading is the whole reason the flight aims at a letter.
-// It ratchets rather than unwinding. Each quarter turn is spent on a beat and then held
-// through the stretch after it, so the horizon the reader is given is the one the last
-// manoeuvre left them with. A roll that returns to level says there is an up out here
-// and the flight keeps finding it; a roll that sticks says there is not, which is both
-// truer and the reason the field stops reading as a row of things at eye level - the
-// same bodies arrive along the frame's long axis, then its short one, then the other
-// way up.
-// Four quarters, not one turn: it still ends level, because the atmosphere at the far
-// end is drawn in screen space with its ground at the bottom of the frame, and arriving
-// at a planet upside down would put the horizon on the ceiling. The last quarter is
-// spent before ENTRY_START for exactly that reason.
-// Nothing rolls before 0.12. The name is at its biggest and most readable just before
-// the bank starts, and the opening frame is meant to look like a photograph - a
-// photograph that is already banking has given the game away.
+// The roll the flight is flown, as opposed to the bank the path earns. It banks both
+// ways: a turn that only ever goes one way is a barrel roll however slowly it is flown -
+// the horizon keeps going round and never comes back, and there is nothing for the eye
+// to settle against. Over, through level, out the other side and back is what an
+// aircraft does, and it reads as flying rather than as spinning.
+// It ends level, because the atmosphere at the far end is drawn in screen space with its
+// ground at the bottom of the frame, and arriving at a planet upside down would put the
+// horizon on the ceiling. The last of it is spent before ENTRY_START for that reason.
+// Nothing rolls before 0.06: the still frame is only really still at s=0 - the dust and
+// the instrument both wake at 0.03 - and an opening frame that is already banking has
+// given away that it was ever 3D.
+// Amplitudes fall as it goes, so it settles rather than stopping dead.
 // Angles in degrees because they are read as angles, not as fractions of a turn.
-// This used to ratchet in four held steps, and it turned too fast to watch: the holds
-// ate 0.46 of the scroll between them, which left every step crammed into a tenth of
-// the page. Measured, the first one turned 22 degrees per hundred pixels of scrolling -
-// about four wheel notches for a quarter turn, which is where the dizziness came from.
-// Rotation rate is what matters, not rotation. So there is one hold left, on the beat
-// that earns it - the ridge letting go of the system, which wants a steady horizon -
-// and the rest is a single long turn with two thirds of the page to make it in. Worst
-// case is now 10.5 degrees per hundred pixels, a little under half what it was, and no
-// segment starts abruptly because smoothstep leaves each one at zero rate.
-// It starts at 0.06 rather than 0.12. The still frame is only really still at s=0 - the
-// dust and the instrument both wake at 0.03 - so there is room to begin the turn before
-// the letter arrives, and beginning earlier is most of what buys the lower rate.
-// 62 at the letter rather than 90: the slot only has to lie across the frame, not square
-// to it. Tilted, it measures 19 degrees against a 31-degree frame, so there is still
-// letterform above and below it, and a diagonal thread looks like flying where a square
-// one looks like a diagram.
-// It banks both ways. A turn that only ever goes one way is a barrel roll however slowly
-// it is flown - the horizon keeps going round and never comes back, and there is nothing
-// for the eye to settle against. Banking over, through level, out the other side and
-// back is what an aircraft does, and it reads as flying rather than as spinning.
-// The amplitudes fall as it goes - 62, then 72, then 28 - so it settles rather than
-// stopping dead, and it ends level for the atmosphere.
+//
+// Rotation rate is what matters, not rotation, and these are a third of what they were:
+// the worst segment now turns about 3.4 degrees per hundred pixels of scrolling, down
+// from 10.5. No segment starts abruptly - smoothstep leaves each one at zero rate.
+// The cost is paid at the letter. 62 degrees laid the Q's counter across the frame, so
+// the flight threaded a slot rather than passing a gap; at 20 the slot stays near
+// upright and most of that composition is gone. The flight still goes through the same
+// hole either way - roll turns the frame, never the path.
 export const ROLL = [
 	{ s: 0.0, r: 0 },
 	{ s: 0.06, r: 0 },
-	{ s: 0.1777, r: 62 * DEG }, // over to the right, laid across the slot in the Q
-	{ s: 0.3, r: 62 * DEG }, // held, so the ridge hands the system over on a steady horizon
-	{ s: 0.55, r: -72 * DEG }, // through level and out the other way for the close pass
-	{ s: 0.72, r: 28 * DEG }, // back again, shallower
+	{ s: 0.1777, r: 20 * DEG }, // over to the right as the Q arrives
+	{ s: 0.3, r: 20 * DEG }, // held, so the ridge hands the system over on a steady horizon
+	{ s: 0.55, r: -24 * DEG }, // through level and out the other way for the close pass
+	{ s: 0.72, r: 9 * DEG }, // back again, shallower
 	{ s: 0.845, r: 0 }, // level, with the atmosphere still ahead
 	{ s: 1.0, r: 0 },
 ]
