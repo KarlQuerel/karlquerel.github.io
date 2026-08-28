@@ -292,9 +292,17 @@ export const ARRIVAL = {
 	// Camera keyframe positions along the runway (see CAMERA.entry / .gone).
 	entryAt: 0.45,
 	goneAt: 0.52,
-	// Contact heading + portals fade in across this window — on the surface.
+	// The surface content arrives one piece at a time: heading, then each portal,
+	// then the report chip. Item n opens `contactStagger` after n-1 and takes
+	// `contactItemSpan` to land, so the last of the five is up by 0.90 — with the
+	// tail of the runway left over, since landing on the last pixel of it is a miss.
 	contactFadeStart: 0.66,
-	contactFadeEnd: 0.88,
+	contactStagger: 0.04,
+	contactItemSpan: 0.08,
+	// The pop itself: a tile starts this small and this far down (px), then
+	// overshoots slightly past both on the way in.
+	contactSquash: 0.82,
+	contactRise: 26,
 	// The flight's own way-out chip leaves far earlier, on its own window: gone before
 	// the first clouds are in frame (see ENTRY.clouds), so nothing from the trip is
 	// still pinned over the atmosphere while we are descending through it. The portals

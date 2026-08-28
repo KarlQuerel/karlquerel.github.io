@@ -6,13 +6,17 @@
 		<!-- the air rushing past on the way in: the same field the departure flies
 		     through, so the two ends of the trip read as one piece of motion -->
 		<FlightDust :travel="dustTravel" :fade="dustFade" />
-		<div class="arrival__content" :style="contentStyle">
-			<header class="arrival__head">
+		<div class="arrival__content">
+			<header class="arrival__head" :style="revealStyle(0)">
 				<PageTitle tag="h2" :lead="CONTACT_HEADING.lead" :accent="CONTACT_HEADING.accent" />
 			</header>
 
 			<ul class="arrival__channels">
-				<li v-for="channel in CONTACT_CHANNELS" :key="channel.key">
+				<li
+					v-for="(channel, i) in CONTACT_CHANNELS"
+					:key="channel.key"
+					:style="revealStyle(i + 1)"
+				>
 					<PixelPortal
 						:label="channel.label"
 						:image="channel.icon"
@@ -25,6 +29,7 @@
 			<!-- secondary action, pinned to the pin (not the page): only present at the planet -->
 			<a
 				class="arrival__report"
+				:style="revealStyle(REPORT_INDEX)"
 				:href="BUG_REPORT.issueUrl"
 				:aria-label="BUG_REPORT.ariaLabel"
 				target="_blank"
@@ -39,9 +44,10 @@
 
 <script setup>
 	import { computed } from 'vue'
+	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { ARRIVAL } from '@/constants/journey'
 	import { BUG_REPORT, CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
-	import { clamp01, smoothstep } from '@/js/math'
+	import { backOut, clamp01, smoothstep } from '@/js/math'
 	import FlightDust from './FlightDust.vue'
 	import PageTitle from './PageTitle.vue'
 	import PixelPortal from './PixelPortal.vue'
@@ -66,19 +72,27 @@
 		return smoothstep(Math.min(up, out))
 	})
 
-	const contentT = computed(() =>
-		clamp01(
-			(props.progress - ARRIVAL.contactFadeStart) /
-				(ARRIVAL.contactFadeEnd - ARRIVAL.contactFadeStart)
-		)
-	)
-	// hidden (not just transparent) until the fade starts, so the links can't
-	// catch clicks or focus mid-approach
-	const contentStyle = computed(() => ({
-		opacity: contentT.value.toFixed(3),
-		visibility: contentT.value > 0 ? null : 'hidden',
-		pointerEvents: contentT.value > 0.5 ? null : 'none',
-	}))
+	// The chip is the last thing out, behind the heading and every portal.
+	const REPORT_INDEX = CONTACT_CHANNELS.length + 1
+
+	const still = prefersReducedMotion()
+
+	// One item's slice of the surface window, by its place in the queue: it fades up
+	// while it rises and springs out of its squash, so the row lands tile by tile.
+	function revealStyle(index) {
+		const start = ARRIVAL.contactFadeStart + index * ARRIVAL.contactStagger
+		const t = clamp01((props.progress - start) / ARRIVAL.contactItemSpan)
+		// hidden (not just transparent) before its turn, so a tile still off-stage
+		// can't catch a click or a tab stop
+		if (t <= 0) return { visibility: 'hidden' }
+		// reduced motion keeps the fade and drops the travel: pop pinned at its target
+		const pop = still ? 1 : backOut(t)
+		return {
+			opacity: smoothstep(t).toFixed(3),
+			translate: `0 ${((1 - pop) * ARRIVAL.contactRise).toFixed(2)}px`,
+			scale: (ARRIVAL.contactSquash + (1 - ARRIVAL.contactSquash) * pop).toFixed(3),
+		}
+	}
 </script>
 
 <style scoped lang="scss">
@@ -101,6 +115,13 @@
 		flex-direction: column;
 		align-items: center;
 		padding: $page-pad-top 1rem 0;
+		// full-screen layer over the scene: only the controls inside it take the pointer
+		pointer-events: none;
+	}
+
+	.arrival__channels li,
+	.arrival__report {
+		pointer-events: auto;
 	}
 
 	// No page-head scrim here: its dark box edges harshly against the light dusk sky.
