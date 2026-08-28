@@ -316,13 +316,15 @@ export const BELT_RADIUS_MAX = 46
 export const BELT_FLATTEN = 0.42
 
 export const BELT_SEED = 777
-// Measured, at 640x400 under a software rasteriser so the absolute numbers mean nothing
-// but the slope is real: the scene costs ~445ms before the belt and ~8.1ms per rock after
-// it, dead linear. 96 rocks was already 63% of the shader; 180 is 78%, and 500 would be
-// 91%. So this is the one number that decides what the page costs - raise it and the
-// frame gets proportionally dearer, and on a weak GPU the art-grid ladder answers by
-// dropping a rung, which is blockier pixels rather than dropped frames.
-export const BELT_MAX = 180
+// Measured at 640x400 under a software rasteriser, so the absolute numbers mean nothing
+// and the slope is everything: the scene costs ~500ms before the belt and ~1.5ms per rock
+// after it. That per-rock figure was 8.1ms while the belt was analytic ellipsoids, because
+// three hashes and two sines ran for every rock on every pixel whether the ray went near
+// it or not; scanning bounding spheres and marching only the winner made the rocks real
+// AND the scaling five times cheaper. 70 marched rocks now cost about half what 96 smooth
+// ones did. Raise it and the frame gets dearer roughly linearly; on a weak GPU the
+// art-grid ladder answers by dropping a rung, which is blockier pixels, not dropped frames.
+export const BELT_MAX = 70
 // Each belt rock is a vec4 of fragment uniform and the rest of the scene already spends
 // about forty of them; WebGL1 only promises sixteen in total, and while no real device
 // ships that few, plenty of phones stop at sixty-four. So ask the GPU, keep this margin,

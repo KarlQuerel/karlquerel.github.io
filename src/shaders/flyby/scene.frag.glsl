@@ -150,6 +150,37 @@ vec3 rockNormal(vec3 wp, vec4 rk, vec4 rot){
                         rockDist(wp + e.yyx, rk, rot) - d0));
 }
 
+// The same geometry as the hero rocks, marched for a body a fraction of their size. Two
+// things have to scale with the rock or a belt rock renders as a smooth blob: the hit
+// epsilon, which at the hero rocks' flat 0.004*t is wider than a 0.3-unit rock eighty
+// units out, so the march "arrives" the moment it enters the bounding sphere; and the
+// normal's sample offset, for the same reason. Fewer steps than traceRock because there
+// is far less rock to cross.
+float traceBelt(vec3 ro, vec3 rd, vec4 rk, vec4 rot){
+  vec3 oc = ro - rk.xyz;
+  float R = rk.w*1.75;
+  float b = dot(oc, rd), c2 = dot(oc, oc) - R*R;
+  float h = b*b - c2;
+  if (h < 0.0) return -1.0;
+  float sh = sqrt(h);
+  float t = max(-b - sh, 0.02), tEnd = -b + sh;
+  float eps = min(0.004*t, 0.02*rk.w);
+  for (int i = 0; i < 36; i++){
+    float d = rockDist(ro + rd*t, rk, rot);
+    if (d < eps) return t;
+    t += d*0.6;
+    if (t > tEnd) return -1.0;
+  }
+  return -1.0;
+}
+vec3 beltNormal(vec3 wp, vec4 rk, vec4 rot){
+  vec2 e = vec2(0.012*rk.w, 0.0);
+  float d0 = rockDist(wp, rk, rot);
+  return normalize(vec3(rockDist(wp + e.xyy, rk, rot) - d0,
+                        rockDist(wp + e.yxy, rk, rot) - d0,
+                        rockDist(wp + e.yyx, rk, rot) - d0));
+}
+
 // --- per-world palettes (band colours low -> high elevation)
 void palette(float pid, out vec3 c1, out vec3 c2, out vec3 c3, out vec3 c4, out vec3 c5,
              out float sea, out float ocean){
@@ -408,43 +439,58 @@ void main(){
     }
   }
 
-  // the belt, composited by depth against everything above and against itself
+  // The belt. One marched rock per ray, not a field of analytic ones.
+  //
+  // These were ellipsoids: cheap, and they tumbled, but three smooth axes is still a
+  // smooth thing, and beside the marched hero rocks they read as pebbles. The fix is not
+  // to march all of them - that would be a hundred sixty-step loops per pixel - but that
+  // a ray only ever lands on one of them. So the loop is now a bounding-sphere scan for
+  // whichever rock is nearest, a dozen flops each with no hashes and no trigonometry,
+  // and the winner alone is marched through exactly the rockRadius the hero rocks use.
+  // Real silhouettes and real craters, at one march per pixel however big the field is -
+  // and the per-rock cost that scales with the count went DOWN, because the hashes and
+  // the two sines that used to run for every rock on every pixel now run once.
+  float bt = best;
+  vec3 bc = vec3(0.0);
+  float br = 0.0;
   for (int i = 0; i < NBELT; i++){
     vec4 bk = uBelt[i];
     if (bk.w <= 0.0) continue;
-    // Ellipsoids, not spheres. A field of perfect balls reads as marbles however it is lit,
-    // and a circle in silhouette is the one thing that gives a sphere away - the same reason
-    // the three hero rocks are marched. At a degree across, three unequal axes tumbling on
-    // two of them is most of what marching would have bought, for a linear transform instead
-    // of sixty steps. Shape, spin and colour are hashed off the rock's own position, so none
-    // of it costs a uniform.
-    float ha = hash13(bk.xyz*0.7 + 3.0);
-    float hb = hash13(bk.xyz*0.7 + 11.0);
-    float hc = hash13(bk.xyz*0.7 + 23.0);
-    vec3 axes = vec3(1.34, 0.70, 0.98) + 0.46*vec3(ha, hb, hc) - 0.23;
+    vec3 oc = ro - bk.xyz;
+    float R = bk.w*1.75;                    // the most rockRadius can bulge
+    float b = dot(oc, rd), c2 = dot(oc, oc) - R*R;
+    float h = b*b - c2;
+    if (h < 0.0) continue;
+    float t = -b - sqrt(h);
+    if (t <= 0.0 || t >= bt) continue;
+    bt = t; bc = bk.xyz; br = bk.w;
+  }
+  if (br > 0.0){
+    // shape, spin and colour hashed off the rock's own position, so none of it costs a
+    // uniform - and now paid once per pixel instead of once per rock per pixel
+    float ha = hash13(bc*0.7 + 3.0);
+    float hb = hash13(bc*0.7 + 11.0);
+    float hc = hash13(bc*0.7 + 23.0);
     float sa = uBeltSpin*(0.5 + ha*1.9), sb = uBeltSpin*(0.35 + hb*1.5);
     vec4 rot = vec4(cos(sa), sin(sa), cos(sb), sin(sb));
-    vec3 ol = rockLocal(ro - bk.xyz, rot)/axes;
-    vec3 dl = rockLocal(rd, rot)/axes;      // a direction, not a point: rockLocal is linear
-    float aa = dot(dl, dl), bb = dot(ol, dl), cc = dot(ol, ol) - bk.w*bk.w;
-    float hh = bb*bb - aa*cc;
-    if (hh < 0.0) continue;
-    float t = (-bb - sqrt(hh))/aa;
-    if (t <= 0.0 || t >= best) continue;
-    best = t;
-    vec3 pl = ol + dl*t;                    // the hit, in the rock's own round space
-    vec3 n = normalize(rockWorld(pl/axes, rot));
-    vec3 sp = normalize(pl);
-    // three rough classes, the way a belt has them: dark and carbonaceous, rusty, or pale
-    // and metallic. One grey for everything is the other half of why this read as gravel.
-    vec3 tint = hc < 0.55 ? vec3(0.20,0.19,0.20)
-              : hc < 0.85 ? vec3(0.33,0.23,0.18)
-                          : vec3(0.45,0.44,0.42);
-    vec3 base = mix(tint, tint*1.95 + 0.05, fbm3(sp*3.1 + bk.xyz*0.07));
-    base = mix(base, tint*0.68, smoothstep(0.45,0.80,ridged(sp*7.0))*0.5);
-    float day = max(dot(n, uSun), 0.0);
-    float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
-    col = farOff(base*(0.06 + 1.02*day) + vec3(0.42,0.50,0.66)*rim*0.12, t);
+    vec4 rk = vec4(bc, br);
+    float t = traceBelt(ro, rd, rk, rot);
+    if (t > 0.0 && t < best){
+      best = t;
+      vec3 hp = ro + rd*t;
+      vec3 n = beltNormal(hp, rk, rot);
+      vec3 sp = rockLocal(hp - bc, rot)/br;   // in units of the rock, so size never matters
+      // three rough classes, the way a belt has them: dark and carbonaceous, rusty, or
+      // pale and metallic. One grey for everything is what made this read as gravel.
+      vec3 tint = hc < 0.55 ? vec3(0.20,0.19,0.20)
+                : hc < 0.85 ? vec3(0.33,0.23,0.18)
+                            : vec3(0.45,0.44,0.42);
+      vec3 base = mix(tint, tint*1.95 + 0.05, fbm3(sp*3.1 + bc*0.07));
+      base = mix(base, tint*0.68, smoothstep(0.45,0.80,ridged(sp*9.0))*0.5);
+      float day = max(dot(n, uSun), 0.0);
+      float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
+      col = farOff(base*(0.06 + 1.02*day) + vec3(0.42,0.50,0.66)*rim*0.12, t);
+    }
   }
 
   // The ring goes last, so it is composited against whatever ended up nearest, sphere or
