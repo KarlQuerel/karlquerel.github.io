@@ -392,7 +392,7 @@
 	// ---------------------------------------------------------------- shaders
 	const VS = `attribute vec2 aP; void main(){ gl_Position = vec4(aP,0.0,1.0); }`
 
-	const FS = `
+	const FS_SRC = NBELT => `
 precision highp float;
 uniform vec2  uRes;
 uniform vec3  uCamPos, uRight, uUp, uFwd;
@@ -410,6 +410,14 @@ uniform vec3  uRingN;
 const int NR = 3;       // rocks on the corridor, always marched, never gated
 uniform vec4  uRock[NR];    // centre.xyz, radius
 uniform vec4  uRockSpin[NR];  // (cos,sin) of the spin, then of the tumble
+// The belt. Spheres rather than marched rocks: at a degree across a lumpy silhouette is a
+// pixel or two of difference and costs sixty raymarch steps to say it, so the whole field
+// here comes in under the price of one of the three rocks. The count is settled at runtime
+// against the GPU's uniform budget - see where this gets compiled - because the spec only
+// promises a fragment shader sixteen vec4s and this asks for a good deal more.
+const int NBELT = ${NBELT};
+uniform vec4  uBelt[NBELT];   // centre.xyz, radius
+uniform float uBeltSpin;
 
 // quantisation is what makes it pixel art; too few levels makes it a poster
 const float LEVELS = 22.0;
@@ -501,6 +509,11 @@ float rockRadius(vec3 dir, float seed){
 vec3 rockLocal(vec3 q, vec4 rot){
   vec3 a = vec3(q.x*rot.x + q.z*rot.y, q.y, -q.x*rot.y + q.z*rot.x);
   return vec3(a.x, a.y*rot.z + a.z*rot.w, -a.y*rot.w + a.z*rot.z);
+}
+// and back out of it again - rockLocal is a rotation, so its inverse is its transpose
+vec3 rockWorld(vec3 v, vec4 rot){
+  vec3 a = vec3(v.x, v.y*rot.z - v.z*rot.w, v.y*rot.w + v.z*rot.z);
+  return vec3(a.x*rot.x - a.z*rot.y, a.y, a.x*rot.y + a.z*rot.x);
 }
 float rockDist(vec3 wp, vec4 rk, vec4 rot){
   vec3 q = wp - rk.xyz;
@@ -788,6 +801,45 @@ void main(){
       float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
       col = farOff(base*(0.07 + 0.98*day) + vec3(0.42,0.50,0.66)*rim*0.14, tr);
     }
+  }
+
+  // the belt, composited by depth against everything above and against itself
+  for (int i = 0; i < NBELT; i++){
+    vec4 bk = uBelt[i];
+    if (bk.w <= 0.0) continue;
+    // Ellipsoids, not spheres. A field of perfect balls reads as marbles however it is lit,
+    // and a circle in silhouette is the one thing that gives a sphere away - the same reason
+    // the three hero rocks are marched. At a degree across, three unequal axes tumbling on
+    // two of them is most of what marching would have bought, for a linear transform instead
+    // of sixty steps. Shape, spin and colour are hashed off the rock's own position, so none
+    // of it costs a uniform.
+    float ha = hash13(bk.xyz*0.7 + 3.0);
+    float hb = hash13(bk.xyz*0.7 + 11.0);
+    float hc = hash13(bk.xyz*0.7 + 23.0);
+    vec3 axes = vec3(1.34, 0.70, 0.98) + 0.46*vec3(ha, hb, hc) - 0.23;
+    float sa = uBeltSpin*(0.5 + ha*1.9), sb = uBeltSpin*(0.35 + hb*1.5);
+    vec4 rot = vec4(cos(sa), sin(sa), cos(sb), sin(sb));
+    vec3 ol = rockLocal(ro - bk.xyz, rot)/axes;
+    vec3 dl = rockLocal(rd, rot)/axes;      // a direction, not a point: rockLocal is linear
+    float aa = dot(dl, dl), bb = dot(ol, dl), cc = dot(ol, ol) - bk.w*bk.w;
+    float hh = bb*bb - aa*cc;
+    if (hh < 0.0) continue;
+    float t = (-bb - sqrt(hh))/aa;
+    if (t <= 0.0 || t >= best) continue;
+    best = t;
+    vec3 pl = ol + dl*t;                    // the hit, in the rock's own round space
+    vec3 n = normalize(rockWorld(pl/axes, rot));
+    vec3 sp = normalize(pl);
+    // three rough classes, the way a belt has them: dark and carbonaceous, rusty, or pale
+    // and metallic. One grey for everything is the other half of why this read as gravel.
+    vec3 tint = hc < 0.55 ? vec3(0.20,0.19,0.20)
+              : hc < 0.85 ? vec3(0.33,0.23,0.18)
+                          : vec3(0.45,0.44,0.42);
+    vec3 base = mix(tint, tint*1.95 + 0.05, fbm3(sp*3.1 + bk.xyz*0.07));
+    base = mix(base, tint*0.68, smoothstep(0.45,0.80,ridged(sp*7.0))*0.5);
+    float day = max(dot(n, uSun), 0.0);
+    float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
+    col = farOff(base*(0.06 + 1.02*day) + vec3(0.42,0.50,0.66)*rim*0.12, t);
   }
 
   // The ring goes last, so it is composited against whatever ended up nearest, sphere or
@@ -1121,25 +1173,38 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	// Nothing rolls before 0.12. The name is at its biggest and most readable just before
 	// the bank starts, and the opening frame is meant to look like a photograph - a
 	// photograph that is already banking has given the game away.
-	// Angles in degrees because they are read as angles, not as fractions of a turn. None
-	// of them is a right angle and none of the steps is the same size - 68, then 83, 98,
-	// 111 - because four equal quarters is a machine indexing round a jig, not something
-	// flying. They grow, so the flight winds up rather than ticking over.
-	// 68 at the letter rather than 90: the slot only has to lie across the frame, not
-	// square to it. Tilted, its bounding box is 25 by 20 degrees against a 52 by 31 frame,
-	// so it still sits inside with ink all round - anything past about 55 keeps that, and a
-	// diagonal thread looks like flying where a square one looks like a diagram.
+	// Angles in degrees because they are read as angles, not as fractions of a turn.
+	// This used to ratchet in four held steps, and it turned too fast to watch: the holds
+	// ate 0.46 of the scroll between them, which left every step crammed into a tenth of
+	// the page. Measured, the first one turned 22 degrees per hundred pixels of scrolling -
+	// about four wheel notches for a quarter turn, which is where the dizziness came from.
+	// Rotation rate is what matters, not rotation. So there is one hold left, on the beat
+	// that earns it - the ridge letting go of the system, which wants a steady horizon -
+	// and the rest is a single long turn with two thirds of the page to make it in. Worst
+	// case is now 10.5 degrees per hundred pixels, a little under half what it was, and no
+	// segment starts abruptly because smoothstep leaves each one at zero rate.
+	// It starts at 0.06 rather than 0.12. The still frame is only really still at s=0 - the
+	// dust and the instrument both wake at 0.03 - so there is room to begin the turn before
+	// the letter arrives, and beginning earlier is most of what buys the lower rate.
+	// 62 at the letter rather than 90: the slot only has to lie across the frame, not square
+	// to it. Tilted, it measures 19 degrees against a 31-degree frame, so there is still
+	// letterform above and below it, and a diagonal thread looks like flying where a square
+	// one looks like a diagram.
+	// It banks both ways. A turn that only ever goes one way is a barrel roll however slowly
+	// it is flown - the horizon keeps going round and never comes back, and there is nothing
+	// for the eye to settle against. Banking over, through level, out the other side and
+	// back is what an aircraft does, and it reads as flying rather than as spinning.
+	// The amplitudes fall as it goes - 62, then 72, then 28 - so it settles rather than
+	// stopping dead, and it ends level for the atmosphere.
 	const ROLL = [
 		{ s: 0.0, r: 0 },
-		{ s: 0.12, r: 0 },
-		{ s: 0.1777, r: 68 * DEG }, // laid across the slot where the Q is threaded
-		{ s: 0.31, r: 68 * DEG }, // and it stays there, over the ridge and the reveal
-		{ s: 0.405, r: 151 * DEG }, // across the ring pass
-		{ s: 0.49, r: 151 * DEG },
-		{ s: 0.605, r: 249 * DEG }, // across the close pass
-		{ s: 0.71, r: 249 * DEG },
-		{ s: 0.845, r: 360 * DEG }, // level again, with the atmosphere still ahead
-		{ s: 1.0, r: 360 * DEG },
+		{ s: 0.06, r: 0 },
+		{ s: 0.1777, r: 62 * DEG }, // over to the right, laid across the slot in the Q
+		{ s: 0.3, r: 62 * DEG }, // held, so the ridge hands the system over on a steady horizon
+		{ s: 0.55, r: -72 * DEG }, // through level and out the other way for the close pass
+		{ s: 0.72, r: 28 * DEG }, // back again, shallower
+		{ s: 0.845, r: 0 }, // level, with the atmosphere still ahead
+		{ s: 1.0, r: 0 },
 	]
 	function rollAt(s) {
 		let i = 0
@@ -1238,6 +1303,13 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	// ---------------------------------------------------------------- gl setup
 	const canvas = document.getElementById('gl')
 	const gl = canvas.getContext('webgl', { antialias: false, alpha: false })
+	// How many belt rocks this GPU can afford. Each one is a vec4 of fragment uniform, and
+	// the rest of the scene already spends about forty of them; WebGL1 only promises
+	// sixteen in total, and while no real device ships that few, plenty of phones stop at
+	// sixty-four. So ask, keep a margin, and let the belt be the thing that shrinks - it is
+	// texture, and the flight does not depend on any single rock in it.
+	const BELT_N = Math.max(0, Math.min(96, gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) - 52))
+	const FS = FS_SRC(BELT_N)
 	// The art grid we aim for, in pixels tall. Fine enough that it reads as detail rather
 	// than as blocks; the ladder in loop() coarsens it if the GPU chokes.
 	// What resize() actually solves for is whole device pixels per art pixel. A fractional
@@ -1452,6 +1524,8 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 	U.uRockSpin = gl.getUniformLocation(scene, 'uRockSpin[0]')
 	const rockArr = new Float32Array(ROCKS.length * 4)
 	const rockSpin = new Float32Array(ROCKS.length * 4)
+	U.uBelt = gl.getUniformLocation(scene, 'uBelt[0]')
+	U.uBeltSpin = gl.getUniformLocation(scene, 'uBeltSpin')
 	U.uB = gl.getUniformLocation(scene, 'uB[0]')
 	U.uBP = gl.getUniformLocation(scene, 'uBP[0]')
 	const TU = {}
@@ -1485,6 +1559,59 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		'uFade',
 	])
 		DU[n] = gl.getUniformLocation(dust, n)
+	// The belt, in the system's own plane and in the stretch where the flight has dropped
+	// below that plane and is closing on the destination - which is exactly where the sky
+	// was emptiest. Generated from a fixed seed rather than written out: fifty positions is
+	// not a design decision worth fifty lines, and a seeded generator gives every reader the
+	// same field. The seed is not arbitrary either - it was picked by checking whole fields
+	// against the flight, judged on the ellipsoids' long axis rather than the nominal radius.
+	// This one clears the hull by 11 units at its closest, never covers the destination or
+	// the ringed world, puts 61 of its 96 rocks in shot at some point and about twenty-two on
+	// screen at once, and is at most 0.57 degrees across on the opening frame - ten art
+	// pixels, where the haze already has 93% of it.
+	// A smaller BELT_N takes a prefix of the same field, so a phone gets a thinner belt made
+	// of the same rocks rather than a different one.
+	const beltArr = new Float32Array(BELT_N * 4)
+	;(() => {
+		let seed = 777
+		const rnd = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296)
+		const EN = norm([0.2, 1.0, 0.13]),
+			E0 = BODIES[0].c
+		// a floor on the lateral offset keeps the belt off the flight line without the
+		// generator needing to know where the flight line is
+		const lateral = () => 5.4 + (rnd() < 0.5 ? -1 : 1) * (6 + rnd() * rnd() * 44)
+		const onPlane = (x, z) => E0[1] - (EN[0] * (x - E0[0]) + EN[2] * (z - E0[2])) / EN[1]
+		// Families. Most of a real belt belongs to one - the debris of the same break-up,
+		// still travelling together - and scattering every rock independently is what makes a
+		// field read as confetti thrown at the screen rather than as something with a history.
+		const FAMILIES = 14
+		const fam = []
+		for (let k = 0; k < FAMILIES; k++) {
+			const z = -(125 + rnd() * 160),
+				x = lateral()
+			fam.push([x, onPlane(x, z) + (rnd() * 2 - 1) * 8, z])
+		}
+		for (let i = 0; i < BELT_N; i++) {
+			let x, y, z
+			if (rnd() < 0.72) {
+				const f = fam[(rnd() * FAMILIES) | 0]
+				const w = 5 + rnd() * 16
+				x = f[0] + (rnd() * 2 - 1) * w
+				y = f[1] + (rnd() * 2 - 1) * w * 0.5
+				z = f[2] + (rnd() * 2 - 1) * w * 1.6
+			} else {
+				z = -(125 + rnd() * 160)
+				x = lateral()
+				y = onPlane(x, z) + (rnd() * 2 - 1) * 9
+			}
+			// Sizes on a cube law rather than a flat draw. A belt is almost all gravel with
+			// the occasional real body in it; a field of same-sized pebbles is the other thing
+			// that made this look manufactured.
+			const u = rnd()
+			beltArr.set([x, y, z, 0.09 + u * u * u * 0.62], i * 4)
+		}
+	})()
+
 	const bodyArr = new Float32Array(BODIES.length * 4)
 	const bodyP = new Float32Array(BODIES.length * 4)
 	BODIES.forEach((b, i) => {
@@ -1706,6 +1833,8 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		})
 		gl.uniform4fv(U.uRock, rockArr)
 		gl.uniform4fv(U.uRockSpin, rockSpin)
+		// the belt turns with the scroll like everything else; its positions went up once
+		if (BELT_N) gl.uniform1f(U.uBeltSpin, p * 6.283 * 1.7)
 		gl.disable(gl.BLEND)
 		gl.drawArrays(gl.TRIANGLES, 0, 6)
 
@@ -1844,6 +1973,10 @@ void main(){ gl_FragColor = vec4(vec3(0.78,0.85,1.0)*vA*uFade, 1.0); }`
 		resize()
 		prog = -1
 	})
+	if (BELT_N) {
+		gl.useProgram(scene)
+		gl.uniform4fv(U.uBelt, beltArr)
+	}
 	resize()
 	buildTitle()
 	// the pixel font may still be loading; redraw the plane once it lands
