@@ -13,15 +13,7 @@
 			<button class="chrome__mark" :class="{ on: markOn }" type="button" @click="toTop">
 				Karl Querel
 			</button>
-			<div class="chrome__nav">
-				<span class="chrome__links">
-					<a class="chrome__link" :href="LAB_SOURCE_URL" target="_blank" rel="noopener">
-						SOURCE
-					</a>
-					<button class="chrome__link" type="button" @click="toEnd">CONTACT</button>
-				</span>
-				<span v-if="supported" class="chrome__spec">{{ spec }}</span>
-			</div>
+			<button class="chrome__link" type="button" @click="toEnd">CONTACT</button>
 		</div>
 
 		<!-- Flight instrument, and the only thing that says the page is ten screens long -->
@@ -73,7 +65,7 @@
 	import { computed, ref } from 'vue'
 	import { useFlyby } from '@/composables/useFlyby'
 	import LabBoot from '@/components/lab/LabBoot.vue'
-	import { LAB_BEATS, LAB_SOURCE_URL, LAB_TITLE } from '@/data/labBeats'
+	import { LAB_BEATS, LAB_TITLE } from '@/data/labBeats'
 	import { CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
 
 	// how far into the arrival each portal lifts in, so they land one at a time
@@ -81,21 +73,8 @@
 	const PORTAL_STAGGER = 0.15
 
 	const canvas = ref(null)
-	const {
-		supported,
-		booting,
-		bootProgress,
-		bootCeiling,
-		leg,
-		wake,
-		hint,
-		arrive,
-		markOn,
-		shaderLines,
-	} = useFlyby(canvas)
-
-	// Counted, not claimed: the shader is right there in the bundle, so measure it.
-	const spec = computed(() => `webgl1 · ${shaderLines.value}-line shader · 0 deps`)
+	const { supported, booting, bootProgress, bootCeiling, leg, wake, hint, arrive, markOn } =
+		useFlyby(canvas)
 
 	// With no WebGL there is no flight to arrive from, so the contact block is simply
 	// always up rather than waiting on a scroll position nothing is driving.
@@ -262,8 +241,9 @@
 		left: 50%;
 		bottom: 6vh;
 		transform: translateX(-50%);
-		font-size: 8px;
-		color: $flyby-dim;
+		font-size: 10px;
+		letter-spacing: 1px;
+		color: $flyby-ink;
 		z-index: 3;
 		text-align: center;
 		text-shadow:
@@ -272,8 +252,20 @@
 
 		b {
 			display: block;
-			margin-top: 8px;
+			margin-top: 10px;
+			font-size: 12px;
 			color: $flyby-hot;
+			// self-running, so it steps: a two-frame beckon
+			animation: hint-beckon 1.1s steps(2, end) infinite;
+		}
+	}
+
+	@keyframes hint-beckon {
+		from {
+			transform: translateY(0);
+		}
+		to {
+			transform: translateY(8px);
 		}
 	}
 
@@ -344,7 +336,6 @@
 		display: flex;
 		align-items: flex-start;
 		justify-content: flex-end;
-		gap: 16px;
 		padding: 20px 6vw;
 		font-size: 8px;
 		line-height: 1.8;
@@ -392,26 +383,6 @@
 		}
 	}
 
-	.chrome__nav {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		gap: 6px;
-		text-align: right;
-	}
-
-	.chrome__links {
-		display: flex;
-		gap: 16px;
-	}
-
-	// The claim the page is making, in counted numbers rather than adjectives - the
-	// shader line count is read off the shader at runtime, so it cannot drift.
-	.chrome__spec {
-		color: $flyby-faint;
-		text-shadow: 2px 2px 0 $black;
-	}
-
 	.hud {
 		position: fixed;
 		right: 6vw;
@@ -442,6 +413,9 @@
 	@media (prefers-reduced-motion: reduce) {
 		.portal {
 			transition: none;
+		}
+		.hint b {
+			animation: none;
 		}
 	}
 

@@ -36,7 +36,3 @@ export const LAB_BEATS = [
 // The name, for screen readers. It is drawn into the scene as geometry, so the
 // document still needs a real heading.
 export const LAB_TITLE = 'Karl Querel — Software Engineer'
-
-// Where the SOURCE link in the fixed chrome points.
-export const LAB_SOURCE_URL =
-	'https://github.com/KarlQuerel/karlquerel.github.io/tree/master/src/components/lab'
