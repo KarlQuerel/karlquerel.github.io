@@ -28,11 +28,11 @@
 </template>
 
 <script setup>
-	import { onBeforeUnmount, onMounted, ref } from 'vue'
+	import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { HERO_FLYBY } from '@/constants/journey'
 
-	defineProps({
+	const props = defineProps({
 		// the whole name, and the two words the camera flies between
 		name: { type: String, required: true },
 		firstWords: { type: String, required: true },
@@ -40,6 +40,9 @@
 		role: { type: String, required: true },
 		// the scroll cue, on the plate with the rest so it flies with it
 		cue: { type: String, required: true },
+		// mid-transit the plate goes bare: ink and keyline only, since the blurred
+		// passes magnify into frame-sized washes inside the gate
+		bare: { type: Boolean, default: false },
 	})
 
 	const textEl = ref(null)
@@ -176,13 +179,15 @@
 		// keyline, then the letters crisp on top. The keyline is the one that carries
 		// legibility once the words are crossing a lit limb or a cloud deck; the blurred
 		// passes are the glow the live type used to get from its text-shadows.
-		for (const [colour, blur, bloomOnly] of [
-			[HERO_FLYBY.plateShadow, HERO_FLYBY.plateShadowBlur, false],
-			[HERO_FLYBY.plateGlow, HERO_FLYBY.plateGlowBlur, true],
-		]) {
-			ctx.shadowColor = colour
-			ctx.shadowBlur = blur * dpr
-			for (const run of runs) if (run.bloom || !bloomOnly) drawRun(ctx, run, dpr)
+		if (!props.bare) {
+			for (const [colour, blur, bloomOnly] of [
+				[HERO_FLYBY.plateShadow, HERO_FLYBY.plateShadowBlur, false],
+				[HERO_FLYBY.plateGlow, HERO_FLYBY.plateGlowBlur, true],
+			]) {
+				ctx.shadowColor = colour
+				ctx.shadowBlur = blur * dpr
+				for (const run of runs) if (run.bloom || !bloomOnly) drawRun(ctx, run, dpr)
+			}
 		}
 		ctx.shadowBlur = 0
 		ctx.shadowColor = 'transparent'
@@ -198,6 +203,9 @@
 	}
 
 	const repaint = useRafThrottle(paint)
+
+	// one repaint per threshold crossing, both directions
+	watch(() => props.bare, repaint)
 
 	onMounted(() => {
 		paint()
