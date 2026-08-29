@@ -171,6 +171,15 @@
 		padding-block: $chrome-clearance;
 	}
 
+	// The first chapter opens the station: it hangs just under the heading instead
+	// of centring in its own viewport, or the station opens on half a screen of
+	// empty space before anything is said. Below it the chapter rhythm resumes -
+	// and that whitespace is owed: the route's first zigzag crossing turns in it.
+	.life-slot:first-child {
+		min-height: 0;
+		padding-block: 0 34vh;
+	}
+
 	.life-card {
 		// flow-root, not block: contains the floated art so it can't spill past the wash
 		display: flow-root;

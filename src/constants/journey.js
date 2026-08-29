@@ -116,6 +116,10 @@ export const HERO_FLYBY = {
 	// the role line's warm bloom — the name takes the dark pass and the keyline only
 	plateGlow: 'rgba(255, 189, 46, 0.34)',
 	plateGlowBlur: 26,
+	// Past this scale the plate repaints bare - ink and keyline, no blurred passes.
+	// The blurs exist to hold the words off a lit limb at rest; magnified thirty
+	// times they are frame-sized grey washes smeared over the gate transit.
+	bareFromScale: 5,
 	plateDepth: 26,
 	// The chrome holds back until the hero has gone by — the opening frame is meant to
 	// be the name and nothing else — then rides the rest of the flight.
@@ -125,16 +129,20 @@ export const HERO_FLYBY = {
 	dustFull: 0.4,
 	dustOut: 1.6,
 	// How near the words get by the end. The pass flies into the Q: its counter has
-	// to swallow the frame, which against a hole a few glyph-units wide takes an
-	// order more magnification than flying past the words did (6 then). The ring
-	// reads as a gate on the way in; the dissolve rides only the last stretch and
-	// finishes the exit once the bowl's stroke is past the frame edges.
-	nearScale: 34,
-	fadeFromScale: 18,
-	// Where the Q's counter sits inside its glyph box, in em of the glyph size —
-	// the tail pushes the bowl off the box's own centre. Small numbers, big stakes:
-	// at nearScale an em of error at rest is a frame of error at the end.
-	qAxis: { x: -0.07, y: -0.19 },
+	// to swallow the frame, and the arithmetic is unforgiving - after the keyline the
+	// hole is ~3.7 design px tall (0.46em), so clearing a ~900px viewport needs scale
+	// past 30 BEFORE the ink starts to go. 34-with-fade-from-18 dissolved the letter
+	// while the hole was still inside the frame, which read as flying at the Q and
+	// never through it. The dissolve now starts once the hole is taller than the
+	// frame and finishes as its side strokes leave.
+	nearScale: 60,
+	fadeFromScale: 34,
+	// Where the Q's counter sits inside its glyph box, in em of the glyph size,
+	// relative to the box centre and the row middle. These are the /lab flyby's
+	// measured Q_COUNTER values (read off the face at 16 device px per design px,
+	// pen-origin x 0.4128 minus the half-em), not eyeballed: at nearScale an em of
+	// error at rest is a frame of error at the end.
+	qAxis: { x: -0.087, y: -0.108 },
 }
 
 // The ground we leave from: one near ridge across the foot of the opening frame, so
@@ -672,4 +680,49 @@ export const ENTRY = {
 		shades: ['void', 'ink', 'basalt', 'rust', 'ochre', 'clay'],
 		crest: 'amber',
 	},
+}
+
+// ---------------------------------------------------------------- route
+// The journey's own line (JourneyRoute.vue): a dashed gold trace drawn in the page,
+// from the departure pad under the hero down to the entry point where the arrival's
+// approach lights take over. It runs straight through the WORK timeline at its rail
+// centre - the route IS that spine, AboutWork draws none of its own - and skirts the
+// station headings, which sit at negative z on landscape and must never have the
+// line over their letters. Geometry is measured off the real layout at mount.
+export const ROUTE = {
+	// Where the line begins: this share of a viewport above the WORK station, running
+	// in on one 45 sized to the room above the heading. It used to be born at the
+	// hero gate; starting beside the content reads calmer and keeps the hero clean.
+	startAboveVh: 0.3,
+	// Corners are flown, not cornered: the line enters each turn this far before the
+	// vertex and arcs through it. crispEdges quantises the arc into pixel steps, so
+	// a turn reads as an 8-bit curve rather than a vector swoosh.
+	turnPx: 36,
+	// clearance kept around station headings
+	headMarginPx: 18,
+	// how far left of the LIFE column's edge its stretch of the line runs
+	gutterPx: 36,
+	// LIFE zigzags: the line runs a flank beside each chapter - left of the cards,
+	// then right of them, back and forth - crossing the whole frame in the whitespace
+	// between chapters as elbow / horizontal run / elbow. WORK stays straight on
+	// purpose: the career is the direct line, life swings side to side.
+	// elbow = the most a crossing may rise each side of its horizontal; each crossing
+	// takes as much of the inter-card whitespace as actually exists, up to this, and
+	// more height is more scroll - the whole reason a crossing can afford to be slow.
+	// pad = clearance kept off the cards above and below.
+	crossElbowPx: 200,
+	crossPadPx: 40,
+	// where in the viewport the tip diamond rides
+	tipFrac: 0.55,
+	// How far into the arrival runway the line runs, and the viewport share kept
+	// between the last jog and the arrival's top. Solved against the orbit fade
+	// below: the tip touches the entry diamond just as the chart dissolves.
+	endRunFrac: 0.17,
+	endLeadVh: 0.15,
+	// The chart leaves as the orbit begins - once the planet owns the frame the
+	// route has done its job. Fade window, in arrival-runway fractions.
+	orbitOutAt: 0.02,
+	orbitOutSpan: 0.14,
+	nodePx: 7,
+	tipPx: 9,
 }

@@ -56,7 +56,6 @@
 	@use '@/styles/mixins' as *;
 
 	$row-gap: 0.3rem;
-	$rail-w: 3px;
 	$badge: clamp(2.6rem, 6.5vw, 3.4rem);
 	$emblem-ghost: 0.88;
 	$tick-gap: 0.25rem;
@@ -72,21 +71,9 @@
 		list-style: none;
 	}
 
-	// dashed gold spine threading every node
-	.ztl::before {
-		content: '';
-		position: absolute;
-		left: var(--rail-center);
-		transform: translateX(-50%);
-		top: 1.5rem;
-		bottom: 1.5rem;
-		width: $rail-w;
-		background: repeating-linear-gradient(
-			to bottom,
-			rgba($yellow, 0.45) 0 6px,
-			transparent 6px 12px
-		);
-	}
+	// No spine drawn here any more: the journey's route (JourneyRoute) runs straight
+	// through the timeline at --rail-center, so the career is one leg of the page's
+	// own line - track flown behind the reader, dotted plan ahead of them.
 
 	// all of this lands under the caption, so it reads as the caption's own padding
 	.ztl-item {

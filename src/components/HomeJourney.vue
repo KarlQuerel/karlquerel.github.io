@@ -1,6 +1,8 @@
 <template>
 	<section id="top" ref="trackRef" class="journey" :style="[trackStyle, parallaxStyle]">
 		<PlanetStage :cam="cam" :spin="spin" :light-yaw="lightYaw" :haze="haze" />
+		<!-- the journey's own line, threading the stations - see JourneyRoute -->
+		<JourneyRoute />
 		<JourneyRail :active="activeStop" />
 
 		<!-- Chrome that rides the whole flight once the hero has gone by: the name, a
@@ -13,7 +15,7 @@
 			<RouterLink class="journey__cta" :style="ctaStyle" :to="JOURNEY_STOPS.at(-1).to">
 				{{ JOURNEY_STOPS.at(-1).label }}
 			</RouterLink>
-			<div class="journey__progress" aria-hidden="true">
+			<div class="journey__progress" :style="progressBoxStyle" aria-hidden="true">
 				<span class="journey__progress-run" :style="progressStyle" />
 			</div>
 		</div>
@@ -35,6 +37,7 @@
 						:last-word="lastWord"
 						:role="HOME_LANDING.label"
 						:cue="HOME_LANDING.scrollHint"
+						:bare="plateBare"
 						@axis="onAxis"
 					/>
 				</div>
@@ -92,6 +95,7 @@
 	import HeroTitle from './HeroTitle.vue'
 	import JourneyArrival from './JourneyArrival.vue'
 	import JourneyRail from './JourneyRail.vue'
+	import JourneyRoute from './JourneyRoute.vue'
 	import PageTitle from './PageTitle.vue'
 	import PlanetStage from './PlanetStage.vue'
 
@@ -277,8 +281,12 @@
 	// Since scale and offset-from-the-axis grow together, one scale about the corridor
 	// is the whole move. The words go on out past the frame edges; the dissolve is
 	// what ends the pass.
+	const passScale = computed(() => 1 / (1 - flown(clamp01(pass.value)) / HERO_FLYBY.titleZ))
+	// bare plate through the gate - see HERO_FLYBY.bareFromScale
+	const plateBare = computed(() => passScale.value >= HERO_FLYBY.bareFromScale)
+
 	const flybyStyle = computed(() => {
-		const scale = 1 / (1 - flown(clamp01(pass.value)) / HERO_FLYBY.titleZ)
+		const scale = passScale.value
 		const gone = clamp01(
 			(scale - HERO_FLYBY.fadeFromScale) / (HERO_FLYBY.nearScale - HERO_FLYBY.fadeFromScale)
 		)
@@ -360,6 +368,22 @@
 	})
 
 	const progressStyle = computed(() => ({ height: `${(progress.value * 100).toFixed(1)}%` }))
+
+	// The distance meter leaves with the way-out chip: on the surface there is no
+	// distance left to count, and a lit meter pinned over the dusk sky was the last
+	// piece of flight chrome still up after landing.
+	const progressBoxStyle = computed(() => {
+		const there = smoothstep(
+			clamp01(
+				(arrivalProgress.value - ARRIVAL.ctaFadeStart) /
+					(ARRIVAL.ctaFadeEnd - ARRIVAL.ctaFadeStart)
+			)
+		)
+		return {
+			opacity: (1 - there).toFixed(3),
+			visibility: there < 1 ? null : 'hidden',
+		}
+	})
 
 	// The way out goes away once the descent starts rather than once it ends: it is
 	// gone by the time the first clouds are in frame, so the last stretch is the
