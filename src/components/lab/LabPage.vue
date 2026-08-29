@@ -38,7 +38,7 @@
 			</section>
 		</div>
 
-		<p class="hint" :style="hintStyle" aria-hidden="true">Scroll to begin<b>▼</b></p>
+		<p class="hint" :style="hintStyle" aria-hidden="true">▼</p>
 
 		<div class="end" :style="endStyle">
 			<h2>
@@ -236,36 +236,27 @@
 			$flyby-outline;
 	}
 
+	// A lone chevron, no caption: it says "below" without writing on the photograph.
 	.hint {
 		position: fixed;
 		left: 50%;
 		bottom: 6vh;
-		transform: translateX(-50%);
-		font-size: 10px;
-		letter-spacing: 1px;
-		color: $flyby-ink;
+		font-size: 16px;
+		color: $flyby-hot;
 		z-index: 3;
-		text-align: center;
 		text-shadow:
 			2px 2px 0 $black,
 			$flyby-outline;
-
-		b {
-			display: block;
-			margin-top: 10px;
-			font-size: 12px;
-			color: $flyby-hot;
-			// self-running, so it steps: a two-frame beckon
-			animation: hint-beckon 1.1s steps(2, end) infinite;
-		}
+		// self-running, so it steps: a two-frame beckon
+		animation: hint-beckon 1.1s steps(2, end) infinite;
 	}
 
 	@keyframes hint-beckon {
 		from {
-			transform: translateY(0);
+			transform: translate(-50%, 0);
 		}
 		to {
-			transform: translateY(8px);
+			transform: translate(-50%, 8px);
 		}
 	}
 
@@ -414,8 +405,9 @@
 		.portal {
 			transition: none;
 		}
-		.hint b {
+		.hint {
 			animation: none;
+			transform: translateX(-50%);
 		}
 	}
 

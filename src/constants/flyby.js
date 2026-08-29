@@ -21,7 +21,9 @@ export const BODIES = [
 	// the page is a grey horizon under stars and nothing else exists. It hides the
 	// corridor by blocking it, not by the camera looking away - which is why the
 	// reveal is parallax as we climb over it, and needs no camera trick at all.
-	{ c: [6.5, -6, -25], r: 12.0, pid: 2, spin: 0.12, ring: [0, 0] },
+	// x is solved with the opening waypoints: centred under the rest camera (0.1
+	// degrees off), so the horizon sits under the name instead of leaning left.
+	{ c: [10.25, -6, -25], r: 12.0, pid: 2, spin: 0.12, ring: [0, 0] },
 	// The corridor moon: the ridge's trick again, but spent on one body instead of the
 	// whole scene. It takes the destination back after the first look at it and holds
 	// it to s=0.527, so the arrival happens at 8.2 degrees across instead of 2.4 - the
