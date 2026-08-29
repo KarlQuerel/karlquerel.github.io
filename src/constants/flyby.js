@@ -376,6 +376,9 @@ export const BOOT_WEIGHTS = {
 }
 // How fast the displayed figure closes the gap to the next checkpoint, in seconds.
 export const BOOT_EASE_TAU = 0.9
+// Once the boot lands, the fill sweeps the rest of the mark at this steady pace
+// (seconds per full mark), so finishing reads as a climb rather than a teleport.
+export const BOOT_SWEEP = 0.5
 // How long the cover stays up once it is up, so it reads as a beat rather than a blink.
 // There is deliberately no "only show if the boot is slow" threshold. That was tried and
 // cannot work here: the boot's own steps take about 100ms of yielding, and the expensive
