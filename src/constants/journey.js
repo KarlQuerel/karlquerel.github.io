@@ -300,7 +300,7 @@ export const ARRIVAL = {
 	contactFadeStart: 0.66,
 	contactStagger: 0.055,
 	// The flight's own way-out chip leaves far earlier, on its own window: gone before
-	// the first clouds are in frame (see ENTRY.clouds), so nothing from the trip is
+	// the first clouds are in frame (see ENTRY.cloudStream), so nothing from the trip is
 	// still pinned over the atmosphere while we are descending through it. The portals
 	// below surface later, on the window above.
 	ctaFadeStart: 0.14,
@@ -315,10 +315,14 @@ export const ARRIVAL = {
 	dustFull: 0.28,
 	dustOut: 0.66,
 	dustTravel: 30,
-	// Orbital haze over the early approach; the entry sky takes over from it.
-	hazeStart: 0.05,
+	// Atmosphere over the approach; the entry sky takes over from it. Full, not a
+	// tint: it has to own the whole frame by the time the limb is gone (0.36) or the
+	// stretch before the whiteout shows naked space from inside the planet. Starting
+	// with the camera keyframes rather than at the runway's top keeps the surface
+	// crossing crisp - the veil only climbs once we are actually going down.
+	hazeStart: 0.18,
 	hazeEnd: 0.4,
-	hazeMax: 0.7,
+	hazeMax: 1,
 }
 
 // The entry scene (PlanetEntry.vue): cloud deck, sky takeover, ridgelines.
@@ -375,28 +379,23 @@ export const ENTRY = {
 		shades: ['stone', 'bone', 'chalk', 'cream', 'linen'],
 	},
 
-	// A dense, staggered stream: the deck has to be thick enough through the
-	// takeover that the surface is gone before the sky is up.
-	clouds: [
-		{ left: 18, scale: 0.5, start: 0.5 },
-		{ left: 74, scale: 0.42, start: 0.511 },
-		{ left: 44, scale: 0.6, start: 0.522 },
-		{ left: 8, scale: 0.72, start: 0.533 },
-		{ left: 62, scale: 0.66, start: 0.544 },
-		{ left: 32, scale: 0.85, start: 0.555 },
-		{ left: 88, scale: 0.78, start: 0.566 },
-		{ left: 52, scale: 1.5, start: 0.577 },
-		{ left: 14, scale: 1.4, start: 0.588 },
-		{ left: 70, scale: 1.7, start: 0.599 },
-		{ left: 38, scale: 1.6, start: 0.61 },
-		{ left: 84, scale: 1.35, start: 0.621 },
-		{ left: 24, scale: 1.7, start: 0.632 },
-		{ left: 58, scale: 1.55, start: 0.643 },
-		{ left: 6, scale: 1.0, start: 0.654 },
-		{ left: 78, scale: 1.25, start: 0.665 },
-		{ left: 42, scale: 1.15, start: 0.676 },
-		{ left: 66, scale: 0.95, start: 0.687 },
-	],
+	// A dense, staggered stream: the deck has to be thick enough through the takeover
+	// that the surface is gone before the sky is up. The puffs used to be a written-out
+	// table, so every landing had identical weather; they are rolled per visit now (see
+	// seedClouds in PlanetEntry) and these are the ranges the roll draws from. Scale
+	// climbs through the stream - far puffs lead, near ones close it out - and the
+	// stagger keeps the density the fixed table guaranteed.
+	cloudStream: {
+		count: 18,
+		startAt: 0.5,
+		stagger: 0.011,
+		startJitter: 0.007,
+		leftMin: 6,
+		leftMax: 88,
+		scaleFrom: 0.45,
+		scaleTo: 1.6,
+		scaleJitter: 0.4,
+	},
 
 	// Mouse parallax on the surface, same mechanism as the starfield backdrop:
 	// pixels of travel per layer, against the cursor. Depths are on the same

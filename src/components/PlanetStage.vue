@@ -87,15 +87,17 @@
 		will-change: transform;
 	}
 
-	// densest at the horizon, gone by mid-sky
+	// Densest at the horizon, but never open at the top: by the time the limb has
+	// gone the camera is inside the atmosphere, and a sky with stars in it up there
+	// reads as space still showing through the planet we just entered.
 	.stage__haze {
 		position: absolute;
 		inset: 0;
 		background: linear-gradient(
 			to top,
-			rgba(var(--atmosphere), 0.55) 0%,
-			rgba(var(--atmosphere), 0.3) 30%,
-			rgba(var(--atmosphere), 0) 62%
+			rgba(var(--atmosphere), 1) 0%,
+			rgba(var(--atmosphere), 0.9) 40%,
+			rgba(var(--atmosphere), 0.82) 100%
 		);
 	}
 </style>

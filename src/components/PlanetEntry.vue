@@ -43,7 +43,7 @@
 			</div>
 		</div>
 		<div
-			v-for="(cloud, i) in ENTRY.clouds"
+			v-for="(cloud, i) in cloudField"
 			:key="i"
 			class="entry__cloud"
 			:style="cloudStyle(cloud, i)"
@@ -172,6 +172,22 @@
 	}
 	const starTiles = ref([])
 	const twinklers = ref([])
+	const cloudField = ref([])
+
+	// The stream, rolled per visit like everything else here. Lanes advance by the
+	// golden ratio from a seeded phase: consecutive puffs never share a lane and any
+	// window of the stream still covers the width - a plain shuffle guarantees neither.
+	function seedClouds(seed) {
+		const c = ENTRY.cloudStream
+		const phase = hash1(1, seed + 7)
+		return Array.from({ length: c.count }, (_, i) => ({
+			left: c.leftMin + ((phase + i * 0.618034) % 1) * (c.leftMax - c.leftMin),
+			scale:
+				(c.scaleFrom + (c.scaleTo - c.scaleFrom) * (i / (c.count - 1))) *
+				(1 + (hash1(i, seed + 19) - 0.5) * c.scaleJitter),
+			start: c.startAt + i * c.stagger + (hash1(i, seed + 31) - 0.5) * c.startJitter,
+		}))
+	}
 
 	// Placed off the visit seed like everything else here, so no two visits blink in
 	// the same places. Kept inside the band of sky the star mask actually shows.
@@ -497,6 +513,7 @@
 	onMounted(() => {
 		visitSeed = Math.floor(Math.random() * 1e5) + 1
 		cut()
+		cloudField.value = seedClouds(visitSeed)
 		cloudSprites.value = Array.from({ length: ENTRY.cloud.variants }, (_, i) =>
 			drawCloud(visitSeed + i * 137)
 		)
