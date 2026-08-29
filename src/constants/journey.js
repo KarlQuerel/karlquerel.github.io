@@ -723,6 +723,31 @@ export const ROUTE = {
 	// route has done its job. Fade window, in arrival-runway fractions.
 	orbitOutAt: 0.02,
 	orbitOutSpan: 0.14,
+	// The dive aims at the world rather than at the frame: by the arrival the planet
+	// has swung back into the middle of the shot, so steering the last leg onto its
+	// centre keeps the two together if the camera is ever retuned. Clamped this far
+	// in from either edge, so a camera change can never throw the dive off screen.
+	diveAimBand: 0.3,
+	// How generously a crossing's own four corners turn - the rest of the route keeps
+	// turnPx. The straight 45 between them is the whole point of the shape, and it is
+	// what bounds this: the diagonal leg is elbow * sqrt2 (~283px at full elbow) and
+	// each end of it pays a corner, so much past 60 eats the 45 entirely and the
+	// crossing becomes one swoosh with nothing 8-bit left in it. 50 keeps the
+	// diagonal plainly straight and only takes the hard edge off the transitions;
+	// turnPx here gives back the original, tighter corner exactly.
+	crossTurnPx: 50,
+	// How many straight steps a corner arc is walked in, at most - a small arc takes
+	// proportionally fewer. The browser draws the real curve; this is only what the
+	// reveal masks and the tip ride, and walking the arc rather than chording it is
+	// what lets the dart's heading turn through a corner instead of sitting on one
+	// averaged angle and then snapping to the next leg.
+	curveSteps: 12,
 	nodePx: 7,
-	tipPx: 9,
+	// The tip is a dart, not a diamond, so its heading reads. Local space, nose along
+	// +x; the transform turns it onto the path tangent. A square has four-fold
+	// symmetry - rotating one to the heading shows nothing at all.
+	tipNosePx: 6,
+	tipShoulderPx: 1.5,
+	tipHalfPx: 3.5,
+	tipTailPx: 4,
 }

@@ -34,7 +34,8 @@
 			</mask>
 		</defs>
 		<g class="route__flown" mask="url(#route-flown)">
-			<path :d="geo.d" />
+			<path class="route__casing" :d="geo.d" />
+			<path class="route__ink" :d="geo.d" />
 			<rect
 				v-for="(n, i) in geo.nodes"
 				:key="i"
@@ -46,14 +47,11 @@
 				:transform="`rotate(45 ${n[0]} ${n[1]})`"
 			/>
 		</g>
-		<rect
+		<polygon
 			v-if="tip"
 			class="route__tip"
-			:x="-ROUTE.tipPx / 2"
-			:y="-ROUTE.tipPx / 2"
-			:width="ROUTE.tipPx"
-			:height="ROUTE.tipPx"
-			:transform="`translate(${tip[0]} ${tip[1]}) rotate(45)`"
+			:points="TIP_DART"
+			:transform="`translate(${tip[0]} ${tip[1]}) rotate(${heading})`"
 		/>
 	</svg>
 </template>
@@ -64,12 +62,31 @@
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { smoothstep } from '@/js/math'
 
+	const props = defineProps({
+		// The camera sampled at an arbitrary scroll (HomeJourney owns the track). The
+		// route aims its dive at where the planet will be when the tip arrives, which
+		// is not the scroll being drawn - so a value would not do, it needs the curve.
+		camAt: { type: Function, required: true },
+	})
+
 	const geo = ref(null)
 	const flownLen = ref(0)
 	const tip = ref(null)
+	// which way the tip is pointing, in degrees - the tangent of the path under it
+	const heading = ref(90)
 	// the line leaves as the orbit begins: once the planet owns the frame, the
 	// chart has done its job
 	const fade = ref(1)
+
+	// nose, shoulder, tail, shoulder - a dart in local space, pointing along +x
+	const TIP_DART = [
+		[ROUTE.tipNosePx, 0],
+		[-ROUTE.tipShoulderPx, ROUTE.tipHalfPx],
+		[-ROUTE.tipTailPx, 0],
+		[-ROUTE.tipShoulderPx, -ROUTE.tipHalfPx],
+	]
+		.map(p => p.join(','))
+		.join(' ')
 
 	// how much of one subpath the flown length reaches
 	const reveal = sub => clamp(flownLen.value - sub.start, 0, sub.len)
@@ -82,6 +99,16 @@
 	let span = [0, 1]
 	let orbit = [0, 1]
 	let vh = 0
+
+	// Where the planet's centre sits across the frame at the moment the tip reaches a
+	// given point on the page - the same placement PlanetStage makes, an offset from
+	// the frame's middle in vw. The camera is sampled at the scroll that puts the tip
+	// on `y`, not at the scroll being drawn: the dive has to aim where the world will
+	// be, not where it is.
+	function planetXAt(y, w, h) {
+		const cam = props.camAt(clamp(y - vh * ROUTE.tipFrac, 0, Math.max(0, h - vh)))
+		return w / 2 + (cam.x / 100) * window.innerWidth
+	}
 
 	// The geometry is measured, not authored: x follows the timeline's own rail, y
 	// follows the real section layout, and everything is rebuilt on reshape.
@@ -110,7 +137,7 @@
 
 		const w = track.clientWidth
 		const h = track.offsetHeight
-		const xC = Math.round(w / 2)
+		const xMid = Math.round(w / 2)
 		const ztlBox = box(ztl)
 		const xS = Math.round(ztlBox.left - track.getBoundingClientRect().left + railCenter)
 		const m = ROUTE.headMarginPx
@@ -120,7 +147,7 @@
 		const yG = Math.round(box(work).top - vh * ROUTE.startAboveVh)
 		const headBox = box(workHead)
 		const dock1 = Math.round(headBox.top - m)
-		const runIn = Math.max(0, Math.min(Math.abs(xC - xS), dock1 - m - yG))
+		const runIn = Math.max(0, Math.min(Math.abs(xMid - xS), dock1 - m - yG))
 		const xG = xS + runIn
 		const resume1 = Math.round(headBox.bottom + m)
 		// The heading only needs skirting when the rail would actually cross its
@@ -159,6 +186,11 @@
 		// elbow / horizontal run / elbow, centred on the slot boundary and pushed off
 		// the real card boxes; a crossing that cannot clear both cards is skipped and
 		// the flank simply continues.
+		// The four vertices carry their own turn radius: 45s and orthogonals are the
+		// pixel vocabulary and the shape is deliberate, but on legs this long the
+		// route's usual 36px corner reads as a hard edge. A crossing was briefly one
+		// flown S instead - smoother, and wrong: it read as a vector swoosh with
+		// nothing 8-bit left in it.
 		const xR = w - xL
 		const elbow = ROUTE.crossElbowPx
 		const pad = ROUTE.crossPadPx
@@ -178,16 +210,32 @@
 				Math.min(Math.max(box(lifeSlots[k]).top, gapTop + elbowK), gapBot - elbowK)
 			)
 			const step = lane < target ? elbowK : -elbowK
+			const r = ROUTE.crossTurnPx
 			weave.push(
-				[lane, yH - elbowK],
-				[lane + step, yH],
-				[target - step, yH],
-				[target, yH + elbowK]
+				[lane, yH - elbowK, r],
+				[lane + step, yH, r],
+				[target - step, yH, r],
+				[target, yH + elbowK, r]
 			)
 			lane = target
 			reach = yH + elbowK
 		}
-		const dxDive = Math.abs(xC - lane)
+		// The dive aims at the world, not at the frame: the last leg is steered onto
+		// where the planet's centre will be when the tip lands, so the two arrive
+		// together by construction rather than by coincidence.
+		// On the camera as tuned today that is the frame's middle and nothing moves -
+		// every arrival keyframe holds x at 0 (see CAMERA.approach / .entry / .gone) -
+		// so this reads the same number the hardcoded centre did. It is here so the
+		// line still lands on the planet the day a keyframe brings it in off-axis.
+		// Same reason it is safe that a first measure can run before HomeJourney has
+		// built its track: the resting camera is centred too, and the observer on the
+		// track re-cuts the line as soon as there is one.
+		// Clamped well inside the frame - a dive that leaves the page is worse than
+		// one that is a little off.
+		const xAim = Math.round(
+			clamp(planetXAt(yEnd, w, h), w * ROUTE.diveAimBand, w * (1 - ROUTE.diveAimBand))
+		)
+		const dxDive = Math.abs(xAim - lane)
 		const yJ2 = Math.max(reach + m, Math.round(arrivalBox.top - vh * ROUTE.endLeadVh) - dxDive)
 
 		const trunk = [
@@ -195,8 +243,8 @@
 			[xL, yJ3 + dxL],
 			...weave,
 			[lane, yJ2],
-			[xC, yJ2 + dxDive],
-			[xC, yEnd],
+			[xAim, yJ2 + dxDive],
+			[xAim, yEnd],
 		]
 		const head =
 			runIn >= 2
@@ -217,20 +265,16 @@
 		const subs = []
 		// Corners are flown, not cornered: every interior vertex becomes a small arc
 		// (a quadratic with the vertex as its control), entered turnPx short of the
-		// corner and clamped so short legs stay sane. Arc lengths are sampled so the
-		// reveal masks and the tip walk ride the same distances the browser dashes.
-		const quadLen = (a, c, b) => {
-			let len = 0
-			let prev = a
-			for (let k = 1; k <= 8; k++) {
-				const t = k / 8
-				const u = 1 - t
-				const px = u * u * a[0] + 2 * u * t * c[0] + t * t * b[0]
-				const py = u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]
-				len += Math.hypot(px - prev[0], py - prev[1])
-				prev = [px, py]
-			}
-			return len
+		// corner - or the vertex's own radius, where it carries one - and clamped so
+		// short legs stay sane. The arc is walked in steps rather than chorded, so the
+		// reveal masks ride the distances the browser really dashes and the tip's
+		// heading turns through the corner instead of holding one averaged angle.
+		const quadAt = (a, c, b, t) => {
+			const u = 1 - t
+			return [
+				u * u * a[0] + 2 * u * t * c[0] + t * t * b[0],
+				u * u * a[1] + 2 * u * t * c[1] + t * t * b[1],
+			]
 		}
 		const pushSeg = (x1, y1, x2, y2, len) => {
 			if (len < 0.5) return
@@ -246,7 +290,9 @@
 				const inLen = Math.hypot(corner[0] - cur[0], corner[1] - cur[1])
 				const next = i < pts.length - 1 ? pts[i + 1] : null
 				const outLen = next ? Math.hypot(next[0] - corner[0], next[1] - corner[1]) : 0
-				const t = next ? Math.min(ROUTE.turnPx, inLen * 0.45, outLen * 0.45) : 0
+				// a vertex may carry its own radius; the crossings ask for a wider one
+				const turn = corner[2] ?? ROUTE.turnPx
+				const t = next ? Math.min(turn, inLen * 0.45, outLen * 0.45) : 0
 				if (!next || t < 2) {
 					d += ` L${corner[0]} ${corner[1]}`
 					pushSeg(cur[0], cur[1], corner[0], corner[1], inLen)
@@ -259,7 +305,20 @@
 				const by = corner[1] + ((next[1] - corner[1]) / outLen) * t
 				d += ` L${ax} ${ay} Q${corner[0]} ${corner[1]} ${bx} ${by}`
 				pushSeg(cur[0], cur[1], ax, ay, Math.hypot(ax - cur[0], ay - cur[1]))
-				pushSeg(ax, ay, bx, by, quadLen([ax, ay], corner, [bx, by]))
+				// steps in proportion to the arc: a tight corner is still one chord
+				const steps = clamp(Math.round(t / 6), 1, ROUTE.curveSteps)
+				let prev = [ax, ay]
+				for (let k = 1; k <= steps; k++) {
+					const q = quadAt([ax, ay], corner, [bx, by], k / steps)
+					pushSeg(
+						prev[0],
+						prev[1],
+						q[0],
+						q[1],
+						Math.hypot(q[0] - prev[0], q[1] - prev[1])
+					)
+					prev = q
+				}
 				cur = [bx, by]
 			}
 			subs.push({ d, start, len: total - start })
@@ -304,28 +363,32 @@
 			nodes: headClear
 				? [
 						[xG, yG],
-						[xC, yEnd],
+						[xAim, yEnd],
 					]
 				: [
 						[xG, yG],
 						[xS, dock1],
 						[xS, resume1],
-						[xC, yEnd],
+						[xAim, yEnd],
 					],
 		}
 		update()
 	}
 
-	// flown fraction and tip position for the current scroll - a walk over a handful
-	// of segments, all monotone in y
+	// flown fraction, tip position and tip heading for the current scroll - a walk
+	// over a handful of segments, all monotone in y
 	function update() {
 		if (!segs.length) return
 		const yT = window.scrollY + vh * ROUTE.tipFrac
 		let fr = total
 		let pos = [segs.at(-1).x2, segs.at(-1).y2]
+		// the segment under the tip, or the last one it cleared: parked in a gap, the
+		// dart keeps the heading it docked on rather than snapping to a default
+		let on = segs.at(-1)
 		for (const s of segs) {
 			if (yT >= s.yb) {
 				pos = [s.x2, s.y2]
+				on = s
 				continue
 			}
 			if (yT <= s.ya) {
@@ -335,8 +398,10 @@
 			const t = (yT - s.ya) / (s.yb - s.ya)
 			fr = s.cum + t * s.len
 			pos = [s.x1 + (s.x2 - s.x1) * t, s.y1 + (s.y2 - s.y1) * t]
+			on = s
 			break
 		}
+		heading.value = +((Math.atan2(on.y2 - on.y1, on.x2 - on.x1) * 180) / Math.PI).toFixed(1)
 		if (yT >= segs.at(-1).yb) fr = total
 		flownLen.value = fr
 		const orbited = smoothstep(
@@ -402,10 +467,30 @@
 	// ahead, and the track is one flat gold from the gate to the tip.
 	.route__flown path {
 		fill: none;
-		stroke-width: 2px;
 		// the WORK spine's own cadence, so docking into it reads as one line
 		stroke-dasharray: 6 6;
-		stroke: rgba($yellow, 0.55);
+	}
+
+	.route__flown .route__ink {
+		stroke-width: 2px;
+		stroke: rgba($yellow, 0.8);
+	}
+
+	// A dark casing under the gold, the trick every chart drawn over terrain uses:
+	// the planet is the brightest thing on the page, and a bare 2px line at half
+	// alpha simply disappears into its lit limb. On the gold's own 12px period but
+	// a step longer at each end, so every dash carries its own outline and the line
+	// still reads as dashed rather than as a solid dark trace with gold on top.
+	// Both rules need the group in the selector: `.route__flown path` above would
+	// otherwise outrank a bare class and take the dash pattern back.
+	.route__flown .route__casing {
+		// exactly one pixel of halo each side of the gold, and lighter than it: a
+		// casing that outweighs its line stops reading as gold-over-terrain and
+		// starts reading as a black line with a gold core
+		stroke-width: 4px;
+		stroke: rgba($black, 0.6);
+		stroke-dasharray: 8 4;
+		stroke-dashoffset: -1;
 	}
 
 	.route__flown .route__node {
@@ -421,8 +506,10 @@
 		stroke-width: 12px;
 	}
 
-	// You are here. The reserved gold at full strength - the current milestone -
-	// with the one self-running motion on the line, stepped as the house rules ask.
+	// You are here. The reserved gold at full strength - the current milestone - with
+	// the one self-running motion on the line, stepped as the house rules ask. A dart
+	// rather than a diamond: it is turned onto the path's own tangent every frame, and
+	// a square would show nothing for it - four-fold symmetry hides every quarter turn.
 	.route__tip {
 		fill: $yellow;
 		filter: drop-shadow(0 0 4px rgba($yellow, 0.6));

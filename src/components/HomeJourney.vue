@@ -1,8 +1,10 @@
 <template>
 	<section id="top" ref="trackRef" class="journey" :style="[trackStyle, parallaxStyle]">
 		<PlanetStage :cam="cam" :spin="spin" :light-yaw="lightYaw" :haze="haze" />
-		<!-- the journey's own line, threading the stations - see JourneyRoute -->
-		<JourneyRoute />
+		<!-- the journey's own line, threading the stations - see JourneyRoute. It takes
+		     the camera sampler, not the camera: it aims its dive at where the planet
+		     will be, which is a scroll it has not reached yet. -->
+		<JourneyRoute :cam-at="camAt" />
 		<JourneyRail :active="activeStop" />
 
 		<!-- Chrome that rides the whole flight once the hero has gone by: the name, a
@@ -237,11 +239,13 @@
 		return slopes
 	})
 
-	const cam = computed(() => {
+	// Sampled at an arbitrary scroll, not just the current one: the route needs to
+	// know where the planet will be when its tip reaches a given point on the page,
+	// which is a different scroll from the one being drawn.
+	function camAt(s) {
 		const pts = camTrack.value
 		const slopes = camSlopes.value
 		if (!slopes) return { ...CAM_CHANNELS, ...CAMERA.rest }
-		const s = scrolled.value
 		if (s <= pts[0].s) return { ...CAM_CHANNELS, ...pts[0] }
 		for (let i = 0; i < pts.length - 1; i++) {
 			const a = pts[i]
@@ -258,7 +262,9 @@
 			}
 		}
 		return pts[pts.length - 1]
-	})
+	}
+
+	const cam = computed(() => camAt(scrolled.value))
 
 	// the planet keeps rolling under you for the whole trip; the camera's roll
 	// channel piles ground rush on top through the skim and the entry
