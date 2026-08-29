@@ -8,6 +8,7 @@
 // it reads as a belt rather than a tube, but centred on where the camera actually goes.
 
 import { camAt } from './flybyPath.js'
+import { add, cross, mul, norm } from './vec3.js'
 import {
 	BELT_FAMILIES,
 	BELT_FLATTEN,
@@ -16,6 +17,7 @@ import {
 	BELT_SEED,
 	BELT_Z_NEAR,
 	BELT_Z_SPAN,
+	RING_NORMAL,
 } from '../constants/flyby.js'
 
 // The corridor, keyed on depth. Path z is monotone, so a coarse table and a lerp invert
@@ -55,14 +57,21 @@ export function buildBelt(count) {
 		return [cx + dx * k, cy + dy * k, p[2]]
 	}
 
-	// Ring the corridor at a radius that never comes near the hull, flattened on y so the
-	// field reads as a belt seen close to edge-on. Weighted inward - most of a belt is the
-	// near gravel you actually pass, not the far stuff.
+	// Ring the corridor at a radius that never comes near the hull, flattened along the
+	// system plane's normal so the slab lies in the plane everything else obeys - it
+	// crosses the frame at the plane's own 13-degree tilt instead of sitting as a
+	// horizontal stripe at the camera's eye level. Weighted inward - most of a belt is
+	// the near gravel you actually pass, not the far stuff.
+	const inPlane = norm(cross(RING_NORMAL, [0, 0, 1]))
 	const place = z => {
 		const [cx, cy] = corridorAt(z)
 		const r = BELT_RADIUS_MIN + rnd() * rnd() * (BELT_RADIUS_MAX - BELT_RADIUS_MIN)
 		const th = rnd() * Math.PI * 2
-		return [cx + Math.cos(th) * r, cy + Math.sin(th) * r * BELT_FLATTEN, z]
+		const off = add(
+			mul(inPlane, Math.cos(th) * r),
+			mul(RING_NORMAL, Math.sin(th) * r * BELT_FLATTEN)
+		)
+		return [cx + off[0], cy + off[1], z + off[2]]
 	}
 
 	// Families. Most of a real belt belongs to one - the debris of the same break-up,

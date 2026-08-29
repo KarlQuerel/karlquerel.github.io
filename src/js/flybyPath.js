@@ -9,6 +9,7 @@ import { clamp01, hermite, smoothstep } from './math.js'
 import { add, cross, dot, lerp, mul, norm, slerp, sub } from './vec3.js'
 import {
 	BANK_GRAVITY,
+	BODIES,
 	BANK_LEAD,
 	BANK_MAX,
 	BANK_MAX_STILL,
@@ -19,6 +20,7 @@ import {
 	LOOK_MAX,
 	MAX_FRAME_DT,
 	PATH,
+	RING_NORMAL,
 	ROLL_DAMPING,
 	ROLL_FREQ,
 	ROLL_REST,
@@ -29,6 +31,20 @@ import {
 	WAKE_SPAN,
 	WAKE_START,
 } from '../constants/flyby.js'
+
+// The ring plane's own axes, for anything that has to travel in it.
+const RING_E1 = norm(cross(RING_NORMAL, UP))
+const RING_E2 = cross(RING_NORMAL, RING_E1)
+
+// Where a body sits at scroll `s`. All but one are fixed; the shepherd carries an
+// orbit - an arc about its primary in the ring plane - so the system has one thing
+// that visibly revolves, and it does it where ring physics puts one.
+export function bodyAt(b, s) {
+	if (!b.orbit) return b.c
+	const th = (b.orbit.phase + b.orbit.sweep * s) * 2 * Math.PI
+	const arm = add(mul(RING_E1, Math.cos(th) * b.orbit.r), mul(RING_E2, Math.sin(th) * b.orbit.r))
+	return add(BODIES[b.orbit.about].c, arm)
+}
 
 // Which keyframe interval `s` falls in. Every channel below is keyed on scroll the
 // same way, so they share the search rather than each rolling their own.

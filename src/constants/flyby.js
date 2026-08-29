@@ -49,10 +49,21 @@ export const BODIES = [
 	// Every one of them also sits at a phase angle between 55 and 125 degrees, so it has a
 	// terminator across it. Four of the old set sat under 50 and rendered as flat lit discs,
 	// which is most of what made them look pasted on.
+	// Spread matters as much as the plane does. Measured before this pass, everything
+	// prominent sat within six degrees of eye level and all of it to the right - a
+	// system obeying one plane still reads as beads on a string if every body also
+	// shares the camera's own height and side. So the free bodies take the spread a
+	// real ecliptic has: inclinations both ways, depth in clumps rather than even
+	// steps (one loner, then a binary, then a void), and the upper-left field handed
+	// from one tenant to the next as the flight goes - the ice world to s=0.29, the
+	// tan one from 0.35. Phase angles all hold 55-125.
 	{ c: [1.39, 36.34, -142.55], r: 1.42, pid: 4, spin: 0.27, ring: [0, 0] },
-	{ c: [43.16, -10.62, -199.15], r: 1.16, pid: 7, spin: 0.33, ring: [0, 0] },
+	// the small half of the binary: 12 units from its partner, 5.5 partner-radii,
+	// tilted across the plane so the pair carries its own inclination
+	{ c: [66.5, -1.5, -222.5], r: 1.16, pid: 7, spin: 0.33, ring: [0, 0] },
 	{ c: [-29.96, 82.6, -472.12], r: 3.17, pid: 8, spin: 0.06, ring: [0, 0] },
-	{ c: [21.98, 59.1, -334.99], r: 3.04, pid: 9, spin: 0.09, ring: [0, 0] },
+	// upper-left, mid-flight: on screen s=0.35..0.72 while everything else is right
+	{ c: [-42, 47, -345], r: 3.04, pid: 9, spin: 0.09, ring: [0, 0] },
 	{ c: [73.69, 5.31, -229.16], r: 2.18, pid: 6, spin: 0.14, ring: [0, 0] },
 	// Moons. The cheapest thing in the scene that reads as a system: the eye sees a pair
 	// and supplies the orbit. They are also the only near-field bodies that come hidden for
@@ -60,8 +71,25 @@ export const BODIES = [
 	// the primary is. Each is a fifth to a third of its planet, three to six radii out, and
 	// none may sit on the destination during either scripted reveal: a moon crossing its
 	// own planet is worth having, a moon crossing the beat is not.
-	{ c: [6.31, 4.61, -47.39], r: 0.56, pid: 2, spin: 0.41, ring: [0, 0] },
-	{ c: [6.18, 2.27, -169.66], r: 1.08, pid: 4, spin: 0.35, ring: [0, 0] },
+	// The shepherd. This was a fixed moon at 4.4 radii; it now rides the ring's outer
+	// edge - 7.6 units out, just past the 7.2 the ring stops at, which is where ring
+	// physics actually keeps such a thing - and it is the one body in the system that
+	// visibly revolves: 32 degrees of arc across the scroll, in the ring's own plane.
+	// Phase and sweep are solved, not chosen: hidden on the opening frame, never nearer
+	// the hull than 8.9 units, never on the destination sightline, and on screen from
+	// s=0.20 to 0.42 - four to five degrees across through the ring pass, creeping
+	// three quarters of its own diameter while watched.
+	{
+		orbit: { about: 0, r: 7.6, phase: 0.205, sweep: -0.09 },
+		r: 0.56,
+		pid: 2,
+		spin: 0.41,
+		ring: [0, 0],
+	},
+	// The corridor moon's companion sits beside and below it (4.3 radii) rather than
+	// twenty units ahead: at the same depth the two read as a pair, and it is the one
+	// prominent body under the plane - low-right against everything else's eye level.
+	{ c: [19.55, -11.67, -152.7], r: 1.08, pid: 4, spin: 0.35, ring: [0, 0] },
 	{ c: [18.36, 13.33, -218.77], r: 2.07, pid: 2, spin: 0.19, ring: [0, 0] },
 ]
 
@@ -113,16 +141,17 @@ export const TARGETS = [BODIES[0], BODIES[1]]
 // of the scroll: from eighty units out that is no visible motion at all, so the page
 // opens as a still frame and only admits it is 3D once you have scrolled past it.
 export const PATH = [
-	{ s: 0.0, p: [9.0, 2.6, 24] },
-	{ s: 0.123, p: [8.8, 3.4, 18] }, // still frame ends here, engines light
-	// Held out to the right so the run-in to the letter is a turn rather than a straight
-	// line. The roll is a coordinated turn now, so the only way to bank through the title
-	// is to actually fly a curve there - this earns about 11 degrees at s=0.1777 and then
-	// carries straight on into the ridge turn, so the two read as one manoeuvre instead of
-	// a tilt that arrives from nowhere. Measured: it leaves the occlusion chain alone
-	// (ridge holds the destination to 0.209, ringed world 0.131..0.310, moon 0.302..0.623)
-	// and the ridge is still passed at 1.20 radii.
-	{ s: 0.194, p: [9.6, 6.0, 4] }, // climbing: the ridge starts to drop away
+	// The first three x values are solved together: they aim the rest frame so the
+	// name reads centred with the pointer centred (it used to sit 7 degrees right),
+	// and they leave the opening horizon dead level (bank under 0.3 degrees).
+	{ s: 0.0, p: [10.0, 2.6, 24] },
+	{ s: 0.123, p: [10.0, 3.4, 18] }, // still frame ends here, engines light
+	// The run-in to the letter is still a turn rather than a straight line - centring
+	// the rest frame softened it, so the bank through the title is about 5 degrees now
+	// rather than 11 - and it carries straight on into the ridge turn, so the two read
+	// as one manoeuvre instead of a tilt that arrives from nowhere. Measured: it leaves
+	// the occlusion chain alone and the ridge is still passed at 1.20 radii.
+	{ s: 0.194, p: [9.8, 6.0, 4] }, // climbing: the ridge starts to drop away
 	{ s: 0.255, p: [7.8, 8.6, -20] }, // up and over it, and the system is just there
 	{ s: 0.306, p: [6.9, 6.4, -44] }, // settling back onto the corridor
 	{ s: 0.356, p: [3.8, 4.4, -61.2] }, // through the ring plane, near its outer edge
@@ -295,10 +324,10 @@ export const DUST_BOX = 22
 // decision worth fifty lines, and a seeded generator gives every reader the same field.
 // The seed is not arbitrary either - it was picked by checking whole fields against the
 // flight, judged on the ellipsoids' long axis rather than the nominal radius. This one
-// clears the hull by 11 units at its closest, never covers the destination or the ringed
-// world, puts 61 of its 96 rocks in shot at some point and about twenty-two on screen at
-// once, and is at most 0.57 degrees across on the opening frame - ten art pixels, where
-// the haze already has 93% of it.
+// keeps 5.9 units between the hull and the nearest rock's long axis (re-measured after
+// the field was tilted into the system plane - the tilt cost nothing), never puts a rock
+// on the destination's disc while it is watched, and is at most 0.57 degrees across on
+// the opening frame - ten art pixels, where the haze already has 93% of it.
 // Where the field lies along the corridor, as depth out from the camera's start. It used
 // to run 125..285, which straddled the destination at 186 and put more than half the rocks
 // behind the thing they were meant to be seen in front of. 85..182 puts all of it in front
@@ -309,8 +338,9 @@ export const BELT_Z_NEAR = 85
 export const BELT_Z_SPAN = 97
 // How far off the corridor's centre line the rocks sit. The floor is the safety margin -
 // nothing may come nearer the hull than this - and the field is weighted toward it, since
-// most of a belt is the near gravel you actually pass. Flattened on y so it reads as a
-// belt seen near edge-on instead of a tube the camera is inside.
+// most of a belt is the near gravel you actually pass. Flattened along the system plane's
+// own normal - not the camera's y - so the slab crosses the frame at the plane's tilt
+// instead of lying as a horizontal stripe at eye level.
 export const BELT_RADIUS_MIN = 7
 export const BELT_RADIUS_MAX = 46
 export const BELT_FLATTEN = 0.42

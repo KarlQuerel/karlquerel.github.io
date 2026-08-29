@@ -49,6 +49,11 @@ vec3 farOff(vec3 c, float d){
   return mix(c, VOID_TINT, smoothstep(HAZE_NEAR, HAZE_FAR, d)*HAZE_MAX);
 }
 
+// Planetshine off the destination: its dayside is a second, green lamp over the last
+// third of the corridor. Falls off with the disc's solid angle, so it only pays within
+// a few tens of units - exactly the stretch flown beside it - and is strongest where
+// the shone-on face actually sees the lit half.
+
 // --- ordered dithering (4x4/8x8 bayer, no bit ops in GLSL ES 1.00)
 float bayer2(vec2 a){ a = floor(a); return fract(a.x/2.0 + a.y*a.y*0.75); }
 float bayer8(vec2 a){ return bayer2(0.25*a)*0.0625 + bayer2(0.5*a)*0.25 + bayer2(a); }
@@ -274,6 +279,24 @@ float ringDensity(float r, float ri, float ro){
   return a * smoothstep(0.0, 0.05, u) * smoothstep(1.0, 0.90, u);
 }
 
+// Planetshine off the destination: its dayside is a second, green lamp over the last
+// third of the corridor. Falls off with the disc's solid angle, so it only pays within
+// a few tens of units - exactly the stretch flown beside it - and is strongest where
+// the shone-on face actually sees the lit half.
+vec3 destShine(vec3 p, vec3 n){
+  vec3 q = uB[1].xyz - p;
+  float d2 = dot(q, q);
+  // Solid-angle falloff, lifted and capped: raw inverse-square is honest but lands
+  // under one quantisation level (1/22) on everything but the very nearest rock, and
+  // light the dither eats is light nobody was paid for. The cap keeps the gravel
+  // passed right at the limb from reading as if it were floodlit.
+  float k = min(uB[1].w*uB[1].w/max(d2, 1.0)*7.0, 0.85);
+  if (k < 0.03) return vec3(0.0);
+  vec3 l = q*inversesqrt(d2);
+  float dayside = 0.5*(1.0 - dot(l, uSun));
+  return vec3(0.42,0.52,0.20) * (max(dot(n, l), 0.0) * k * dayside);
+}
+
 // ring shadow cast onto the planet
 float ringShadow(vec3 p, vec3 c, float ri, float ro){
   if (ro <= 0.0) return 1.0;
@@ -333,7 +356,18 @@ void main(){
           float cc = dot(oc,oc) - uB[0].w*uB[0].w;
           float hh = bb*bb - cc;
           float lit = (hh > 0.0 && -bb - sqrt(hh) > 0.0) ? 0.30 : 1.0;
-          ringC = mix(vec3(0.40,0.36,0.34), vec3(0.80,0.74,0.68), grain)*lit;
+          ringC = mix(vec3(0.40,0.36,0.34), vec3(0.80,0.74,0.68), grain);
+          // Which face this is. From the sunward side the shards backscatter - the warm
+          // look. From the shadow side the dense bands block their own light and go
+          // dark, and only the thin fringes glow by transmission, brightest looking
+          // sunward, which is what forward scattering is. The camera crosses the plane
+          // at s=0.356, so the flip is a lighting event the flight actually earns.
+          if (dot(uRingN, uSun) * dot(uRingN, ro - uB[0].xyz) < 0.0){
+            float thin = clamp(dens*(1.0 - dens)*4.0, 0.0, 1.0);
+            float fscat = 0.35 + 0.65*pow(max(dot(rd, uSun), 0.0), 6.0);
+            ringC = mix(ringC*0.16, vec3(0.58,0.62,0.72)*fscat, thin*0.8);
+          }
+          ringC *= lit;
         }
       }
     }
@@ -402,12 +436,15 @@ void main(){
       // cloud tops catch the light a beat before the ground does
       shade += ca*day*0.10;
     }
-    // specular glint off open water
-    if (ocean > 0.0 && e < sea){
+    // Specular glint off open water, gated to the brine world: a mirror flash needs
+    // a liquid surface, and the giants' ocean flag buys banding and cloud, not a sea.
+    if (ocean > 0.0 && pp.x < 1.5 && e < sea){
       vec3 hv = normalize(uSun - rd);
       base += vec3(0.96,1.0,0.62)*pow(max(dot(n,hv),0.0), 90.0)*0.55;
     }
     vec3 lit = base*shade;
+    // the destination lights its own neighbourhood - night sides included
+    if (H != 1) lit += base*destShine(p, n);
 
     // atmosphere: forward-scattering rim, warm at the terminator
     float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
@@ -416,7 +453,8 @@ void main(){
     vec3 haze = mix(vec3(0.34,0.44,0.72), vec3(0.44,0.70,0.26), ocean);
     vec3 dusk = mix(vec3(1.0,0.52,0.28), vec3(1.0,0.68,0.32), ocean);
     vec3 atmo = mix(haze, dusk, term);
-    lit += atmo*rim*(0.20 + 0.80*day)*(0.35 + 0.65*ocean);
+    // airless bodies keep only a whisper of it: regolith has no sky to glow
+    lit += atmo*rim*(0.20 + 0.80*day)*(0.12 + 0.88*ocean);
 
     col = farOff(lit, best);
   }
@@ -435,7 +473,8 @@ void main(){
       base = mix(base, vec3(0.40,0.34,0.29), smoothstep(0.45,0.80,ridged(lp*9.0))*0.5);
       float day = max(dot(n, uSun), 0.0);
       float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
-      col = farOff(base*(0.07 + 0.98*day) + vec3(0.42,0.50,0.66)*rim*0.14, tr);
+      col = farOff(base*(0.07 + 0.98*day) + base*destShine(hp, n)
+                   + vec3(0.42,0.50,0.66)*rim*0.14, tr);
     }
   }
 
@@ -489,7 +528,8 @@ void main(){
       base = mix(base, tint*0.68, smoothstep(0.45,0.80,ridged(sp*9.0))*0.5);
       float day = max(dot(n, uSun), 0.0);
       float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
-      col = farOff(base*(0.06 + 1.02*day) + vec3(0.42,0.50,0.66)*rim*0.12, t);
+      col = farOff(base*(0.06 + 1.02*day) + base*destShine(hp, n)
+                   + vec3(0.42,0.50,0.66)*rim*0.12, t);
     }
   }
 

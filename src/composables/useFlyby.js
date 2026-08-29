@@ -5,7 +5,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { clamp01, smoothstep } from '../js/math.js'
 import { dot, mul, sub } from '../js/vec3.js'
-import { createRollState, sampleFlight } from '../js/flybyPath.js'
+import { bodyAt, createRollState, sampleFlight } from '../js/flybyPath.js'
 import { buildBelt } from '../js/flybyBelt.js'
 import { TITLE_PLANE, drawTitleCanvas, planeWidth, textureSize } from '../js/flybyTitle.js'
 import { prefersReducedMotion } from './usePrefersReducedMotion.js'
@@ -97,7 +97,6 @@ export function useFlyby(canvasRef) {
 	const hint = ref(1)
 	const arrive = ref(0)
 	const markOn = ref(false)
-	const shaderLines = ref(0)
 
 	let gl = null
 	let raf = 0
@@ -235,8 +234,11 @@ export function useFlyby(canvasRef) {
 
 		const cam = sampleFlight(p, mxs, mys, still, rollState, dt)
 
-		// spins accumulate with scroll, never on a clock
-		BODIES.forEach((b, i) => (bodyP[i * 4 + 1] = b.spin * p * TURN))
+		// spins accumulate with scroll, never on a clock - and so does the shepherd's arc
+		BODIES.forEach((b, i) => {
+			bodyP[i * 4 + 1] = b.spin * p * TURN
+			if (b.orbit) bodyArr.set(bodyAt(b, p), i * 4)
+		})
 
 		gl.useProgram(scene)
 		gl.bindBuffer(gl.ARRAY_BUFFER, quad)
@@ -459,7 +461,6 @@ export function useFlyby(canvasRef) {
 			)
 		)
 		const sceneFrag = sceneFragSrc.replace('__BELT_COUNT__', String(beltCount))
-		shaderLines.value = sceneFrag.trim().split('\n').length
 		if (!(await step('context'))) return
 
 		scene = compile(sceneVert, sceneFrag)
@@ -501,7 +502,7 @@ export function useFlyby(canvasRef) {
 		dustSeeds = buffer(seeds)
 		dustTails = buffer(tails)
 		BODIES.forEach((b, i) => {
-			bodyArr.set(b.c.concat([b.r]), i * 4)
+			bodyArr.set([...bodyAt(b, 0), b.r], i * 4)
 			bodyP.set([b.pid, 0, b.ring[0], b.ring[1]], i * 4)
 		})
 		if (beltCount) {
@@ -571,6 +572,5 @@ export function useFlyby(canvasRef) {
 		hint,
 		arrive,
 		markOn,
-		shaderLines,
 	}
 }
