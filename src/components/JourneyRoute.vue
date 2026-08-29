@@ -3,15 +3,7 @@
 	     It runs in above the WORK station, threads the timeline as its spine, zigzags
 	     the whole frame between the LIFE chapters, and dives for the arrival. Only
 	     the flown stretch is drawn; the tip diamond is the camera, mid-viewport. -->
-	<svg
-		v-if="geo"
-		class="route"
-		:width="geo.w"
-		:height="geo.h"
-		:viewBox="`0 0 ${geo.w} ${geo.h}`"
-		:style="{ opacity: fade, '--depth': JOURNEY.parallax.body }"
-		aria-hidden="true"
-	>
+	<svg v-if="geo" v-bind="frame" class="route" :style="frameStyle" aria-hidden="true">
 		<defs>
 			<!-- The flown stretch, revealed by dash arithmetic in real units. One mask
 			     path per subpath: Chromium restarts the dash phase at every moveto, so
@@ -47,8 +39,21 @@
 				:transform="`rotate(45 ${n[0]} ${n[1]})`"
 			/>
 		</g>
+	</svg>
+	<!-- The cursor rides its own layer, above the reading matter. The trace belongs
+	     behind it - a line threading the stations is scenery - but "you are here" is
+	     not scenery, and at the trace's own depth it spent most of the journey behind
+	     the station bodies: measured at 66 of 88 sampled scroll positions, on both a
+	     desktop and a phone viewport. Same box and same depth as the trace, so the
+	     two stay glued. -->
+	<svg
+		v-if="geo && tip"
+		v-bind="frame"
+		class="route route--cursor"
+		:style="frameStyle"
+		aria-hidden="true"
+	>
 		<polygon
-			v-if="tip"
 			class="route__tip"
 			:points="TIP_DART"
 			:transform="`translate(${tip[0]} ${tip[1]}) rotate(${heading})`"
@@ -57,7 +62,7 @@
 </template>
 
 <script setup>
-	import { onActivated, onBeforeUnmount, onMounted, ref } from 'vue'
+	import { computed, onActivated, onBeforeUnmount, onMounted, ref } from 'vue'
 	import { JOURNEY, ROUTE } from '@/constants/journey'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { smoothstep } from '@/js/math'
@@ -77,6 +82,22 @@
 	// the line leaves as the orbit begins: once the planet owns the frame, the
 	// chart has done its job
 	const fade = ref(1)
+
+	// Both layers are the same box over the same track, so the cursor lines up with
+	// the trace it belongs to without a second measurement.
+	const frame = computed(() =>
+		geo.value
+			? {
+					width: geo.value.w,
+					height: geo.value.h,
+					viewBox: `0 0 ${geo.value.w} ${geo.value.h}`,
+				}
+			: null
+	)
+	const frameStyle = computed(() => ({
+		opacity: fade.value,
+		'--depth': JOURNEY.parallax.body,
+	}))
 
 	// nose, shoulder, tail, shoulder - a dart in local space, pointing along +x
 	const TIP_DART = [
@@ -446,8 +467,9 @@
 		position: absolute;
 		top: 0;
 		left: 0;
-		// over the fixed stage (later in the DOM), under the station bodies at z 1
-		// and the landscape headings at z -1... which sit below the stage anyway
+		// The trace: over the fixed stage (later in the DOM), under the station bodies
+		// at z 1 and the landscape headings at z -1... which sit below the stage
+		// anyway. The cursor overrides this - see .route--cursor.
 		z-index: 0;
 		pointer-events: none;
 		shape-rendering: crispEdges;
@@ -457,6 +479,13 @@
 		// the pointer moves.
 		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
 			calc(var(--my, 0) * var(--depth, 0) * 1px);
+	}
+
+	// Only the cursor is lifted, and only over the page's own content: clear of the
+	// station bodies and the arrival (z 1) and of the departure flight (z 2), still
+	// well under the rail and the chrome (z 20), which are meant to cover it.
+	.route--cursor {
+		z-index: 3;
 	}
 
 	// The pattern rules stay scoped to the visible group: a bare `.route path` would
