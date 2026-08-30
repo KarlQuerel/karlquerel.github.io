@@ -7,7 +7,7 @@
 		     through, so the two ends of the trip read as one piece of motion -->
 		<FlightDust :travel="dustTravel" :fade="dustFade" />
 		<div class="arrival__content">
-			<header class="arrival__head arrival__reveal" :class="{ 'is-up': revealed(0) }">
+			<header class="arrival__head arrival__reveal" :class="revealClass(0)">
 				<PageTitle tag="h2" :lead="CONTACT_HEADING.lead" :accent="CONTACT_HEADING.accent" />
 			</header>
 
@@ -16,7 +16,7 @@
 					v-for="(channel, i) in CONTACT_CHANNELS"
 					:key="channel.key"
 					class="arrival__reveal"
-					:class="{ 'is-up': revealed(i + 1) }"
+					:class="revealClass(i + 1)"
 				>
 					<PixelPortal
 						:label="channel.label"
@@ -30,7 +30,7 @@
 			<!-- secondary action, pinned to the pin (not the page): only present at the planet -->
 			<a
 				class="arrival__report arrival__reveal"
-				:class="{ 'is-up': revealed(REPORT_INDEX) }"
+				:class="revealClass(REPORT_INDEX)"
 				:href="BUG_REPORT.issueUrl"
 				:aria-label="BUG_REPORT.ariaLabel"
 				target="_blank"
@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-	import { computed } from 'vue'
+	import { computed, ref, watch } from 'vue'
 	import { ARRIVAL } from '@/constants/journey'
 	import { BUG_REPORT, CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
 	import { clamp01, smoothstep } from '@/js/math'
@@ -79,8 +79,20 @@
 	// the trigger is scrolled — the pop itself runs on its own clock in the stylesheet,
 	// so it always plays whole. Scrubbed off scroll, a fast flick through the runway
 	// played the entire reveal inside one frame and a slow one parked a tile half-risen.
-	const revealed = index =>
-		props.progress > ARRIVAL.contactFadeStart + index * ARRIVAL.contactStagger
+	const threshold = index => ARRIVAL.contactFadeStart + index * ARRIVAL.contactStagger
+	const revealed = index => props.progress > threshold(index)
+
+	// Scrolling back up plays the same pop backwards — but only for a tile that has
+	// actually been up (the deepest progress seen), so nothing flashes at first paint.
+	const peak = ref(0)
+	watch(
+		() => props.progress,
+		p => (peak.value = Math.max(peak.value, p))
+	)
+	const revealClass = index => ({
+		'is-up': revealed(index),
+		'is-down': !revealed(index) && peak.value > threshold(index),
+	})
 </script>
 
 <style scoped lang="scss">
@@ -142,6 +154,21 @@
 
 	@keyframes arrival-pop {
 		to {
+			opacity: 1;
+			translate: none;
+			scale: 1;
+		}
+	}
+
+	// the pop backwards: only `from` is declared, so it settles into the base
+	// off-stage state above — visibility included, once the last step lands
+	.arrival__reveal.is-down {
+		animation: arrival-drop $pop-span steps($pop-steps, end) forwards;
+	}
+
+	@keyframes arrival-drop {
+		from {
+			visibility: visible;
 			opacity: 1;
 			translate: none;
 			scale: 1;
