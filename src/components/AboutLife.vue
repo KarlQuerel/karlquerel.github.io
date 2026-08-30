@@ -135,6 +135,10 @@
 
 	// how far a card travels on its slide-in
 	$slide: 28px;
+	// the one gap between cards — fixed, so the rhythm is even whatever the cards'
+	// heights, and roomy enough for the route's crossing to turn inside it (two 45
+	// chamfers plus their card clearance need ~192px)
+	$life-gap: 14rem;
 	// offset between the photo-deck cards peeking out behind each dog's frame
 	$stack-step: 6px;
 	// mat between a section image and its void frame
@@ -149,35 +153,19 @@
 		text-align: left;
 	}
 
-	// One screen per section. The slot carries the height and the card floats in the
-	// middle of it, so the dark wash still hugs its own copy instead of ballooning
-	// into a viewport-tall panel — and the sections can be wildly different heights
-	// (DOGS runs past a screen, MUSIC is a fifth of one) without any of them sharing
-	// the frame with a neighbour. vh, not dvh: a dvh that resizes as a phone's URL bar
-	// slides would re-fire the journey's ResizeObserver and re-measure the camera.
-	//
-	// The height alone carries the rhythm — deliberately no scroll-snap. Snapping these
-	// measured ~500px of scroll dragged backwards across one wheel run: every tick ends
-	// a gesture, so the snap re-settles against the reader's hand. The camera is scrubbed
-	// off scroll position here, so that tug is not just a scroll artefact, it is the
-	// whole scene stuttering with it.
+	// The slots hug their cards, and one fixed gap carries the rhythm — equal
+	// whatever the cards' heights (DOGS runs past a screen, MUSIC is a fifth of
+	// one), where the old screen-per-section slots left every gap a different pair
+	// of leftover half-screens, and far too much of it. The route's crossings turn
+	// centred inside the gap.
 	.life-slot {
 		display: grid;
 		place-items: center;
 		width: 100%;
-		min-height: 100vh;
-		// keeps a card off the fixed corner chrome; inside the 100vh for every card
-		// that fits, so those still centre on the frame exactly as they would without it
-		padding-block: $chrome-clearance;
 	}
 
-	// The first chapter opens the station: it hangs just under the heading instead
-	// of centring in its own viewport, or the station opens on half a screen of
-	// empty space before anything is said. Below it the chapter rhythm resumes -
-	// and that whitespace is owed: the route's first zigzag crossing turns in it.
-	.life-slot:first-child {
-		min-height: 0;
-		padding-block: 0 34vh;
+	.life-slot:not(:last-child) {
+		margin-bottom: $life-gap;
 	}
 
 	.life-card {
