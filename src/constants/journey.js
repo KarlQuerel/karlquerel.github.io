@@ -703,15 +703,18 @@ export const ROUTE = {
 	// how far left of the LIFE column's edge its stretch of the line runs
 	gutterPx: 36,
 	// LIFE zigzags: the line runs a flank beside each chapter - left of the cards,
-	// then right of them, back and forth - crossing the whole frame in the whitespace
-	// between chapters as elbow / horizontal run / elbow. WORK stays straight on
-	// purpose: the career is the direct line, life swings side to side.
-	// elbow = the most a crossing may rise each side of its horizontal; each crossing
-	// takes as much of the inter-card whitespace as actually exists, up to this, and
-	// more height is more scroll - the whole reason a crossing can afford to be slow.
+	// then right of them, back and forth - crossing the frame in the fixed gap
+	// between chapters on a hexagonal jog: a short 45 chamfer off each flank and a
+	// straight run between them. WORK stays straight on purpose: the career is the
+	// direct line, life swings side to side.
 	// pad = clearance kept off the cards above and below.
-	crossElbowPx: 200,
 	crossPadPx: 40,
+	// the least horizontal run a jog may keep between its chamfers - a crossing
+	// that cannot afford it is skipped, the line staying on its flank
+	crossMinRunPx: 120,
+	// the chamfer's 45s, one off each flank around the straight run - hexagon
+	// vertices rather than swept elbows, short enough to fit the chapter gaps
+	crossChamferPx: 56,
 	// where in the viewport the tip diamond rides
 	tipFrac: 0.55,
 	// How far into the arrival runway the line runs, and the viewport share kept
@@ -728,14 +731,6 @@ export const ROUTE = {
 	// centre keeps the two together if the camera is ever retuned. Clamped this far
 	// in from either edge, so a camera change can never throw the dive off screen.
 	diveAimBand: 0.3,
-	// How generously a crossing's own four corners turn - the rest of the route keeps
-	// turnPx. The straight 45 between them is the whole point of the shape, and it is
-	// what bounds this: the diagonal leg is elbow * sqrt2 (~283px at full elbow) and
-	// each end of it pays a corner, so much past 60 eats the 45 entirely and the
-	// crossing becomes one swoosh with nothing 8-bit left in it. 50 keeps the
-	// diagonal plainly straight and only takes the hard edge off the transitions;
-	// turnPx here gives back the original, tighter corner exactly.
-	crossTurnPx: 50,
 	// How many straight steps a corner arc is walked in, at most - a small arc takes
 	// proportionally fewer. The browser draws the real curve; this is only what the
 	// reveal masks and the tip ride, and walking the arc rather than chording it is

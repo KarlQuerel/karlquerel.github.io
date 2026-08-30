@@ -171,10 +171,10 @@
 		const runIn = Math.max(0, Math.min(Math.abs(xMid - xS), dock1 - m - yG))
 		const xG = xS + runIn
 		const resume1 = Math.round(headBox.bottom + m)
-		// The heading only needs skirting when the rail would actually cross its
-		// letters. The face is monospaced, so the widest the glyphs can reach is
-		// exact arithmetic - and a heading wrapped to two lines only overestimates,
-		// which errs toward keeping the skirt. Clear of the letters, the line runs
+		// The heading only matters when the rail would actually cross its letters.
+		// The face is monospaced, so the widest the glyphs can reach is exact
+		// arithmetic - and a heading wrapped to two lines only overestimates, which
+		// errs toward the late start below. Clear of the letters, the line runs
 		// straight through and the timeline reads whole.
 		const headText = workHead.querySelector('.page-heading')
 		let headClear = false
@@ -190,10 +190,14 @@
 		// gutter, clear of the prose - the trace jogs out after the timeline and
 		// jogs back for the dive. Headings only ever meet it across empty padding.
 		const lifeSlots = [...track.querySelectorAll('#life .life-slot')]
-		const xL = Math.max(
+		let xL = Math.max(
 			20,
 			Math.round(box(lifeSlot).left - track.getBoundingClientRect().left - ROUTE.gutterPx)
 		)
+		// A lane change shorter than its own two corners is a wobble, not a jog: on
+		// a phone the LIFE gutter lands a handful of px off the WORK rail, and the
+		// tip visibly stepped sideways for nothing. The line stays in its lane.
+		if (Math.abs(xS - xL) < ROUTE.turnPx * 2) xL = xS
 		const dxL = Math.abs(xS - xL)
 		const yJ3 = Math.round(ztlBox.bottom + 60)
 		const arrivalBox = box(arrival)
@@ -201,19 +205,14 @@
 		orbit = [arrivalBox.top, runway]
 		const yEnd = Math.round(arrivalBox.top + vh * 0.5 + runway * ROUTE.endRunFrac)
 
-		// The zigzag: a flank beside each life chapter - left of the cards, then right
-		// of them, alternating - crossing the whole frame in the whitespace between
-		// chapters. A screen-wide 45 cannot fit that whitespace, so each crossing is
-		// elbow / horizontal run / elbow, centred on the slot boundary and pushed off
-		// the real card boxes; a crossing that cannot clear both cards is skipped and
-		// the flank simply continues.
-		// The four vertices carry their own turn radius: 45s and orthogonals are the
-		// pixel vocabulary and the shape is deliberate, but on legs this long the
-		// route's usual 36px corner reads as a hard edge. A crossing was briefly one
-		// flown S instead - smoother, and wrong: it read as a vector swoosh with
-		// nothing 8-bit left in it.
+		// The zigzag: a flank beside each life chapter - left of the cards, then
+		// right of them, alternating - crossing the frame in the fixed gap between
+		// chapters on a hexagonal jog: a short 45 chamfer off each flank and a
+		// straight run between them, corners nearly sharp like a hexagon's vertices.
+		// Centred in its gap, because the gap is one even beat and a turn off its
+		// middle reads as a mistake; a gap or frame too tight for the shape skips
+		// the crossing and the flank simply continues.
 		const xR = w - xL
-		const elbow = ROUTE.crossElbowPx
 		const pad = ROUTE.crossPadPx
 		const weave = []
 		let reach = yJ3 + dxL + m
@@ -221,25 +220,29 @@
 		for (let k = 1; k < lifeSlots.length; k++) {
 			const target = k % 2 ? xR : xL
 			if (target === lane) continue
-			const card = q => box(lifeSlots[q].firstElementChild ?? lifeSlots[q])
-			const gapTop = Math.max(card(k - 1).bottom + pad, reach)
-			const gapBot = card(k).top - pad
-			// take the whitespace that exists: a taller crossing is a slower one
-			const elbowK = Math.min(elbow, Math.floor((gapBot - gapTop) / 2))
-			if (elbowK < 40) continue
-			const yH = Math.round(
-				Math.min(Math.max(box(lifeSlots[k]).top, gapTop + elbowK), gapBot - elbowK)
+			// the slot, not the card inside it: the card rides the reveal's translate
+			// until it has been seen once, and a measure taken before then lands the
+			// jog off the gap's true centre. The slot hugs the card and never moves.
+			const slot = q => box(lifeSlots[q])
+			const gapTop = Math.max(slot(k - 1).bottom + pad, reach)
+			const gapBot = slot(k).top - pad
+			const cham = Math.min(
+				ROUTE.crossChamferPx,
+				Math.floor((Math.abs(target - lane) - ROUTE.crossMinRunPx) / 2)
 			)
-			const step = lane < target ? elbowK : -elbowK
-			const r = ROUTE.crossTurnPx
+			if (cham < 24 || gapBot - gapTop < cham * 2) continue
+			const yJog = Math.round((gapTop + gapBot) / 2)
+			const jog = lane < target ? cham : -cham
+			// crisp like a hexagon's vertex, just eased off the raw point
+			const rc = Math.round(cham / 4)
 			weave.push(
-				[lane, yH - elbowK, r],
-				[lane + step, yH, r],
-				[target - step, yH, r],
-				[target, yH + elbowK, r]
+				[lane, yJog - cham, rc],
+				[lane + jog, yJog, rc],
+				[target - jog, yJog, rc],
+				[target, yJog + cham, rc]
 			)
 			lane = target
-			reach = yH + elbowK
+			reach = yJog + cham
 		}
 		// The dive aims at the world, not at the frame: the last leg is steered onto
 		// where the planet's centre will be when the tip lands, so the two arrive
@@ -274,12 +277,11 @@
 						[xS, yG + runIn],
 					]
 				: [[xS, yG]]
-		const subpaths = headClear
-			? [[...head, ...trunk]]
-			: [
-					[...head, [xS, dock1]],
-					[[xS, resume1], ...trunk],
-				]
+		// A heading the rail would cross is not skirted with a stub and a gap any
+		// more: on a phone the stranded run above it read as the line breaking off
+		// right beside the words, with the dart parked on the dead end. The route
+		// now simply starts below the heading, gated by its own waypoint.
+		const subpaths = headClear ? [[...head, ...trunk]] : [[[xS, resume1], ...trunk]]
 
 		segs = []
 		total = 0
@@ -371,7 +373,7 @@
 			}
 			gi = gj
 		}
-		span = [yG, yEnd]
+		span = [headClear ? yG : resume1, yEnd]
 
 		geo.value = {
 			w,
@@ -379,16 +381,14 @@
 			subs,
 			d: subs.map(sub => sub.d).join(' '),
 			// The gate and the entry point carry the waypoint glyph, lit when the flown
-			// stretch reaches them; a skirted heading gets its two line-ends capped
-			// too. Nothing else: a diamond floating mid-line reads as a second cursor.
+			// stretch reaches them. Nothing else: a diamond floating mid-line reads as
+			// a second cursor.
 			nodes: headClear
 				? [
 						[xG, yG],
 						[xAim, yEnd],
 					]
 				: [
-						[xG, yG],
-						[xS, dock1],
 						[xS, resume1],
 						[xAim, yEnd],
 					],
