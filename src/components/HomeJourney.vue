@@ -153,17 +153,12 @@
 	// hold whatever the breakpoints and any wrapping did. The pass scales about that
 	// point and shifts it onto the frame's centre, which is where the mote field's
 	// vanishing point is and where the planet comes up.
-	// Pushing the camera in for portrait leaves the globe filling the frame rather than
-	// sitting to one side of it, and a heading behind that is not crossed by a limb —
-	// it is simply hidden (measured: up to 86% of it). So the words come in front there.
-	// Landscape keeps them in the scene, which is the whole point of the treatment.
+	// Portrait renders the vmin-sized globe far smaller, so the camera table swaps
+	// for a pushed-in set (see measure()).
 	const portrait = ref(false)
 
-	// they answer the cursor either way — less than the planet (see JOURNEY.parallax)
-	const headingStyle = computed(() => ({
-		'--depth': JOURNEY.parallax.heading,
-		zIndex: portrait.value ? 1 : -1,
-	}))
+	// the headings answer the cursor too — less than the planet (see JOURNEY.parallax)
+	const headingStyle = { '--depth': JOURNEY.parallax.heading }
 
 	// the prose leans too, as the nearest layer bar the title plate
 	const bodyStyle = { '--depth': JOURNEY.parallax.body }
@@ -514,12 +509,9 @@
 		box-shadow: 0 0 10px rgba($yellow, 0.4);
 	}
 
-	// Isolated so a station heading can sit at a negative z-index and land behind the
-	// planet stage rather than behind the page itself.
 	.journey {
 		position: relative;
 		width: 100%;
-		isolation: isolate;
 	}
 
 	// Departure viewport: the destination planet (PlanetStage) waits in the lower
@@ -575,12 +567,13 @@
 		scroll-margin-top: $page-pad-top;
 	}
 
-	// In the scene rather than over it: behind the stage, so the planet's limb crosses
-	// the words — landscape only, and the depth is set in JS with the portrait test the
-	// camera table shares. No scrim either: a dark box behind type sitting on a lit limb
-	// reads as a panel floating in space, which is why the arrival heading carries none.
+	// Over the stage, not behind it: a title the limb swallows is a title unread, so
+	// the words stay above the planet and the keyline holds them off it. No scrim: a
+	// dark box behind type sitting on a lit limb reads as a panel floating in space,
+	// which is why the arrival heading carries none.
 	.journey__station-head {
 		position: relative;
+		z-index: 1;
 		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
 			calc(var(--my, 0) * var(--depth, 0) * 1px);
 		max-width: min(64rem, 92vw);
