@@ -91,18 +91,6 @@
 		0 0 #{$halo} $halo-colour;
 }
 
-// A journey kicker: the small pixel caption riding display type (the beat's number
-// at WORK/LIFE, the present role at the arrival). Keyline in px, not em — a fraction
-// of an em at this size rounds away to nothing. Margins stay with the caller.
-@mixin kicker-line {
-	font-family: variables.$font-pixel;
-	font-size: variables.px8(1);
-	letter-spacing: 0.22em;
-	text-transform: uppercase;
-	color: variables.$yellow;
-	@include pixel-keyline($unit: 1px, $halo: 6px);
-}
-
 // Dark radial wash that lifts text off the starfield without drawing a panel edge.
 // Move $at to wherever the text actually sits so the densest part sits under it.
 @mixin void-scrim($size: 85% 130%, $at: 50% 50%) {

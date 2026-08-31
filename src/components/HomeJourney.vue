@@ -595,7 +595,13 @@
 	// the beat's number and name, small against the display size above it
 	.journey__kicker {
 		margin: 0 0 1.2rem;
-		@include kicker-line;
+		font-family: $font-pixel;
+		font-size: px8(1);
+		letter-spacing: 0.22em;
+		text-transform: uppercase;
+		color: $yellow;
+		// px, not em: a fraction of an em at this size rounds away to nothing
+		@include pixel-keyline($unit: 1px, $halo: 6px);
 	}
 
 	// the long departure leg: the whole approach from distant world to wall

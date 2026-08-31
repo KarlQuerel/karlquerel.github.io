@@ -9,7 +9,6 @@
 		<div class="arrival__content">
 			<header class="arrival__head arrival__reveal" :class="revealClass(0)">
 				<PageTitle tag="h2" :lead="CONTACT_HEADING.lead" :accent="CONTACT_HEADING.accent" />
-				<p class="arrival__now">{{ CONTACT_NOW }}</p>
 			</header>
 
 			<ul class="arrival__channels">
@@ -47,7 +46,7 @@
 <script setup>
 	import { computed, ref, watch } from 'vue'
 	import { ARRIVAL } from '@/constants/journey'
-	import { BUG_REPORT, CONTACT_CHANNELS, CONTACT_HEADING, CONTACT_NOW } from '@/data/contact'
+	import { BUG_REPORT, CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
 	import { riseFall, smoothstep } from '@/js/math'
 	import FlightDust from './FlightDust.vue'
 	import PageTitle from './PageTitle.vue'
@@ -194,12 +193,6 @@
 
 	.arrival__head :deep(.page-heading) {
 		@include pixel-keyline;
-	}
-
-	// what the signal reaches today, in the stations' own kicker type
-	.arrival__now {
-		margin: 1.4rem 0 0;
-		@include kicker-line;
 	}
 
 	// the accent word's own shadow would replace the border, so it takes it too
