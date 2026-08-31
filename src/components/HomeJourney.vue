@@ -81,13 +81,22 @@
 </template>
 
 <script setup>
-	import { computed, onActivated, onBeforeUnmount, onMounted, ref } from 'vue'
+	import {
+		computed,
+		onActivated,
+		onBeforeUnmount,
+		onDeactivated,
+		onMounted,
+		ref,
+		watch,
+	} from 'vue'
 	import { RouterLink } from 'vue-router'
 	import { ARRIVAL, CAMERA, CAMERA_PORTRAIT, HERO_FLYBY, JOURNEY } from '@/constants/journey'
 	import { JOURNEY_STOPS } from '@/constants/navigation'
 	import { ABOUT_HEADINGS } from '@/data/about'
 	import { HOME_LANDING } from '@/data/heroLines'
-	import { clamp01, hermite, monotoneSlopes, smoothstep } from '@/js/math'
+	import { clamp01, hermite, monotoneSlopes, riseFall, smoothstep } from '@/js/math'
+	import { useBackdropCover } from '@/composables/useBackdropCover'
 	import { usePointerParallax } from '@/composables/usePointerParallax'
 	import { useScrollSections } from '@/composables/useScrollSections'
 	import AboutLife from './AboutLife.vue'
@@ -339,12 +348,9 @@
 	// The mote field: up as the flight starts, on through the pass, out again as the
 	// planet comes up. Measured on the pass's clock, past 1, so it outlasts the words
 	// and carries the empty stretch before the planet.
-	const dust = computed(() => {
-		const t = pass.value
-		const up = clamp01((t - HERO_FLYBY.dustIn) / (HERO_FLYBY.dustFull - HERO_FLYBY.dustIn))
-		const out = clamp01((HERO_FLYBY.dustOut - t) / (HERO_FLYBY.dustOut - HERO_FLYBY.dustFull))
-		return smoothstep(Math.min(up, out))
-	})
+	const dust = computed(() =>
+		smoothstep(riseFall(pass.value, HERO_FLYBY.dustIn, HERO_FLYBY.dustFull, HERO_FLYBY.dustOut))
+	)
 
 	// atmosphere thickens across the entry window
 	const haze = computed(
@@ -354,6 +360,11 @@
 				(arrivalProgress.value - ARRIVAL.hazeStart) / (ARRIVAL.hazeEnd - ARRIVAL.hazeStart)
 			)
 	)
+
+	// once the veil is opaque the starfield is invisible — flag it so the backdrop
+	// stops paying for drift and comets behind the atmosphere
+	const covered = useBackdropCover()
+	watch(haze, h => (covered.value = h >= 1), { immediate: true })
 
 	const activeStop = computed(() => {
 		let active = 0
@@ -416,16 +427,22 @@
 		}
 	})
 
-	// re-shown from KeepAlive: scroll and measurements may have gone stale
+	// re-shown from KeepAlive: scroll and measurements may have gone stale — and the
+	// covered flag must be re-asserted, since haze itself may not have changed
 	onActivated(() => {
 		measure()
 		sync()
 		syncArrival()
+		covered.value = haze.value >= 1
 	})
+
+	// away from the journey, the sky is somebody else's frame
+	onDeactivated(() => (covered.value = false))
 
 	onBeforeUnmount(() => {
 		window.removeEventListener('resize', measure)
 		if (resizeObserver) resizeObserver.disconnect()
+		covered.value = false
 	})
 </script>
 
@@ -578,13 +595,7 @@
 	// the beat's number and name, small against the display size above it
 	.journey__kicker {
 		margin: 0 0 1.2rem;
-		font-family: $font-pixel;
-		font-size: px8(1);
-		letter-spacing: 0.22em;
-		text-transform: uppercase;
-		color: $yellow;
-		// px, not em: a fraction of an em at this size rounds away to nothing
-		@include pixel-keyline($unit: 1px, $halo: 6px);
+		@include kicker-line;
 	}
 
 	// the long departure leg: the whole approach from distant world to wall

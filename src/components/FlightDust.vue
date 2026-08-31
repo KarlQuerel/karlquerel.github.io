@@ -9,7 +9,8 @@
 	import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
-	import { HERO_FLYBY } from '@/constants/journey'
+	import { ARRIVAL, HERO_FLYBY } from '@/constants/journey'
+	import { PALETTE } from '@/constants/palette'
 	import { clamp01, smoothstep } from '@/js/math'
 
 	const props = defineProps({
@@ -19,6 +20,8 @@
 		fade: { type: Number, default: 0 },
 		// the cursor's lean in the --mx/--my convention (usePointerParallax's pointer)
 		lean: { type: Object, default: () => ({ x: 0, y: 0 }) },
+		// 0 → vacuum, 1 → full re-entry burn (walks ARRIVAL.heatRamp band by band)
+		heat: { type: Number, default: 0 },
 	})
 
 	const canvasEl = ref(null)
@@ -73,7 +76,10 @@
 		ctx.clearRect(0, 0, w, h)
 		// over black, motes add up rather than paint over each other
 		ctx.globalCompositeOperation = 'lighter'
-		ctx.strokeStyle = HERO_FLYBY.moteColor
+		// heat walks the whole field up the ember ramp, one hard band at a time
+		const ramp = ARRIVAL.heatRamp
+		const band = Math.min(ramp.length, Math.floor(props.heat * (ramp.length + 1)))
+		ctx.strokeStyle = band === 0 ? HERO_FLYBY.moteColor : `rgb(${PALETTE[ramp[band - 1]]})`
 		ctx.lineWidth = 1
 		const cx = w / 2
 		const cy = h / 2
@@ -109,7 +115,7 @@
 
 	const redraw = useRafThrottle(draw)
 
-	watch(() => [props.travel, props.fade, props.lean], redraw)
+	watch(() => [props.travel, props.fade, props.lean, props.heat], redraw)
 
 	onMounted(() => {
 		if (prefersReducedMotion()) return

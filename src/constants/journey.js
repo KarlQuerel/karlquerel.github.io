@@ -323,6 +323,13 @@ export const ARRIVAL = {
 	dustFull: 0.28,
 	dustOut: 0.66,
 	dustTravel: 30,
+	// Re-entry heat on those speed lines: they flush warm as the air bites and are
+	// cool again under the deck. The ramp is palette steps walked by heat — bands,
+	// never a blend — ending on ember, the site's own accent.
+	heatFrom: 0.26,
+	heatFull: 0.36,
+	heatOut: 0.52,
+	heatRamp: ['glow', 'ember'],
 	// Atmosphere over the approach; the entry sky takes over from it. Full, not a
 	// tint: it has to own the whole frame by the time the limb is gone (0.36) or the
 	// stretch before the whiteout shows naked space from inside the planet. Starting

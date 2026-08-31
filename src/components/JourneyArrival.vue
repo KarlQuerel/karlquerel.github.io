@@ -5,10 +5,11 @@
 		<PlanetEntry :progress="progress" />
 		<!-- the air rushing past on the way in: the same field the departure flies
 		     through, so the two ends of the trip read as one piece of motion -->
-		<FlightDust :travel="dustTravel" :fade="dustFade" />
+		<FlightDust :travel="dustTravel" :fade="dustFade" :heat="dustHeat" />
 		<div class="arrival__content">
 			<header class="arrival__head arrival__reveal" :class="revealClass(0)">
 				<PageTitle tag="h2" :lead="CONTACT_HEADING.lead" :accent="CONTACT_HEADING.accent" />
+				<p class="arrival__now">{{ CONTACT_NOW }}</p>
 			</header>
 
 			<ul class="arrival__channels">
@@ -46,8 +47,8 @@
 <script setup>
 	import { computed, ref, watch } from 'vue'
 	import { ARRIVAL } from '@/constants/journey'
-	import { BUG_REPORT, CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
-	import { clamp01, smoothstep } from '@/js/math'
+	import { BUG_REPORT, CONTACT_CHANNELS, CONTACT_HEADING, CONTACT_NOW } from '@/data/contact'
+	import { riseFall, smoothstep } from '@/js/math'
 	import FlightDust from './FlightDust.vue'
 	import PageTitle from './PageTitle.vue'
 	import PixelPortal from './PixelPortal.vue'
@@ -62,15 +63,14 @@
 	// The fade brings the field up as the descent bites and takes it out once we are
 	// under the deck — streaks past that point would read as still falling.
 	const dustTravel = computed(() => props.progress * ARRIVAL.dustTravel)
-	const dustFade = computed(() => {
-		const up = clamp01(
-			(props.progress - ARRIVAL.dustFrom) / (ARRIVAL.dustFull - ARRIVAL.dustFrom)
-		)
-		const out = clamp01(
-			(ARRIVAL.dustOut - props.progress) / (ARRIVAL.dustOut - ARRIVAL.dustFull)
-		)
-		return smoothstep(Math.min(up, out))
-	})
+	const dustFade = computed(() =>
+		smoothstep(riseFall(props.progress, ARRIVAL.dustFrom, ARRIVAL.dustFull, ARRIVAL.dustOut))
+	)
+
+	// the burn: the same field rides the ember ramp while the air bites hardest
+	const dustHeat = computed(() =>
+		smoothstep(riseFall(props.progress, ARRIVAL.heatFrom, ARRIVAL.heatFull, ARRIVAL.heatOut))
+	)
 
 	// The chip is the last thing out, behind the heading and every portal.
 	const REPORT_INDEX = CONTACT_CHANNELS.length + 1
@@ -194,6 +194,12 @@
 
 	.arrival__head :deep(.page-heading) {
 		@include pixel-keyline;
+	}
+
+	// what the signal reaches today, in the stations' own kicker type
+	.arrival__now {
+		margin: 1.4rem 0 0;
+		@include kicker-line;
 	}
 
 	// the accent word's own shadow would replace the border, so it takes it too

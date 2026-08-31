@@ -5,6 +5,14 @@ export const clamp01 = v => Math.min(1, Math.max(0, v))
 // Hermite ease between 0 and 1 — the one easing curve used for scrubbed motion.
 export const smoothstep = t => t * t * (3 - 2 * t)
 
+// 0 → 1 across [rise, full], holds, back to 0 by [fall] — the in-and-out window
+// the scroll-driven fields (dust, heat) ride. Ease the result where the move needs it.
+export function riseFall(t, rise, full, fall) {
+	const up = clamp01((t - rise) / (full - rise))
+	const down = clamp01((fall - t) / (fall - full))
+	return Math.min(up, down)
+}
+
 // Monotone cubic (Fritsch–Carlson) slopes for a keyframed channel: each knot's
 // slope is the average of its neighbouring secants, limited so the curve can
 // never overshoot the values it passes through. That limit is why the camera
