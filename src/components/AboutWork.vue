@@ -200,7 +200,10 @@
 		flex-direction: column;
 		align-items: flex-start;
 		gap: $row-gap;
+		padding: 0.75rem 1rem;
 		text-align: left;
+		// the same borderless dark wash the LIFE cards carry
+		background: rgba(0, 0, 0, 0.3);
 	}
 
 	.ztl-kind {

@@ -175,7 +175,7 @@
 		width: min(50rem, 92vw);
 		padding: 1rem 1.1rem 1.2rem;
 		// borderless: just the dark wash, no void frame (matches the work timeline)
-		background: rgba(0, 0, 0, 0.7);
+		background: rgba(0, 0, 0, 0.3);
 	}
 
 	.life-card__title {
