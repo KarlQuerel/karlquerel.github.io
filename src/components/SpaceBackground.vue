@@ -26,6 +26,7 @@
 <script setup>
 	import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
+	import { useBackdropCover } from '@/composables/useBackdropCover'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import {
 		STAR_COLORS,
@@ -150,10 +151,13 @@
 		}
 	})
 
-	// halt the drift loops whenever the page isn't visible
-	const paused = ref(false)
+	// halt the drift loops whenever the page isn't visible — or the journey's entry
+	// veil has covered the sky, where drift is invisible but still composited
+	const covered = useBackdropCover()
+	const hidden = ref(false)
+	const paused = computed(() => hidden.value || covered.value)
 	const onVisibility = () => {
-		paused.value = document.visibilityState !== 'visible'
+		hidden.value = document.visibilityState !== 'visible'
 	}
 
 	const shootingStars = ref([])
@@ -161,8 +165,9 @@
 	let timer = 0
 
 	function spawnStar() {
-		// skip while hidden — paused animations never fire animationend, so comets pile up
-		if (document.visibilityState === 'visible') {
+		// skip while hidden or covered — paused animations never fire animationend,
+		// so comets would pile up behind the veil
+		if (document.visibilityState === 'visible' && !covered.value) {
 			shootingStars.value.push({
 				id: nextId++,
 				style: {
