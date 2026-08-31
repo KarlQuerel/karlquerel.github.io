@@ -325,7 +325,7 @@
 		resume()
 	})
 
-	// kept alive under HeroIntro: onBeforeUnmount never fires on navigation, so the
+	// kept alive under HomeJourney: onBeforeUnmount never fires on navigation, so the
 	// shader loop would keep burning the main thread behind every other page
 	onDeactivated(stopLoop)
 	onActivated(resume)

@@ -12,15 +12,8 @@ const routes = [
 		component: () => import('./components/HomeJourney.vue'),
 	},
 	{
-		// hidden dev route: the full hero cinematic that transitions into /game.
-		// Develop here while the journey fronts `/`; swap `/` to it to go live.
-		path: '/preview',
-		component: () => import('./components/HeroIntro.vue'),
-		meta: { title: 'Preview' },
-	},
-	{
-		// the WebGL landing flyby, in development. Unlisted like /preview and /game:
-		// reachable by URL, never linked, and deliberately not prerendered.
+		// the WebGL landing flyby, in development. Unlisted: reachable by URL,
+		// never linked, and deliberately not prerendered.
 		path: '/lab',
 		component: () => import('./components/lab/LabPage.vue'),
 		meta: { title: 'Lab' },

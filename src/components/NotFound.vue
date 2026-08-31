@@ -1,5 +1,6 @@
 <template>
 	<div class="content">
+		<HomeChip />
 		<h1 ref="titleEl" class="not-found-title">
 			<span>Page</span>
 			<span>not</span>
@@ -12,6 +13,7 @@
 	import { onMounted, onBeforeUnmount, ref } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
+	import HomeChip from './HomeChip.vue'
 
 	// zero-g float + cursor-fleeing physics, always easing back toward its layout home
 	const REPEL_RADIUS = 220 // px — how close the cursor must get to push the title

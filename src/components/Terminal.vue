@@ -1,5 +1,6 @@
 <template>
 	<div class="terminal-container">
+		<HomeChip />
 		<div class="terminal-window" data-nosnippet :style="{ '--phosphor': phosphor }">
 			<div class="terminal-header">
 				<div class="terminal-buttons" aria-hidden="true">
@@ -75,6 +76,7 @@
 	import { useTerminalTypewriter } from '@/composables/terminal/useTerminalTypewriter'
 	import { useTerminalTheme } from '@/composables/terminal/useTerminalTheme'
 	import { useVisitTracker } from '@/composables/terminal/useVisitTracker'
+	import HomeChip from './HomeChip.vue'
 	import TerminalLine from './terminal/TerminalLine.vue'
 	import TerminalPrompt from './terminal/TerminalPrompt.vue'
 	import TerminalMatrix from './terminal/TerminalMatrix.vue'
