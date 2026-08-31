@@ -1,11 +1,18 @@
 // Drives the contact arrival at the end of the landing journey (JourneyArrival.vue).
 
+import { CAREER_TIMELINE } from './about'
+
 // The page heading, rendered by PageTitle like every other page. Trailing space on
 // `lead` is intentional — it separates the lead from the accented word.
 export const CONTACT_HEADING = {
 	lead: 'Send me a ',
 	accent: 'signal',
 }
+
+// The line under the heading: what the signal reaches today. Read off the timeline
+// entry flagged `current`, so it can never drift out of date with WORK.
+const CURRENT_ROLE = CAREER_TIMELINE.find(entry => entry.current)
+export const CONTACT_NOW = `Now · ${CURRENT_ROLE.title} @ ${CURRENT_ROLE.place}`
 
 // Each channel renders as an icon portal (PixelPortal), like the About hub.
 // `blank: true` opens the link in a new tab.
