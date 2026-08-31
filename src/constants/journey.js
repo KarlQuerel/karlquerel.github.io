@@ -329,7 +329,7 @@ export const ARRIVAL = {
 	// with the camera keyframes rather than at the runway's top keeps the surface
 	// crossing crisp - the veil only climbs once we are actually going down.
 	hazeStart: 0.18,
-	hazeEnd: 0.4,
+	hazeEnd: 0.36,
 	hazeMax: 1,
 }
 

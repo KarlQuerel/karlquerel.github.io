@@ -87,13 +87,14 @@
 		will-change: transform;
 	}
 
-	// Densest at the horizon, but never open at the top: by the time the limb has
-	// gone the camera is inside the atmosphere, and a sky with stars in it up there
-	// reads as space still showing through the planet we just entered.
+	// Densest at the horizon, thinning upward — but over an opaque black base, so
+	// altitude reads as darker air, never as holes to the starfield: once this is
+	// full, stars up there would read as space showing through the planet we entered.
 	.stage__haze {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(
+		background-color: $black;
+		background-image: linear-gradient(
 			to top,
 			rgba(var(--atmosphere), 1) 0%,
 			rgba(var(--atmosphere), 0.9) 40%,
