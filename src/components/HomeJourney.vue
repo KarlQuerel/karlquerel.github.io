@@ -12,10 +12,18 @@
 		     counts the stations on the left; this counts the distance on the right. -->
 		<div class="journey__chrome" :style="chromeStyle">
 			<RouterLink class="journey__mark" :to="JOURNEY_STOPS[0].to">
-				{{ HOME_LANDING.name }}
+				<span>{{ firstWords }}</span>
+				<span>{{ lastWord }}</span>
 			</RouterLink>
 			<RouterLink class="journey__cta" :style="ctaStyle" :to="JOURNEY_STOPS.at(-1).to">
 				{{ JOURNEY_STOPS.at(-1).label }}
+			</RouterLink>
+			<RouterLink
+				class="journey__cta journey__cta--game"
+				:style="ctaStyle"
+				:to="GAME_LINK.to"
+			>
+				{{ GAME_LINK.label }}
 			</RouterLink>
 			<div class="journey__progress" :style="progressBoxStyle" aria-hidden="true">
 				<span class="journey__progress-run" :style="progressStyle" />
@@ -92,7 +100,7 @@
 	} from 'vue'
 	import { RouterLink } from 'vue-router'
 	import { ARRIVAL, CAMERA, CAMERA_PORTRAIT, HERO_FLYBY, JOURNEY } from '@/constants/journey'
-	import { JOURNEY_STOPS } from '@/constants/navigation'
+	import { GAME_LINK, JOURNEY_STOPS } from '@/constants/navigation'
 	import { ABOUT_HEADINGS } from '@/data/about'
 	import { HOME_LANDING } from '@/data/heroLines'
 	import { clamp01, hermite, monotoneSlopes, riseFall, smoothstep } from '@/js/math'
@@ -472,9 +480,19 @@
 		}
 	}
 
+	// the hero lockup in miniature: the same two words, stacked flag-left — two
+	// lines facing the two chips in the opposite corner
 	.journey__mark {
 		left: 0.6rem;
 		right: auto;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.5em;
+	}
+
+	// the game rides one rung under the way out — same chip, and it leaves with it
+	.journey__cta--game {
+		top: 2.9rem;
 	}
 
 	// Distance run, against the rail's count of stations — a plain column rather than
@@ -653,6 +671,12 @@
 			content: '';
 			position: absolute;
 			inset: -0.55rem -0.6rem;
+		}
+
+		// the smaller mobile chip sits higher, so the rung below moves up with it —
+		// far enough that the two grown tap targets stay apart
+		.journey__cta--game {
+			top: 2.5rem;
 		}
 
 		.journey__station--work {
