@@ -675,6 +675,9 @@ export const ENTRY = {
 	ridgeCeiling: 0.95,
 	ridgeLight: -1,
 	ridgeSlopeSpan: 2,
+	// Cells either side that the shading terrain is averaged over before the slope is
+	// taken. The silhouette keeps the raw profile; only the light is smoothed.
+	ridgeReliefBlur: 4,
 	ridgeDepthFade: 0.6,
 	// Skylight on the shade side. The depth fade alone drives every turned-away face
 	// onto ramp index 0, which in both scenes is the same near-black — so shadow had

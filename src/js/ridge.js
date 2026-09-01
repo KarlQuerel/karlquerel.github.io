@@ -74,6 +74,20 @@ export function drawRidge(el, band, visitSeed, frame) {
 		profile[x] = Math.min(ENTRY.ridgeCeiling, band.base + shape * band.amp * massif)
 	}
 
+	// Shading reads off a smoothed copy of the range, never the sharp one. `face` is
+	// a single value for a whole column, so differencing raw neighbours turns every
+	// local wiggle into a full-height stripe of one tone — which is what made these
+	// ranges read as a row of buildings rather than as rock. Blurring the terrain the
+	// light is measured from, while `profile` still cuts the silhouette, is the same
+	// split shaded-relief mapping has always made: sharp outline, broad facets.
+	const relief = new Array(w)
+	const blur = ENTRY.ridgeReliefBlur
+	for (let x = 0; x < w; x++) {
+		let sum = 0
+		for (let d = -blur; d <= blur; d++) sum += profile[Math.max(0, Math.min(w - 1, x + d))]
+		relief[x] = sum / (blur * 2 + 1)
+	}
+
 	const put = (x, y, [r, g, b]) => {
 		const i = (y * w + x) * 4
 		px[i] = r
@@ -88,8 +102,8 @@ export function drawRidge(el, band, visitSeed, frame) {
 		// which way this face turns decides how much of the sun it catches,
 		// measured across a span so the facets come out broad
 		const span = ENTRY.ridgeSlopeSpan
-		const lo = profile[Math.max(0, x - span)]
-		const hi = profile[Math.min(w - 1, x + span)]
+		const lo = relief[Math.max(0, x - span)]
+		const hi = relief[Math.min(w - 1, x + span)]
 		// Rise over run in cells — which is the slope on screen, the cells
 		// being square — so a band shades the same however it was cropped.
 		// Minus: a slope rising toward +x faces −x, so with the sun stage left
