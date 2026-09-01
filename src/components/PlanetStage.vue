@@ -8,7 +8,12 @@
 		<div class="stage__planet" :style="planetStyle">
 			<!-- reveal is the camera's own channel: 0 through the departure, so the
 			     planet is not drawn at all until it comes up out of the corridor -->
-			<PixelPlanet :reveal="cam.reveal ?? 1" :spin="spin" :light-yaw="lightYaw" />
+			<PixelPlanet
+				:reveal="cam.reveal ?? 1"
+				:spin="spin"
+				:light-yaw="lightYaw"
+				:cloud-thin="cloudThin"
+			/>
 		</div>
 		<!-- atmosphere on entry: haze rising from the horizon, in the planet's tint -->
 		<div class="stage__haze" :style="hazeStyle" />
@@ -20,6 +25,7 @@
 	import { JOURNEY } from '@/constants/journey'
 	import { PALETTE } from '@/constants/palette'
 	import { PLANET } from '@/constants/planet'
+	import { clamp01 } from '@/js/math'
 	import PixelPlanet from './PixelPlanet.vue'
 
 	const props = defineProps({
@@ -32,6 +38,13 @@
 		lightYaw: { type: Number, default: 0 },
 		// 0 → vacuum, 1 → full entry haze
 		haze: { type: Number, default: 0 },
+	})
+
+	// Under the deck by the dive: the globe's clouds thin away as the camera's
+	// scale channel climbs, so magnified terrain is never worn as a checker layer.
+	const cloudThin = computed(() => {
+		const { from, to } = JOURNEY.cloudThin
+		return clamp01((props.cam.scale - from) / (to - from))
 	})
 
 	// the haze borrows the planet's atmosphere colour out of the shared palette, so the

@@ -31,6 +31,10 @@
 		// upper-left key light; the landing journey sweeps it so the terminator
 		// advances while you orbit.
 		lightYaw: { type: Number, default: 0 },
+		// 0 → full cloud deck, 1 → clear skies. The journey raises it as the camera
+		// dives: at landing magnification the deck stops reading as weather above
+		// the ground and starts reading as a checker layer stacked on the mountains.
+		cloudThin: { type: Number, default: 0 },
 		// Optional override of named PALETTE entries — e.g. EARTH_PALETTE, which walks
 		// the same ramps through a different set of colours. Fixed at mount.
 		palette: { type: Object, default: null },
@@ -168,6 +172,104 @@
 		hvx /= hm
 		hvy /= hm
 		hvz /= hm
+		// the yawed light in the tilted frame the cloud shell samples in — the
+		// direction a ground pixel looks along to find the cloud shading it
+		const so = cl.shadowOffset
+		const ltx = lx
+		const lty = light[1] * cosT - lz * sinT
+		const ltz = light[1] * sinT + lz * cosT
+		// how thin the deck is right now — scales the cover, so thinning opens the
+		// deck into scattered dither rather than fading it
+		const thin = props.cloudThin
+		// this visit's storm centre: a unit vector in cloud space, so it rides the
+		// shell. Longitude is seeded around faceLon rather than the whole circle, so
+		// the storm faces the camera while the stations are read.
+		const st = PLANET.storm
+		const lonS = st.faceLon + (hash3(11, 23, 5) - 0.5) * st.lonJitter
+		const latS = st.latMin + (st.latMax - st.latMin) * hash3(17, 3, 29)
+		const sty = hash3(7, 13, 19) < 0.5 ? -latS : latS
+		// sin/cos order matches the view transform: the camera-facing point in cloud
+		// space is (sin C, ·, cos C), so a storm at lonS faces the camera when the
+		// cloud angle (spin × spinFactor) equals lonS — which is what faceLon states.
+		const rS = Math.sqrt(1 - sty * sty)
+		const stx = rS * Math.sin(lonS)
+		const stz = rS * Math.cos(lonS)
+		const stormCos = Math.cos(st.radius)
+		// Tangent basis at the storm centre, for the rainbands' angle around its
+		// axis (the centre never sits at a pole, latMax keeps it off).
+		const u1m = Math.hypot(stx, stz) || 1
+		const u1x = -stz / u1m
+		const u1z = stx / u1m
+		const u2x = sty * u1z
+		const u2y = stz * u1x - stx * u1z
+		const u2z = -sty * u1x
+		const bandPhase = hash3(29, 41, 3) * Math.PI * 2
+
+		// Cloud cover at a cloud-space point (0..opacity) — the deck overhead and the
+		// shadow it casts both read this one field. The storm warps the domain first:
+		// inside its cap the sample rotates around the storm axis (Rodrigues), hardest
+		// at the centre, so the fbm streaks bend into a spiral; the wall fills and the
+		// eye clears on the same falloff. `stormT` (the falloff, 0 outside the cap)
+		// and `stormN` (the warped noise there) are left holding the last sample's
+		// values so the shading step can texture the wall — read them before the
+		// shadow sample overwrites them.
+		let stormT = 0
+		let stormN = 0
+		function cloudCoverAt(cx, cy, cz) {
+			stormT = 0
+			stormN = 0
+			if (thin >= 1) return 0
+			let wx = cx
+			let wy = cy
+			let wz = cz
+			let bump = 0
+			const dot = cx * stx + cy * sty + cz * stz
+			if (dot > stormCos) {
+				const t = (dot - stormCos) / (1 - stormCos)
+				stormT = t
+				const t2 = t * t
+				const a = st.swirl * t2
+				const ca = Math.cos(a)
+				const sa = Math.sin(a)
+				const k = dot * (1 - ca)
+				wx = cx * ca + (sty * cz - stz * cy) * sa + stx * k
+				wy = cy * ca + (stz * cx - stx * cz) * sa + sty * k
+				wz = cz * ca + (stx * cy - sty * cx) * sa + stz * k
+				// Rainbands: the boost is cut by angle into spiral arms that wind
+				// outward, instead of filling the cap — a flat radial boost thresholds
+				// along its own circular contour and reads as a pasted white circle.
+				// φ is the sample's angle around the storm axis (unwarped, so the
+				// bands hold still while the fbm shreds under them); the phase runs
+				// with (1 − t) so each arm trails away from the eye.
+				const px = cx - stx * dot
+				const py = cy - sty * dot
+				const pz = cz - stz * dot
+				const phi = Math.atan2(px * u2x + py * u2y + pz * u2z, px * u1x + pz * u1z)
+				const band =
+					st.bandMin +
+					(1 - st.bandMin) *
+						(0.5 + 0.5 * Math.sin(st.arms * phi + st.armTwist * (1 - t) + bandPhase))
+				const t8 = t2 * t2 * t2 * t2
+				bump = st.boost * t2 * band - st.eyeDrop * t8 * t8
+			}
+			const cn = fbm(wx * cl.scale + 41, wy * cl.scale, wz * cl.scale, cl.octaves) + bump
+			if (stormT > 0) stormN = cn
+			if (cn <= cl.cover - cl.blend) return 0
+			// The wall solidifies where the storm is dense: a hurricane wall is not
+			// 72% cloud with ground dithering through — at fixed opacity the whole
+			// interior becomes one uniform checker and reads as wallpaper. Ambient
+			// decks keep cl.opacity; the texture inside the solid wall comes from
+			// the shading step reading stormN.
+			const op =
+				bump > 0
+					? cl.opacity + (1 - cl.opacity) * Math.min(1, bump * st.solidify)
+					: cl.opacity
+			const cover =
+				cn >= cl.cover + cl.blend
+					? op
+					: smoothstep((cn - cl.cover + cl.blend) / (2 * cl.blend)) * op
+			return cover * (1 - thin)
+		}
 
 		for (let y = 0; y < res; y++) {
 			for (let x = 0; x < res; x++) {
@@ -188,9 +290,15 @@
 						// floored, not dithered — see PLANET.shell
 						const at = (up * SHELL.length) | 0
 						const [col, alpha] = SHELL[at > SHELL.length - 1 ? SHELL.length - 1 : at]
-						// the shell's own normal is its direction from the centre
+						// The shell's own normal is its direction from the centre. Its zero
+						// crossing sits shellTwilight past the terminator, so the dusk arc
+						// hangs past the day/night line instead of dying where the ground does.
 						const inv = 1 / dist
-						const nl = Math.max(0, dx * inv * lx + dy * inv * light[1])
+						const tw = PLANET.shellTwilight
+						const nl = Math.max(
+							0,
+							(dx * inv * lx + dy * inv * light[1] + tw) / (1 + tw)
+						)
 						const night = PLANET.shellNight
 						d[i] = col[0]
 						d[i + 1] = col[1]
@@ -221,20 +329,12 @@
 				// The cloud shell picks the ramp rather than a colour to blend toward.
 				// Coverage short of 1 thins the deck by letting ground through in a
 				// dither, which is how a deck stays a deck once it is magnified.
-				const cn = fbm(
-					(dx * cosC + nz * sinC) * cl.scale + 41,
-					ny * cl.scale,
-					(-dx * sinC + nz * cosC) * cl.scale,
-					cl.octaves
-				)
-				let cover = 0
-				if (cn > cl.cover - cl.blend) {
-					cover =
-						cn >= cl.cover + cl.blend
-							? cl.opacity
-							: smoothstep((cn - cl.cover + cl.blend) / (2 * cl.blend)) * cl.opacity
-				}
+				const cover = cloudCoverAt(dx * cosC + nz * sinC, ny, -dx * sinC + nz * cosC)
 				const onCloud = cover > thr
+				// this pixel's storm falloff and noise, saved before the shadow sample
+				// clobbers them
+				const inStorm = stormT
+				const stormTex = stormN
 				const ramp = onCloud ? CLOUD_RAMP : RAMPS[bandAt(n, thr)]
 
 				// Relief modulates the catch before the step, so the band boundaries
@@ -247,8 +347,32 @@
 					ditherIndex(diff * relief, LEVELS, x, y) +
 					ditherIndex(d2 * d2 * diff, PLANET.rimLevels, x, y)
 
-				// open water mirroring the sun goes to the top of its ramp
-				if (!onCloud && n < PLANET.seaLevel) {
+				// The storm wall is promoted toward the ramp's white top by its own
+				// falloff — scaled by daylight so the cyclone's night side stays night,
+				// and by the warped noise, which the domain warp has already bent into
+				// spirals: a flat promotion paints the whole wall the same white, where
+				// this one draws the striations inside it.
+				if (onCloud && inStorm > 0) {
+					const tex = Math.min(1, Math.max(0, (stormTex - cl.cover) * st.texGain))
+					step += ditherIndex(inStorm * diff * tex, st.whitenLevels, x, y)
+				}
+
+				// A deck between this ground and the sun demotes the step: the displaced
+				// shadow is what proves the clouds float above the surface rather than
+				// being painted on it. Same field (storm included), same threshold — and
+				// day side only, since night has no sun to block.
+				let shaded = false
+				if (!onCloud && diff > 0) {
+					const ox = dx + ltx * so
+					const oy = ny + lty * so
+					const oz = nz + ltz * so
+					shaded = cloudCoverAt(ox * cosC + oz * sinC, oy, -ox * sinC + oz * cosC) > thr
+					if (shaded) step = Math.max(0, step - cl.shadowDrop)
+				}
+
+				// open water mirroring the sun goes to the top of its ramp — unless it
+				// sits in a cloud's shadow, exactly where a glint cannot be
+				if (!onCloud && !shaded && n < PLANET.seaLevel) {
 					const sd = Math.max(0, dx * hvx + dy * hvy + dz * hvz)
 					const s2 = sd * sd
 					const s4 = s2 * s2
@@ -313,6 +437,7 @@
 
 	watch(() => props.spin, scheduleDraw)
 	watch(() => props.lightYaw, scheduleDraw)
+	watch(() => props.cloudThin, scheduleDraw)
 	watch(() => props.reveal, resume)
 
 	onMounted(() => {

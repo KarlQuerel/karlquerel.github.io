@@ -74,8 +74,9 @@ export const PLANET = {
 		['peak', Infinity],
 	],
 	// The cloud shell rides the same sun on its own ramp, so a deck is lit by the light
-	// the ground under it is lit by.
-	cloudRamp: ['ink', 'ash', 'stone', 'bone', 'chalk', 'cream'],
+	// the ground under it is lit by. Tops at linen rather than cream so a fully lit
+	// deck — the storm wall above all — reads whiter than the sunlit highlands.
+	cloudRamp: ['ink', 'ash', 'stone', 'bone', 'chalk', 'linen'],
 	// Noise frequency over the sphere — higher = smaller, busier continents.
 	noiseScale: 1.35,
 	// Noise value below which a cell is ocean (≈ land/sea ratio). Lower = more land.
@@ -101,6 +102,52 @@ export const PLANET = {
 		// than the old alpha on purpose: at 0.85 a dithered deck is near solid, and a
 		// cloud that lets no ground through reads as a blob rather than as weather.
 		opacity: 0.72,
+		// The deck's shadow: ground pixels sample the field a second time this far
+		// toward the sun (sphere-radius units), and a hit demotes the ramp step by
+		// `shadowDrop`. A displaced shadow is the cue that the deck floats above the
+		// surface instead of being painted on it.
+		shadowOffset: 0.1,
+		shadowDrop: 1,
+	},
+	// One cyclone per visit, seeded like the terrain and fixed in cloud space so it
+	// rides the shell. Inside `radius` (radians of arc) the cloud samples rotate
+	// around the storm's axis — `swirl` radians at the centre, dying quadratically
+	// toward the rim — which bends the fbm streaks into a spiral without inventing
+	// a colour. `boost` densifies the wall, `eyeDrop` clears the eye, and the centre
+	// stays at cyclone latitudes (|y| in latMin..latMax, off the equator and poles).
+	storm: {
+		radius: 0.58,
+		swirl: 3.1,
+		boost: 0.5,
+		eyeDrop: 1.2,
+		latMin: 0.3,
+		latMax: 0.65,
+		// The rainbands that break the wall out of a solid disc: `arms` spiral arms,
+		// wound tighter by `armTwist` (radians of phase across the cap), never cut
+		// below `bandMin` of the full boost so the wall stays closed around the eye.
+		arms: 2,
+		bandMin: 0.25,
+		armTwist: 3.2,
+		// How fast the wall goes solid as its density climbs — at fixed deck opacity
+		// the interior is one uniform checker (wallpaper); solid, the interior is
+		// textured by the shading instead. `texGain` scales the warped noise into
+		// that shading: higher = harder striations inside the wall.
+		solidify: 2.5,
+		texGain: 2,
+		// Cloud-space longitude the centre is seeded around (± lonJitter), in the same
+		// angle convention as the cloud spin (spin × spinFactor). Tuned empirically
+		// (sweep faceLon live in dev and read the lit blob's screen position off the
+		// canvas): 3.7 lands the storm on the lit, on-screen face through the WORK
+		// read and the approach beat. During LIFE the sun has swung the lit face past
+		// the right screen edge — the visible sliver is terminator — so only the
+		// storm's lit fringe can show there; no longitude beats that. Re-measure if
+		// JOURNEY.turns or the camera roll channel changes.
+		faceLon: 3.7,
+		lonJitter: 0.3,
+		// The wall is promoted up the cloud ramp toward its white top — this many
+		// dither levels at the storm's centre, scaled by daylight — so the spiral
+		// stays legible even over pale highland that shares the deck's colours.
+		whitenLevels: 3,
 	},
 	// Atmosphere halo colour, taken from the shared palette like everything else.
 	atmosphere: 'haze',
@@ -130,6 +177,10 @@ export const PLANET = {
 	// sun side. This is what is left of it on the night limb — enough to keep an edge
 	// against space, not enough to look like the dark side is glowing.
 	shellNight: 0.12,
+	// How far the shell's lit arc overshoots the terminator, as a shift of its zero
+	// crossing past the day/night line. Forward scatter hangs dusk past the
+	// terminator on a real limb; without it the arc dies exactly where the ground does.
+	shellTwilight: 0.25,
 	// The lit-limb glow, as how many steps up its own ramp the limb is promoted. It
 	// brightens by climbing the ramp rather than by adding light on top: an additive
 	// term lands between palette entries, and since the ramps warm as they climb, a

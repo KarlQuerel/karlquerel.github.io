@@ -48,6 +48,13 @@ export const JOURNEY = {
 	// has to start from a frame that is already lined up, or the last thing before the
 	// dive reads as the planet sliding into place rather than as us going in.
 	lineUpAt: 0.55,
+	// The planet's cloud deck thins away as the camera's scale channel climbs — from
+	// untouched at `from` to clear skies at `to`. Up close the deck stops reading as
+	// weather above the ground and starts reading as a checker layer stacked on the
+	// mountains; by the dive and the entry we are under it anyway. `from` must sit
+	// past the swell at the tail of the station reads (scale runs to ~2.5 with WORK
+	// text still up), or the storm dithers away while it is being read.
+	cloudThin: { from: 2.6, to: 3.6 },
 }
 
 // The departure flyby: the camera's axis runs through the gap between the two
