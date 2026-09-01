@@ -31,11 +31,16 @@ export const PALETTE = {
 	foam: [140, 92, 88],
 
 	// Rock: violet-brown through red to a warm tan where the sun hits square on.
+	// Stepped finely on purpose: a ramp compresses for distance by picking adjacent
+	// entries, never by repeating one — a repeat costs the dither a boundary.
 	basalt: [50, 34, 40],
 	rust: [84, 46, 44],
 	ochre: [124, 60, 48],
+	brick: [141, 68, 51],
 	clay: [158, 76, 54],
+	flare: [174, 92, 62],
 	amber: [190, 108, 70],
+	dune: [202, 130, 87],
 	sand: [214, 152, 104],
 
 	// Pale ground and cloud: cool grey through warm bone to cream.
@@ -50,7 +55,9 @@ export const PALETTE = {
 	// the sun, so it gets the only cold ramp in the palette — which is exactly what
 	// makes leaving read as cold and arriving read as warm.
 	pitch: [13, 15, 22],
+	soot: [17, 21, 31],
 	iron: [24, 29, 42],
+	steel: [31, 38, 53],
 	zinc: [40, 48, 66],
 	frost: [66, 79, 102],
 	rime: [96, 112, 140],

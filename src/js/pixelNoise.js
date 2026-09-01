@@ -62,11 +62,17 @@ export function ditherThreshold(x, y) {
 }
 
 // Pick an index into a `levels`-long ramp for brightness `lit` (0..1), dithering
-// between the two nearest steps by pixel position.
-export function ditherIndex(lit, levels, x, y) {
+// between the two nearest steps by pixel position. `contrast` bends the fraction
+// between those two steps toward one or the other, so the checker gathers into a
+// narrow seam where the steps meet instead of tiling the whole band — the same
+// argument the ridge makes for its own faces, available to any ramp walked over a
+// large, slowly-varying area (the sky being the one that needed it).
+export function ditherIndex(lit, levels, x, y, contrast = 0) {
 	const v = lit * (levels - 1)
 	const i = Math.floor(v)
-	const step = v - i > ditherThreshold(x, y) ? 1 : 0
+	let f = v - i
+	if (contrast) f += (smoothstep(f) - f) * contrast
+	const step = f > ditherThreshold(x, y) ? 1 : 0
 	return Math.max(0, Math.min(levels - 1, i + step))
 }
 

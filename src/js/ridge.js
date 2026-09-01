@@ -48,6 +48,10 @@ export function drawRidge(el, band, visitSeed, frame) {
 	// the backlit-ridge shot every dusk photo chases. ENTRY.sun's frame-fraction
 	// position, converted into this band's own cell space; the departure bands
 	// leave the flag off, having no sun to be near.
+	// How much sky the shade side catches. A property of the scene's sky, not of the
+	// shading model: the arrival sits under a lit dusk dome, the departure under a
+	// black one, so the night bands name their own far lower value.
+	const ambient = band.ambient ?? ENTRY.ridgeAmbient
 	const sun = band.sunGlow ? ENTRY.sun : null
 	const sunX = sun ? sun.x * w : 0
 	const sunY = sun ? (sun.y * frame.h - (frame.h - h * cell)) / cell : 0
@@ -118,6 +122,11 @@ export function drawRidge(el, band, visitSeed, frame) {
 			// solid steps, so the checker gathers into narrow bands where two tones
 			// actually meet instead of wallpapering whole faces.
 			lit += (smoothstep(lit) - lit) * ENTRY.ridgeContrast
+			// Skylight, applied after the curve rather than before it: a slope turned
+			// away from the sun still sits under an open sky, so its shade end is the
+			// cool bottom of the ramp and not black. Folded in earlier the S-curve
+			// would simply pull the floor back down to where it started.
+			lit = ambient + (1 - ambient) * lit
 			// Inside the cap, the same lit walked on the snow ramp — the cap keeps the
 			// facets and the shadow of the rock it sits on — dithered out over
 			// `feather` cells at its lower edge.

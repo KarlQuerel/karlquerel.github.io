@@ -184,10 +184,15 @@ export const DEPARTURE_RIDGE = {
 			// share of the climb and of the cursor's travel (px), far → less of both
 			climb: 0.5,
 			depth: 7,
-			// PALETTE's night ramp, with steps repeated to compress the contrast —
-			// aerial perspective on a range this far off, and the same trick the
-			// arrival's distant band uses.
-			shades: ['void', 'pitch', 'iron', 'iron', 'zinc', 'zinc'],
+			// starlight, not dusk: barely enough sky to lift shadow off black, but
+			// enough that the shade side keeps the ramp's cool instead of going flat
+			ambient: 0.05,
+			// PALETTE's night ramp, held to its dark end — aerial perspective on a
+			// range this far off, and the same trick the arrival's distant band uses.
+			// Compressed by walking adjacent steps, never by writing one twice: a
+			// repeat leaves the dither no boundary to work at, and six slots holding
+			// three colours is what turned these faces into flat slabs.
+			shades: ['void', 'pitch', 'soot', 'iron', 'steel', 'zinc'],
 			crest: 'frost',
 		},
 		{
@@ -202,8 +207,10 @@ export const DEPARTURE_RIDGE = {
 			faceDepth: 14,
 			climb: 1,
 			depth: 20,
-			// darker still: the ground underfoot is a shape, not a landscape
-			shades: ['void', 'void', 'pitch', 'pitch', 'iron', 'iron'],
+			ambient: 0.05,
+			// darker still, and on a shorter ramp: the ground underfoot is a shape,
+			// not a landscape, and four steps is how you say that without repeats
+			shades: ['void', 'pitch', 'soot', 'iron'],
 			crest: 'zinc',
 		},
 	],
@@ -438,8 +445,28 @@ export const ENTRY = {
 	// once the planet, the ranges, the decks and the hull were all stepped, and it
 	// showed: a soft wash sitting directly on top of hard-dithered rock. `gamma` bends
 	// the ramp so the bright band hugs the horizon rather than spreading up the frame.
-	sky: ['void', 'ink', 'basalt', 'rust', 'ochre', 'clay', 'haze', 'sand'],
+	// Twelve steps rather than eight: the sky is the largest flat area in the scene,
+	// so a short ramp spreads each transition over ~20 cells of half-lit checker and
+	// the eye reads the Bayer lattice instead of a gradient. More steps means smaller
+	// jumps and narrower seams. `skyContrast` is the other half of the same fix —
+	// ridgeContrast's S-curve, applied to the fraction between two ramp steps, so the
+	// dither gathers at the boundary and the middle of each band goes solid.
+	sky: [
+		'void',
+		'ink',
+		'slate',
+		'basalt',
+		'rust',
+		'ochre',
+		'brick',
+		'clay',
+		'flare',
+		'haze',
+		'dune',
+		'sand',
+	],
 	skyGamma: 1.45,
+	skyContrast: 0.8,
 
 	// The sun, drawn into the sky's own canvas so it shares the grid and the palette
 	// and the ranges (separate canvases, in front) occlude it. It goes stage left
@@ -456,7 +483,7 @@ export const ENTRY = {
 		y: 0.66,
 		r: 13,
 		coronaR: 4,
-		coronaLift: 5,
+		coronaLift: 7,
 		disc: 'glow',
 		rim: 'sand',
 	},
@@ -649,6 +676,11 @@ export const ENTRY = {
 	ridgeLight: -1,
 	ridgeSlopeSpan: 2,
 	ridgeDepthFade: 0.6,
+	// Skylight on the shade side. The depth fade alone drives every turned-away face
+	// onto ramp index 0, which in both scenes is the same near-black — so shadow had
+	// no hue and the ranges read as cut paper. This is the floor it lands on instead.
+	// The dusk default; a band under a darker sky overrides it (see DEPARTURE_RIDGE).
+	ridgeAmbient: 0.14,
 	// crag texture broken across the faces, so a slope is not one flat wash;
 	// its scale is in cells, so the crags stay the same size as the grid they
 	// are cut on
@@ -692,8 +724,9 @@ export const ENTRY = {
 		slopeGain: 0.3,
 		faceDepth: 16,
 		// highest up the ramp and hardest compressed: distance washes a range toward
-		// the sky, which in a limited palette is fewer steps, not paler paint
-		shades: ['ochre', 'ochre', 'clay', 'clay', 'clay', 'amber'],
+		// the sky, which in a limited palette is a shorter walk of adjacent steps —
+		// not paler paint, and not the same step written three times
+		shades: ['ochre', 'brick', 'clay', 'flare', 'amber'],
 		crest: 'amber',
 	},
 	far: {
@@ -709,7 +742,7 @@ export const ENTRY = {
 		faceDepth: 22,
 		// dark → lit ramp. Aerial perspective: the far band sits closer to the
 		// sky's tone throughout, which is what pushes it into the distance.
-		shades: ['basalt', 'rust', 'ochre', 'clay', 'amber', 'amber'],
+		shades: ['basalt', 'rust', 'ochre', 'clay', 'flare', 'amber'],
 		crest: 'sand',
 		// Alpenglow snowcaps, per peak rather than per altitude: how far a summit
 		// pokes above the (ruffled) snowline sets how deep its cap hangs — `depth`

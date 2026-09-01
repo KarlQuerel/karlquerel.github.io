@@ -477,7 +477,7 @@
 					// top, so every pixel of it is still exactly a palette entry
 					const g = clamp01(1 - (d - sun.r) / (reach - sun.r))
 					const step =
-						ditherIndex(lit, ramp.length, x, y) +
+						ditherIndex(lit, ramp.length, x, y, ENTRY.skyContrast) +
 						ditherIndex(g * g, sun.coronaLift, x, y)
 					col = ramp[step > top ? top : step]
 				}
