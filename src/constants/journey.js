@@ -689,6 +689,11 @@ export const ENTRY = {
 	// are cut on
 	ridgeRough: 0.26,
 	ridgeRoughCells: 7.5,
+	// How much the crag texture's strength itself varies, over `ridgeRoughVaryCells`
+	// — several times the crag scale, so it makes patches of shattered and smooth
+	// rock rather than modulating each crag on its own.
+	ridgeRoughVary: 0.75,
+	ridgeRoughVaryCells: 46,
 	// How hard the shading is pushed toward solid steps (an S-curve on the lit
 	// value before the dither picks one). At 0 the checker wallpapers whole
 	// faces; pushed up, it gathers into narrow bands where two tones meet —
@@ -708,6 +713,10 @@ export const ENTRY = {
 	// instead of one, and no seam is drawn where the rock is already this dark.
 	strataDeepAt: 0.72,
 	strataMinLit: 0.32,
+	// How far off the regular pitch a bed's seam may sit, as a share of one spacing —
+	// enough that consecutive seams land unevenly and the bedding stops reading as a
+	// ruled grid.
+	strataJitter: 0.55,
 	// How far the sun's warmth reaches into bands flagged `sunGlow` (cells), and
 	// how many ramp steps it can promote at the disc itself.
 	sunGlowCells: 45,

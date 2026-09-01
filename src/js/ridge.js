@@ -113,6 +113,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 		const slope = ((hi - lo) / (2 * span)) * h
 		const face = 0.5 - slope * band.slopeGain * ENTRY.ridgeLight
 		const rf = 1 / ENTRY.ridgeRoughCells
+		const vf = 1 / ENTRY.ridgeRoughVaryCells
 		// Snow is a cap, not a stratum: how far this column's summit pokes above the
 		// (ruffled) snowline sets how many cells of snow hang below its crest — tall
 		// massifs carry deep caps, a peak just past the line gets a dusting, and
@@ -134,8 +135,16 @@ export function drawRidge(el, band, visitSeed, frame) {
 		for (let y = yTop; y < h; y++) {
 			// the face is a band under the crest; below it the mass goes dark
 			const depth = Math.min(1, (y - yTop) / band.faceDepth)
-			// crag texture in 2D — sampled per column only, it stripes
-			const rough = (fbm2(x * rf, y * rf, band.seed + visitSeed + 5) - 0.5) * ENTRY.ridgeRough
+			// Crag texture in 2D — sampled per column only, it stripes. How MUCH of it
+			// a place carries varies on a far longer wavelength than the crags
+			// themselves: rock is shattered in one place and weathered smooth in the
+			// next, and it is that variation in texture density — not more texture
+			// everywhere — that stops one crag pattern tiling a whole massif.
+			const vary = fbm2(x * vf, y * vf, band.seed + visitSeed + 67)
+			const rough =
+				(fbm2(x * rf, y * rf, band.seed + visitSeed + 5) - 0.5) *
+				ENTRY.ridgeRough *
+				(1 - ENTRY.ridgeRoughVary + 2 * ENTRY.ridgeRoughVary * vary)
 			let lit = clamp01((face + rough) * (1 - depth * ENTRY.ridgeDepthFade))
 			// Dither is for boundaries, not fill: the S-curve pushes the field toward
 			// solid steps, so the checker gathers into narrow bands where two tones
@@ -169,7 +178,12 @@ export function drawRidge(el, band, visitSeed, frame) {
 				// index. Seams of one constant width at one constant depth are what
 				// read as courses of masonry rather than as rock.
 				const r = hash1(which, band.seed + visitSeed + 53)
-				if (bed - which < ENTRY.strataWidth * (0.4 + 1.6 * r)) {
+				// Nor do beds march at a fixed pitch: each seam sits a little off the
+				// regular grid, so consecutive seams land at uneven spacings and the
+				// eye stops counting them. Wrapped, so a shifted seam stays whole.
+				const jitter = (hash1(which, band.seed + visitSeed + 89) - 0.5) * ENTRY.strataJitter
+				const off = (((bed - which - jitter) % 1) + 1) % 1
+				if (off < ENTRY.strataWidth * (0.4 + 1.6 * r)) {
 					idx = Math.max(0, idx - (r > ENTRY.strataDeepAt ? 2 : 1))
 				}
 			}
