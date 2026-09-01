@@ -50,7 +50,8 @@ export const PLANET = {
 	// difference between this and multiplying one colour by a brightness.
 	//
 	// A rocky red-grey world: the rock ramps carry it, and the pale ramps are highland
-	// stone rather than ice. The ice lives at the poles instead — see `polar`.
+	// stone rather than ice. Nothing overrides them by latitude — what the elevation
+	// says the ground is, the ground is, pole to equator.
 	ramps: {
 		abyss: ['void', 'ink', 'slate', 'deep', 'brine', 'tide'],
 		ocean: ['void', 'ink', 'slate', 'brine', 'tide', 'shoal'],
@@ -76,20 +77,11 @@ export const PLANET = {
 	// the ground under it is lit by. Tops at linen rather than cream so a fully lit
 	// deck — the storm wall above all — reads whiter than the sunlit highlands.
 	cloudRamp: ['ink', 'ash', 'stone', 'bone', 'chalk', 'linen'],
-	// Polar frost: past `lat` (|y| on the unit sphere) the surface reads as ice
-	// whatever the elevation says — sea freezes and land snows over alike. The edge
-	// dithers across `blend` like every other boundary, and the ramp walks the
-	// shared dark end into the palette's cold blues — the same snow the night
-	// ridges wear, so the poles and the departure read as one climate.
-	polar: {
-		lat: 0.78,
-		blend: 0.05,
-		ramp: ['void', 'ink', 'zinc', 'frost', 'rime', 'linen'],
-	},
 	// Impact basins: a few circular dents pressed into the elevation field, so the
 	// continents carry history instead of pure noise — where a floor drops below
-	// sea level it floods and reads as a round sea. Radii in radians of arc; kept
-	// off the poles so the frost never hides one.
+	// sea level it floods and reads as a round sea. Radii in radians of arc;
+	// `latMax` keeps them off the poles, where the projection would only smear
+	// a circle into a band.
 	basins: {
 		count: 3,
 		radMin: 0.22,

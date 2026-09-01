@@ -46,7 +46,6 @@
 	const palette = { ...PALETTE, ...props.palette }
 	const RAMPS = PLANET.bands.map(([name]) => PLANET.ramps[name].map(c => palette[c]))
 	const CLOUD_RAMP = PLANET.cloudRamp.map(c => palette[c])
-	const POLAR_RAMP = PLANET.polar.ramp.map(c => palette[c])
 	// every ramp is the same length; the light picks an index into it
 	const LEVELS = CLOUD_RAMP.length
 	const TOP = LEVELS - 1
@@ -362,14 +361,8 @@
 				// clobbers them
 				const inStorm = stormT
 				const stormTex = stormN
-				// Past the frost latitude the ground is ice whatever the elevation
-				// says — sea freezes and land snows over alike. ny is the planet-space
-				// latitude (the spin turns about this axis), and the edge dithers.
-				let ramp = CLOUD_RAMP
-				if (!onCloud) {
-					const frost = (Math.abs(ny) - PLANET.polar.lat) / (2 * PLANET.polar.blend) + 0.5
-					ramp = frost > thr ? POLAR_RAMP : RAMPS[bandAt(n, thr)]
-				}
+				// Elevation alone decides the ground; no latitude overrides it.
+				const ramp = onCloud ? CLOUD_RAMP : RAMPS[bandAt(n, thr)]
 
 				// Relief modulates the catch before the step, so the band boundaries
 				// follow the terrain instead of ringing the globe in even circles.
