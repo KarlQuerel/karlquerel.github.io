@@ -701,6 +701,13 @@ export const ENTRY = {
 	strataWidth: 0.18,
 	strataWobble: 6,
 	strataWobbleCells: 18,
+	// Cells the beds fall per cell across, the whole range sharing one tilt — one
+	// tectonic history, so the seams stay parallel from massif to massif.
+	strataDip: 0.35,
+	// A bed wider than `strataWidth` by this share of the roll bites two steps deep
+	// instead of one, and no seam is drawn where the rock is already this dark.
+	strataDeepAt: 0.72,
+	strataMinLit: 0.32,
 	// How far the sun's warmth reaches into bands flagged `sunGlow` (cells), and
 	// how many ramp steps it can promote at the disc itself.
 	sunGlowCells: 45,

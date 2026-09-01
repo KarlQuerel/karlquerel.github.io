@@ -11,7 +11,7 @@
 import { ENTRY } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
 import { clamp01, smoothstep } from './math.js'
-import { ditherIndex, ditherThreshold, fbm1, fbm2, ridged1 } from './pixelNoise.js'
+import { ditherIndex, ditherThreshold, fbm1, fbm2, hash1, ridged1 } from './pixelNoise.js'
 
 // Each column is lit by the way its face turns, then darkened with depth into the
 // mass, and the result is dithered onto the band's ramp — the same trick the planet
@@ -122,10 +122,15 @@ export function drawRidge(el, band, visitSeed, frame) {
 				(fbm1(x / ENTRY.snowRuffleCells, band.seed + visitSeed + 9) - 0.5) * snow.ruffle
 			: 2
 		const capCells = snow ? (profile[x] - snowLine) * h * snow.depth : 0
-		// this column's shift of the strata beds, so the seams undulate
+		// This column's shift of the strata beds: a gentle undulation, plus a steady
+		// dip across the range. The dip is what stops them reading as shelves — a
+		// seam that runs level is a terrace, and the eye takes any horizontal line on
+		// a mountain for flat ground. Tilted, the same seams read as bedding that the
+		// topography cuts across, which is what bedded rock actually looks like.
 		const bedShift =
 			(fbm1(x / ENTRY.strataWobbleCells, band.seed + visitSeed + 31) - 0.5) *
-			ENTRY.strataWobble
+				ENTRY.strataWobble +
+			x * ENTRY.strataDip
 		for (let y = yTop; y < h; y++) {
 			// the face is a band under the crest; below it the mass goes dark
 			const depth = Math.min(1, (y - yTop) / band.faceDepth)
@@ -155,9 +160,18 @@ export function drawRidge(el, band, visitSeed, frame) {
 			// Strata: sparse darker seams undulating across the faces, so the rock
 			// reads as bedded stone rather than noise. A seam demotes the step — the
 			// planet's cloud-shadow trick — and the snow lies over the beds.
-			if (ramp === shades) {
+			// Only where there is light to lose: a seam drawn into shadow is a seam
+			// nobody could see, and it was those that laid brickwork over the dark mass.
+			if (ramp === shades && lit > ENTRY.strataMinLit) {
 				const bed = (y + bedShift) / ENTRY.strataSpacing
-				if (bed - Math.floor(bed) < ENTRY.strataWidth) idx = Math.max(0, idx - 1)
+				const which = Math.floor(bed)
+				// Each bed gets its own thickness and its own bite, hashed off its
+				// index. Seams of one constant width at one constant depth are what
+				// read as courses of masonry rather than as rock.
+				const r = hash1(which, band.seed + visitSeed + 53)
+				if (bed - which < ENTRY.strataWidth * (0.4 + 1.6 * r)) {
+					idx = Math.max(0, idx - (r > ENTRY.strataDeepAt ? 2 : 1))
+				}
 			}
 			if (sun) {
 				const reach = clamp01(1 - Math.hypot(x - sunX, y - sunY) / ENTRY.sunGlowCells)
