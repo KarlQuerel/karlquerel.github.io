@@ -46,6 +46,7 @@
 	const palette = { ...PALETTE, ...props.palette }
 	const RAMPS = PLANET.bands.map(([name]) => PLANET.ramps[name].map(c => palette[c]))
 	const CLOUD_RAMP = PLANET.cloudRamp.map(c => palette[c])
+	const POLAR_RAMP = PLANET.polar.ramp.map(c => palette[c])
 	// every ramp is the same length; the light picks an index into it
 	const LEVELS = CLOUD_RAMP.length
 	const TOP = LEVELS - 1
@@ -109,10 +110,36 @@
 		return sum
 	}
 
-	// fractal elevation over the sphere — the bands and the sea-glint mask read it
+	// this visit's impact basins, fixed in planet space so they turn with the ground
+	let basins = []
+
+	// Fractal elevation over the sphere — the bands and the sea-glint mask read it.
+	// The basins press smooth circular dents into it: where a floor drops below sea
+	// level the dent floods, and the world gains a round sea.
 	function elevation(px, py, pz) {
 		const s = PLANET.noiseScale
-		return fbm(px * s, py * s, pz * s)
+		let n = fbm(px * s, py * s, pz * s)
+		for (const b of basins) {
+			const dot = px * b.x + py * b.y + pz * b.z
+			if (dot > b.cos) n -= PLANET.basins.depth * smoothstep((dot - b.cos) / (1 - b.cos))
+		}
+		return n
+	}
+
+	// rolled from the same seed as the terrain, once per visit
+	function rollBasins() {
+		const bs = PLANET.basins
+		basins = Array.from({ length: bs.count }, (_, b) => {
+			const lon = hash3(101 + b, 7, 13) * Math.PI * 2
+			const y = (hash3(3, 51 + b, 11) - 0.5) * 2 * bs.latMax
+			const r = Math.sqrt(Math.max(0, 1 - y * y))
+			return {
+				x: r * Math.sin(lon),
+				y,
+				z: r * Math.cos(lon),
+				cos: Math.cos(bs.radMin + (bs.radMax - bs.radMin) * hash3(9, 29, 71 + b)),
+			}
+		})
 	}
 
 	// Which band an elevation falls in. Across an edge the two bands are dithered
@@ -335,7 +362,14 @@
 				// clobbers them
 				const inStorm = stormT
 				const stormTex = stormN
-				const ramp = onCloud ? CLOUD_RAMP : RAMPS[bandAt(n, thr)]
+				// Past the frost latitude the ground is ice whatever the elevation
+				// says — sea freezes and land snows over alike. ny is the planet-space
+				// latitude (the spin turns about this axis), and the edge dithers.
+				let ramp = CLOUD_RAMP
+				if (!onCloud) {
+					const frost = (Math.abs(ny) - PLANET.polar.lat) / (2 * PLANET.polar.blend) + 0.5
+					ramp = frost > thr ? POLAR_RAMP : RAMPS[bandAt(n, thr)]
+				}
 
 				// Relief modulates the catch before the step, so the band boundaries
 				// follow the terrain instead of ringing the globe in even circles.
@@ -446,6 +480,7 @@
 		el.height = res
 		ctx = el.getContext('2d')
 		seed = Math.floor(Math.random() * 1e5) + 1
+		rollBasins()
 		draw(props.spin ?? 0) // initial static frame so it's ready the instant it reveals
 		resume()
 	})

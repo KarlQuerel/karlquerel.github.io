@@ -50,8 +50,7 @@ export const PLANET = {
 	// difference between this and multiplying one colour by a brightness.
 	//
 	// A rocky red-grey world: the rock ramps carry it, and the pale ramps are highland
-	// stone rather than ice. No caps — the poles are sea and coastline like everywhere
-	// else.
+	// stone rather than ice. The ice lives at the poles instead — see `polar`.
 	ramps: {
 		abyss: ['void', 'ink', 'slate', 'deep', 'brine', 'tide'],
 		ocean: ['void', 'ink', 'slate', 'brine', 'tide', 'shoal'],
@@ -77,6 +76,27 @@ export const PLANET = {
 	// the ground under it is lit by. Tops at linen rather than cream so a fully lit
 	// deck — the storm wall above all — reads whiter than the sunlit highlands.
 	cloudRamp: ['ink', 'ash', 'stone', 'bone', 'chalk', 'linen'],
+	// Polar frost: past `lat` (|y| on the unit sphere) the surface reads as ice
+	// whatever the elevation says — sea freezes and land snows over alike. The edge
+	// dithers across `blend` like every other boundary, and the ramp walks the
+	// shared dark end into the palette's cold blues — the same snow the night
+	// ridges wear, so the poles and the departure read as one climate.
+	polar: {
+		lat: 0.78,
+		blend: 0.05,
+		ramp: ['void', 'ink', 'zinc', 'frost', 'rime', 'linen'],
+	},
+	// Impact basins: a few circular dents pressed into the elevation field, so the
+	// continents carry history instead of pure noise — where a floor drops below
+	// sea level it floods and reads as a round sea. Radii in radians of arc; kept
+	// off the poles so the frost never hides one.
+	basins: {
+		count: 3,
+		radMin: 0.22,
+		radMax: 0.42,
+		depth: 0.13,
+		latMax: 0.7,
+	},
 	// Noise frequency over the sphere — higher = smaller, busier continents.
 	noiseScale: 1.35,
 	// Noise value below which a cell is ocean (≈ land/sea ratio). Lower = more land.

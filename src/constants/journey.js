@@ -223,6 +223,14 @@ export const DEPARTURE_RIDGE = {
 	airFrom: 0.28,
 	airTo: 0.92,
 	air: { colour: 'frost', alpha: 0.34 },
+	// Authored, not rolled — same contract as ENTRY.ridgeSeed: change the number
+	// to audition a new opening range.
+	ridgeSeed: 18,
+	// The destination: one warm star low over the ranges, near the corridor the
+	// name flies through — the same ember the arrival world is lit by, on screen
+	// from the first frame so the whole journey has somewhere it is pointed.
+	// Position in vw/vh; it breathes between full and `dim` every `periodMs`.
+	star: { leftVw: 64, topVh: 58, sizePx: 3, periodMs: 3200, dim: 0.35 },
 }
 
 // Camera keyframes: where the planet sits at each beat, as its centre's offset
@@ -646,10 +654,34 @@ export const ENTRY = {
 	// are cut on
 	ridgeRough: 0.26,
 	ridgeRoughCells: 7.5,
+	// How hard the shading is pushed toward solid steps (an S-curve on the lit
+	// value before the dither picks one). At 0 the checker wallpapers whole
+	// faces; pushed up, it gathers into narrow bands where two tones meet —
+	// dither is for boundaries, not fill.
+	ridgeContrast: 0.85,
+	// Strata: darker seams every `strataSpacing` cells, `strataWidth` of a bed
+	// wide, undulating by `strataWobble` cells per `strataWobbleCells` — bedded
+	// stone instead of noise.
+	strataSpacing: 7,
+	strataWidth: 0.18,
+	strataWobble: 6,
+	strataWobbleCells: 18,
+	// How far the sun's warmth reaches into bands flagged `sunGlow` (cells), and
+	// how many ramp steps it can promote at the disc itself.
+	sunGlowCells: 45,
+	sunGlowLevels: 3,
+	// The arrival range is authored, not rolled: one fixed seed so every visit
+	// gets the composition that was chosen by eye — snowcaps, passes and the
+	// habitat's spot included. Change the number to audition a new range.
+	ridgeSeed: 18,
+	// The snowline's meander, in cells per fbm cycle — shared by every band that
+	// carries snow, so both ends of the trip crown their ranges on the same scale.
+	snowRuffleCells: 24,
 	// Furthest range, behind the other two: tallest silhouette but the least
 	// contrast, since aerial perspective washes distance toward the sky. Finer
 	// `freq` too — distance compresses the peaks together.
 	distant: {
+		sunGlow: true,
 		revealAt: 0.52,
 		liftVh: 6,
 		heightVh: 58,
@@ -665,6 +697,7 @@ export const ENTRY = {
 		crest: 'amber',
 	},
 	far: {
+		sunGlow: true,
 		revealAt: 0.56,
 		liftVh: 10,
 		heightVh: 50,
@@ -678,8 +711,27 @@ export const ENTRY = {
 		// sky's tone throughout, which is what pushes it into the distance.
 		shades: ['basalt', 'rust', 'ochre', 'clay', 'amber', 'amber'],
 		crest: 'sand',
+		// Alpenglow snowcaps, per peak rather than per altitude: how far a summit
+		// pokes above the (ruffled) snowline sets how deep its cap hangs — `depth`
+		// scales the overshoot into cells of snow below the crest, dithered out
+		// over `feather` cells at the cap's lower edge. Tall massifs carry deep
+		// caps; a peak just past the line gets a dusting. The ramp is warm-lit —
+		// dusk light on snow, not white paint.
+		// minCap culls caps thinner than this many cells: a long flat crest that
+		// barely crosses the line otherwise wears a one-cell strip of white down
+		// its whole length, which reads as an outline rather than as snow.
+		snow: {
+			line: 0.53,
+			ruffle: 0.12,
+			depth: 1.3,
+			feather: 5,
+			minCap: 1.2,
+			shades: ['stone', 'bone', 'chalk', 'cream', 'linen', 'linen'],
+			crest: 'linen',
+		},
 	},
 	near: {
+		sunGlow: true,
 		revealAt: 0.62,
 		liftVh: 16,
 		heightVh: 33,
@@ -693,6 +745,42 @@ export const ENTRY = {
 		// contrast to spare, and its dark end is where the cool of the sky shows
 		shades: ['void', 'ink', 'basalt', 'rust', 'ochre', 'clay'],
 		crest: 'amber',
+		// the near caps keep a cool shadow end — snow in shade is brighter than
+		// rock in shade, but it is not lit
+		snow: {
+			line: 0.54,
+			ruffle: 0.12,
+			depth: 1.5,
+			feather: 5,
+			minCap: 1.2,
+			shades: ['ash', 'stone', 'bone', 'chalk', 'cream', 'linen'],
+			crest: 'linen',
+		},
+		// The habitat: one dome low on the nearest range — slope welcome, the
+		// footing buries the downhill edge — with one steady ember doorway under
+		// "SEND ME A SIGNAL": someone lives here, and can be reached. Width in
+		// cells, odd so the doorway centres — and well past the largest flock bird
+		// (13px × scale 5 ≈ 12 cells): the nearest built thing reading smaller than
+		// a creature in the sky breaks the perspective. `shades` is the shell's
+		// ramp, shadow to sun. The path runs from the door down the face toward the
+		// camera: `pathSpread` is how many cells it widens by the bottom (the
+		// perspective), `pathMeander` how far it wanders, per `pathWanderCells`.
+		// `shellFade` is how fast the shell darkens below its surface.
+		habitat: {
+			w: 17,
+			h: 7,
+			shellFade: 0.7,
+			shades: ['ink', 'basalt', 'rust', 'ochre'],
+			rim: 'amber',
+			light: 'ember',
+			glow: 'glow',
+			spill: 'ochre',
+			shadowLen: 5,
+			pathSpread: 5,
+			pathMeander: 5,
+			pathWanderCells: 14,
+			pathShades: ['ash', 'stone'],
+		},
 	},
 }
 

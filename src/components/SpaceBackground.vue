@@ -185,8 +185,8 @@
 		scheduleNext()
 	}
 
-	function scheduleNext() {
-		timer = window.setTimeout(spawnStar, rand(...SHOOTING_STAR.gapMs))
+	function scheduleNext(gap = SHOOTING_STAR.gapMs) {
+		timer = window.setTimeout(spawnStar, rand(...gap))
 	}
 
 	function removeStar(id) {
@@ -202,7 +202,8 @@
 			window.addEventListener('pointermove', onPointerMove, { passive: true })
 			window.addEventListener('scroll', onScrollParallax, { passive: true })
 		}
-		scheduleNext()
+		// the first comet rides the short fuse — see SHOOTING_STAR.firstMs
+		scheduleNext(SHOOTING_STAR.firstMs)
 	})
 
 	onBeforeUnmount(() => {

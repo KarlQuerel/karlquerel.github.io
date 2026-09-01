@@ -6,6 +6,9 @@
 	<div class="ridge" :style="ridgeStyle" aria-hidden="true">
 		<!-- behind the silhouettes, so the ridges mask the half of it below the crests -->
 		<div class="ridge__air" :style="airStyle" />
+		<!-- the destination: the star the whole flight is pointed at, behind the
+		     crests so the world can still stand in front of it -->
+		<span class="ridge__star" :style="starStyle" />
 		<canvas
 			v-for="(band, i) in RIDGE.bands"
 			:key="i"
@@ -55,6 +58,18 @@
 		}
 	}
 
+	// The destination star holds still while the ground drops away — a star sits at
+	// infinity, so the climb owes it no motion. It only leaves with the scene's fade.
+	const starStyle = {
+		left: `${RIDGE.star.leftVw}vw`,
+		top: `${RIDGE.star.topVh}vh`,
+		width: `${RIDGE.star.sizePx}px`,
+		height: `${RIDGE.star.sizePx}px`,
+		background: `rgb(${PALETTE.ember.join(',')})`,
+		animationDuration: `${RIDGE.star.periodMs}ms`,
+		'--dim': RIDGE.star.dim,
+	}
+
 	// The air rides with the ground rather than the frame, so it stays the range's
 	// own atmosphere as the horizon drops away. Its colour is a palette entry with an
 	// alpha, since a wash over the scene is the one thing that is not a sprite pixel.
@@ -65,15 +80,15 @@
 		background: `linear-gradient(to top, transparent 0%, ${air} ${RIDGE.airFrom * 100}%, transparent ${RIDGE.airTo * 100}%)`,
 	}))
 
-	// one seed per visit, so a reshape re-cuts the same ridges rather than new ones
-	let visitSeed = 1
 	let frame = { w: 0, h: 0 }
 	const bandEls = []
 
+	// cut from the authored RIDGE.ridgeSeed — the opening frame is a composition,
+	// not a roll; a reshape re-cuts the same ridges
 	function cut() {
 		frame = { w: window.innerWidth, h: window.innerHeight }
 		RIDGE.bands.forEach((band, i) => {
-			if (bandEls[i]) drawRidge(bandEls[i], band, visitSeed + i * 31, frame)
+			if (bandEls[i]) drawRidge(bandEls[i], band, RIDGE.ridgeSeed + i * 31, frame)
 		})
 	}
 
@@ -86,7 +101,6 @@
 	})
 
 	onMounted(() => {
-		visitSeed = Math.floor(Math.random() * 1e5) + 1
 		cut()
 		window.addEventListener('resize', onResize, { passive: true })
 	})
@@ -106,6 +120,32 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
+	}
+
+	// Breathing on its own clock, so it is stepped — and it is the one ember pixel
+	// in a white sky, which is what marks it as somewhere to go.
+	.ridge__star {
+		position: absolute;
+		animation-name: ridge-star;
+		animation-timing-function: steps(3, end);
+		animation-iteration-count: infinite;
+	}
+
+	@keyframes ridge-star {
+		0%,
+		55% {
+			opacity: 1;
+		}
+		70%,
+		100% {
+			opacity: var(--dim, 0.35);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.ridge__star {
+			animation: none;
+		}
 	}
 
 	// Anchored to the foot of the frame and grown from there, so the swell pushes the

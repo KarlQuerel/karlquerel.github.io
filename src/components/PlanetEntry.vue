@@ -491,14 +491,16 @@
 		ctx.putImageData(img, 0, 0)
 	}
 
-	// one seed per visit: a reshape re-cuts the same range, it never rolls a new one
+	// One seed per visit for the weather — clouds, twinklers, star tiles — so no
+	// two visits share a sky. The ranges are NOT on it: they cut from the authored
+	// ENTRY.ridgeSeed, so every visit lands in the composition chosen by eye.
 	let visitSeed = 1
 
 	function cut() {
 		frame = { w: window.innerWidth, h: window.innerHeight }
 		if (skyEl.value) drawSky(skyEl.value, frame)
 		bands.forEach((band, i) => {
-			if (ridgeEls[i]) drawRidge(ridgeEls[i], band, visitSeed, frame)
+			if (ridgeEls[i]) drawRidge(ridgeEls[i], band, ENTRY.ridgeSeed, frame)
 		})
 	}
 

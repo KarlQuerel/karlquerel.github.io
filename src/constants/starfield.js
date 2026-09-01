@@ -80,6 +80,9 @@ export const DRIFT_STEP_DEVICE_PX = 1
 export const SHOOTING_STAR = {
 	tints: ['#ffffff', '#ffffff', '#ffffff', '#00ccff', '#ffbd2e'],
 	gapMs: [2800, 8000],
+	// The first comet of a visit fires on this shorter fuse, so a first impression
+	// always catches the sky moving before the scroll starts.
+	firstMs: [900, 1600],
 	y: [0, 75],
 	x: [-10, 65],
 	angle: [-35, 80],
