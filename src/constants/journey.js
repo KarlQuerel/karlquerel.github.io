@@ -159,16 +159,20 @@ export const HERO_FLYBY = {
 // is what makes the two ends of the trip the same world-building, but cold instead of
 // warm: this is a night-side silhouette under starlight, not a dusk landscape.
 export const DEPARTURE_RIDGE = {
-	// Two bands that read as two distances rather than two rims. The far one carries
-	// the mountains: tall, and cut fine enough that a narrow frame still crops several
-	// peaks out of it — but no finer. At freq 15 against a slopeGain of 0.55 the peaks
-	// came out as a comb of narrow towers with flat, evenly striped faces, which the
-	// eye read as a city skyline rather than a range. The arrival's own distant band
-	// (freq 10) is the reference, and the steeper gain is what turns those flat faces
-	// back into lit slopes. The near one is the ground we are standing on — low, near-black and
-	// barely rimmed, because a flat band is only wrong when it is tall enough that the
-	// eye expects a mountain. That was the mobile fault: two similar rims, both lit
-	// hard enough to read as drawn contour lines rather than as lit edges.
+	// We leave from a moon, not a mountain range. Everything here follows from the one
+	// fact that it has no air:
+	//
+	//   - `blend` runs low, so the profile comes off the rolling octaves rather than
+	//     the ridged ones. Nothing on an airless surface is sharp for long; the swells
+	//     are old and the horizon is smooth, and alpine crests are the tell that gives
+	//     a moon away as a mountain.
+	//   - `faceDepth` runs long, so the light does not die below the crest. That fade
+	//     is aerial perspective and there is no aerial here — what we look across is
+	//     surface receding, not a wall going into haze.
+	//   - `ambient` runs near zero. Shadow on an airless body really is black, because
+	//     nothing scatters into it.
+	//   - `bedded: false` — bedding is sedimentary, and this ground was laid by impact.
+	//   - `craters` do the rest, and they carry the whole read.
 	//
 	// Crests sit close to the band's own top shade (the arrival's are 1.1x to 1.27x);
 	// a bigger jump than that stops being a lit edge and becomes an outline.
@@ -176,42 +180,77 @@ export const DEPARTURE_RIDGE = {
 		{
 			heightVh: 44,
 			freq: 10,
-			base: 0.18,
-			amp: 0.44,
+			base: 0.46,
+			amp: 0.22,
 			seed: 47,
-			slopeGain: 0.82,
-			faceDepth: 26,
+			blend: 0.12,
+			bedded: false,
+			// Almost nothing, and that is the point: `slopeGain` lights a column by the
+			// profile's own slope, and with the light no longer dying below the crest
+			// that one value paints the column's whole height. On a range it reads as a
+			// lit flank; on a plain it reads as a vertical stripe. Turned down, the mass
+			// settles to an even surface tone and the craters carry every bit of relief.
+			slopeGain: 0.3,
+			faceDepth: 90,
+			// the far field: small and many, the ground already worked over
+			craters: {
+				count: 48,
+				rMin: 2.5,
+				rMax: 13,
+				squash: 0.45,
+				rim: 0.72,
+				bowl: 0.4,
+				rimLight: 0.3,
+			},
 			// share of the climb and of the cursor's travel (px), far → less of both
 			climb: 0.5,
 			depth: 7,
 			// starlight, not dusk: barely enough sky to lift shadow off black, but
 			// enough that the shade side keeps the ramp's cool instead of going flat
-			ambient: 0.05,
+			// Lifted off the floor not for scattered light — there is none — but so the
+			// unbroken plain sits mid-ramp, where a crater has steps to carve in both
+			// directions. Pinned dark, every bowl bottoms out on the same black.
+			ambient: 0.13,
 			// PALETTE's night ramp, held to its dark end — aerial perspective on a
 			// range this far off, and the same trick the arrival's distant band uses.
 			// Compressed by walking adjacent steps, never by writing one twice: a
 			// repeat leaves the dither no boundary to work at, and six slots holding
 			// three colours is what turned these faces into flat slabs.
-			shades: ['void', 'pitch', 'soot', 'iron', 'steel', 'zinc'],
-			crest: 'frost',
+			// Walked one step up the night ramp now that this is ground we stand on
+			// rather than a far silhouette: a moon is a bright thing, and craters need
+			// a surface with steps above and below them to be cut into.
+			shades: ['pitch', 'soot', 'iron', 'steel', 'zinc', 'frost'],
+			crest: 'rime',
 		},
 		{
 			// the ground: dark enough to be a shape and not a landscape, and low enough
 			// that its long stretches read as level ground rather than as a wall
 			heightVh: 15,
 			freq: 5,
-			base: 0.3,
-			amp: 0.4,
+			base: 0.5,
+			amp: 0.2,
 			seed: 83,
-			slopeGain: 0.8,
-			faceDepth: 14,
+			blend: 0.1,
+			bedded: false,
+			slopeGain: 0.28,
+			faceDepth: 60,
+			// underfoot: fewer and broader, near enough that one basin fills a stretch
+			craters: {
+				count: 28,
+				rMin: 4,
+				rMax: 20,
+				squash: 0.42,
+				rim: 0.72,
+				bowl: 0.45,
+				rimLight: 0.35,
+			},
 			climb: 1,
 			depth: 20,
-			ambient: 0.05,
-			// darker still, and on a shorter ramp: the ground underfoot is a shape,
-			// not a landscape, and four steps is how you say that without repeats
-			shades: ['void', 'pitch', 'soot', 'iron'],
-			crest: 'zinc',
+			ambient: 0.13,
+			// still the darker of the two — it is nearer, and the sun is low behind
+			// the far rim — but lifted with it, on the same short ramp
+			shades: ['pitch', 'soot', 'iron', 'steel'],
+			crest: 'frost',
 		},
 	],
 	// The climb, per world unit the flight covers: the horizon drops away and the
@@ -226,10 +265,13 @@ export const DEPARTURE_RIDGE = {
 	goneTo: 0.85,
 	// Air stacked over the range, behind the silhouettes so the ridges mask their own
 	// half of it: the ground meets the sky with atmosphere rather than a hard cut.
+	// Barely there now: an airless world has no band of atmosphere over its horizon,
+	// and the wash that used to sell distance here reads as a mistake once the ground
+	// below it is cratered. Kept faint only to keep the two bands from butting.
 	airVh: 42,
 	airFrom: 0.28,
 	airTo: 0.92,
-	air: { colour: 'frost', alpha: 0.34 },
+	air: { colour: 'frost', alpha: 0.08 },
 	// Authored, not rolled — same contract as ENTRY.ridgeSeed: change the number
 	// to audition a new opening range.
 	ridgeSeed: 18,

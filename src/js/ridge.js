@@ -56,6 +56,13 @@ export function drawRidge(el, band, visitSeed, frame) {
 	const sunX = sun ? sun.x * w : 0
 	const sunY = sun ? (sun.y * frame.h - (frame.h - h * cell)) / cell : 0
 
+	// How much of the profile is ridged noise rather than rolling octaves. A range
+	// wants the crests; an airless, endlessly gardened surface wants the swells, so a
+	// band that is a moon turns this most of the way down.
+	const blend = band.blend ?? ENTRY.ridgeBlend
+	// Bedding is sedimentary. A surface built by impact and gardened by them since has
+	// no beds to show, so a moon band turns the seams off rather than tuning them down.
+	const bedded = band.bedded ?? true
 	// the whole profile first, so a column can be compared with its neighbour
 	const profile = new Array(w)
 	for (let x = 0; x < w; x++) {
@@ -63,7 +70,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 		// as it has room for, at the size the range is drawn everywhere else
 		const u = (x / ENTRY.ridgeRefCells) * band.freq
 		const seed = band.seed + visitSeed
-		const shape = ENTRY.ridgeBlend * ridged1(u, seed) + (1 - ENTRY.ridgeBlend) * fbm1(u, seed)
+		const shape = blend * ridged1(u, seed) + (1 - blend) * fbm1(u, seed)
 		// The massif swell: tall clusters and low passes. Spans the frame rather
 		// than the range, so however narrow the crop there is still a tall
 		// stretch and a pass in view.
@@ -86,6 +93,47 @@ export function drawRidge(el, band, visitSeed, frame) {
 		let sum = 0
 		for (let d = -blur; d <= blur; d++) sum += profile[Math.max(0, Math.min(w - 1, x + d))]
 		relief[x] = sum / (blur * 2 + 1)
+	}
+
+	// Craters (band.craters): a field of light offsets the shading loop adds in, for a
+	// band that is a moon rather than a mountain range. Each is a bowl inside a raised
+	// rim, and the two take the light opposite ways — the bowl's far wall turned into
+	// the sun and lit while its near wall lies in its own shadow, the rim's outer
+	// slopes the reverse. That reversal IS the read: shade both the same way round and
+	// what you have drawn is a dome sitting on the ground.
+	const craters = band.craters
+	const craterAt = craters ? new Float32Array(w * h) : null
+	if (craters) {
+		const lightSide = -ENTRY.ridgeLight
+		const seed = band.seed + visitSeed + 101
+		for (let i = 0; i < craters.count; i++) {
+			const cx = hash1(i * 3, seed) * w
+			// Seated in the ground, not in the sprite. Rolled against the full height
+			// most of them landed in the sky above the horizon and contributed a thin
+			// sliver where the ellipse happened to dip into rock — which reads as
+			// scratches, not craters. Each is placed below the terrain at its own
+			// column, so the whole bowl has ground to sit in.
+			const top = h * (1 - profile[Math.max(0, Math.min(w - 1, Math.round(cx)))])
+			const cy = top + (h - top) * hash1(i * 3 + 1, seed)
+			// Squared, so the roll lands small far more often than large: a couple of
+			// broad basins under a scatter of pocks, which is how a cratered surface
+			// actually counts out. A flat roll gives every crater the same weight and
+			// the ground comes out as bubble wrap.
+			const rx = craters.rMin + (craters.rMax - craters.rMin) * hash1(i * 3 + 2, seed) ** 2
+			// circles on a surface seen at a low angle, so they read as ellipses
+			const ry = rx * craters.squash
+			for (let y = Math.max(0, cy - ry) | 0; y <= Math.min(h - 1, cy + ry); y++) {
+				for (let x = Math.max(0, cx - rx) | 0; x <= Math.min(w - 1, cx + rx); x++) {
+					const nx = (x - cx) / rx
+					const d = Math.hypot(nx, (y - cy) / ry)
+					if (d > 1) continue
+					craterAt[y * w + x] +=
+						d < craters.rim
+							? nx * craters.bowl * lightSide
+							: (-nx * craters.rimLight * lightSide * (1 - d)) / (1 - craters.rim)
+				}
+			}
+		}
 	}
 
 	const put = (x, y, [r, g, b]) => {
@@ -145,7 +193,8 @@ export function drawRidge(el, band, visitSeed, frame) {
 				(fbm2(x * rf, y * rf, band.seed + visitSeed + 5) - 0.5) *
 				ENTRY.ridgeRough *
 				(1 - ENTRY.ridgeRoughVary + 2 * ENTRY.ridgeRoughVary * vary)
-			let lit = clamp01((face + rough) * (1 - depth * ENTRY.ridgeDepthFade))
+			const crater = craterAt ? craterAt[y * w + x] : 0
+			let lit = clamp01((face + rough + crater) * (1 - depth * ENTRY.ridgeDepthFade))
 			// Dither is for boundaries, not fill: the S-curve pushes the field toward
 			// solid steps, so the checker gathers into narrow bands where two tones
 			// actually meet instead of wallpapering whole faces.
@@ -171,7 +220,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 			// planet's cloud-shadow trick — and the snow lies over the beds.
 			// Only where there is light to lose: a seam drawn into shadow is a seam
 			// nobody could see, and it was those that laid brickwork over the dark mass.
-			if (ramp === shades && lit > ENTRY.strataMinLit) {
+			if (bedded && ramp === shades && lit > ENTRY.strataMinLit) {
 				const bed = (y + bedShift) / ENTRY.strataSpacing
 				const which = Math.floor(bed)
 				// Each bed gets its own thickness and its own bite, hashed off its
