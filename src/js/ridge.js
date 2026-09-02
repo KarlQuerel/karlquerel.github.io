@@ -213,14 +213,31 @@ export function drawRidge(el, band, visitSeed, frame) {
 		const rim = PALETTE[hab.rim]
 		const light = PALETTE[hab.light]
 		const spill = PALETTE[hab.spill]
+		const keyline = PALETTE[hab.keyline]
 		const half = (hab.w - 1) / 2
-		// wherever the middle stretch is lowest — a slope is fine, the footing
-		// buries the downhill edge and the dome reads as built into the mountain
+		// where this column's surface sits, which is what everything below clips to
+		const groundAt = x => Math.round(h * (1 - profile[Math.max(0, Math.min(w - 1, x))]))
+		// A low shoulder that faces the sun, rather than the lowest ground going. The
+		// absolute minimum of the stretch is the floor of a valley — the darkest place
+		// in the frame — and a structure lit at full strength there disagrees with
+		// every rock around it. Facing is read off the same smoothed relief the rock
+		// is shaded from, so the dome and its hillside agree about where the sun is.
 		let hx = Math.round(w * 0.5)
+		let bestScore = -Infinity
 		for (let x = Math.round(w * 0.25); x < w * 0.75; x++) {
-			if (profile[x] < profile[hx]) hx = x
+			const span = ENTRY.ridgeSlopeSpan
+			const slope =
+				((relief[Math.min(w - 1, x + span)] - relief[Math.max(0, x - span)]) / (2 * span)) *
+				h
+			const facing = clamp01(0.5 - slope * ENTRY.ridgeLight)
+			const score = 1 - profile[x] + facing * hab.sunWeight
+			if (score > bestScore) {
+				bestScore = score
+				hx = x
+			}
 		}
-		// footed on the lowest ground it spans
+		// footed on the lowest ground it spans — a level floor, which the hillside
+		// then cuts across (see the clip below) rather than the dome riding the slope
 		let base = 0
 		for (let dx = -half; dx <= half; dx++) {
 			base = Math.max(
@@ -238,18 +255,31 @@ export function drawRidge(el, band, visitSeed, frame) {
 		for (let dx = -half; dx <= half; dx++) {
 			const x = hx + dx
 			if (x < 0 || x >= w) continue
+			const ground = groundAt(x)
 			const rise = Math.max(1, Math.round(hab.h * Math.sqrt(1 - (dx / (half + 0.5)) ** 2)))
 			const face = 0.5 + (dx / half) * 0.5 * ENTRY.ridgeLight
+			const edgeY = base - rise + 1
+			// the hillside has risen over this whole column: the dome is behind it
+			if (edgeY > ground) continue
 			for (let dy = 0; dy < rise; dy++) {
+				const y = base - dy
+				// Below this column's own surface is inside the hill, not on it. The
+				// floor is one level row for the whole dome, so on the uphill side it
+				// runs under the ground — and painting shell there put a lit wedge in
+				// the middle of a shadowed rock face.
+				if (y > ground) continue
 				// Darken by depth below the shell surface, never by height above the
 				// ground: the low edge columns ARE surface, and dimming them for
 				// being short painted a false shadow across the dome's sun side.
 				const under = (rise - 1 - dy) / hab.h
 				const lit = clamp01(face * (1 - under * hab.shellFade))
-				put(x, base - dy, shellShades[ditherIndex(lit, shellShades.length, x, base - dy)])
+				put(x, y, shellShades[ditherIndex(lit, shellShades.length, x, y)])
 			}
-			const edgeY = base - rise + 1
 			put(x, edgeY, edgeShades[ditherIndex(face, edgeShades.length, x, edgeY)])
+			// A dark keyline over the lit rim, so the shell reads against whatever is
+			// behind it. The shell ramp and the near band's share four of their steps;
+			// on busy ground a sprite needs the break to hold its own shape.
+			if (edgeY - 1 >= 0) put(x, edgeY - 1, keyline)
 		}
 		// the shell's ground shadow, thrown a few cells along the surface away from
 		// the sun — a shape without a shadow floats, whatever else it does
@@ -267,9 +297,12 @@ export function drawRidge(el, band, visitSeed, frame) {
 		// ground receding in depth. It fades down its own length the way the rock
 		// does, and clips to the terrain so it dips out of sight where the ground
 		// falls away instead of floating.
+		// The entrance stands on the ground of its own column: where the hill has
+		// risen under the dome, the shell's floor is buried and a door on it would be.
+		const doorY = Math.min(base, groundAt(hx))
 		const trailShades = hab.pathShades.map(name => PALETTE[name])
-		for (let y = base + 1; y < h; y++) {
-			const t = (y - base) / Math.max(1, h - 1 - base)
+		for (let y = doorY + 1; y < h; y++) {
+			const t = (y - doorY) / Math.max(1, h - 1 - doorY)
 			const cx =
 				hx +
 				0.5 +
@@ -290,20 +323,28 @@ export function drawRidge(el, band, visitSeed, frame) {
 		// The entrance: an arch, not a slab — ember walls around a hotter core, the
 		// warm gradient being what reads as light from inside rather than paint.
 		const glow = PALETTE[hab.glow]
-		put(hx - 1, base, light)
-		put(hx + 1, base, light)
-		put(hx - 1, base - 1, light)
-		put(hx + 1, base - 1, light)
-		put(hx, base - 2, light)
-		put(hx, base, glow)
-		put(hx, base - 1, glow)
+		put(hx - 1, doorY, light)
+		put(hx + 1, doorY, light)
+		put(hx - 1, doorY - 1, light)
+		put(hx + 1, doorY - 1, light)
+		put(hx, doorY - 2, light)
+		put(hx, doorY, glow)
+		put(hx, doorY - 1, glow)
+		// Lit windows. One doorway cannot carry "someone lives here" by itself, and a
+		// window reads at any size — it is light where light could only be made.
+		for (const [wx, wy] of hab.windows) {
+			const x = hx + wx
+			const y = base - wy
+			if (x < 0 || x >= w || y < 0 || y > groundAt(x)) continue
+			put(x, y, light)
+		}
 		// and its pool on the ground below — light that lands on nothing is a sticker
 		for (let dx = -2; dx <= 2; dx++) {
-			if (base + 1 < h && ditherThreshold(hx + dx, base + 1) < 0.5) {
-				put(hx + dx, base + 1, spill)
+			if (doorY + 1 < h && ditherThreshold(hx + dx, doorY + 1) < 0.5) {
+				put(hx + dx, doorY + 1, spill)
 			}
 		}
-		if (base + 2 < h && ditherThreshold(hx, base + 2) < 0.5) put(hx, base + 2, spill)
+		if (doorY + 2 < h && ditherThreshold(hx, doorY + 2) < 0.5) put(hx, doorY + 2, spill)
 	}
 
 	ctx.putImageData(img, 0, 0)

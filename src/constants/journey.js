@@ -819,14 +819,33 @@ export const ENTRY = {
 		// perspective), `pathMeander` how far it wanders, per `pathWanderCells`.
 		// `shellFade` is how fast the shell darkens below its surface.
 		habitat: {
-			w: 17,
-			h: 7,
+			w: 25,
+			h: 11,
 			shellFade: 0.7,
-			shades: ['ink', 'basalt', 'rust', 'ochre'],
+			// A built shell is not rock, so it does not walk the rock ramp: pale cool
+			// grey against warm ochre separates by material, which no amount of value
+			// contrast on the same hue could do. Lifting it along the rock ramp only
+			// moved the problem — off the shadow it used to vanish into, and onto the
+			// lit hillside it then matched instead.
+			shades: ['ash', 'stone', 'bone', 'chalk', 'cream'],
+			// the dark break drawn over the lit rim, so the dome reads against rock
+			keyline: 'void',
 			rim: 'amber',
 			light: 'ember',
 			glow: 'glow',
 			spill: 'ochre',
+			// What a sun-facing slope is worth against low ground when the spot is
+			// picked — the scan lives in js/ridge.js. At zero it settles in the
+			// deepest pit it can find, which is the darkest place in the frame.
+			sunWeight: 0.6,
+			// Lit windows, as [across, up from the floor] off the doorway. One door
+			// cannot carry "someone lives here" alone, and a window reads at any size.
+			windows: [
+				[-6, 2],
+				[-3, 4],
+				[3, 4],
+				[6, 2],
+			],
 			shadowLen: 5,
 			pathSpread: 5,
 			pathMeander: 5,
