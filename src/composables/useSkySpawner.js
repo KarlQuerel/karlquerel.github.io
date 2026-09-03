@@ -13,8 +13,10 @@ import { prefersReducedMotion } from './usePrefersReducedMotion'
 //
 // `gapMs` is a [min, max] range and `make` is called per spawn — it returns whatever
 // that item needs, spread onto it, so one crossing can be a single streak and another
-// a whole formation.
-export function useSkySpawner({ gapMs, make }) {
+// a whole formation. `active` says whether the sky is on stage at all: a scene that has
+// scrolled away is display:none, where nothing animates and nothing ends, so spawning
+// into it would pile up just as a hidden tab does.
+export function useSkySpawner({ gapMs, make, active = () => true }) {
 	const items = ref([])
 	let nextId = 0
 	let timer = 0
@@ -25,8 +27,8 @@ export function useSkySpawner({ gapMs, make }) {
 	}
 
 	function spawn() {
-		// skip while hidden, or they pile up behind a paused animation
-		if (document.visibilityState === 'visible') {
+		// skip while hidden or off stage, or they pile up behind a paused animation
+		if (document.visibilityState === 'visible' && active()) {
 			items.value.push({ id: nextId++, ...make() })
 		}
 		schedule()

@@ -15,6 +15,14 @@
 			:style="glintStyle(glint)"
 		/>
 		<span class="ridge__glint" :style="starStyle" />
+		<!-- meteors: a streak jumping cell by cell down and right, rare -->
+		<span
+			v-for="meteor in meteors"
+			:key="meteor.id"
+			class="ridge__meteor"
+			:style="meteor.style"
+			@animationend="removeMeteor(meteor.id)"
+		/>
 		<canvas
 			v-for="(band, i) in RIDGE.bands"
 			:key="i"
@@ -28,9 +36,10 @@
 <script setup>
 	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
+	import { useSkySpawner } from '@/composables/useSkySpawner'
 	import { DEPARTURE_RIDGE as RIDGE, ENTRY } from '@/constants/journey'
 	import { PALETTE } from '@/constants/palette'
-	import { clamp01, smoothstep } from '@/js/math'
+	import { clamp01, randIn, smoothstep } from '@/js/math'
 	import { createCutter } from '@/js/departureCut'
 	import { cellFor } from '@/js/ridge'
 
@@ -95,6 +104,37 @@
 		top: `${glint.y * 100}%`,
 		...glintVars(glint, RIDGE.sky.glintDepth),
 	})
+	// Meteors, rolled per crossing: where they enter and how far they run. The head is
+	// the element, the tail its shadows a cell up and left per step behind it; the
+	// stepping is in the timing function, one step per cell, so the streak is never
+	// between cells. None spawn once the scene has left the frame.
+	const M = RIDGE.sky.meteor
+	const tail = M.shades
+		.slice(1)
+		.map(
+			(name, i) =>
+				`calc(var(--cell) * ${-(i + 1)}px) calc(var(--cell) * ${-(i + 1)}px) ${rgb(name)}`
+		)
+		.join(', ')
+	const { items: meteors, remove: removeMeteor } = useSkySpawner({
+		gapMs: M.gapMs,
+		active: () => gone.value < 1,
+		make: () => {
+			const cells = Math.round(randIn(M.travelCells))
+			return {
+				style: {
+					left: `${(randIn(M.x) * 100).toFixed(1)}%`,
+					top: `${(randIn(M.y) * 100).toFixed(1)}%`,
+					'--head': rgb(M.shades[0]),
+					'--tail': tail,
+					'--cells': cells,
+					animationDuration: `${cells * M.msPerCell}ms`,
+					animationTimingFunction: `steps(${cells}, end)`,
+				},
+			}
+		},
+	})
+
 	// the destination's place comes off the cut: over the notch, clear of the crest
 	const starAt = ref({ left: 0, top: 0 })
 	const starStyle = computed(() => ({
@@ -214,6 +254,26 @@
 		}
 	}
 
+	// a meteor is its head cell; the tail rides along as shadows. The travel is the same
+	// count of cells across and down, so every step lands it exactly one cell on.
+	.ridge__meteor {
+		position: absolute;
+		opacity: var(--fade, 1);
+		width: calc(var(--cell, 6) * 1px);
+		height: calc(var(--cell, 6) * 1px);
+		background: var(--head);
+		box-shadow: var(--tail);
+		animation-name: ridge-meteor;
+		animation-fill-mode: forwards;
+	}
+
+	@keyframes ridge-meteor {
+		to {
+			translate: calc(var(--cell, 6) * var(--cells) * 1px)
+				calc(var(--cell, 6) * var(--cells) * 1px);
+		}
+	}
+
 	@keyframes ridge-glint {
 		0%,
 		55% {
@@ -238,7 +298,8 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.ridge__glint::before,
-		.ridge__glint::after {
+		.ridge__glint::after,
+		.ridge__meteor {
 			animation: none;
 		}
 	}

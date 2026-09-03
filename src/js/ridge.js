@@ -675,6 +675,27 @@ export function drawMoon(el, band, visitSeed, frame) {
 		put(x + sunSide, y, ramp[Math.min(levels - 1, cur + 1)])
 	}
 
+	// the hand-placed boulders, as sprites over their bumps (see moon.boulderSprites),
+	// found back on screen from their place in the world
+	const S = M.boulderSprites
+	for (const b of P.boulders.big) {
+		const sprite = b.r >= S.bigFrom ? S.big : S.small
+		let x = Math.round(w / 2 + b.x)
+		let rows = rowsOf(x)
+		let t = (sFar * Math.exp((b.y * (sNear - sFar)) / rows) - sFar) / (sNear - sFar)
+		// the column depends on the spread at this depth, which depends on the column —
+		// one refinement lands it within a cell
+		x = Math.round(w / 2 + b.x / (1 + P.spread * (1 - t)))
+		rows = rowsOf(x)
+		t = (sFar * Math.exp((b.y * (sNear - sFar)) / rows) - sFar) / (sNear - sFar)
+		const foot = Math.round(yH[x] + t * rows)
+		sprite.forEach((row, dy) =>
+			row.forEach((idx, dx) => {
+				if (idx >= 0) put(x - 1 + dx, foot - (sprite.length - 1) + dy, ramp[idx])
+			})
+		)
+	}
+
 	ctx.putImageData(img, 0, 0)
 	return cut
 }

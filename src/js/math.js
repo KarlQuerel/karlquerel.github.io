@@ -2,6 +2,9 @@
 
 export const clamp01 = v => Math.min(1, Math.max(0, v))
 
+// a roll inside a [lo, hi] range — the shape every tunable range in the constants takes
+export const randIn = ([lo, hi]) => lo + Math.random() * (hi - lo)
+
 // Hermite ease between 0 and 1 — the one easing curve used for scrubbed motion.
 export const smoothstep = t => t * t * (3 - 2 * t)
 

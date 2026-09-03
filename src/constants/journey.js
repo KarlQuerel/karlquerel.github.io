@@ -292,6 +292,7 @@ export const DEPARTURE_RIDGE = {
 					big: [
 						{ x: 30, y: 22, r: 11 },
 						{ x: -96, y: 12, r: 6 },
+						{ x: -40, y: 30, r: 6.5 },
 						{ x: 47, y: 30, r: 3 },
 						{ x: 54, y: 33, r: 2.6 },
 						{ x: 41, y: 35, r: 2.4 },
@@ -428,6 +429,22 @@ export const DEPARTURE_RIDGE = {
 		// boulders: radius range in cells, height as a share of radius, and how many
 		// radii out the bump is still evaluated
 		boulder: { rMin: 0.9, rMax: 2.3, height: 1.3, reach: 2.5 },
+		// The hand-placed boulders wear a sprite over their bump: at two or three cells a
+		// shaded bump is a blob, and what reads as a rock is a lit shoulder on the sun
+		// side, a dark flank, and a hard shadow on the ground beside it. Rows of ramp
+		// indices, -1 for nothing, the bottom row on the ground; `big` from bigFrom cells.
+		boulderSprites: {
+			bigFrom: 3,
+			big: [
+				[-1, 4, 3, -1, -1],
+				[4, 3, 2, 1, -1],
+				[3, 2, 1, 0, 0],
+			],
+			small: [
+				[4, 3, -1, -1],
+				[3, 2, 1, 0],
+			],
+		},
 		// pocks land from this share of the band's depth down, biased toward the camera
 		pockFrom: 0.25,
 		pockNearBias: 0.7,
@@ -527,6 +544,19 @@ export const DEPARTURE_RIDGE = {
 			faint: ['slate', 'ash'],
 			bright: ['stone', 'bone', 'chalk'],
 			brightArm: 'ash',
+		},
+		// Meteors, on the shared spawner (useSkySpawner): rare — one every ten to twenty
+		// seconds, a landscape not a shower — and on the grid: a streak of `shades` cells
+		// (head to tail) that jumps one cell down and one right per step, `msPerCell`
+		// apart, over `travelCells`. A rotated line would be the one thing in this sky
+		// off the pixel grid. Enters across the top of the frame (shares of the frame).
+		meteor: {
+			gapMs: [10000, 22000],
+			x: [0.05, 0.7],
+			y: [0.02, 0.26],
+			travelCells: [26, 44],
+			msPerCell: 34,
+			shades: ['star', 'chalk', 'bone', 'stone', 'ash'],
 		},
 		// Each is a five-cell cross: a core, arms one cell out that breathe between full
 		// and `dim`, and tips two cells out that blink on the off-beat — the two-frame

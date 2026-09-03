@@ -68,7 +68,7 @@
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { ENTRY } from '@/constants/journey'
 	import { PALETTE } from '@/constants/palette'
-	import { clamp01, smoothstep } from '@/js/math'
+	import { clamp01, randIn, smoothstep } from '@/js/math'
 	import { ditherIndex, fbm1, fbm2, hash1 } from '@/js/pixelNoise'
 	import { drawRidge } from '@/js/ridge'
 
@@ -227,7 +227,6 @@
 		display: starFade.value > 0 ? null : 'none',
 	}))
 
-	const rand = ([lo, hi]) => lo + Math.random() * (hi - lo)
 	// inclusive of both ends, and flat across them — rounding a float instead biases
 	// hard toward the middle of a short range
 	const randInt = ([lo, hi]) => lo + Math.floor(Math.random() * (hi - lo + 1))
@@ -242,13 +241,13 @@
 			const m = ENTRY.meteor
 			return {
 				style: {
-					'--y': `${rand(m.y).toFixed(1)}%`,
-					'--x': `${rand(m.x).toFixed(1)}%`,
-					'--angle': `${rand(m.angle).toFixed(1)}deg`,
-					'--len': `${Math.round(rand(m.len))}px`,
-					'--travel': `${rand(m.travelVw).toFixed(1)}vw`,
-					'--dur': `${Math.round(rand(m.durMs))}ms`,
-					'--peak': rand(m.peak).toFixed(2),
+					'--y': `${randIn(m.y).toFixed(1)}%`,
+					'--x': `${randIn(m.x).toFixed(1)}%`,
+					'--angle': `${randIn(m.angle).toFixed(1)}deg`,
+					'--len': `${Math.round(randIn(m.len))}px`,
+					'--travel': `${randIn(m.travelVw).toFixed(1)}vw`,
+					'--dur': `${Math.round(randIn(m.durMs))}ms`,
+					'--peak': randIn(m.peak).toFixed(2),
 					'--tint': tint(m.tints),
 				},
 			}
@@ -264,17 +263,17 @@
 			const f = ENTRY.flock
 			const bird = ENTRY.bird
 			const scale = randInt(f.scale)
-			const flap = Math.round(rand(f.flapMs))
+			const flap = Math.round(randIn(f.flapMs))
 			const sheet = bird.frames.length * bird.w * scale
 			const rightward = Math.random() < 0.5
 			return {
 				style: {
-					'--y': `${rand(f.y).toFixed(1)}%`,
+					'--y': `${randIn(f.y).toFixed(1)}%`,
 					'--from': rightward ? '-14vw' : '114vw',
-					'--travel': `${(rand(f.travelVw) * (rightward ? 1 : -1)).toFixed(1)}vw`,
-					'--drift': `${rand(f.driftVh).toFixed(1)}vh`,
-					'--dur': `${Math.round(rand(f.durMs))}ms`,
-					'--peak': rand(f.peak).toFixed(2),
+					'--travel': `${(randIn(f.travelVw) * (rightward ? 1 : -1)).toFixed(1)}vw`,
+					'--drift': `${randIn(f.driftVh).toFixed(1)}vh`,
+					'--dur': `${Math.round(randIn(f.durMs))}ms`,
+					'--peak': randIn(f.peak).toFixed(2),
 				},
 				// Gaps accumulate from independent rolls rather than scaling one roll by
 				// the index, so the spacing inside a flock is uneven the way a real one is.
@@ -283,7 +282,7 @@
 					return Array.from({ length: randInt(f.count) }, () => {
 						const at = {
 							left: Math.round(x),
-							top: Math.round(rand(f.jitterPx)),
+							top: Math.round(randIn(f.jitterPx)),
 							w: bird.w * scale,
 							h: bird.h * scale,
 							sheet,
@@ -291,7 +290,7 @@
 							// its own phase, so the wingbeats never line up
 							delay: Math.round(Math.random() * flap),
 						}
-						x += rand(f.gapPx)
+						x += randIn(f.gapPx)
 						return at
 					})
 				})(),
