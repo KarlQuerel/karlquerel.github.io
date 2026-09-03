@@ -506,12 +506,15 @@ export const DEPARTURE_RIDGE = {
 			shades: ['ink', 'deep', 'slate'],
 		},
 		// The galaxy: a band from `from` to `to` (shares of the frame), `width` of the
-		// frame's height across. A dark mantle spans the band on `base` of its profile;
-		// a bright spine, spineWidth of the half-width wide, carries the cloud. The cloud
-		// is noise over cloudCells with wispMix of finer noise over wispCells laid on it,
-		// both sampled through a warp of themselves (`warp` cells over warpCells) so they
-		// billow, stretched between cloudFloor and cloudCeil, scaled by `density` and
-		// quantised onto `haze` (transparent first) with the dither held to `seam`.
+		// frame's height across, its middle wandering `wander` of the half-width and its
+		// width swelling by `swell` over `wanderCells` along the run — one width on a
+		// ruled line reads as a bar. A dark mantle spans the band on `base` of its
+		// profile; a bright spine, spineWidth of the half-width wide, carries the rest,
+		// and the cloud multiplies both, so the band ends where the cloud runs out. The
+		// cloud is noise over cloudCells with wispMix of finer noise over wispCells laid
+		// on it, both sampled through a warp of themselves (`warp` cells over warpCells)
+		// so they billow, stretched between cloudFloor and cloudCeil, scaled by `density`
+		// and quantised onto `haze` (transparent first) with the dither held to `seam`.
 		// Where a second noise over laneCells falls below laneBelow, a dust lane cuts
 		// laneCut steps out. Stars: a cell's chance is `stars` (faint, one cell, on
 		// `faint`) or brightStars (a small cross: a `bright` core with brightArm arms),
@@ -520,11 +523,14 @@ export const DEPARTURE_RIDGE = {
 		galaxy: {
 			from: [0, 0.04],
 			to: [1, 0.38],
-			width: 0.16,
+			width: 0.44,
+			wander: 0.45,
+			swell: 0.7,
+			wanderCells: 3,
 			density: 0.9,
 			seam: 0.07,
 			base: 0.3,
-			spineWidth: 0.6,
+			spineWidth: 0.45,
 			cloudCells: 12,
 			wispCells: 4.5,
 			wispMix: 0.3,
@@ -548,14 +554,16 @@ export const DEPARTURE_RIDGE = {
 		// Meteors, on the shared spawner (useSkySpawner): rare — one every ten to twenty
 		// seconds, a landscape not a shower — and on the grid: a streak of `shades` cells
 		// (head to tail) that jumps one cell down and one right per step, `msPerCell`
-		// apart, over `travelCells`. A rotated line would be the one thing in this sky
-		// off the pixel grid. Enters across the top of the frame (shares of the frame).
+		// apart. A rotated line would be the one thing in this sky off the pixel grid.
+		// Enters across the top of the frame (shares of the frame); the run is not a
+		// tunable, it is however many cells the entry point is from the edge, so the
+		// streak always leaves the frame instead of stopping in mid-sky. `msPerCell` is
+		// therefore the speed, and a crossing takes about a second and a half.
 		meteor: {
 			gapMs: [10000, 22000],
 			x: [0.05, 0.7],
 			y: [0.02, 0.26],
-			travelCells: [26, 44],
-			msPerCell: 34,
+			msPerCell: 12,
 			shades: ['star', 'chalk', 'bone', 'stone', 'ash'],
 		},
 		// Each is a five-cell cross: a core, arms one cell out that breathe between full

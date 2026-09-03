@@ -47,11 +47,21 @@ export function drawSky(el, frame) {
 	const bx = G.to[0] * w - ax
 	const by = G.to[1] * h - ay
 	const half = (G.width * h) / 2
+	// the band's middle and its half-width, both wandering along its length, and the
+	// furthest either can reach — past that a cell is out before any noise is sampled
+	const centreAt = t => (fbm1(t * G.wanderCells, seed + 51) - 0.5) * G.wander * half
+	const halfAt = t => half * (1 + (fbm1(t * G.wanderCells + 9.4, seed + 53) - 0.5) * G.swell)
+	const reach = half * (1 + (G.swell + G.wander) / 2)
 	const stars = []
 	for (let y = 0; y < h; y++) {
 		for (let x = 0; x < w; x++) {
 			const t = clamp01(((x - ax) * bx + (y - ay) * by) / (bx * bx + by * by))
-			const d = Math.hypot(x - ax - t * bx, y - ay - t * by) / half
+			const rx = x - ax - t * bx
+			const ry = y - ay - t * by
+			// signed, so a side of the band can be the near one and the middle can wander
+			const off = Math.hypot(rx, ry) * (ry * bx - rx * by < 0 ? -1 : 1)
+			if (Math.abs(off) >= reach) continue
+			const d = Math.abs(off - centreAt(t)) / halfAt(t)
 			if (d >= 1) continue
 			const wx = (fbm2(x / G.warpCells, y / G.warpCells, seed + 21) - 0.5) * G.warp
 			const wy = (fbm2(x / G.warpCells + 7.3, y / G.warpCells, seed + 23) - 0.5) * G.warp
@@ -61,10 +71,12 @@ export function drawSky(el, frame) {
 				((1 - G.wispMix) * billow + G.wispMix * wisp - G.cloudFloor) /
 					(G.cloudCeil - G.cloudFloor)
 			)
-			// the mantle spans the band; the spine is the same cloud, held to its middle
+			// the mantle spans the band, the spine gathers its light — and the cloud
+			// carries both: a profile with a floor of its own ends on an iso-contour,
+			// the one ruled line a galaxy never has
 			const mantle = 1 - d * d
 			const spine = Math.max(0, 1 - (d / G.spineWidth) ** 2)
-			const g = G.density * (G.base * mantle + (1 - G.base) * spine * cloud)
+			const g = G.density * mantle * (G.base + (1 - G.base) * spine) * cloud
 			let idx = seamIndex(clamp01(g), haze.length + 1, x, y, G.seam)
 			if (fbm2(x / G.laneCells, y / G.laneCells, seed + 3) < G.laneBelow) {
 				idx = Math.max(0, idx - G.laneCut)

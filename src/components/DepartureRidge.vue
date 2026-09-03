@@ -104,10 +104,10 @@
 		top: `${glint.y * 100}%`,
 		...glintVars(glint, RIDGE.sky.glintDepth),
 	})
-	// Meteors, rolled per crossing: where they enter and how far they run. The head is
-	// the element, the tail its shadows a cell up and left per step behind it; the
-	// stepping is in the timing function, one step per cell, so the streak is never
-	// between cells. None spawn once the scene has left the frame.
+	// Meteors, rolled per crossing: where they enter. The head is the element, the tail
+	// its shadows a cell up and left per step behind it; the stepping is in the timing
+	// function, one step per cell, so the streak is never between cells. None spawn
+	// once the scene has left the frame.
 	const M = RIDGE.sky.meteor
 	const tail = M.shades
 		.slice(1)
@@ -120,11 +120,18 @@
 		gapMs: M.gapMs,
 		active: () => gone.value < 1,
 		make: () => {
-			const cells = Math.round(randIn(M.travelCells))
+			// entered on the grid, and run out until the tail too has left the frame —
+			// by the right edge or behind the ridge, whichever the entry point meets
+			// first. A streak that stops in open sky reads as a dropped frame.
+			const cell = cellFor(frame)
+			const left = Math.round((randIn(M.x) * frame.w) / cell) * cell
+			const top = Math.round((randIn(M.y) * frame.h) / cell) * cell
+			const cells =
+				Math.ceil(Math.min(frame.w - left, frame.h - top) / cell) + M.shades.length
 			return {
 				style: {
-					left: `${(randIn(M.x) * 100).toFixed(1)}%`,
-					top: `${(randIn(M.y) * 100).toFixed(1)}%`,
+					left: `${left}px`,
+					top: `${top}px`,
 					'--head': rgb(M.shades[0]),
 					'--tail': tail,
 					'--cells': cells,
