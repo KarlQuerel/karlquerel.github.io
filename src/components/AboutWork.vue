@@ -195,6 +195,75 @@
 		height: 100%;
 	}
 
+	// The node powers up while its entry is being read. The hover lands on the ROW, not
+	// on the badge: the badge is decorative and aria-hidden, so a hover that only fired
+	// on a 2.6rem square would promise a click that is not there — and it would be a
+	// 2.6rem target. Lighting the whole entry's node instead reads as "this is the one
+	// you are on", and it can be hit from anywhere in the row.
+	//
+	// A halo of spread with no blur: concentric hard rings, which is what a glow looks
+	// like on a pixel grid. A blurred bloom is the one thing in this scene that would
+	// be resolution-independent, and nothing else here is. Nothing moves, either — the
+	// badge is a node sitting on the journey's own route line, and a node that lifts
+	// off its rail on hover stops being a node.
+	// `$k` is how far up it is turned: the current post wears a low one at rest and
+	// every node takes a full one under the cursor, so the two are the same light at
+	// two strengths rather than two different ideas of what a lit node looks like.
+	@mixin node-lit($c, $k: 1) {
+		border-color: rgba($c, 0.6 + 0.35 * $k);
+		box-shadow:
+			0 0 0 2px rgba($c, 0.45 * $k),
+			0 0 0 5px rgba($c, 0.2 * $k),
+			0 0 0 9px rgba($c, 0.07 * $k);
+	}
+
+	// Stepped, like every other transition the hand drives here.
+	@media (hover: hover) {
+		.ztl-badge {
+			transition:
+				border-color 0.2s steps(3, end),
+				box-shadow 0.2s steps(3, end);
+		}
+
+		.ztl-emblem {
+			transition: opacity 0.2s steps(3, end);
+		}
+
+		// off its ghost and up to full ink, so the sprite reads as switched on
+		.ztl-row:hover .ztl-emblem {
+			opacity: 1;
+		}
+
+		// the years are the node's own label, so they come up with it
+		.ztl-tick {
+			transition: color 0.2s steps(3, end);
+		}
+
+		.ztl-row:hover .ztl-tick {
+			color: $yellow;
+		}
+
+		.ztl-row:hover .ztl-badge--study {
+			@include node-lit($tag-education);
+		}
+
+		.ztl-row:hover .ztl-badge--job {
+			@include node-lit($tag-experience);
+		}
+
+		// the current post already wears the yellow; hovering it just turns it up
+		.is-current .ztl-row:hover .ztl-badge {
+			@include node-lit($yellow);
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			.ztl-badge,
+			.ztl-emblem {
+				transition: none;
+			}
+		}
+	}
+
 	.ztl-card {
 		display: flex;
 		flex-direction: column;
@@ -306,10 +375,12 @@
 	}
 
 	.is-current .ztl-badge {
-		border: 2px solid rgba($yellow, 0.7);
+		border: 2px solid;
 		background:
 			linear-gradient(0deg, rgba($yellow, 0.16), rgba($yellow, 0.16)), rgba(0, 0, 0, 0.6);
-		box-shadow: 0 0 12px rgba($yellow, 0.35);
+		// rings, not a 12px bloom: it was the one blurred glow left in a scene that
+		// quantises everything else, and it read as soft next to its own hover state
+		@include node-lit($yellow, 0.45);
 	}
 
 	.is-current .ztl-title {
