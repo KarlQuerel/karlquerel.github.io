@@ -27,7 +27,8 @@ export const JOURNEY = {
 	// the title plate (HERO_FLYBY.plateDepth 26) is the plane we fly through, then the
 	// body copy — the reading matter rides just in front of the planet — then the
 	// planet — the nearest thing in frame at a station, where it fills half of it —
-	// then the ridge we lift off (DEPARTURE_RIDGE bands, 20 and 7), then the station
+	// then the ridge we lift off (DEPARTURE_RIDGE bands, 20, 7 and 3, its sky's glints at 6
+	// and the galaxy at 2 behind everything), then the station
 	// headings, which sit behind the planet and move less again. The ridge and the
 	// planet are never in frame together, so their two claims on being near never meet.
 	parallax: { planet: 22, heading: 10, body: 24 },
@@ -152,134 +153,410 @@ export const HERO_FLYBY = {
 	qAxis: { x: -0.087, y: -0.108 },
 }
 
-// The ground we leave from: one near ridge across the foot of the opening frame, so
-// the page opens on a world rather than on empty space — and so the planet is hidden
-// by something in the scene rather than by nothing being there. Cut from the same
-// grid and the same shading as the arrival's range (see ENTRY and js/ridge.js), which
-// is what makes the two ends of the trip the same world-building, but cold instead of
-// warm: this is a night-side silhouette under starlight, not a dusk landscape.
+// The ground we leave from: a moon across the foot of the opening frame, so the page
+// opens on a world rather than on empty space — and so the planet is hidden by
+// something in the scene rather than by nothing being there. A moon is not a skyline,
+// so unlike the arrival's ranges these bands are not profiles lit by their own slope:
+// each is a window onto a height field seen in perspective (drawMoon in js/ridge.js),
+// with a real normal per cell, one sun, and the hard shadow of a vacuum. Cold on
+// purpose — leaving is cold, arriving is warm — but lit: a moon is a bright thing.
 export const DEPARTURE_RIDGE = {
-	// We leave from a moon, not a mountain range. Everything here follows from the one
-	// fact that it has no air:
-	//
-	//   - `blend` runs low, so the profile comes off the rolling octaves rather than
-	//     the ridged ones. Nothing on an airless surface is sharp for long; the swells
-	//     are old and the horizon is smooth, and alpine crests are the tell that gives
-	//     a moon away as a mountain.
-	//   - `faceDepth` runs long, so the light does not die below the crest. That fade
-	//     is aerial perspective and there is no aerial here — what we look across is
-	//     surface receding, not a wall going into haze.
-	//   - `ambient` runs near zero. Shadow on an airless body really is black, because
-	//     nothing scatters into it.
-	//   - `bedded: false` — bedding is sedimentary, and this ground was laid by impact.
-	//   - `craters` do the rest, and they carry the whole read.
-	//
-	// Crests sit close to the band's own top shade (the arrival's are 1.1x to 1.27x);
-	// a bigger jump than that stops being a lit edge and becomes an outline.
+	// Three layers, back to front, on one grid (ENTRY.ridgeCellPx): a distant range
+	// that is hills and nothing else, the plain running out to the horizon with low
+	// hills behind it, and the same ground underfoot with a low rise along its top edge
+	// so the parallax has a face to move. A band stands on its `horizon` row:
+	//   horizon  — the plain's far edge and the hills' feet, as a share of the band's
+	//              height from the top; `roll` is how many cells it wanders
+	//   curve    — rows the horizon drops by at the frame's edges (the limb)
+	//   hills    — the massifs behind, a height field seen edge-on: `depth` cells of
+	//              range behind the horizon, walked in `step` cells; `peaks` the cones
+	//              (count per ridgeRefCells of width, radius and height ranges, `power`
+	//              rolling heights low, `shape` > 1 for concave flanks, `overhang` how
+	//              far past the frame's edges they may stand, zMin the nearest depth,
+	//              `big` placed by hand with x as a share of the width);
+	//              `texture` the rock on them; `gain` the lit side's reach up the ramp,
+	//              `shadowSteps` the march toward the sun; shades dark→lit and the
+	//              crest's own walk; `notch` a crater bitten into the range at `at` of
+	//              the frame's width, `z` deep, `r` wide, `depth` deep
+	//   plain    — the ground itself:
+	//     squash   — a crater's vertical radius over its horizontal one at the horizon
+	//                and at the band's foot: the foreshortening, and how it changes
+	//     spread   — how much wider the world is at the horizon than underfoot
+	//     craters  — the field, counted per ridgeRefCells of width; radius rolls
+	//                rMin..rMax by u^power so most land small; `big` are placed by hand
+	//                in world cells (x from centre, y from the far edge)
+	//     boulders — likewise, `big` placed by hand
+	//     pocks    — two-pixel micro-craters, counted the same way
+	//     rise     — a lift along the far edge, cells high, gone `depth` cells in
+	//     lines    — long folds at depth y, wandering ±wander over `cells`, half a
+	//                width wide and `height` tall (negative digs: a rille; positive
+	//                raises: a wrinkle ridge), tapered over `taper` from `from` to `to`
+	//     shades   — the ramp, shadow to sun: the night ramp with one warm step at the
+	//                top, the palette's own rule that a face turning into the sun turns
+	//                warm — and the one thing tying this ground to the ember star
 	bands: [
 		{
-			heightVh: 44,
-			freq: 10,
-			base: 0.46,
-			amp: 0.22,
-			seed: 47,
-			blend: 0.12,
-			bedded: false,
-			// Almost nothing, and that is the point: `slopeGain` lights a column by the
-			// profile's own slope, and with the light no longer dying below the crest
-			// that one value paints the column's whole height. On a range it reads as a
-			// lit flank; on a plain it reads as a vertical stripe. Turned down, the mass
-			// settles to an even surface tone and the craters carry every bit of relief.
-			slopeGain: 0.3,
-			faceDepth: 90,
-			// the far field: small and many, the ground already worked over
-			craters: {
-				count: 48,
-				rMin: 2.5,
-				rMax: 13,
-				squash: 0.45,
-				rim: 0.72,
-				bowl: 0.4,
-				rimLight: 0.3,
+			// The range, a long way off. Peaks, not domes — the old highland rim of
+			// some basin — catching the sun on their facets against the black. Least
+			// parallax and least climb: as we lift, it stays up while the ground drops.
+			heightVh: 32,
+			seed: 61,
+			horizon: 0.45,
+			roll: 0,
+			curve: 4,
+			// Broad massifs, not peaks: nothing on an airless world stays sharp. Lit
+			// brighter than the hills in front — there is no haze to dim distance, and
+			// a sunlit face on the horizon is the brightest thing a moon shows.
+			hills: {
+				depth: 70,
+				step: 1,
+				peaks: {
+					count: 16,
+					overhang: 0.15,
+					zMin: 8,
+					rMin: 22,
+					rMax: 48,
+					hMin: 4,
+					hMax: 13,
+					power: 1.2,
+					shape: 1.25,
+					// the tallest massif stands under the destination star, and the
+					// notch is bitten out of it (x as a share of the frame's width)
+					big: [{ at: 0.64, z: 30, r: 46, h: 16 }],
+				},
+				texture: { amp: 0.4, cells: 9 },
+				gain: 1.2,
+				shadowSteps: 8,
+				seam: 0.1,
+				shades: ['pitch', 'iron', 'steel', 'zinc', 'frost', 'rime'],
+				crest: ['zinc', 'frost', 'rime', 'bone'],
+				// under the destination star (star.leftVw): the gap the flight leaves
+				// through
+				notch: { at: 0.64, z: 26, r: 26, depth: 12 },
 			},
-			// share of the climb and of the cursor's travel (px), far → less of both
-			climb: 0.5,
-			depth: 7,
-			// starlight, not dusk: barely enough sky to lift shadow off black, but
-			// enough that the shade side keeps the ramp's cool instead of going flat
-			// Lifted off the floor not for scattered light — there is none — but so the
-			// unbroken plain sits mid-ramp, where a crater has steps to carve in both
-			// directions. Pinned dark, every bowl bottoms out on the same black.
-			ambient: 0.13,
-			// PALETTE's night ramp, held to its dark end — aerial perspective on a
-			// range this far off, and the same trick the arrival's distant band uses.
-			// Compressed by walking adjacent steps, never by writing one twice: a
-			// repeat leaves the dither no boundary to work at, and six slots holding
-			// three colours is what turned these faces into flat slabs.
-			// Walked one step up the night ramp now that this is ground we stand on
-			// rather than a far silhouette: a moon is a bright thing, and craters need
-			// a surface with steps above and below them to be cut into.
-			shades: ['pitch', 'soot', 'iron', 'steel', 'zinc', 'frost'],
-			crest: 'rime',
+			climb: 0.6,
+			depth: 3,
 		},
 		{
-			// the ground: dark enough to be a shape and not a landscape, and low enough
-			// that its long stretches read as level ground rather than as a wall
-			heightVh: 15,
-			freq: 5,
-			base: 0.5,
-			amp: 0.2,
+			heightVh: 32,
+			seed: 47,
+			horizon: 0.45,
+			roll: 2,
+			curve: 4,
+			// rounded, worn hills: low domes, sparse, lit as the range behind them is —
+			// nearer, so never darker than it where the sun lands
+			hills: {
+				depth: 40,
+				step: 1,
+				peaks: {
+					count: 13,
+					overhang: 0.1,
+					zMin: 3,
+					rMin: 18,
+					rMax: 44,
+					hMin: 2,
+					hMax: 6,
+					power: 1.3,
+					shape: 1.3,
+					big: [],
+				},
+				texture: { amp: 0.4, cells: 7 },
+				gain: 1.05,
+				shadowSteps: 6,
+				seam: 0.1,
+				// one step under the range behind, and a dark crest: the edge that tells
+				// a nearer layer from a farther one is drawn dark, not bright
+				shades: ['pitch', 'iron', 'steel', 'zinc'],
+				crest: ['pitch', 'soot', 'iron', 'steel'],
+			},
+			plain: {
+				squash: [0.3, 0.5],
+				spread: 0.45,
+				// Few, and in a clear order: one hero basin, one medium companion, a
+				// handful of small ones. A field of like-sized rings is bubble wrap.
+				craters: {
+					count: 12,
+					rMin: 4,
+					rMax: 11,
+					power: 2.2,
+					// the hero basin, its companion, and a chain of secondaries thrown
+					// out of the basin — the debris a big impact leaves in a line
+					big: [
+						{ x: 30, y: 22, r: 11 },
+						{ x: -96, y: 12, r: 6 },
+						{ x: 47, y: 30, r: 3 },
+						{ x: 54, y: 33, r: 2.6 },
+						{ x: 41, y: 35, r: 2.4 },
+					],
+				},
+				boulders: { count: 8, big: [] },
+				pocks: 40,
+				lines: [
+					// the rille, left of centre
+					{
+						y: 16,
+						wander: 8,
+						cells: 40,
+						halfWidth: 2.4,
+						height: -2,
+						from: -150,
+						to: 0,
+						taper: 30,
+					},
+					// its raised twin, a wrinkle ridge running off to the right
+					{
+						y: 13,
+						wander: 6,
+						cells: 50,
+						halfWidth: 3,
+						height: 1.8,
+						from: 50,
+						to: 200,
+						taper: 30,
+					},
+				],
+				shades: ['pitch', 'iron', 'steel', 'zinc', 'frost', 'rime', 'bone'],
+			},
+			// share of the climb and of the cursor's travel (px), far → less of both
+			climb: 0.8,
+			depth: 7,
+		},
+		{
+			heightVh: 9,
 			seed: 83,
-			blend: 0.1,
-			bedded: false,
-			slopeGain: 0.28,
-			faceDepth: 60,
-			// underfoot: fewer and broader, near enough that one basin fills a stretch
-			craters: {
-				count: 28,
-				rMin: 4,
-				rMax: 20,
-				squash: 0.42,
-				rim: 0.72,
-				bowl: 0.45,
-				rimLight: 0.35,
+			horizon: 0.3,
+			roll: 4,
+			curve: 0,
+			plain: {
+				squash: [0.5, 0.65],
+				spread: 0.15,
+				rise: { amp: 1.5, depth: 8 },
+				// small only: a bowl wider than this band's few rows of ground gets
+				// sliced by its top edge and reads as a stack of plates
+				craters: { count: 4, rMin: 3, rMax: 5, power: 2, big: [] },
+				boulders: {
+					count: 4,
+					big: [
+						{ x: -24, y: 10, r: 2.6 },
+						{ x: 88, y: 6, r: 2.2 },
+					],
+				},
+				pocks: 16,
+				shades: ['pitch', 'iron', 'steel', 'zinc', 'frost', 'rime', 'bone'],
 			},
 			climb: 1,
 			depth: 20,
-			ambient: 0.13,
-			// still the darker of the two — it is nearer, and the sun is low behind
-			// the far rim — but lifted with it, on the same short ramp
-			shades: ['pitch', 'soot', 'iron', 'steel'],
-			crest: 'frost',
 		},
 	],
+	// Shared by every band: the light, and the shapes of things.
+	moon: {
+		// The sun, as a direction: x stage left is negative (the planet's key, the
+		// side ENTRY.ridgeLight names), y toward the camera is positive, z up. About
+		// 21° up — low enough that every rim throws a shadow, high enough that the
+		// bowls still show their floors.
+		sun: [-1, 0.35, 0.42],
+		// There is no skylight; `ambient` only lifts the shade end off the ramp's floor
+		// so the plain sits where a crater has steps to carve both ways. `shade` is the
+		// further drop inside a cast shadow, `gain` the lit side's reach up the ramp.
+		ambient: 0.1,
+		shade: 0.5,
+		gain: 1.15,
+		// the shadow march: samples along the ground toward the sun, the first this
+		// many cells out and each `grow` times further than the last
+		shadow: { steps: 20, first: 0.8, grow: 1.28 },
+		// dither only this far (in ramp steps) either side of a boundary; solid elsewhere
+		seam: 0.07,
+		// the horizon's wander, in cells per fbm cycle
+		rollCells: 48,
+		// the ground between the craters: broad swells and fine regolith, as cells of
+		// height over cells of wavelength
+		swell: { amp: 5, cells: 70 },
+		rough: { amp: 0.3, cells: 8 },
+		// albedo, not height: mare against highland, ±amp over `cells`
+		mare: { amp: 0.08, cells: 55 },
+		// ejecta rays off the biggest crater, from `from` to `reach` radii out
+		rays: {
+			from: 1.1,
+			reach: 3.6,
+			gain: 0.34,
+			count: 7,
+			sharpness: 8,
+			wobble: 4,
+			wobbleFreq: 3,
+		},
+		// One crater, in radii. `depth` and `rimHeight` are [fresh, worn away by age].
+		// The floor is flat inside `floor` ([small, basin]), a basin being wider than
+		// basinR; past peakR a crater carries a central peak. The ejecta blanket slopes
+		// off the rim out to ejectaTo. A fresh crater (age under freshBelow) sits in a
+		// brighter blanket, freshGain brighter at the rim and gone by freshTo.
+		// Rims narrow and tall, walls steep, floors broad: it is the sharp lip that
+		// draws the crater's ring in one cell, and the steep wall that gives the two
+		// crescents inside it their width. A shallow bowl under a soft rim is a smudge.
+		crater: {
+			depth: [0.3, 0.12],
+			rimHeight: [0.2, 0.1],
+			rimWidth: 0.18,
+			ejectaTo: 1.8,
+			ejectaGain: 0.05,
+			floor: [0.45, 0.55],
+			basinR: 9,
+			peakR: 10,
+			peak: 0.55,
+			peakAt: 0.18,
+			freshAge: 0.15,
+			freshBelow: 0.45,
+			freshGain: 0.1,
+			freshTo: 1.7,
+		},
+		// boulders: radius range in cells, height as a share of radius, and how many
+		// radii out the bump is still evaluated
+		boulder: { rMin: 0.9, rMax: 2.3, height: 1.3, reach: 2.5 },
+		// pocks land from this share of the band's depth down, biased toward the camera
+		pockFrom: 0.25,
+		pockNearBias: 0.7,
+	},
 	// The climb, per world unit the flight covers: the horizon drops away and the
 	// crests swell as we lift over them. Both come off the flight's own travel, so
-	// the ridge, the motes and the name are all one movement. Kept slow — a range
-	// this size is far off, and a foreground rock's drop rate would take the whole
-	// opening beat away on the first flick of the wheel.
-	dropVhPerUnit: 3,
+	// the ridge, the motes and the name are all one movement. The ground leaves the
+	// frame by this motion alone, never by fading — a fade shows stars through rock.
+	// Sized so every band is out by the time the travel levels off (~14 units, see
+	// HERO_FLYBY): the swell grows a band up from its foot, so it fights the drop by
+	// swellPerUnit × heightVh per unit and the rate has to beat that.
+	dropVhPerUnit: 5.5,
 	swellPerUnit: 0.05,
-	// gone by this much of the pass — from here on the frame is open space
+	// The things at infinity — the galaxy and the glints — cannot drop away, so they
+	// alone fade, over this stretch of the pass; the scene is gone at goneTo.
 	goneFrom: 0.55,
 	goneTo: 0.85,
-	// Air stacked over the range, behind the silhouettes so the ridges mask their own
-	// half of it: the ground meets the sky with atmosphere rather than a hard cut.
-	// Barely there now: an airless world has no band of atmosphere over its horizon,
-	// and the wash that used to sell distance here reads as a mistake once the ground
-	// below it is cratered. Kept faint only to keep the two bands from butting.
-	airVh: 42,
-	airFrom: 0.28,
-	airTo: 0.92,
-	air: { colour: 'frost', alpha: 0.08 },
 	// Authored, not rolled — same contract as ENTRY.ridgeSeed: change the number
 	// to audition a new opening range.
 	ridgeSeed: 18,
-	// The destination: one warm star low over the ranges, near the corridor the
-	// name flies through — the same ember the arrival world is lit by, on screen
-	// from the first frame so the whole journey has somewhere it is pointed.
-	// Position in vw/vh; it breathes between full and `dim` every `periodMs`.
-	star: { leftVw: 64, topVh: 58, sizePx: 3, periodMs: 3200, dim: 0.35 },
+	// The destination: one warm star hanging over the notch the range was bitten for —
+	// the same ember the arrival world is lit by, on screen from the first frame so the
+	// whole journey has somewhere it is pointed. A glint like the others (see sky), but
+	// placed by the cut, not the frame: `aboveCells` over the notch's crest, so it clears
+	// the skyline on every viewport and under the lean. It is the fixed point the whole
+	// flight aims at, so it takes less of the lean than the other glints (`depth`).
+	star: {
+		aboveCells: 6,
+		depth: 6,
+		core: 'glow',
+		arm: 'ember',
+		tip: 'haze',
+		periodMs: 3200,
+		dim: 0.35,
+		delayMs: 0,
+	},
+	// The sky above the ground, on the same grid (js/sky.js). Black — no air — with the
+	// off-frame sun's glow low on the left, the galaxy across it, and a few bright stars.
+	// `depth` is the cursor lean (px) of the canvas and `glintDepth` that of the bright
+	// stars; both run past the ground's, as the faint field's planes already do (see
+	// STAR_LAYERS) — the lean here is relief, not distance.
+	sky: {
+		depth: 12,
+		glintDepth: 18,
+		// The sun's glow: centre and reach as shares of the frame (y is the horizon),
+		// `power` the falloff from the centre, quantised to rings with the dither held
+		// to `seam`; the rim wobbles by `wobble` of its radius over wobbleFreq cycles
+		// round the centre, so no ring is a perfect ellipse.
+		sunGlow: {
+			x: -0.05,
+			y: 0.82,
+			rx: 0.5,
+			ry: 0.3,
+			power: 1.2,
+			seam: 0.14,
+			wobble: 0.16,
+			wobbleFreq: 5,
+			shades: ['ink', 'deep', 'slate'],
+		},
+		// The galaxy: a band from `from` to `to` (shares of the frame), `width` of the
+		// frame's height across. A dark mantle spans the band on `base` of its profile;
+		// a bright spine, spineWidth of the half-width wide, carries the cloud. The cloud
+		// is noise over cloudCells with wispMix of finer noise over wispCells laid on it,
+		// both sampled through a warp of themselves (`warp` cells over warpCells) so they
+		// billow, stretched between cloudFloor and cloudCeil, scaled by `density` and
+		// quantised onto `haze` (transparent first) with the dither held to `seam`.
+		// Where a second noise over laneCells falls below laneBelow, a dust lane cuts
+		// laneCut steps out. Stars: a cell's chance is `stars` (faint, one cell, on
+		// `faint`) or brightStars (a small cross: a `bright` core with brightArm arms),
+		// times the haze squared so they gather where it is thick, times clusterGain
+		// inside clusters (a third noise over clusterCells above clusterAbove).
+		galaxy: {
+			from: [0, 0.04],
+			to: [1, 0.38],
+			width: 0.16,
+			density: 0.9,
+			seam: 0.07,
+			base: 0.3,
+			spineWidth: 0.6,
+			cloudCells: 12,
+			wispCells: 4.5,
+			wispMix: 0.3,
+			cloudFloor: 0.28,
+			cloudCeil: 0.74,
+			warp: 14,
+			warpCells: 26,
+			laneCells: 19,
+			laneBelow: 0.38,
+			laneCut: 1,
+			haze: ['ink', 'deep', 'brine', 'tide'],
+			stars: 0.2,
+			brightStars: 0.012,
+			clusterCells: 12,
+			clusterAbove: 0.56,
+			clusterGain: 3,
+			faint: ['slate', 'ash'],
+			bright: ['stone', 'bone', 'chalk'],
+			brightArm: 'ash',
+		},
+		// Each is a five-cell cross: a core, arms one cell out that breathe between full
+		// and `dim`, and tips two cells out that blink on the off-beat — the two-frame
+		// twinkle every 8-bit sky has had. A handful, since a sky that twinkles everywhere
+		// reads as noise.
+		glints: [
+			{
+				x: 0.21,
+				y: 0.17,
+				core: 'star',
+				arm: 'chalk',
+				tip: 'bone',
+				periodMs: 2600,
+				dim: 0.3,
+				delayMs: 0,
+			},
+			{
+				x: 0.86,
+				y: 0.27,
+				core: 'star',
+				arm: 'bone',
+				tip: 'stone',
+				periodMs: 3100,
+				dim: 0.35,
+				delayMs: 900,
+			},
+			{
+				x: 0.55,
+				y: 0.09,
+				core: 'linen',
+				arm: 'chalk',
+				tip: 'bone',
+				periodMs: 2200,
+				dim: 0.3,
+				delayMs: 1600,
+			},
+			{
+				x: 0.08,
+				y: 0.36,
+				core: 'chalk',
+				arm: 'bone',
+				tip: 'stone',
+				periodMs: 3600,
+				dim: 0.3,
+				delayMs: 500,
+			},
+		],
+	},
 }
 
 // Camera keyframes: where the planet sits at each beat, as its centre's offset

@@ -1,31 +1,38 @@
 <template>
-	<!-- The ground the flight leaves from: two ranges across the foot of the opening
-	     frame, dropping away as the camera lifts over them. Scroll owns the climb, the
-	     cursor owns the lean. Decorative — the same cut as the arrival's range, see
-	     js/ridge.js. -->
-	<div class="ridge" :style="ridgeStyle" aria-hidden="true">
-		<!-- behind the silhouettes, so the ridges mask the half of it below the crests -->
-		<div class="ridge__air" :style="airStyle" />
-		<!-- the destination: the star the whole flight is pointed at, behind the
-		     crests so the world can still stand in front of it -->
-		<span class="ridge__star" :style="starStyle" />
+	<!-- The ground the flight leaves from: a moon across the foot of the opening frame,
+	     three layers of one ground dropping away as the camera lifts over them.
+	     Scroll owns the climb, the cursor owns the lean. Decorative — drawn by
+	     drawMoon in js/ridge.js. -->
+	<div ref="rootEl" class="ridge" :style="ridgeStyle" aria-hidden="true">
+		<!-- the sky: the sun's glow and the galaxy, on the ground's grid -->
+		<canvas ref="skyEl" class="ridge__sky" :style="skyStyle" />
+		<!-- the bright stars — behind the crests, so the world can still stand in front
+		     of them — and the destination's ember, hung over the notch by the cut -->
+		<span
+			v-for="(glint, i) in RIDGE.sky.glints"
+			:key="i"
+			class="ridge__glint"
+			:style="glintStyle(glint)"
+		/>
+		<span class="ridge__glint" :style="starStyle" />
 		<canvas
 			v-for="(band, i) in RIDGE.bands"
 			:key="i"
 			:ref="el => (bandEls[i] = el)"
 			class="ridge__band"
-			:style="bandStyle(band)"
+			:style="bandStyle(band, i)"
 		/>
 	</div>
 </template>
 
 <script setup>
-	import { computed, onBeforeUnmount, onMounted } from 'vue'
+	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { DEPARTURE_RIDGE as RIDGE, ENTRY } from '@/constants/journey'
 	import { PALETTE } from '@/constants/palette'
 	import { clamp01, smoothstep } from '@/js/math'
-	import { drawRidge } from '@/js/ridge'
+	import { cellFor, drawMoon } from '@/js/ridge'
+	import { drawSky } from '@/js/sky'
 
 	const props = defineProps({
 		// world units the camera has run down the corridor
@@ -36,9 +43,11 @@
 
 	// --mx/--my come from the flight container (usePointerParallax); each band takes
 	// its own share of them through --depth, and that difference is the relief.
+	// --fade is for the sky alone: the ground leaves by dropping out of frame, and
+	// only what sits at infinity has to fade instead.
 	const ridgeStyle = computed(() => ({
 		display: gone.value < 1 ? null : 'none',
-		opacity: (1 - gone.value).toFixed(3),
+		'--fade': (1 - gone.value).toFixed(3),
 	}))
 
 	const gone = computed(() =>
@@ -48,48 +57,79 @@
 	// A band swells as we close on it and drops as we climb: one is the perspective,
 	// the other is the camera rising, and both come off the same travel — scaled by the
 	// band's own share of it, which is the parallax that reads as relief.
-	function bandStyle(band) {
+	function bandStyle(band, i) {
 		const swell = 1 + RIDGE.swellPerUnit * band.climb * props.travel
 		const drop = RIDGE.dropVhPerUnit * band.climb * props.travel
 		return {
 			'--depth': band.depth,
-			height: `${band.heightVh}vh`,
+			...sized(sizes.value.bands[i]),
 			transform: `translate3d(0, ${drop.toFixed(1)}vh, 0) scale(${swell.toFixed(3)})`,
 		}
 	}
 
-	// The destination star holds still while the ground drops away — a star sits at
-	// infinity, so the climb owes it no motion. It only leaves with the scene's fade.
-	const starStyle = {
-		left: `${RIDGE.star.leftVw}vw`,
-		top: `${RIDGE.star.topVh}vh`,
-		width: `${RIDGE.star.sizePx}px`,
-		height: `${RIDGE.star.sizePx}px`,
-		background: `rgb(${PALETTE.ember.join(',')})`,
-		animationDuration: `${RIDGE.star.periodMs}ms`,
-		'--dim': RIDGE.star.dim,
-	}
-
-	// The air rides with the ground rather than the frame, so it stays the range's
-	// own atmosphere as the horizon drops away. Its colour is a palette entry with an
-	// alpha, since a wash over the scene is the one thing that is not a sprite pixel.
-	const air = `rgba(${PALETTE[RIDGE.air.colour].join(',')}, ${RIDGE.air.alpha})`
-	const airStyle = computed(() => ({
-		height: `${RIDGE.airVh}vh`,
-		transform: `translate3d(0, ${(RIDGE.dropVhPerUnit * props.travel).toFixed(1)}vh, 0)`,
-		background: `linear-gradient(to top, transparent 0%, ${air} ${RIDGE.airFrom * 100}%, transparent ${RIDGE.airTo * 100}%)`,
+	// The glints hold still while the ground drops away — a star sits at infinity, so
+	// the climb owes it no motion. They only leave with the scene's fade. One cell
+	// each (--cell, set at the cut), a core with four arms breathing on a stepped clock.
+	const rgb = name => `rgb(${PALETTE[name].join(',')})`
+	// Every canvas is sized to exactly the cells it was cut on (see gridFor), never
+	// stretched to the frame — that is what keeps each cell a whole number of device
+	// pixels. The sizes come back from the cut.
+	const sizes = ref({ sky: null, bands: [] })
+	const sized = cut =>
+		cut ? { width: `${cut.cols * cut.cell}px`, height: `${cut.rows * cut.cell}px` } : {}
+	const skyStyle = computed(() => ({ '--depth': RIDGE.sky.depth, ...sized(sizes.value.sky) }))
+	const glintVars = (glint, depth) => ({
+		'--depth': depth,
+		'--core': rgb(glint.core),
+		'--arm': rgb(glint.arm),
+		'--tip': rgb(glint.tip),
+		'--period': `${glint.periodMs}ms`,
+		'--delay': `${glint.delayMs}ms`,
+		'--dim': glint.dim,
+	})
+	const glintStyle = glint => ({
+		left: `${glint.x * 100}%`,
+		top: `${glint.y * 100}%`,
+		...glintVars(glint, RIDGE.sky.glintDepth),
+	})
+	// the destination's place comes off the cut: over the notch, clear of the crest
+	const starAt = ref({ left: 0, top: 0 })
+	const starStyle = computed(() => ({
+		left: `${starAt.value.left}px`,
+		top: `${starAt.value.top}px`,
+		...glintVars(RIDGE.star, RIDGE.star.depth),
 	}))
 
 	let frame = { w: 0, h: 0 }
+	const rootEl = ref(null)
+	const skyEl = ref(null)
 	const bandEls = []
 
 	// cut from the authored RIDGE.ridgeSeed — the opening frame is a composition,
-	// not a roll; a reshape re-cuts the same ridges
+	// not a roll; a reshape re-cuts the same ground
 	function cut() {
-		frame = { w: window.innerWidth, h: window.innerHeight }
-		RIDGE.bands.forEach((band, i) => {
-			if (bandEls[i]) drawRidge(bandEls[i], band, RIDGE.ridgeSeed + i * 31, frame)
+		frame = { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 }
+		rootEl.value.style.setProperty('--cell', cellFor(frame))
+		const sky = drawSky(skyEl.value, { ...frame, bleed: RIDGE.sky.depth })
+		const bands = RIDGE.bands.map((band, i) => {
+			if (!bandEls[i]) return null
+			const cut = drawMoon(bandEls[i], band, RIDGE.ridgeSeed, { ...frame, bleed: band.depth })
+			const notch = band.hills?.notch
+			if (cut.hillTop && notch) {
+				// the star hangs `aboveCells` over the highest point the notch's crest
+				// reaches under it and its arms, whatever this frame made of the range;
+				// the canvas starts `depth` px left of the frame and ends at its foot
+				const x = Math.round(notch.at * cut.cols)
+				const crest = Math.min(...cut.hillTop.slice(Math.max(0, x - 1), x + 2))
+				const top = frame.h + band.depth - cut.rows * cut.cell
+				starAt.value = {
+					left: x * cut.cell - band.depth,
+					top: top + (crest - RIDGE.star.aboveCells) * cut.cell,
+				}
+			}
+			return cut
 		})
+		sizes.value = { sky, bands }
 	}
 
 	// only when the frame really changed shape (see ENTRY.ridgeReshape)
@@ -115,23 +155,58 @@
 		pointer-events: none;
 	}
 
-	.ridge__air {
+	// Starts its bleed past the frame's corner, like the bands, so the lean never
+	// uncovers an edge; its size is the cut's, in whole cells.
+	.ridge__sky {
 		position: absolute;
-		bottom: 0;
-		left: 0;
-		right: 0;
+		opacity: var(--fade, 1);
+		top: calc(var(--depth, 0) * -1px);
+		left: calc(var(--depth, 0) * -1px);
+		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
+			calc(var(--my, 0) * var(--depth, 0) * 1px);
+		image-rendering: pixelated;
 	}
 
-	// Breathing on its own clock, so it is stepped — and it is the one ember pixel
-	// in a white sky, which is what marks it as somewhere to go.
-	.ridge__star {
+	// A pixel star, five cells across: one cell of core; arms one cell out, drawn as
+	// shadows so they can breathe without the core; and tips two cells out that blink
+	// on the off-beat. Both motions are on their own clock, so they are stepped.
+	.ridge__glint {
 		position: absolute;
-		animation-name: ridge-star;
-		animation-timing-function: steps(3, end);
-		animation-iteration-count: infinite;
+		opacity: var(--fade, 1);
+		width: calc(var(--cell, 6) * 1px);
+		height: calc(var(--cell, 6) * 1px);
+		background: var(--core);
+		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
+			calc(var(--my, 0) * var(--depth, 0) * 1px);
+
+		&::before,
+		&::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+		}
+
+		&::before {
+			box-shadow:
+				calc(var(--cell, 6) * -1px) 0 var(--arm),
+				calc(var(--cell, 6) * 1px) 0 var(--arm),
+				0 calc(var(--cell, 6) * -1px) var(--arm),
+				0 calc(var(--cell, 6) * 1px) var(--arm);
+			animation: ridge-glint var(--period) steps(3, end) var(--delay) infinite;
+		}
+
+		&::after {
+			box-shadow:
+				calc(var(--cell, 6) * -2px) 0 var(--tip),
+				calc(var(--cell, 6) * 2px) 0 var(--tip),
+				0 calc(var(--cell, 6) * -2px) var(--tip),
+				0 calc(var(--cell, 6) * 2px) var(--tip);
+			animation: ridge-glint-tip var(--period) steps(2, end)
+				calc(var(--delay) + var(--period) / 2) infinite;
+		}
 	}
 
-	@keyframes ridge-star {
+	@keyframes ridge-glint {
 		0%,
 		55% {
 			opacity: 1;
@@ -142,8 +217,20 @@
 		}
 	}
 
+	@keyframes ridge-glint-tip {
+		0%,
+		45% {
+			opacity: 1;
+		}
+		55%,
+		100% {
+			opacity: 0;
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
-		.ridge__star {
+		.ridge__glint::before,
+		.ridge__glint::after {
 			animation: none;
 		}
 	}
@@ -155,7 +242,6 @@
 		position: absolute;
 		bottom: calc(var(--depth, 0) * -1px);
 		left: calc(var(--depth, 0) * -1px);
-		width: calc(100% + var(--depth, 0) * 2px);
 		display: block;
 		transform-origin: bottom center;
 		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)

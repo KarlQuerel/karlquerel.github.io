@@ -76,9 +76,24 @@ export function ditherIndex(lit, levels, x, y, contrast = 0) {
 	return Math.max(0, Math.min(levels - 1, i + step))
 }
 
+// Quantise `lit` onto a `levels`-long ramp with the dither confined to a seam of
+// half-width `seam` (in steps) either side of each boundary. Faces come out solid and
+// the checker gathers where two tones actually meet — dither as an edge tool, which
+// is how it is laid by hand. A seam of 0 is plain rounding.
+export function seamIndex(lit, levels, x, y, seam) {
+	const v = lit * (levels - 1)
+	const i = Math.floor(v)
+	const f = v - i
+	let step = f >= 0.5 ? 1 : 0
+	if (seam > 0 && Math.abs(f - 0.5) <= seam) {
+		step = (f - (0.5 - seam)) / (2 * seam) > ditherThreshold(x, y) ? 1 : 0
+	}
+	return Math.max(0, Math.min(levels - 1, i + step))
+}
+
 // 2D value noise. Rock texture sampled per column alone comes out as vertical
 // striping; it has to vary down the face as well as across it.
-function hash2(ix, iy, seed) {
+export function hash2(ix, iy, seed) {
 	let n = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263) ^ Math.imul(seed, 951274213)
 	n = Math.imul(n ^ (n >>> 13), 1274126177)
 	return ((n ^ (n >>> 16)) >>> 0) / 4294967295
