@@ -385,20 +385,26 @@ function paintHills(put, w, h, yH, Hh, seed, sun, fillBelow) {
 	// the sun in the range's frame: x across, y up, z into the depth (away from us)
 	const len = Math.hypot(...sun)
 	const L = [sun[0] / len, sun[2] / len, -sun[1] / len]
+	// Each column's field is sampled once along the depth and kept: every row of the
+	// column then walks that array to its first hit instead of re-evaluating the field,
+	// which is most of what the range used to cost.
+	const K = Math.floor(Hh.depth / Hh.step)
+	const col = new Float32Array(K + 1)
 	const skyline = new Array(w)
 	for (let x = 0; x < w; x++) {
 		let top = 0
-		for (let z = 0; z <= Hh.depth; z += Hh.step) top = Math.max(top, height(x, z))
+		for (let k = 0; k <= K; k++) {
+			col[k] = height(x, k * Hh.step)
+			top = Math.max(top, col[k])
+		}
 		skyline[x] = top
-	}
-	for (let x = 0; x < w; x++) {
-		const top = Math.round(yH[x] - skyline[x])
-		for (let y = Math.max(0, top); y < yH[x]; y++) {
+		const first = Math.round(yH[x] - top)
+		for (let y = Math.max(0, first); y < yH[x]; y++) {
 			// the first mass this ray meets, walking into the depth at the cell's height
 			const hw = yH[x] - y
-			let z = 0
-			while (z <= Hh.depth && height(x, z) < hw) z += Hh.step
-			if (z > Hh.depth) z = Hh.depth
+			let k = 0
+			while (k < K && col[k] < hw) k++
+			const z = k * Hh.step
 			const gx = (height(x + 1, z) - height(x - 1, z)) / 2
 			const gz = (height(x, z + 1) - height(x, z - 1)) / 2
 			const lit = Math.max(0, (-gx * L[0] + L[1] - gz * L[2]) / Math.hypot(gx, 1, gz))
@@ -410,7 +416,7 @@ function paintHills(put, w, h, yH, Hh, seed, sun, fillBelow) {
 			const v = clamp01(
 				shadow ? M.ambient * M.shade : M.ambient + (1 - M.ambient) * lit * Hh.gain
 			)
-			const ramp = y === top ? crest : shades
+			const ramp = y === first ? crest : shades
 			put(x, y, ramp[seamIndex(v, ramp.length, x, y, Hh.seam)])
 		}
 		if (fillBelow) for (let y = Math.max(0, yH[x]); y < h; y++) put(x, y, shades[0])
@@ -614,7 +620,7 @@ export function drawMoon(el, band, visitSeed, frame) {
 			const lit = Math.max(0, (lz - gx * lx - gy * ly) / Math.hypot(gx, gy, 1))
 			const a = albedo(X, Y)
 			const v =
-				lit > 0 && shadowed(X, Y, h0)
+				lit > M.shadow.skipBelow && shadowed(X, Y, h0)
 					? M.ambient * M.shade * a
 					: (M.ambient + (1 - M.ambient) * lit * M.gain) * a
 			const idx = seamIndex(clamp01(v), levels, x, y, M.seam)

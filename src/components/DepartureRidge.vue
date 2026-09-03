@@ -105,17 +105,28 @@
 	const skyEl = ref(null)
 	const bandEls = []
 
-	// cut from the authored RIDGE.ridgeSeed — the opening frame is a composition,
-	// not a roll; a reshape re-cuts the same ground
+	// Cut from the authored RIDGE.ridgeSeed — the opening frame is a composition, not a
+	// roll; a reshape re-cuts the same ground. The cut is spread over frames, one canvas
+	// each, and starts a frame after it is asked for: the title, the stars and the
+	// planet paint first and the ground arrives a frame later, back to front, and no
+	// single task holds the main thread long enough to swallow an input.
+	let pendingFrame = 0
 	function cut() {
 		frame = { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 }
 		rootEl.value.style.setProperty('--cell', cellFor(frame))
-		const sky = drawSky(skyEl.value, { ...frame, bleed: RIDGE.sky.depth })
-		const bands = RIDGE.bands.map((band, i) => {
-			if (!bandEls[i]) return null
-			const cut = drawMoon(bandEls[i], band, RIDGE.ridgeSeed, { ...frame, bleed: band.depth })
-			const notch = band.hills?.notch
-			if (cut.hillTop && notch) {
+		const steps = [
+			() => {
+				sizes.value.sky = drawSky(skyEl.value, { ...frame, bleed: RIDGE.sky.depth })
+			},
+			...RIDGE.bands.map((band, i) => () => {
+				if (!bandEls[i]) return
+				const cut = drawMoon(bandEls[i], band, RIDGE.ridgeSeed, {
+					...frame,
+					bleed: band.depth,
+				})
+				sizes.value.bands[i] = cut
+				const notch = band.hills?.notch
+				if (!cut.hillTop || !notch) return
 				// the star hangs `aboveCells` over the highest point the notch's crest
 				// reaches under it and its arms, whatever this frame made of the range;
 				// the canvas starts `depth` px left of the frame and ends at its foot
@@ -126,10 +137,14 @@
 					left: x * cut.cell - band.depth,
 					top: top + (crest - RIDGE.star.aboveCells) * cut.cell,
 				}
-			}
-			return cut
-		})
-		sizes.value = { sky, bands }
+			}),
+		]
+		cancelAnimationFrame(pendingFrame)
+		const next = () => {
+			steps.shift()()
+			if (steps.length) pendingFrame = requestAnimationFrame(next)
+		}
+		pendingFrame = requestAnimationFrame(next)
 	}
 
 	// only when the frame really changed shape (see ENTRY.ridgeReshape)
@@ -145,7 +160,10 @@
 		window.addEventListener('resize', onResize, { passive: true })
 	})
 
-	onBeforeUnmount(() => window.removeEventListener('resize', onResize))
+	onBeforeUnmount(() => {
+		cancelAnimationFrame(pendingFrame)
+		window.removeEventListener('resize', onResize)
+	})
 </script>
 
 <style scoped lang="scss">

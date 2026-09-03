@@ -361,9 +361,12 @@ export const DEPARTURE_RIDGE = {
 		ambient: 0.1,
 		shade: 0.5,
 		gain: 1.15,
-		// the shadow march: samples along the ground toward the sun, the first this
-		// many cells out and each `grow` times further than the last
-		shadow: { steps: 20, first: 0.8, grow: 1.28 },
+		// The shadow march: samples along the ground toward the sun, the first this many
+		// cells out and each `grow` times further than the last. Reach is ~14 cells: the
+		// tallest thing on the plain is a boulder three cells high, and at this sun that
+		// throws eight. A cell lit under `skipBelow` is already at the ramp's floor, so
+		// it skips the march — shadow could not make it darker.
+		shadow: { steps: 8, first: 0.7, grow: 1.45, skipBelow: 0.08 },
 		// dither only this far (in ramp steps) either side of a boundary; solid elsewhere
 		seam: 0.07,
 		// the horizon's wander, in cells per fbm cycle
