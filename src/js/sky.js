@@ -33,23 +33,6 @@ export function drawSky(el, frame) {
 	}
 	const seed = DEPARTURE_RIDGE.ridgeSeed + 5
 
-	// The sun's glow: stepped rings about a centre on the horizon off frame left, the
-	// rim wobbled so no ring is a perfect ellipse. Faint by design — no air carries it.
-	const glow = S.shades.map(name => PALETTE[name])
-	const sx = S.x * w
-	const sy = S.y * h
-	for (let y = 0; y < h; y++) {
-		for (let x = 0; x < w; x++) {
-			const dx = (x - sx) / (S.rx * w)
-			const dy = (y - sy) / (S.ry * h)
-			const rim = 1 + (fbm1(Math.atan2(dy, dx) * S.wobbleFreq, seed + 13) - 0.5) * S.wobble
-			const d = Math.hypot(dx, dy) * rim
-			if (d >= 1) continue
-			const idx = seamIndex((1 - d) ** S.power, glow.length + 1, x, y, S.seam)
-			if (idx > 0) put(x, y, glow[idx - 1])
-		}
-	}
-
 	// The galaxy: a band across the frame — a wide dark mantle with a narrow bright spine
 	// down its middle, the way the real one reads from a dark place. The haze is noise
 	// sampled through a warp of itself, which is what turns a gradient into billows,
@@ -96,8 +79,27 @@ export function drawSky(el, frame) {
 			else if (roll < G.stars * weight) stars.push({ x, y, big: false })
 		}
 	}
-	// tidy the clouds and the glow, then set the stars — a star is meant to stand alone
+	// tidy the clouds, then the glow and the stars go on — a star is meant to stand alone
 	tidySprite(img, w, h, DEPARTURE_RIDGE.moon.tidyPasses)
+	// The sun's glow, last onto whatever is still sky and after the tidy: it is the one
+	// soft thing in the frame, a dithered falloff about a centre on the horizon off
+	// frame left, and a tidy would gather its dither into flat blocks. Faint by design —
+	// no air carries it.
+	const glow = S.shades.map(name => PALETTE[name])
+	const sx = S.x * w
+	const sy = S.y * h
+	for (let y = 0; y < h; y++) {
+		for (let x = 0; x < w; x++) {
+			if (px[(y * w + x) * 4 + 3]) continue
+			const dx = (x - sx) / (S.rx * w)
+			const dy = (y - sy) / (S.ry * h)
+			const rim = 1 + (fbm1(Math.atan2(dy, dx) * S.wobbleFreq, seed + 13) - 0.5) * S.wobble
+			const d = Math.hypot(dx, dy) * rim
+			if (d >= 1) continue
+			const idx = seamIndex((1 - d) ** S.power, glow.length + 1, x, y, S.seam)
+			if (idx > 0) put(x, y, glow[idx - 1])
+		}
+	}
 	for (const star of stars) {
 		const shade = hash2(star.x, star.y, seed + 9)
 		if (!star.big) {

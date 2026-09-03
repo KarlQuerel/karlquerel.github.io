@@ -473,16 +473,17 @@ export const DEPARTURE_RIDGE = {
 		depth: 12,
 		glintDepth: 18,
 		// The sun's glow: centre and reach as shares of the frame (y is the horizon),
-		// `power` the falloff from the centre, quantised to rings with the dither held
-		// to `seam`; the rim wobbles by `wobble` of its radius over wobbleFreq cycles
-		// round the centre, so no ring is a perfect ellipse.
+		// `power` the falloff from the centre, dithered the whole way (`seam` wide) — the
+		// one soft gradient in the frame, since a glow drawn as rings reads as a shape;
+		// the rim wobbles by `wobble` of its radius over wobbleFreq cycles round the
+		// centre, so its edge is never a clean ellipse either.
 		sunGlow: {
 			x: -0.05,
 			y: 0.82,
 			rx: 0.5,
 			ry: 0.3,
 			power: 1.2,
-			seam: 0.14,
+			seam: 0.45,
 			wobble: 0.16,
 			wobbleFreq: 5,
 			shades: ['ink', 'deep', 'slate'],
