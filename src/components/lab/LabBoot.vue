@@ -177,8 +177,9 @@
 		align-items: center;
 		justify-content: center;
 		gap: 2.2rem;
-		// the same ground the flight paints over, so uncovering it is not a scene change
-		background: $flyby-ground;
+		// the same ground the scene under it paints over, so uncovering it is not a scene
+		// change: the flight's by default, or whatever the host names in --boot-ground
+		background: var(--boot-ground, #{$flyby-ground});
 		font-family: $font-pixel;
 		// stepped, because this one runs on its own clock rather than the reader's hand
 		transition: opacity 0.32s steps(4, end);

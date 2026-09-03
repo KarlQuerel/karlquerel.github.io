@@ -58,6 +58,12 @@ export const JOURNEY = {
 	cloudThin: { from: 2.6, to: 3.6 },
 }
 
+// The landing's boot (App.vue, composables/useBoot.js): the frame is held until the
+// departure has cut its ground and the title's face is in. `maxWaitMs` is the safety
+// valve — if the scene never reports, the boot leaves anyway rather than hold a black
+// screen for a visitor whose browser choked on something.
+export const LANDING_BOOT = { maxWaitMs: 4000 }
+
 // The departure flyby: the camera's axis runs through the gap between the two
 // words of the name, and the first stretch of scroll takes it through. The lockup
 // is a plane square-on to the view, so the whole pass is one scale about the point

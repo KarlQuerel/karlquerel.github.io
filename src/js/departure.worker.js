@@ -13,6 +13,10 @@ self.onmessage = ({ data }) => {
 		return
 	}
 	const out = { sky: null, bands: [] }
-	for (const step of drawSteps(canvases, data.frame, data.seed, out)) step()
+	const steps = drawSteps(canvases, data.frame, data.seed, out)
+	steps.forEach((step, i) => {
+		step()
+		self.postMessage({ id: data.id, done: i + 1, total: steps.length })
+	})
 	self.postMessage({ id: data.id, cuts: out })
 }

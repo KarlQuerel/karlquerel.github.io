@@ -63,6 +63,13 @@
 </head>
 
 <body>
+	<!-- The landing boots (App.vue). This holds the frame black from the first parse
+	     until the app's boot screen is painted, so the starfield in the prerendered
+	     shell never shows on its own. Inline, because it has to be there before any
+	     stylesheet or script has arrived. -->
+	<style>html.booting::after { content: ''; position: fixed; inset: 0; z-index: 99; background: #000; }</style>
+	<script>if (location.pathname === '/') document.documentElement.classList.add('booting')</script>
+
 	<!-- Vue App -->
 	<div id="app"></div>
 

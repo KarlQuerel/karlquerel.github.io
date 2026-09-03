@@ -39,7 +39,12 @@
 			<div class="journey__flight" :style="flightStyle">
 				<FlightDust :travel="travel" :fade="dust" :lean="pointer" />
 				<!-- the ground we leave from, dropping away as the flight lifts over it -->
-				<DepartureRidge :travel="travel" :pass="pass" />
+				<DepartureRidge
+					:travel="travel"
+					:pass="pass"
+					@progress="boot.report"
+					@ready="boot.finish"
+				/>
 				<div class="journey__lockup" :style="flybyStyle">
 					<HeroTitle
 						:name="HOME_LANDING.name"
@@ -105,6 +110,7 @@
 	import { HOME_LANDING } from '@/data/heroLines'
 	import { clamp01, hermite, monotoneSlopes, riseFall, smoothstep } from '@/js/math'
 	import { useBackdropCover } from '@/composables/useBackdropCover'
+	import { useBoot } from '@/composables/useBoot'
 	import { usePointerParallax } from '@/composables/usePointerParallax'
 	import { useScrollSections } from '@/composables/useScrollSections'
 	import AboutLife from './AboutLife.vue'
@@ -123,6 +129,9 @@
 	defineOptions({ name: 'HomeJourney' })
 
 	const trackRef = ref(null)
+
+	// the shell's boot (App.vue) waits on the departure's cut; the landing reports it
+	const boot = useBoot()
 	const workRef = ref(null)
 	const lifeRef = ref(null)
 	const arrivalRef = ref(null)

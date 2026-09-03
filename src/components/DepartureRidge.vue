@@ -40,6 +40,9 @@
 		// how far through the pass we are — what the ridge is gone by
 		pass: { type: Number, default: 0 },
 	})
+	// the cut's progress (done, and what the step in flight will bring it to, 0..1)
+	// and its landing — what the landing's boot screen waits on
+	const emit = defineEmits(['progress', 'ready'])
 
 	// --mx/--my come from the flight container (usePointerParallax); each band takes
 	// its own share of them through --depth, and that difference is the relief.
@@ -113,8 +116,10 @@
 	function cut() {
 		frame = { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 }
 		rootEl.value.style.setProperty('--cell', cellFor(frame))
-		cutter.cut(frame, RIDGE.ridgeSeed).then(cuts => {
+		const onStep = (done, total) => emit('progress', done / total, (done + 1) / total)
+		cutter.cut(frame, RIDGE.ridgeSeed, onStep).then(cuts => {
 			sizes.value = cuts
+			emit('ready')
 			const i = RIDGE.bands.findIndex(band => band.hills?.notch)
 			const band = RIDGE.bands[i]
 			const cut = cuts.bands[i]
