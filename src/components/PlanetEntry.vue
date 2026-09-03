@@ -512,22 +512,30 @@
 		if (reshaped) cut()
 	})
 
+	// The arrival is viewports down the page, so its sprites are cut a frame after
+	// mount: the opening frame is not made to wait for ranges it cannot see yet.
+	let deferred = 0
 	onMounted(() => {
 		visitSeed = Math.floor(Math.random() * 1e5) + 1
-		cut()
-		cloudField.value = seedClouds(visitSeed)
-		cloudSprites.value = Array.from({ length: ENTRY.cloud.variants }, (_, i) =>
-			drawCloud(visitSeed + i * 137)
-		)
-		starTiles.value = ENTRY.stars.layers.map((layer, i) =>
-			drawStarTile(visitSeed + i * 991, layer)
-		)
-		twinklers.value = seedTwinklers(visitSeed)
-		birdSheet.value = drawBirdSheet()
 		window.addEventListener('resize', onResize, { passive: true })
+		deferred = requestAnimationFrame(() => {
+			cut()
+			cloudField.value = seedClouds(visitSeed)
+			cloudSprites.value = Array.from({ length: ENTRY.cloud.variants }, (_, i) =>
+				drawCloud(visitSeed + i * 137)
+			)
+			starTiles.value = ENTRY.stars.layers.map((layer, i) =>
+				drawStarTile(visitSeed + i * 991, layer)
+			)
+			twinklers.value = seedTwinklers(visitSeed)
+			birdSheet.value = drawBirdSheet()
+		})
 	})
 
-	onBeforeUnmount(() => window.removeEventListener('resize', onResize))
+	onBeforeUnmount(() => {
+		cancelAnimationFrame(deferred)
+		window.removeEventListener('resize', onResize)
+	})
 </script>
 
 <style scoped lang="scss">

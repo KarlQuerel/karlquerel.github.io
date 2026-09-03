@@ -31,8 +31,8 @@
 	import { DEPARTURE_RIDGE as RIDGE, ENTRY } from '@/constants/journey'
 	import { PALETTE } from '@/constants/palette'
 	import { clamp01, smoothstep } from '@/js/math'
-	import { cellFor, drawMoon } from '@/js/ridge'
-	import { drawSky } from '@/js/sky'
+	import { createCutter } from '@/js/departureCut'
+	import { cellFor } from '@/js/ridge'
 
 	const props = defineProps({
 		// world units the camera has run down the corridor
@@ -106,45 +106,29 @@
 	const bandEls = []
 
 	// Cut from the authored RIDGE.ridgeSeed — the opening frame is a composition, not a
-	// roll; a reshape re-cuts the same ground. The cut is spread over frames, one canvas
-	// each, and starts a frame after it is asked for: the title, the stars and the
-	// planet paint first and the ground arrives a frame later, back to front, and no
-	// single task holds the main thread long enough to swallow an input.
-	let pendingFrame = 0
+	// roll; a reshape re-cuts the same ground. The drawing happens off the main thread
+	// where it can (js/departureCut.js), so the title, the stars and the planet paint at
+	// once and the ground arrives when it is ready.
+	let cutter = null
 	function cut() {
 		frame = { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 }
 		rootEl.value.style.setProperty('--cell', cellFor(frame))
-		const steps = [
-			() => {
-				sizes.value.sky = drawSky(skyEl.value, { ...frame, bleed: RIDGE.sky.depth })
-			},
-			...RIDGE.bands.map((band, i) => () => {
-				if (!bandEls[i]) return
-				const cut = drawMoon(bandEls[i], band, RIDGE.ridgeSeed, {
-					...frame,
-					bleed: band.depth,
-				})
-				sizes.value.bands[i] = cut
-				const notch = band.hills?.notch
-				if (!cut.hillTop || !notch) return
-				// the star hangs `aboveCells` over the highest point the notch's crest
-				// reaches under it and its arms, whatever this frame made of the range;
-				// the canvas starts `depth` px left of the frame and ends at its foot
-				const x = Math.round(notch.at * cut.cols)
-				const crest = Math.min(...cut.hillTop.slice(Math.max(0, x - 1), x + 2))
-				const top = frame.h + band.depth - cut.rows * cut.cell
-				starAt.value = {
-					left: x * cut.cell - band.depth,
-					top: top + (crest - RIDGE.star.aboveCells) * cut.cell,
-				}
-			}),
-		]
-		cancelAnimationFrame(pendingFrame)
-		const next = () => {
-			steps.shift()()
-			if (steps.length) pendingFrame = requestAnimationFrame(next)
-		}
-		pendingFrame = requestAnimationFrame(next)
+		cutter.cut(frame, RIDGE.ridgeSeed).then(cuts => {
+			sizes.value = cuts
+			const i = RIDGE.bands.findIndex(band => band.hills?.notch)
+			const band = RIDGE.bands[i]
+			const cut = cuts.bands[i]
+			// the star hangs `aboveCells` over the highest point the notch's crest reaches
+			// under it and its arms, whatever this frame made of the range; the canvas
+			// starts `depth` px left of the frame and ends at its foot
+			const x = Math.round(band.hills.notch.at * cut.cols)
+			const crest = Math.min(...cut.hillTop.slice(Math.max(0, x - 1), x + 2))
+			const top = frame.h + band.depth - cut.rows * cut.cell
+			starAt.value = {
+				left: x * cut.cell - band.depth,
+				top: top + (crest - RIDGE.star.aboveCells) * cut.cell,
+			}
+		})
 	}
 
 	// only when the frame really changed shape (see ENTRY.ridgeReshape)
@@ -156,12 +140,13 @@
 	})
 
 	onMounted(() => {
+		cutter = createCutter({ sky: skyEl.value, bands: bandEls })
 		cut()
 		window.addEventListener('resize', onResize, { passive: true })
 	})
 
 	onBeforeUnmount(() => {
-		cancelAnimationFrame(pendingFrame)
+		cutter.dispose()
 		window.removeEventListener('resize', onResize)
 	})
 </script>
