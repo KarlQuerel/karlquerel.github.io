@@ -62,6 +62,31 @@ function openSprite(el, w, h) {
 	return { ctx, img, put }
 }
 
+// The tidy pass every sprite takes before its deliberate details are stamped: a cell
+// whose four neighbours all agree and disagree with it becomes what they are. That is
+// the orphan pixel, the one-cell spike on a silhouette, the lone checker cell a seam
+// left behind — the marks that give procedural art away against hand-placed pixels,
+// where no pixel is ever alone. Transparent counts as a tone, so silhouettes tidy too.
+export function tidySprite(img, w, h, passes) {
+	const cells = new Uint32Array(img.data.buffer)
+	for (let pass = 0; pass < passes; pass++) {
+		for (let y = 1; y < h - 1; y++) {
+			for (let x = 1; x < w - 1; x++) {
+				const i = y * w + x
+				const around = cells[i - 1]
+				if (
+					around !== cells[i] &&
+					cells[i + 1] === around &&
+					cells[i - w] === around &&
+					cells[i + w] === around
+				) {
+					cells[i] = around
+				}
+			}
+		}
+	}
+}
+
 // Each column is lit by the way its face turns, then darkened with depth into the
 // mass, and the result is dithered onto the band's ramp — the same trick the planet
 // sprite uses, so the ridges gain volume without leaving the grid. `frame` is the
@@ -474,6 +499,7 @@ export function drawMoon(el, band, visitSeed, frame) {
 	}
 	const P = band.plain
 	if (!P) {
+		tidySprite(img, w, h, M.tidyPasses)
 		ctx.putImageData(img, 0, 0)
 		return cut
 	}
@@ -524,9 +550,11 @@ export function drawMoon(el, band, visitSeed, frame) {
 
 	// the field itself: swells and regolith texture, then every crater and boulder
 	const height = (X, Y) => {
+		// the regolith's grain runs across the frame: ground seen at a low angle shows
+		// its detail foreshortened into streaks, not specks
 		let hgt =
 			(fbm2(X / M.swell.cells, Y / M.swell.cells, seed) - 0.5) * M.swell.amp +
-			(fbm2(X / M.rough.cells, Y / M.rough.cells, seed + 5) - 0.5) * M.rough.amp
+			(fbm2(X / M.rough.cellsX, Y / M.rough.cellsY, seed + 5) - 0.5) * M.rough.amp
 		// a low rise along the band's far edge, so the near band has a lit face to
 		// stand on where it cuts across the far one
 		if (P.rise) hgt += P.rise.amp * clamp01(1 - Y / P.rise.depth) ** 2
@@ -615,10 +643,12 @@ export function drawMoon(el, band, visitSeed, frame) {
 		for (let y = yH[x]; y < h; y++) {
 			const { X, Y } = toWorld(x, y)
 			const h0 = height(X, Y)
+			// the ground darkens toward the viewer: it frames the title and reads as depth
+			const near = 1 - P.nearShade * clamp01((y - yH[x]) / rowsOf(x))
 			const gx = (height(X + 1, Y) - height(X - 1, Y)) / 2
 			const gy = (height(X, Y + 1) - height(X, Y - 1)) / 2
 			const lit = Math.max(0, (lz - gx * lx - gy * ly) / Math.hypot(gx, gy, 1))
-			const a = albedo(X, Y)
+			const a = albedo(X, Y) * near
 			const v =
 				lit > M.shadow.skipBelow && shadowed(X, Y, h0)
 					? M.ambient * M.shade * a
@@ -628,6 +658,8 @@ export function drawMoon(el, band, visitSeed, frame) {
 			put(x, y, ramp[idx])
 		}
 	}
+
+	tidySprite(img, w, h, M.tidyPasses)
 
 	// Micro-pocks: a dark cell with a lit cell on its sun side, the two-pixel crater
 	// every hand-drawn moon is textured with. Denser toward the camera, and only on

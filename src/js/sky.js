@@ -11,7 +11,7 @@ import { DEPARTURE_RIDGE } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
 import { clamp01 } from './math.js'
 import { fbm1, fbm2, hash2, seamIndex } from './pixelNoise.js'
-import { cellFor } from './ridge.js'
+import { cellFor, tidySprite } from './ridge.js'
 
 export function drawSky(el, frame) {
 	const { sunGlow: S, galaxy: G } = DEPARTURE_RIDGE.sky
@@ -96,6 +96,8 @@ export function drawSky(el, frame) {
 			else if (roll < G.stars * weight) stars.push({ x, y, big: false })
 		}
 	}
+	// tidy the clouds and the glow, then set the stars — a star is meant to stand alone
+	tidySprite(img, w, h, DEPARTURE_RIDGE.moon.tidyPasses)
 	for (const star of stars) {
 		const shade = hash2(star.x, star.y, seed + 9)
 		if (!star.big) {

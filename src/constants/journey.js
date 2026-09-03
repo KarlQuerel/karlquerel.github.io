@@ -278,6 +278,8 @@ export const DEPARTURE_RIDGE = {
 			plain: {
 				squash: [0.3, 0.5],
 				spread: 0.45,
+				// how much darker the ground is at this band's foot than at its far edge
+				nearShade: 0.1,
 				// Few, and in a clear order: one hero basin, one medium companion, a
 				// handful of small ones. A field of like-sized rings is bubble wrap.
 				craters: {
@@ -296,7 +298,7 @@ export const DEPARTURE_RIDGE = {
 					],
 				},
 				boulders: { count: 8, big: [] },
-				pocks: 40,
+				pocks: 28,
 				lines: [
 					// the rille, left of centre
 					{
@@ -336,6 +338,7 @@ export const DEPARTURE_RIDGE = {
 			plain: {
 				squash: [0.5, 0.65],
 				spread: 0.15,
+				nearShade: 0.16,
 				rise: { amp: 1.5, depth: 8 },
 				// small only: a bowl wider than this band's few rows of ground gets
 				// sliced by its top edge and reads as a stack of plates
@@ -347,7 +350,7 @@ export const DEPARTURE_RIDGE = {
 						{ x: 88, y: 6, r: 2.2 },
 					],
 				},
-				pocks: 16,
+				pocks: 10,
 				shades: ['pitch', 'iron', 'steel', 'zinc', 'frost', 'rime', 'bone'],
 			},
 			climb: 1,
@@ -374,13 +377,18 @@ export const DEPARTURE_RIDGE = {
 		// it skips the march — shadow could not make it darker.
 		shadow: { steps: 8, first: 0.7, grow: 1.45, skipBelow: 0.08 },
 		// dither only this far (in ramp steps) either side of a boundary; solid elsewhere
-		seam: 0.07,
+		seam: 0.05,
+		// passes of the tidy (js/ridge.js tidySprite): orphan cells become their
+		// neighbours, so no pixel stands alone unless it was put there on purpose
+		tidyPasses: 2,
 		// the horizon's wander, in cells per fbm cycle
 		rollCells: 48,
 		// the ground between the craters: broad swells and fine regolith, as cells of
 		// height over cells of wavelength
 		swell: { amp: 5, cells: 70 },
-		rough: { amp: 0.3, cells: 8 },
+		// the regolith's grain, stretched across the frame (cells) more than down it:
+		// ground at a low angle shows streaks, not specks
+		rough: { amp: 0.3, cellsX: 11, cellsY: 3.5 },
 		// albedo, not height: mare against highland, ±amp over `cells`
 		mare: { amp: 0.08, cells: 55 },
 		// ejecta rays off the biggest crater, from `from` to `reach` radii out
