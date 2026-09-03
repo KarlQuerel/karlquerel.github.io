@@ -192,7 +192,7 @@
 		portrait.value = vh > track.clientWidth
 		const cameras = portrait.value ? CAMERA_PORTRAIT : CAMERA
 		dims.value = { trackH: track.offsetHeight, vh }
-		// the departure flies out empty, the planet comes up dead ahead, the camera
+		// the departure flies through the name at the planet, the camera
 		// comes around it, then stations dock as they enter; inside the pinned runway
 		// the limb blows out and hands off to the entry
 		const arrivalTop = topOf(arrivalRef.value)
@@ -236,8 +236,8 @@
 
 	// The camera: one cubic per channel through the measured keyframes. A keyframe
 	// that leaves a channel out holds at the default here rather than reading NaN,
-	// which keeps `light` and `reveal` to the beats that actually use them.
-	const CAM_CHANNELS = { x: 0, y: 0, scale: 1, fade: 1, roll: 0, tilt: 0, light: 0, reveal: 1 }
+	// which keeps `light` to the beats that actually use it.
+	const CAM_CHANNELS = { x: 0, y: 0, scale: 1, fade: 1, roll: 0, tilt: 0, light: 0 }
 
 	// Slopes for those cubics, rebuilt only when the track is re-measured. Easing
 	// each segment on its own (a smoothstep per leg) parked the camera at every one
@@ -245,7 +245,7 @@
 	// of the flight read as fifteen separate moves. Monotone slopes carry the speed
 	// through a knot wherever a channel keeps heading the same way, and stop only
 	// where it genuinely turns around — without ever overshooting the keyframes,
-	// which `reveal`, `fade` and `scale` all depend on.
+	// which `fade` and `scale` both depend on.
 	const camSlopes = computed(() => {
 		const pts = camTrack.value
 		if (pts.length < 2) return null

@@ -58,6 +58,15 @@
 			class="entry__ridge"
 			:style="ridgeStyle(band)"
 		/>
+		<!-- someone is home: the habitat's chimney, over the near band it stands on -->
+		<div v-if="smoke" class="entry__smoke" :style="smoke">
+			<span
+				v-for="i in ENTRY.smoke.puffs"
+				:key="i"
+				class="entry__puff"
+				:style="puffStyle(i - 1)"
+			/>
+		</div>
 	</div>
 </template>
 
@@ -69,7 +78,7 @@
 	import { ENTRY } from '@/constants/journey'
 	import { PALETTE } from '@/constants/palette'
 	import { clamp01, randIn, smoothstep } from '@/js/math'
-	import { ditherIndex, fbm1, fbm2, hash1 } from '@/js/pixelNoise'
+	import { ditherIndex, fbm1, fbm2, hash1, seamIndex } from '@/js/pixelNoise'
 	import { drawRidge } from '@/js/ridge'
 
 	const props = defineProps({
@@ -134,6 +143,44 @@
 			opacity: t.toFixed(3),
 			height: `${band.heightVh}vh`,
 			transform: `translate3d(0, ${((1 - t) * band.liftVh).toFixed(1)}vh, 0)`,
+		}
+	}
+
+	// The chimney's plume: where it hangs comes back from the cut, since only the cut
+	// knows where the range put the habitat. It rides the near band's own box and
+	// beat, so it lifts into place with the rock it stands on.
+	const vent = ref(null)
+	const smoke = computed(() => {
+		if (!vent.value) return null
+		const { x, y, cell, band } = vent.value
+		const S = ENTRY.smoke
+		return {
+			...ridgeStyle(band),
+			'--vent-x': `${(x * 100).toFixed(2)}%`,
+			'--vent-y': `${(y * 100).toFixed(2)}%`,
+			'--puff': `${(S.puffCells * cell).toFixed(1)}px`,
+			'--rise': `${(-S.riseCells * cell).toFixed(1)}px`,
+
+			'--grow': S.grow,
+			'--peak': S.peak,
+			'--period': `${S.periodMs}ms`,
+			// one whole cell per step on the way up, one whole cell per step wider
+			'--rise-ease': `steps(${S.riseCells}, end)`,
+			'--puff-ease': `steps(${S.grow - 1}, end)`,
+			'--smoke': `rgb(${PALETTE[S.shade].join(',')})`,
+		}
+	})
+	// Evenly staggered, so a handful of squares reads as one continuous column — and
+	// staggered backwards, so the column is already full on the frame it appears on
+	// rather than building itself over a whole period while you watch. Each puff takes
+	// its own share of the wind, or the column comes up dead straight and reads as a
+	// stack of boxes rather than as smoke.
+	const puffStyle = i => {
+		const S = ENTRY.smoke
+		const wander = S.driftMin + (1 - S.driftMin) * 2 * hash1(i, ENTRY.ridgeSeed)
+		return {
+			'--delay': `${(-(i * S.periodMs) / S.puffs).toFixed(0)}ms`,
+			'--drift': `${(S.driftCells * (vent.value?.cell ?? 0) * wander).toFixed(1)}px`,
 		}
 	}
 
@@ -455,6 +502,9 @@
 		const px = img.data
 		const ramp = ENTRY.sky.map(name => PALETTE[name])
 		const top = ramp.length - 1
+		// one rung of the ramp, the unit the sky's two fields are sized in
+		const F = ENTRY.skyField
+		const rung1 = 1 / top
 		const sun = ENTRY.sun
 		const disc = PALETTE[sun.disc]
 		const rim = PALETTE[sun.rim]
@@ -465,18 +515,30 @@
 		for (let y = 0; y < h; y++) {
 			// gamma keeps the bright band against the horizon instead of letting it
 			// spread halfway up the frame
-			const lit = Math.pow(y / (h - 1), ENTRY.skyGamma)
+			const rung = Math.pow(y / (h - 1), ENTRY.skyGamma)
 			for (let x = 0; x < w; x++) {
 				const d = Math.hypot(x - cx, y - cy)
 				let col
 				if (d <= sun.r) col = disc
 				else if (d <= sun.r + 1.5) col = rim
 				else {
+					// Haze at altitude plus grain, both in ramp steps, so the bands
+					// stop being level sets of a smooth field — see ENTRY.skyField.
+					// The colour is untouched: this only decides which of the twelve
+					// entries a cell lands on, so the sky is still exactly its ramp.
+					const lit =
+						rung +
+						(fbm2(x / F.driftCells, y / F.driftRows, ENTRY.ridgeSeed) - 0.5) *
+							F.drift *
+							rung1 +
+						(fbm2(x / F.mottleCells, y / F.mottleCells, ENTRY.ridgeSeed + 3) - 0.5) *
+							F.mottle *
+							rung1
 					// the corona climbs the sky's own ramp rather than adding light on
 					// top, so every pixel of it is still exactly a palette entry
 					const g = clamp01(1 - (d - sun.r) / (reach - sun.r))
 					const step =
-						ditherIndex(lit, ramp.length, x, y, ENTRY.skyContrast) +
+						seamIndex(lit, ramp.length, x, y, ENTRY.skySeam, ENTRY.skyJitter) +
 						ditherIndex(g * g, sun.coronaLift, x, y)
 					col = ramp[step > top ? top : step]
 				}
@@ -499,7 +561,9 @@
 		frame = { w: window.innerWidth, h: window.innerHeight }
 		if (skyEl.value) drawSky(skyEl.value, frame)
 		bands.forEach((band, i) => {
-			if (ridgeEls[i]) drawRidge(ridgeEls[i], band, ENTRY.ridgeSeed, frame)
+			if (!ridgeEls[i]) return
+			const sprite = drawRidge(ridgeEls[i], band, ENTRY.ridgeSeed, frame)
+			if (sprite.vent) vent.value = { ...sprite.vent, cell: sprite.cell, band }
 		})
 	}
 
@@ -556,7 +620,8 @@
 	// shift can never uncover an edge.
 	.entry__stars,
 	.entry__cloud,
-	.entry__ridge {
+	.entry__ridge,
+	.entry__smoke {
 		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
 			calc(var(--my, 0) * var(--depth, 0) * 1px);
 	}
@@ -685,7 +750,8 @@
 		.entry__twinkle,
 		.entry__meteor,
 		.entry__flock,
-		.entry__bird {
+		.entry__bird,
+		.entry__puff {
 			animation: none;
 		}
 	}
@@ -710,13 +776,54 @@
 		image-rendering: pixelated;
 	}
 
-	.entry__ridge {
+	// The smoke shares the near band's box and its depth: it stands on that rock, so
+	// it has to lean with it or the plume slides off its own chimney.
+	.entry__ridge,
+	.entry__smoke {
 		position: absolute;
 		bottom: calc(var(--depth, 0) * -1px);
 		left: calc(var(--depth, 0) * -1px);
 		width: calc(100% + var(--depth, 0) * 2px);
 		// hard-edged silhouettes, like the rest of the sprite work
 		image-rendering: pixelated;
+	}
+
+	// A puff is one cell, climbing and spreading in whole cells: `translate` carries
+	// the climb and `scale` the spread, two animations on two properties over the same
+	// clock, so each can step on its own count and neither lands on half a cell.
+	.entry__puff {
+		position: absolute;
+		top: var(--vent-y);
+		left: var(--vent-x);
+		width: var(--puff);
+		height: var(--puff);
+		margin: calc(var(--puff) / -2) 0 0 calc(var(--puff) / -2);
+		background: var(--smoke);
+		opacity: 0;
+		animation:
+			entry-smoke var(--period) var(--rise-ease) var(--delay) infinite,
+			entry-smoke-spread var(--period) var(--puff-ease) var(--delay) infinite;
+	}
+
+	@keyframes entry-smoke {
+		0% {
+			translate: 0 0;
+			opacity: 0;
+		}
+		10%,
+		55% {
+			opacity: var(--peak);
+		}
+		100% {
+			translate: var(--drift) var(--rise);
+			opacity: 0;
+		}
+	}
+
+	@keyframes entry-smoke-spread {
+		to {
+			scale: var(--grow);
+		}
 	}
 
 	// Inside the deck: cloud closes right over the lens. Deliberately a flat

@@ -34,9 +34,20 @@ export const JOURNEY = {
 	parallax: { planet: 22, heading: 10, body: 24 },
 	// Where the departure's beats land, as fractions of the run from the top of the
 	// page to the WORK dock. `void` has to sit past the end of the pass
-	// (HERO_FLYBY.runVh, which is in viewports) so the planet stays out of the frame
-	// until the words have gone — that is the whole point of the beat.
+	// (HERO_FLYBY.runVh, which is in viewports): up to there the world is what you
+	// see through the Q, and it stays a far-off disc so the letter is what moves.
+	// `dot` is the frame the porthole has gone from, and where the approach starts.
 	departure: { void: 0.38, dot: 0.48, close: 0.61, orbitIn: 0.7, orbitOut: 0.85 },
+	// The far world before it is a world. At rest the globe is a few pixels across,
+	// and a few pixels of globe is not a star: it is transparent corners around a
+	// mostly-night face, so at that size it reads as a smudge or as nothing at all.
+	// What a planet at that distance actually looks like is one bright dot, so that
+	// is what stands in its place — the size and shade of the starfield's near plane
+	// (STAR_LAYERS), with none of the sky's bright-star chrome and no blink. Nothing
+	// marks it out but the letter it sits in the middle of, which is the whole point:
+	// you are meant to take it for a star until it opens. It hands over to the globe
+	// across a window of the camera's scale channel, gone once the disc can carry it.
+	spark: { size: 3, shade: 'linen', fadeFrom: 0.009, fadeTo: 0.021 },
 	// Where the held stretch of the surface skim ends, as a fraction of the run from
 	// the dive's apex to the LIFE dock. The apex alone was an in-and-out: the camera
 	// dropped toward the deck and pulled straight back up, so the whole beat was the
@@ -64,12 +75,13 @@ export const JOURNEY = {
 // screen for a visitor whose browser choked on something.
 export const LANDING_BOOT = { maxWaitMs: 4000 }
 
-// The departure flyby: the camera's axis runs through the gap between the two
-// words of the name, and the first stretch of scroll takes it through. The lockup
-// is a plane square-on to the view, so the whole pass is one scale about the point
-// the camera aims at — the corridor — every offset from that point growing by the
-// same factor. Nothing else is needed: the role line and the cue hang below the
-// corridor, so the same scale carries them out of the bottom of frame.
+// The departure flyby: the camera's axis runs through the counter of the Q, and the
+// first stretch of scroll takes it through. The lockup is a plane square-on to the
+// view, so the whole pass is one scale about the point the camera aims at — the
+// corridor — every offset from that point growing by the same factor. Nothing else
+// is needed: the role line and the cue hang below the corridor, so the same scale
+// carries them out of the bottom of frame. The planet sits on that axis from the
+// first frame, which is what makes the counter a porthole rather than a hole.
 export const HERO_FLYBY = {
 	// Scroll the pass takes, in viewports. Long enough that lifting over the ridge and
 	// the words going by are two beats rather than one flick.
@@ -143,20 +155,29 @@ export const HERO_FLYBY = {
 	dustFull: 0.4,
 	dustOut: 1.6,
 	// How near the words get by the end. The pass flies into the Q: its counter has
-	// to swallow the frame, and the arithmetic is unforgiving - after the keyline the
-	// hole is ~3.7 design px tall (0.46em), so clearing a ~900px viewport needs scale
-	// past 30 BEFORE the ink starts to go. 34-with-fade-from-18 dissolved the letter
-	// while the hole was still inside the frame, which read as flying at the Q and
-	// never through it. The dissolve now starts once the hole is taller than the
-	// frame and finishes as its side strokes leave.
+	// to swallow the frame, and the arithmetic is unforgiving - the porthole below is
+	// 3 design px (0.375em, so 24px at the desktop type size), and clearing a ~900px
+	// viewport needs scale past 37 BEFORE the ink starts to go. 34-with-fade-from-18
+	// dissolved the letter while the hole was still inside the frame, which read as
+	// flying at the Q and never through it. The dissolve starts once the hole is
+	// taller than the frame and finishes as its side strokes leave.
 	nearScale: 60,
-	fadeFromScale: 34,
+	fadeFromScale: 37,
 	// Where the Q's counter sits inside its glyph box, in em of the glyph size,
-	// relative to the box centre and the row middle. These are the /lab flyby's
-	// measured Q_COUNTER values (read off the face at 16 device px per design px,
-	// pen-origin x 0.4128 minus the half-em), not eyeballed: at nearScale an em of
-	// error at rest is a frame of error at the end.
-	qAxis: { x: -0.087, y: -0.108 },
+	// relative to the box centre and the row middle — read off the painted plate at
+	// one texel per design pixel, not eyeballed: at nearScale an em of error at rest
+	// is a frame of error at the end. Press Start 2P cuts the counter 3 design px
+	// wide and 5 tall, but the tail's nub eats its bottom-right corner, so the square
+	// the flight actually threads is the top 3x3 — and that square's centre, not the
+	// full counter's, is what the camera aims at. Aimed at the 3x5 centre the corridor
+	// sat on the nub's own edge, which is what put the planet half behind a letter.
+	qAxis: { x: -0.064, y: -0.194 },
+	// The porthole: that same 3x3 square, in em, cut back out of the plate after every
+	// pass has been laid down. Everything the plate paints spills inward — the blurred
+	// washes grey the hole out and the keyline alone eats 0.08em off each of its four
+	// sides, better than a third of it — and what is behind the hole is the planet we
+	// are flying at. A shade under 3/8em so rounding can never shave the strokes.
+	qPort: 0.36,
 }
 
 // The ground we leave from: a moon across the foot of the opening frame, so the page
@@ -628,19 +649,23 @@ export const DEPARTURE_RIDGE = {
 //   tilt   — camera bank (deg): the world leans into the turns
 //   light  — extra sun yaw (turns) on top of JOURNEY.sunTurns: swinging it while
 //            the globe holds its distance is what reads as circling the thing
-//   reveal — 0 keeps the planet out of the frame entirely (it is not even drawn);
-//            crossing to 1 is it coming into being, growing out of a point
 // A keyframe can leave any channel out and it holds at that channel's default.
 // `orbitIn`/`orbitOut` are the circle: the globe keeps its distance and crosses
 // the frame while its surface streams past and the terminator sweeps. `workEnd`/
 // `lifeEnd` keep the holds drifting slowly so the trajectory never fully stops;
 // `dive` is the low-orbit surface skim.
 export const CAMERA = {
-	// The departure is empty space: nothing in the frame but the name we are flying
-	// at. The planet comes afterwards, up out of the gap the flight went through.
-	rest: { x: 0, y: 0, scale: 0.05, fade: 1, roll: 0, tilt: 0, reveal: 0 },
-	void: { x: 0, y: 0, scale: 0.06, fade: 1, roll: 0, tilt: 0, reveal: 0 },
-	dot: { x: 0, y: 0, scale: 0.09, fade: 1, roll: 0, tilt: 0, reveal: 1 },
+	// The destination is in the frame from the first pixel, sat in the Q's porthole:
+	// the camera's axis runs through that hole, so the far world is exactly what you
+	// see through it. `rest` is a marble with room to spare in the hole (0.375em of
+	// 64px type, ~24px) — small enough that the approach has somewhere to go, big
+	// enough to read as a world rather than as a star. Sized to fill the hole it grew
+	// ~23px to 30px across the whole pass, so the one thing you were meant to watch
+	// was the one thing standing still; it more than doubles over that stretch now
+	// and takes off the moment the letter is behind us.
+	rest: { x: 0, y: 0, scale: 0.006, fade: 1, roll: 0, tilt: 0 },
+	void: { x: 0, y: 0, scale: 0.045, fade: 1, roll: 0, tilt: 0 },
+	dot: { x: 0, y: 0, scale: 0.09, fade: 1, roll: 0, tilt: 0 },
 	close: { x: -4, y: 6, scale: 0.42, fade: 1, roll: 0.02, tilt: 0, light: 0.01 },
 	// The circle. Going around a world turns the face it shows you and swings the sun
 	// by the same angle, so `roll` and `light` advance together here — that pair,
@@ -670,9 +695,11 @@ export const CAMERA = {
 // Portrait screens: vmin is the narrow side, so the same scales render a far
 // smaller globe — push in closer to keep the limb and horizon in frame.
 export const CAMERA_PORTRAIT = {
-	rest: { x: 0, y: 0, scale: 0.07, fade: 1, roll: 0, tilt: 0, reveal: 0 },
-	void: { x: 0, y: 0, scale: 0.08, fade: 1, roll: 0, tilt: 0, reveal: 0 },
-	dot: { x: 0, y: 0, scale: 0.12, fade: 1, roll: 0, tilt: 0, reveal: 1 },
+	// no porthole here: the narrow frame stacks the name into two rows, so the world
+	// hangs in the band between them (see HERO_FLYBY.qAxis / HeroTitle's `stacked`)
+	rest: { x: 0, y: 0, scale: 0.014, fade: 1, roll: 0, tilt: 0 },
+	void: { x: 0, y: 0, scale: 0.1, fade: 1, roll: 0, tilt: 0 },
+	dot: { x: 0, y: 0, scale: 0.14, fade: 1, roll: 0, tilt: 0 },
 	close: { x: -4, y: 6, scale: 0.6, fade: 1, roll: 0.02, tilt: 0, light: 0.01 },
 	orbitIn: { x: -14, y: 2, scale: 0.7, fade: 1, roll: 0.06, tilt: -2, light: 0.03 },
 	orbitOut: { x: -32, y: -2, scale: 0.78, fade: 1, roll: 0.16, tilt: -3, light: 0.1 },
@@ -809,6 +836,26 @@ export const ENTRY = {
 		scaleJitter: 0.4,
 	},
 
+	// The chimney's smoke, drawn as DOM over the near band (the rock is a static cut;
+	// this is the one thing on it that moves). Puffs climb the same grid the rock is
+	// cut on, a whole cell per step — motion on its own clock is stepped, house rule —
+	// spreading in whole cells too, so a puff is never a fraction of one. They cross
+	// the lit far range on the way up, which is where a pale mark reads; `peak` keeps
+	// them thin enough to be smoke over it rather than paint on it. `puffs` staggered
+	// across `periodMs` is what makes one plume out of a handful of squares.
+	smoke: {
+		puffs: 10,
+		periodMs: 7000,
+		puffCells: 2,
+		riseCells: 24,
+		driftCells: 8,
+		// each puff's own share of the wind rolls between this and 2 minus it
+		driftMin: 0.45,
+		grow: 3,
+		shade: 'cream',
+		peak: 0.55,
+	},
+
 	// Mouse parallax on the surface, same mechanism as the starfield backdrop:
 	// pixels of travel per layer, against the cursor. Depths are on the same
 	// scale as STAR_LAYERS so the two backdrops feel like one system. The sky
@@ -820,17 +867,25 @@ export const ENTRY = {
 	// once the planet, the ranges, the decks and the hull were all stepped, and it
 	// showed: a soft wash sitting directly on top of hard-dithered rock. `gamma` bends
 	// the ramp so the bright band hugs the horizon rather than spreading up the frame.
-	// Twelve steps rather than eight: the sky is the largest flat area in the scene,
+	// A ramp the eye reads as one rotation: the sky's hue swings once, violet through
+	// red to orange, and never back. `garnet` is in the rock ramps for exactly that
+	// rotation but it cannot be here — its blue sits above its green where `rust` on
+	// one side and `ochre` on the other have blue below, so in a ramp it is not a rung
+	// but an excursion, and an excursion reads as a stripe of another colour however
+	// smoothly it is dithered. Thirteen steps rather than eight: the sky is the largest flat area in the scene,
 	// so a short ramp spreads each transition over ~20 cells of half-lit checker and
 	// the eye reads the Bayer lattice instead of a gradient. More steps means smaller
-	// jumps and narrower seams. `skyContrast` is the other half of the same fix —
-	// ridgeContrast's S-curve, applied to the fraction between two ramp steps, so the
-	// dither gathers at the boundary and the middle of each band goes solid.
+	// jumps and narrower seams. `skySeam` is the other half of the same fix, and the
+	// harder half: an S-curve on the fraction only leans it toward the ends, so most
+	// of a band still wore checker. A seam cuts the dither to a fixed window either
+	// side of the boundary and leaves the rest solid — the departure's sky and ground
+	// have always been cut this way (seamIndex); this one was not.
 	sky: [
 		'void',
 		'ink',
 		'slate',
 		'basalt',
+		'shale',
 		'rust',
 		'ochre',
 		'brick',
@@ -841,7 +896,39 @@ export const ENTRY = {
 		'sand',
 	],
 	skyGamma: 1.45,
-	skyContrast: 0.8,
+	// The sky only STARTS as a ramp of y. Left at that it is a smooth field, and every
+	// level set of a smooth field is one continuous curve right across the frame — so
+	// however the boundary is bent, a stack of them reads as layers laid on top of one
+	// another rather than as air. Two fields ride on the ramp to break that:
+	//   drift  — haze at altitude. Sampled wide and tall, and big enough to carry a
+	//            boundary a whole band, so no two cross the frame the same way and
+	//            they stop being parallel.
+	//   mottle — grain at a couple of cells, which dissolves what is left of a
+	//            boundary into texture instead of a line.
+	// Amplitudes are in ramp steps. The seam then has something organic to sit in,
+	// which is why it can stay narrow and keep the poster edge on the rock.
+	skyField: {
+		drift: 1.3,
+		// Wide and shallow, not square: sampled this way the haze comes out in long
+		// horizontal streaks — cirrus catching the last of the sun — instead of round
+		// blooms. It is the one structure a dusk sky actually has, and structure is
+		// what a flat gradient is missing however smoothly it is dithered.
+		driftCells: 130,
+		driftRows: 20,
+		mottle: 0.5,
+		mottleCells: 2.4,
+	},
+	// How much of the gap between two rungs carries the checker; 0.5 is all of it. The
+	// rock wants a narrow seam — a face is a surface, and a surface has an edge. The
+	// sky is the opposite: it has no edges, and a seam narrow enough to leave a solid
+	// core in each band is exactly what makes the band a layer. Full width, so the
+	// dither density ramps the whole way from one rung to the next and the eye reads a
+	// blend. This is only safe because `skyField` breaks the Bayer lattice — the same
+	// number over a smooth ramp is the halftone screen this scene started with.
+	skySeam: 0.5,
+	// and scattered inside each Bayer level, because a full-width dither over an area
+	// this size is exactly where the lattice shows (see ditherThreshold)
+	skyJitter: 1,
 
 	// The sun, drawn into the sky's own canvas so it shares the grid and the palette
 	// and the ranges (separate canvases, in front) occlude it. It goes stage left
@@ -1070,10 +1157,17 @@ export const ENTRY = {
 	ridgeRoughVary: 0.75,
 	ridgeRoughVaryCells: 46,
 	// How hard the shading is pushed toward solid steps (an S-curve on the lit
-	// value before the dither picks one). At 0 the checker wallpapers whole
-	// faces; pushed up, it gathers into narrow bands where two tones meet —
-	// dither is for boundaries, not fill.
+	// value before the dither picks one).
 	ridgeContrast: 0.85,
+	// The dither's own width, as a share of the gap between two ramp steps: the
+	// checker lives inside this window and the rest of every band is solid (see
+	// seamIndex). The S-curve above leans the shading toward the ends; this is what
+	// actually keeps the checker off the middle of a face.
+	ridgeSeam: 0.16,
+	// Orphan-cell passes over each cut range, as the departure's ground gets — a lone
+	// cell of one shade inside another is what a generated sprite has and a drawn one
+	// does not.
+	tidyPasses: 2,
 	// Strata: darker seams every `strataSpacing` cells, `strataWidth` of a bed
 	// wide, undulating by `strataWobble` cells per `strataWobbleCells` — bedded
 	// stone instead of noise.
@@ -1103,6 +1197,11 @@ export const ENTRY = {
 	// The snowline's meander, in cells per fbm cycle — shared by every band that
 	// carries snow, so both ends of the trip crown their ranges on the same scale.
 	snowRuffleCells: 24,
+	// How a cap answers to prominence rather than to altitude alone, shared for the
+	// same reason. A column's height over the mean of the `cells` around it is what
+	// separates a summit from open crest at the same altitude: `ref` is the rise that
+	// earns a full cap, `base` the share a flat crest keeps before the culls take it.
+	snowProminence: { cells: 16, base: 0.25, ref: 0.05 },
 	// Furthest range, behind the other two: tallest silhouette but the least
 	// contrast, since aerial perspective washes distance toward the sky. Finer
 	// `freq` too — distance compresses the peaks together.
@@ -1122,6 +1221,34 @@ export const ENTRY = {
 		// not paler paint, and not the same step written three times
 		shades: ['ochre', 'brick', 'clay', 'flare', 'amber'],
 		crest: 'amber',
+		// `lift` is how far toward its palest step the foot goes, reached `depth` of
+		// the band's height below the crest and eased by `power`. No hue rotation in
+		// this band's ramp on purpose: shadow this far out is full of scattered light,
+		// so it stays warm — the rotation belongs to the near range, where the air is
+		// thin enough for shadow to take the sky's colour.
+		haze: { lift: 0.55, depth: 0.55, power: 1.4 },
+		// The tallest silhouette in the frame, so the high country is here — a range
+		// this size reading bare while the smaller ones in front are capped is the
+		// odd note. Aerial perspective is kept by compressing the ramp, not by going
+		// without: three steps to the far band's six, topping out at cream where the
+		// nearer caps reach linen, and a `line` that only the top tenth of the crest
+		// crosses. A dusting seen through a lot of air, not white paint.
+		snow: {
+			line: 0.5,
+			ruffle: 0.12,
+			depth: 0.9,
+			aspect: 2,
+			gully: 0.45,
+			gullyCells: 9,
+			edge: 2,
+			minCap: 3.5,
+			minRun: 5,
+			// Aerial perspective on snow is the shadow end lifting toward the sky, not
+			// the lit end dimming: at this range a cap is a pale patch with almost no
+			// contrast in it. Dropped instead to a grey floor it read as a rock nub.
+			shades: ['chalk', 'cream'],
+			crest: 'cream',
+		},
 	},
 	far: {
 		sunGlow: true,
@@ -1136,8 +1263,9 @@ export const ENTRY = {
 		faceDepth: 22,
 		// dark → lit ramp. Aerial perspective: the far band sits closer to the
 		// sky's tone throughout, which is what pushes it into the distance.
-		shades: ['basalt', 'rust', 'ochre', 'clay', 'flare', 'amber'],
+		shades: ['shale', 'garnet', 'ochre', 'clay', 'flare', 'amber'],
 		crest: 'sand',
+		haze: { lift: 0.38, depth: 0.5, power: 1.5 },
 		// Alpenglow snowcaps, per peak rather than per altitude: how far a summit
 		// pokes above the (ruffled) snowline sets how deep its cap hangs — `depth`
 		// scales the overshoot into cells of snow below the crest, dithered out
@@ -1147,14 +1275,30 @@ export const ENTRY = {
 		// minCap culls caps thinner than this many cells: a long flat crest that
 		// barely crosses the line otherwise wears a one-cell strip of white down
 		// its whole length, which reads as an outline rather than as snow.
+		// `line` is a fraction of the band's own height, so it has to be read against
+		// the crest this band actually cuts, not against base + amp: the profile is
+		// fbm, and its peaks reach ~0.59 where the sum says 0.74. At 0.53 the line
+		// sat above all but the top two percent of the crest and the whole band wore
+		// three cells of snow. 0.48 puts its caps on the same share of the ridge the
+		// near band's sit on.
 		snow: {
-			line: 0.53,
+			line: 0.48,
 			ruffle: 0.12,
 			depth: 1.3,
-			feather: 5,
-			minCap: 1.2,
-			shades: ['stone', 'bone', 'chalk', 'cream', 'linen', 'linen'],
-			crest: 'linen',
+			aspect: 3,
+			gully: 0.5,
+			gullyCells: 8,
+			edge: 2,
+			// 1.2 was tuned against a line nothing reached, so nothing tested it.
+			// With the line down where the crest actually is, a long flat ridge just
+			// over it wore a one-cell strip of white down its whole length — the
+			// outline this cull exists to prevent.
+			minCap: 3,
+			minRun: 5,
+			// one rung of the same ladder: floor off the near band's ash, ceiling
+			// under its linen, so the contrast inside a cap collapses with distance
+			shades: ['bone', 'chalk', 'cream'],
+			crest: 'cream',
 		},
 	},
 	near: {
@@ -1170,7 +1314,7 @@ export const ENTRY = {
 		faceDepth: 28,
 		// the full ramp, shadow end included: the nearest range is the one with
 		// contrast to spare, and its dark end is where the cool of the sky shows
-		shades: ['void', 'ink', 'basalt', 'rust', 'ochre', 'clay'],
+		shades: ['void', 'ink', 'shale', 'garnet', 'ochre', 'clay'],
 		crest: 'amber',
 		// the near caps keep a cool shadow end — snow in shade is brighter than
 		// rock in shade, but it is not lit
@@ -1178,8 +1322,12 @@ export const ENTRY = {
 			line: 0.54,
 			ruffle: 0.12,
 			depth: 1.5,
-			feather: 5,
-			minCap: 1.2,
+			aspect: 3,
+			gully: 0.5,
+			gullyCells: 7,
+			edge: 2,
+			minCap: 3,
+			minRun: 4,
 			shades: ['ash', 'stone', 'bone', 'chalk', 'cream', 'linen'],
 			crest: 'linen',
 		},
@@ -1194,15 +1342,60 @@ export const ENTRY = {
 		// perspective), `pathMeander` how far it wanders, per `pathWanderCells`.
 		// `shellFade` is how fast the shell darkens below its surface.
 		habitat: {
-			w: 17,
-			h: 7,
-			shellFade: 0.7,
+			w: 21,
+			h: 9,
+			// The shell's light, gathered on a real hemisphere normal: `sun` off a
+			// cosine with the sun at (ridgeLight, sunUp, sunFront), `sky` off how far
+			// the facet is turned up, `ambient` the floor neither reaches. `panels` are
+			// the meridian joins across its width and `panelSeam` how wide one is;
+			// `rimLift` is the extra the crown's own edge cell carries over the shell
+			// under it, which is the line that holds the silhouette.
+			sun: 0.78,
+			sky: 0.34,
+			ambient: 0.06,
+			sunUp: 0.45,
+			sunFront: 0.55,
+			panels: 5,
+			panelSeam: 0.075,
+			// how far a seam dips the light, and how near the crown they run before
+			// fading — every meridian meets at the apex and a hard join blots there
+			panelDip: 0.17,
+			panelTop: 0.8,
+			// how far the shell's lowest visible cell goes down — its skirt, and the
+			// dark line at the floor that stops it hovering
+			footDip: 0.26,
+			rimLift: 0.3,
+			// how much of its own light the shell keeps whatever the ground is doing
+			bed: 0.55,
+			// cells of shell below the ground line — the part that is dug in — and the
+			// least that has to stand above it for a column to be drawn at all. Without
+			// the floor the shell tapers to one-cell tails, and where the ground rises
+			// through it those tails come away as bars floating clear of the dome.
+			sink: 2,
+			minRise: 2,
 			shades: ['ink', 'basalt', 'rust', 'ochre'],
 			rim: 'amber',
 			light: 'ember',
 			glow: 'glow',
-			spill: 'ochre',
+			// The doorway's pool: `spillR` cells of reach, squashed by `spillSquash` so
+			// it runs along the ground rather than ballooning, `spillDrop` cells below
+			// the sill so it falls in front of the door instead of around it, and
+			// `spillPower` bending the falloff hard enough that the dithered edge is
+			// short. The ramp is warm rock, not the door's own ember: this is rock
+			// catching light, and painting it the colour of the source is what makes a
+			// glow read as a decal stuck on the scene.
+			spillShades: ['basalt', 'rust', 'ochre', 'amber'],
+			spillR: 9,
+			spillSquash: 1.45,
+			spillDrop: 2,
+			spillPower: 1.6,
 			shadowLen: 5,
+			// The chimney: a short stack off the crown, on the sun side so its lip
+			// catches the last of the light — the dome itself is a silhouette against
+			// silhouette from here, and this one lit cell plus the smoke over it is
+			// what actually says lived-in. `at` is cells from the centre (negative is
+			// the sun side, see ridgeLight), `h` how far it stands off the shell.
+			vent: { at: -4, h: 2 },
 			pathSpread: 5,
 			pathMeander: 5,
 			pathWanderCells: 14,

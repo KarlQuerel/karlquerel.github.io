@@ -22,7 +22,7 @@
 
 	const props = defineProps({
 		// 0 → far-off dot, 1 → arrived and full size. Drives scale and opacity.
-		reveal: { type: Number, default: 0 },
+		reveal: { type: Number, default: 1 },
 		// Longitude in radians. null → the planet free-spins on the clock over
 		// PLANET.spinSeconds. A number → the caller owns the angle (a scroll-driven
 		// orbit), and each change schedules a redraw instead of an idle loop running.

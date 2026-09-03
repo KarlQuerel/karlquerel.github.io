@@ -11,6 +11,7 @@
 import { DEPARTURE_RIDGE, ENTRY } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
 import { clamp01, smoothstep } from './math.js'
+import { norm } from './vec3.js'
 import {
 	ditherIndex,
 	ditherThreshold,
@@ -150,33 +151,83 @@ export function drawRidge(el, band, visitSeed, frame) {
 		relief[x] = sum / (blur * 2 + 1)
 	}
 
-	for (let x = 0; x < w; x++) {
-		const ridge = profile[x]
-		const yTop = Math.round(h * (1 - ridge))
-		// which way this face turns decides how much of the sun it catches,
-		// measured across a span so the facets come out broad
+	// Snow is a cap, not a stratum: how far a column's summit pokes above the
+	// (ruffled) snowline sets how many cells of snow hang below its crest, so tall
+	// massifs carry deep caps and a peak just past the line gets a dusting. Cut in one
+	// pass ahead of the paint, because a cap is a shape across columns and none of
+	// what makes it read as snow can be decided a column at a time:
+	//   aspect — the sun strips the lit flanks first, so cover hangs lower on the
+	//            shaded side. Without it a cap is a symmetrical hat sat on a peak,
+	//            which is the single thing that most says sticker rather than snow.
+	//   gully  — the lower edge reaches down the couloirs and pulls back on the spurs.
+	//            Left as the overshoot alone it traces the crest above it, and a
+	//            boundary parallel to the skyline reads as a band, not as cover.
+	//   minCap — a cap too shallow to hold a solid core is an outline along a crest.
+	//   minRun — one too narrow is a speck on a spire: a one-cell summit clears the
+	//            depth test easily, being the tallest thing around, and lands a lone
+	//            white pixel that reads as dirt on the screen.
+	// Which way the ground at a column turns, and so how much of the sun it catches,
+	// measured across a span so the facets come out broad. Rise over run in cells —
+	// which is the slope on screen, the cells being square — so a band shades the same
+	// however it was cropped. Minus: a slope rising toward +x faces −x, so with the sun
+	// stage left (ridgeLight −1) it is the rising flanks that catch it. The sign was
+	// flipped for a long time and read fine — until the sun disc and its glow gave the
+	// scene an anchor, and the lie showed. The faces, the snow's aspect and the
+	// habitat's bedding all ask the same question, so they ask it in one place.
+	const faceAt = x => {
 		const span = ENTRY.ridgeSlopeSpan
 		const lo = relief[Math.max(0, x - span)]
 		const hi = relief[Math.min(w - 1, x + span)]
-		// Rise over run in cells — which is the slope on screen, the cells
-		// being square — so a band shades the same however it was cropped.
-		// Minus: a slope rising toward +x faces −x, so with the sun stage left
-		// (ridgeLight −1) it is the rising flanks that catch it. The sign was
-		// flipped for a long time and read fine — until the sun disc and its
-		// glow gave the scene an anchor, and the lie showed.
-		const slope = ((hi - lo) / (2 * span)) * h
-		const face = 0.5 - slope * band.slopeGain * ENTRY.ridgeLight
+		return 0.5 - ((hi - lo) / (2 * span)) * h * band.slopeGain * ENTRY.ridgeLight
+	}
+
+	const caps = new Float32Array(w)
+	if (snow) {
+		// How far each column stands above its own neighbourhood — a summit, not
+		// merely high ground. Snow gathers on summits and blows off open crest, and a
+		// cap that reads only absolute height hangs a level awning of white under
+		// every ridge that crosses the line: white, flat-bottomed, floating over a
+		// sunlit face. That is a cloud, and it was the single thing keeping the far
+		// range's caps from reading as snow.
+		const P = ENTRY.snowProminence
+		const wide = new Float32Array(w)
+		for (let x = 0; x < w; x++) {
+			let sum = 0
+			for (let i = -P.cells; i <= P.cells; i++) {
+				sum += profile[Math.max(0, Math.min(w - 1, x + i))]
+			}
+			wide[x] = sum / (P.cells * 2 + 1)
+		}
+		for (let x = 0; x < w; x++) {
+			const line =
+				snow.line +
+				(fbm1(x / ENTRY.snowRuffleCells, band.seed + visitSeed + 9) - 0.5) * snow.ruffle
+			let cap = (profile[x] - line) * h * snow.depth
+			if (cap <= 0) continue
+			cap += (0.5 - faceAt(x)) * snow.aspect
+			cap *= P.base + (1 - P.base) * clamp01((profile[x] - wide[x]) / P.ref)
+			cap *= 1 + (fbm1(x / snow.gullyCells, band.seed + visitSeed + 71) - 0.5) * snow.gully
+			caps[x] = cap
+		}
+		for (let x = 0; x < w; ) {
+			if (caps[x] <= snow.minCap) {
+				x++
+				continue
+			}
+			let end = x
+			while (end < w && caps[end] > snow.minCap) end++
+			if (end - x < snow.minRun) caps.fill(0, x, end)
+			x = end
+		}
+	}
+
+	for (let x = 0; x < w; x++) {
+		const ridge = profile[x]
+		const yTop = Math.round(h * (1 - ridge))
+		const face = faceAt(x)
 		const rf = 1 / ENTRY.ridgeRoughCells
 		const vf = 1 / ENTRY.ridgeRoughVaryCells
-		// Snow is a cap, not a stratum: how far this column's summit pokes above the
-		// (ruffled) snowline sets how many cells of snow hang below its crest — tall
-		// massifs carry deep caps, a peak just past the line gets a dusting, and
-		// snow never starts mid-face the way an altitude band across the sprite did.
-		const snowLine = snow
-			? snow.line +
-				(fbm1(x / ENTRY.snowRuffleCells, band.seed + visitSeed + 9) - 0.5) * snow.ruffle
-			: 2
-		const capCells = snow ? (profile[x] - snowLine) * h * snow.depth : 0
+		const capCells = caps[x]
 		// This column's shift of the strata beds: a gentle undulation, plus a steady
 		// dip across the range. The dip is what stops them reading as shelves — a
 		// seam that runs level is a terrace, and the eye takes any horizontal line on
@@ -209,17 +260,40 @@ export function drawRidge(el, band, visitSeed, frame) {
 			// cool bottom of the ramp and not black. Folded in earlier the S-curve
 			// would simply pull the floor back down to where it started.
 			lit = ENTRY.ridgeAmbient + (1 - ENTRY.ridgeAmbient) * lit
+			// Aerial haze pools in the valleys. The air between the ranges scatters the
+			// low sun, so a range does not simply darken away from its crest — its foot
+			// lifts toward the palest step of its own ramp, which is the sky's own tone
+			// (the sky is cut from these same entries). The strip of that left showing
+			// above the range in front is what reads as miles of air between them, and
+			// it sharpens the nearer crest against it for nothing. Strongest on the
+			// furthest band and gone by the nearest, like every cue that answers to
+			// distance — the near range is the dark silhouette all of this is read
+			// against, and hazing its foot would only wash out the bottom of the frame.
+			if (band.haze) {
+				const H = band.haze
+				lit += (1 - lit) * H.lift * clamp01((y - yTop) / (H.depth * h)) ** H.power
+			}
 			// Inside the cap, the same lit walked on the snow ramp — the cap keeps the
-			// facets and the shadow of the rock it sits on — dithered out over
-			// `feather` cells at its lower edge.
+			// facets and the shadow of the rock it sits on. Solid to within `edge`
+			// cells of its lower boundary and dithered only across those: spreading
+			// the checker over the cap's whole depth, as this did, thinned marginal
+			// caps into scattered cells and left the crest pixel stranded above them.
+			const edge = capCells - (y - yTop)
 			const ramp =
 				snow &&
 				capCells > snow.minCap &&
-				(capCells - (y - yTop)) / snow.feather > ditherThreshold(x, y)
+				edge > 0 &&
+				(edge >= snow.edge || edge / snow.edge > ditherThreshold(x, y))
 					? snowShades
 					: shades
 			const rampLen = ramp === shades ? levels : ramp.length
-			let idx = ditherIndex(lit, rampLen, x, y)
+			// Dither is for boundaries, not for fill: `seam` holds the checker to a
+			// narrow window either side of where two steps meet and leaves the rest of
+			// each band solid. The S-curve this used instead only leaned the fraction
+			// toward the ends, so a face still wore checker over most of its area —
+			// which is the difference between a painted surface and a halftone screen.
+			// The departure's ground has always been cut this way (see drawMoon).
+			let idx = seamIndex(lit, rampLen, x, y, ENTRY.ridgeSeam)
 			// Strata: sparse darker seams undulating across the faces, so the rock
 			// reads as bedded stone rather than noise. A seam demotes the step — the
 			// planet's cloud-shadow trick — and the snow lies over the beds.
@@ -261,12 +335,13 @@ export function drawRidge(el, band, visitSeed, frame) {
 	// journey was TO somewhere, and someone is home. A shaded shell and a doorway
 	// whose light pools on the ground. The light is steady on purpose; a blink
 	// would read as distress.
+	// where the chimney's smoke hangs, once there is a habitat to carry one
+	let vent = null
 	const hab = band.habitat
 	if (hab) {
 		const shellShades = hab.shades.map(name => PALETTE[name])
 		const rim = PALETTE[hab.rim]
 		const light = PALETTE[hab.light]
-		const spill = PALETTE[hab.spill]
 		const half = (hab.w - 1) / 2
 		// wherever the middle stretch is lowest — a slope is fine, the footing
 		// buries the downhill edge and the dome reads as built into the mountain
@@ -282,28 +357,118 @@ export function drawRidge(el, band, visitSeed, frame) {
 				Math.round(h * (1 - profile[Math.max(0, Math.min(w - 1, hx + dx))]))
 			)
 		}
-		// A half-ellipse shell, shaded like everything else in the scene: full on
-		// the sun side falling to shadow across the curve, brighter at the crown
-		// than at the ground — a dome this size left flat would read as a hole.
-		// The top edge walks its own ramp by facing — rim-bright where it faces the
-		// sun, fading around the curve to a dark keyline in shadow. A binary
-		// rim/keyline switch at the apex cuts the roof into two colours.
+		// The shell is lit off a real surface normal, the way the ranges and the planet
+		// are: at each cell the hemisphere's normal is read from where the cell sits on
+		// the dome, and the sun and the sky are gathered on it separately. What it had
+		// before was a left-to-right ramp across the width, which is a cylinder's
+		// shading, not a dome's — no terminator curved round the form, no crown, and
+		// the roof had to be faked with a second darkening by depth. A cosine on a real
+		// normal gives all three for free, and the terminator bends round the shell
+		// instead of falling down it as a straight edge.
+		//
+		// The sun is bedded into the hillside's own light (see `bed`) and the sky is
+		// not: the ground can shade a wall from the sun, but nothing takes the sky away
+		// from a surface turned up at it. That split is what keeps the crown legible on
+		// a slope that has turned away from the sun, which is the slope this one sits
+		// on.
+		const sunDir = norm([ENTRY.ridgeLight, hab.sunUp, hab.sunFront])
 		const edgeShades = [shellShades[0], shellShades[2], shellShades[3], rim]
 		for (let dx = -half; dx <= half; dx++) {
 			const x = hx + dx
 			if (x < 0 || x >= w) continue
-			const rise = Math.max(1, Math.round(hab.h * Math.sqrt(1 - (dx / (half + 0.5)) ** 2)))
-			const face = 0.5 + (dx / half) * 0.5 * ENTRY.ridgeLight
+			// The shell springs from `sink` cells UNDER the ground, so what stands
+			// above it is the top of a bigger dome rather than a whole half-ellipse
+			// resting on the surface. Drawn the other way it tapered to one-cell tails
+			// several cells long at each end — a thin lip laid across the hill, and the
+			// one thing on it that could not be read as anything but pasted on. A dome
+			// set into ground shows no springing at all.
+			const rise = Math.round((hab.h + hab.sink) * Math.sqrt(1 - (dx / (half + 0.5)) ** 2))
+			// A dome is its own shape, but it stands in the mountain's light and not in
+			// its own. Read straight off the sun, its lit flank came out brighter than
+			// any ground near it wherever the slope under it had turned away — the far
+			// side of a dip is exactly that, and the shell sat on the black there as a
+			// pale blob laid on the hill rather than a thing built into it. Bedding it
+			// in the ground's own facing sinks that flank to whatever the terrain is
+			// doing, and `bed` is how much of its own light it keeps regardless, which
+			// is what stops the curve across its width going flat with the hillside.
+			const u = dx / (half + 0.5)
+			const bedded = hab.bed + (1 - hab.bed) * clamp01(faceAt(x))
+			// The hill in front of it buries it. `base` is the LOWEST ground the shell
+			// spans, so every other column has ground standing above that line — and
+			// the shell was painted straight across it, over terrain that should have
+			// been in front. That is what put a hard cut-out edge on its downhill
+			// skirt: not a shading fault but a depth one, a shape pasted on the slope
+			// instead of set into it. Clipped to each column's own ground it settles
+			// into the dip it was placed in, the way the path below it already does.
+			const ground = Math.round(h * (1 - profile[x]))
+			const foot = base + hab.sink
+			// what is left of this column once the hill in front has buried it; too
+			// little and it is a stray cell rather than part of the dome
+			if (rise - Math.max(0, foot - ground) < hab.minRise) continue
+			let crownLit = 0
+			let footCourse = true
 			for (let dy = 0; dy < rise; dy++) {
-				// Darken by depth below the shell surface, never by height above the
-				// ground: the low edge columns ARE surface, and dimming them for
-				// being short painted a false shadow across the dome's sun side.
-				const under = (rise - 1 - dy) / hab.h
-				const lit = clamp01(face * (1 - under * hab.shellFade))
-				put(x, base - dy, shellShades[ditherIndex(lit, shellShades.length, x, base - dy)])
+				const y = foot - dy
+				const v = dy / (hab.h + hab.sink)
+				const nz = Math.sqrt(Math.max(0, 1 - u * u - v * v))
+				const lit = clamp01(
+					hab.ambient +
+						hab.sun * bedded * clamp01(u * sunDir[0] + v * sunDir[1] + nz * sunDir[2]) +
+						hab.sky * v
+				)
+				crownLit = lit
+				if (y > ground) continue
+				// Panel seams, run as longitude and not as screen x. Taken across the
+				// width they came out as dead straight verticals — which is a cylinder's
+				// meridian, not a dome's, and it fought the very roundness the normal
+				// had just bought. Read as the angle round the shell's axis they lean
+				// with the curve and converge on the crown, which is what a panelled
+				// dome does and what makes the form read rather than argue with it.
+				// They fade out before the apex, where every meridian meets and a hard
+				// seam would gather into a blot.
+				//
+				// And they dip the light rather than demoting the step: a step down
+				// from this ramp is a jump to near-black, which is the hard line you
+				// saw. A dip only darkens where it happens to push a cell over a
+				// quantisation boundary, so a seam comes out broken the way a panel
+				// join catching the light actually does.
+				const lon = Math.atan2(u, Math.max(nz, 1e-3))
+				const m = (lon / Math.PI + 0.5) * hab.panels
+				const onSeam =
+					v < hab.panelTop && Math.abs(m - Math.round(m)) * (1 / hab.panelSeam) < 1
+				// The base course: the lowest cell a column still shows is where the
+				// shell meets the ground, and it goes down a notch. It reads as the
+				// skirt a built thing has and it does the job of a contact shadow at
+				// the same time — an object with no dark line where it meets the floor
+				// hovers over it however well the rest of it is drawn.
+				const shade = clamp01(
+					lit - (onSeam ? hab.panelDip : 0) - (footCourse ? hab.footDip : 0)
+				)
+				footCourse = false
+				put(x, y, shellShades[seamIndex(shade, shellShades.length, x, y, ENTRY.ridgeSeam)])
 			}
-			const edgeY = base - rise + 1
-			put(x, edgeY, edgeShades[ditherIndex(face, edgeShades.length, x, edgeY)])
+			// The crown is lit by the sky, not only by the sun. `lip` is how much of it
+			// is skylight — a floor under the sun term — so the top edge stays a step
+			// or two above the body the whole way round instead of going out with it
+			// on the shadow side. That continuous lighter arc is the entire reason a
+			// dark shell reads against dark ground, and here it is the only reason:
+			// the ground rises on the sunward side, so the flank that would have
+			// caught the sun is the one the hill buries, and what is left facing the
+			// camera is the shadow half. Lit by the sun alone the habitat vanished
+			// into the mountain — the shape was right by then and there was nothing
+			// left to see it by. A silhouette needs one lit edge, not a pale body.
+			const edgeY = foot - rise + 1
+			if (edgeY <= ground) {
+				// Seamed, not checkered: a rim one cell thick that alternates shades
+				// cell by cell is a dotted line, and a dotted line does not read as an
+				// edge. It walks its ramp in clean runs, the way the faces do.
+				const lip = clamp01(crownLit + hab.rimLift)
+				put(
+					x,
+					edgeY,
+					edgeShades[seamIndex(lip, edgeShades.length, x, edgeY, ENTRY.ridgeSeam)]
+				)
+			}
 		}
 		// the shell's ground shadow, thrown a few cells along the surface away from
 		// the sun — a shape without a shadow floats, whatever else it does
@@ -341,6 +506,27 @@ export function drawRidge(el, band, visitSeed, frame) {
 				put(x, y, trailShades[ditherIndex(1 - t, trailShades.length, x, y)])
 			}
 		}
+		// The doorway's light on what it lands on. A dithered falloff about the door,
+		// squashed so it spreads along the ground it grazes rather than ballooning, and
+		// applied only where there is already something there to be lit — a pool laid
+		// over sky is the sticker this exists to avoid. It runs before the arch so the
+		// arch stays the brightest thing in it, and it washes up the shell as well as
+		// out over the ground, which is what ties the two together: the same light on
+		// the wall and on the floor is how a lit doorway actually reads.
+		const spillShades = hab.spillShades.map(name => PALETTE[name])
+		const R = hab.spillR
+		for (let sy = -R; sy <= R; sy++) {
+			for (let sx = -R; sx <= R; sx++) {
+				const x = hx + sx
+				const y = base + hab.spillDrop + sy
+				if (x < 0 || x >= w || y < 0 || y >= h) continue
+				if (img.data[(y * w + x) * 4 + 3] === 0) continue
+				const f = clamp01(1 - Math.hypot(sx, sy * hab.spillSquash) / R) ** hab.spillPower
+				if (f <= ditherThreshold(x, y)) continue
+				put(x, y, spillShades[seamIndex(f, spillShades.length, x, y, ENTRY.ridgeSeam)])
+			}
+		}
+
 		// The entrance: an arch, not a slab — ember walls around a hotter core, the
 		// warm gradient being what reads as light from inside rather than paint.
 		const glow = PALETTE[hab.glow]
@@ -351,16 +537,31 @@ export function drawRidge(el, band, visitSeed, frame) {
 		put(hx, base - 2, light)
 		put(hx, base, glow)
 		put(hx, base - 1, glow)
-		// and its pool on the ground below — light that lands on nothing is a sticker
-		for (let dx = -2; dx <= 2; dx++) {
-			if (base + 1 < h && ditherThreshold(hx + dx, base + 1) < 0.5) {
-				put(hx + dx, base + 1, spill)
-			}
+
+		// The chimney: one column standing off the shell, its lip on the rim shade so
+		// the sun catches it. The smoke over it moves, so it is DOM (PlanetEntry) —
+		// this hands back where to hang it, in fractions of the grid, since the band
+		// is stretched to its box and only a fraction survives that.
+		const vx = hx + hab.vent.at
+		const shell = Math.max(
+			1,
+			Math.round((hab.h + hab.sink) * Math.sqrt(1 - (hab.vent.at / (half + 0.5)) ** 2)) -
+				hab.sink
+		)
+		const lip = base - shell - hab.vent.h + 1
+		const ventGround = Math.round(h * (1 - profile[Math.max(0, Math.min(w - 1, vx))]))
+		for (let y = lip; y <= base - shell; y++) {
+			if (y <= ventGround) put(vx, y, y === lip ? rim : shellShades[1])
 		}
-		if (base + 2 < h && ditherThreshold(hx, base + 2) < 0.5) put(hx, base + 2, spill)
+		vent = { x: (vx + 0.5) / w, y: lip / h }
 	}
 
+	// No pixel stands alone — the same pass the departure's ground gets. A lone cell
+	// of one shade inside another is the tell of a generated sprite; a hand would
+	// have clustered it. Run after the habitat so its lit cells are tidied too.
+	tidySprite(img, w, h, ENTRY.tidyPasses)
 	ctx.putImageData(img, 0, 0)
+	return { cols: w, rows: h, cell, vent }
 }
 
 // Hills (band.hills) standing on the horizon row, built the way the plain is: a height

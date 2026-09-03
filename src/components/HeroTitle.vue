@@ -154,9 +154,9 @@
 		// The corridor: through the counter of the Q — the one glyph with a porthole,
 		// and by luck of the name dead on its centre (glyph six of eleven). Vertically
 		// the middle of the row it sits on — which is not the sprite's middle, since
-		// the role and the cue hang below. Stacked into two rows on a narrow frame
-		// there is no single letter to thread, so the corridor stays the horizontal
-		// band between the rows, as before.
+		// the role and the cue hang below — offset onto the counter's own square.
+		// Stacked into two rows on a narrow frame there is no single letter to thread,
+		// so the corridor stays the horizontal band between the rows, as before.
 		const [first, last, , cue] = runs
 		const stacked = Math.abs(first.mid - last.mid) > 1
 		const qMid = last.x + last.size / 2 + HERO_FLYBY.qAxis.x * last.size
@@ -198,6 +198,19 @@
 			}
 		}
 		for (const run of runs) drawRun(ctx, run, dpr)
+
+		// The porthole, cut last so nothing can silt it up again: the Q's counter is a
+		// window onto the planet we are flying at, and every pass above spills into it.
+		// Nothing of the face lives inside the square, so clearing it costs no ink.
+		if (!stacked) {
+			const port = HERO_FLYBY.qPort * last.size * dpr
+			ctx.clearRect(
+				(box.width / 2 + axis.x) * dpr - port / 2,
+				(box.height / 2 + axis.y) * dpr - port / 2,
+				port,
+				port
+			)
+		}
 
 		emit('axis', axis)
 	}

@@ -33,8 +33,14 @@ export const PALETTE = {
 	// Rock: violet-brown through red to a warm tan where the sun hits square on.
 	// Stepped finely on purpose: a ramp compresses for distance by picking adjacent
 	// entries, never by repeating one — a repeat costs the dither a boundary.
+	// `shale` and `garnet` are the rotation, not extra brightness steps: a ramp that
+	// only brightens reads as one colour under a dimmer, and the eye takes that for
+	// paint. Shadow sits in the sky's violet and swings through a cool red before it
+	// reaches the orange the sun actually puts on the rock.
+	shale: [52, 38, 58],
 	basalt: [50, 34, 40],
 	rust: [84, 46, 44],
+	garnet: [104, 52, 66],
 	ochre: [124, 60, 48],
 	brick: [141, 68, 51],
 	clay: [158, 76, 54],

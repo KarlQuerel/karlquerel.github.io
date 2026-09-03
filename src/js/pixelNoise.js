@@ -57,8 +57,17 @@ const BAYER4 = [
 // This pixel's slot on the dither grid, 0..1. Exposed because a scene that dithers
 // more than one decision per pixel — which ramp, and how far up it — has to make both
 // against the same threshold, or the two patterns beat against each other.
-export function ditherThreshold(x, y) {
-	return (BAYER4[y & 3][x & 3] + 0.5) / 16
+// `jitter` spreads a pixel's threshold across its own Bayer level instead of pinning
+// it to the middle. At 0 this is the plain ordered matrix — the right tool on a face,
+// where the pattern is small against the shape and the even spacing is what keeps an
+// edge clean. Over a big smooth field it is the wrong tool: every pixel sharing a
+// level shares a threshold, so they all flip together and the eye reads the lattice,
+// which is the halftone screen a dithered sky always turns into. Jittered, the level
+// still sets the average density — so the gradient is unchanged — but which pixels
+// inside it flip is no longer a grid.
+export function ditherThreshold(x, y, jitter = 0) {
+	const at = jitter ? 0.5 + (hash2(x, y, 9161) - 0.5) * jitter : 0.5
+	return (BAYER4[y & 3][x & 3] + at) / 16
 }
 
 // Pick an index into a `levels`-long ramp for brightness `lit` (0..1), dithering
@@ -80,13 +89,13 @@ export function ditherIndex(lit, levels, x, y, contrast = 0) {
 // half-width `seam` (in steps) either side of each boundary. Faces come out solid and
 // the checker gathers where two tones actually meet — dither as an edge tool, which
 // is how it is laid by hand. A seam of 0 is plain rounding.
-export function seamIndex(lit, levels, x, y, seam) {
+export function seamIndex(lit, levels, x, y, seam, jitter = 0) {
 	const v = lit * (levels - 1)
 	const i = Math.floor(v)
 	const f = v - i
 	let step = f >= 0.5 ? 1 : 0
 	if (seam > 0 && Math.abs(f - 0.5) <= seam) {
-		step = (f - (0.5 - seam)) / (2 * seam) > ditherThreshold(x, y) ? 1 : 0
+		step = (f - (0.5 - seam)) / (2 * seam) > ditherThreshold(x, y, jitter) ? 1 : 0
 	}
 	return Math.max(0, Math.min(levels - 1, i + step))
 }
