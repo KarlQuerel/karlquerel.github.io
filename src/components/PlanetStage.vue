@@ -8,7 +8,12 @@
 		<div class="stage__planet" :style="planetStyle">
 			<!-- in frame from the first pixel: at rest the camera has it sat in the Q's
 			     porthole, which is the hole the departure then flies through -->
-			<PixelPlanet :spin="spin" :light-yaw="lightYaw" :cloud-thin="cloudThin" />
+			<PixelPlanet
+				:awake="visible"
+				:spin="spin"
+				:light-yaw="lightYaw"
+				:cloud-thin="cloudThin"
+			/>
 		</div>
 		<!-- The world as a point of light, while it is still too small to be a disc —
 		     one dot, indistinguishable from the starfield, on the camera's axis, so at
@@ -67,11 +72,17 @@
 		}
 	})
 
+	// The camera fades the world out at the entry and the sky takes over. Past that
+	// the globe is worth nothing to draw and nothing to composite.
+	const visible = computed(() => (props.cam.fade ?? 1) > 0)
+
 	const planetStyle = computed(() => ({
 		// tilt banks the world into the turns; rotation pivots on the globe's centre
 		transform: `translate3d(${props.cam.x.toFixed(2)}vw, ${props.cam.y.toFixed(2)}vh, 0) scale(${props.cam.scale.toFixed(3)}) rotate(${(props.cam.tilt ?? 0).toFixed(2)}deg)`,
 		// the world recedes while a station is read (see CAMERA.fade)
 		opacity: (props.cam.fade ?? 1).toFixed(3),
+		// and once it has gone, its promoted canvas leaves the compositor with it
+		display: visible.value ? null : 'none',
 	}))
 
 	const hazeStyle = computed(() => ({

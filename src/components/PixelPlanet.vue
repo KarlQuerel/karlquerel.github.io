@@ -23,6 +23,13 @@
 	const props = defineProps({
 		// 0 → far-off dot, 1 → arrived and full size. Drives scale and opacity.
 		reveal: { type: Number, default: 1 },
+		// False parks the shader. The globe keeps its canvas and its seed — it is the
+		// same world when it comes back — but a sweep of the sprite that lands under an
+		// opacity of nought is the most expensive way there is to draw nothing, and the
+		// entry is exactly where it happens: `roll` spins the planet two thirds of a
+		// turn while it fades out behind the atmosphere, so it redraws hardest at the
+		// one moment nobody can see it and the cloud deck needs the frame.
+		awake: { type: Boolean, default: true },
 		// Longitude in radians. null → the planet free-spins on the clock over
 		// PLANET.spinSeconds. A number → the caller owns the angle (a scroll-driven
 		// orbit), and each change schedules a redraw instead of an idle loop running.
@@ -176,6 +183,9 @@
 	const haloReach = 1 + PLANET.haloWidth
 
 	function draw(spin) {
+		drawnSpin = spin
+		drawnYaw = props.lightYaw
+		drawnThin = props.cloudThin
 		if (!imageData) imageData = ctx.createImageData(res, res)
 		const img = imageData
 		const d = img.data
@@ -429,10 +439,36 @@
 		rafId = requestAnimationFrame(loop)
 	}
 
+	// The last picture actually put on the canvas, so a redraw can be judged against
+	// what is already there rather than against the clock.
+	let drawnSpin = null
+	let drawnYaw = 0
+	let drawnThin = 0
+
+	// A redraw that cannot move a single art pixel costs a full sweep of the sprite to
+	// produce the picture already on screen. The globe is `res` cells around, so the
+	// surface has to turn by 2π/res before any cell can land on a different sample —
+	// and a scrolled frame advances the spin by roughly a third of that, so most of
+	// the redraws the orbit used to run were identical to the one before. Judging the
+	// pending angle against the drawn one instead of against a frame budget skips
+	// those, and it is not a stepped orbit: the globe's position and scale are CSS and
+	// stay continuous, and a texture that has moved less than one of its own pixels
+	// has by definition nothing to show.
+	const cellTurn = (2 * Math.PI) / res
+	function moved() {
+		return (
+			drawnSpin === null ||
+			Math.abs((props.spin ?? 0) - drawnSpin) >= cellTurn ||
+			Math.abs(props.lightYaw - drawnYaw) >= cellTurn ||
+			Math.abs(props.cloudThin - drawnThin) >= PLANET.cloudThinStep
+		)
+	}
+
 	// Driven mode: at most one redraw per frame, and always trailing to the latest
 	// angle, so a flung scroll still lands the orbit where it stopped.
 	function scheduleDraw() {
-		if (drawId || !ctx || props.reveal <= 0 || prefersReducedMotion()) return
+		if (drawId || !ctx || !props.awake || props.reveal <= 0 || prefersReducedMotion()) return
+		if (!moved()) return
 		drawId = requestAnimationFrame(ts => {
 			drawId = 0
 			if (lastDraw >= 0 && ts - lastDraw < orbitFrameMs) {
@@ -450,7 +486,7 @@
 			scheduleDraw()
 			return
 		}
-		if (!rafId && props.reveal > 0 && ctx && !prefersReducedMotion()) {
+		if (!rafId && props.awake && props.reveal > 0 && ctx && !prefersReducedMotion()) {
 			rafId = requestAnimationFrame(loop)
 		}
 	}
@@ -466,6 +502,8 @@
 	watch(() => props.lightYaw, scheduleDraw)
 	watch(() => props.cloudThin, scheduleDraw)
 	watch(() => props.reveal, resume)
+	// coming back on has to catch the picture up: `moved` sees a stale angle and redraws
+	watch(() => props.awake, resume)
 
 	onMounted(() => {
 		const el = canvasEl.value

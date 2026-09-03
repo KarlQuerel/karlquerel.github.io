@@ -24,6 +24,10 @@ export const PLANET = {
 	// rate under scroll, so a coarse surface redraw reads as lag rather than as pixel
 	// art. If this costs too much on a phone, drop `resolution` — cost is resolution².
 	orbitFps: 60,
+	// The cloud deck's thinning is the one input to a redraw that is not an angle, so
+	// it needs its own floor: below this much change the deck lands on the same steps
+	// and the sweep is spent redrawing the picture already on the canvas.
+	cloudThinStep: 0.02,
 	orbitFpsMobile: 30,
 	// Axial tilt of the spin (degrees), so continents drift across on a diagonal
 	// rather than straight sideways.
