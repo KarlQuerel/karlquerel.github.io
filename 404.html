@@ -60,12 +60,19 @@
 	<!-- Fonts — self-hosted latin subsets (see src/styles/_fonts.scss), preloaded off the render-blocking path -->
 	<link rel="preload" href="/assets/fonts/press-start-2p-latin.woff2" as="font" type="font/woff2" crossorigin>
 	<link rel="preload" href="/assets/fonts/departure-mono.woff2" as="font" type="font/woff2" crossorigin>
-  <script type="module" crossorigin src="/assets/index-CGSlvfr9.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/vendor-B4mMyx-8.js">
-  <link rel="stylesheet" crossorigin href="/assets/index-D4Dv1HJK.css">
+  <script type="module" crossorigin src="/assets/index-C8N5zFDU.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/vendor-CF6qPNJq.js">
+  <link rel="stylesheet" crossorigin href="/assets/index-Dq3fmYrV.css">
 </head>
 
 <body>
+	<!-- The landing boots (App.vue). This holds the frame black from the first parse
+	     until the app's boot screen is painted, so the starfield in the prerendered
+	     shell never shows on its own. Inline, because it has to be there before any
+	     stylesheet or script has arrived. -->
+	<style>html.booting::after { content: ''; position: fixed; inset: 0; z-index: 99; background: #000; }</style>
+	<script>if (location.pathname === '/') document.documentElement.classList.add('booting')</script>
+
 	<!-- Vue App -->
 	<div id="app"></div>
 
