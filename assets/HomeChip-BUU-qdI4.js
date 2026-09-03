@@ -1,0 +1,1 @@
+import{b as a,m as s,q as o,A as t,t as e,u as m,R as i}from"./vendor-CF6qPNJq.js";import{H as p}from"./navigation-CeyHdci7.js";import{_ as r}from"./index-HPLZiK3A.js";const c=r({__name:"HomeChip",setup:r=>(r,c)=>(a(),s(m(i),{class:"home-chip",to:m(p).to},{default:o(()=>[t(e(m(p).label),1)]),_:1},8,["to"]))},[["__scopeId","data-v-8cfccae3"]]);export{c as H};
