@@ -1066,14 +1066,16 @@ export const ENTRY = {
 	// band of sky and sometimes across the sun. It doubles as a scale cue: birds are a
 	// size everyone knows, so a range behind them gets its own size for free.
 	flock: {
-		// Rare and small: a pair or a trio going somewhere, not a migration. A flock
-		// every minute or so is enough to make the sky feel inhabited; any more and
-		// it stops being something you notice and becomes wallpaper with wings.
-		gapMs: [36000, 84000],
-		// Inclusive, and picked as a flat integer rather than by rounding a float — that
-		// rounding put half of all flocks at exactly two birds. One bird on its own is
-		// worth having in the mix: a lone gull reads as different weather to a trio.
-		count: [1, 3],
+		// Small and frequent: a lone gull or a pair going somewhere, not a migration.
+		// Spawn to spawn; a crossing takes 16-27s, so the sky is rarely empty for more
+		// than ten or fifteen seconds rather than the minute it used to be. Two flocks
+		// never share the sky — PlanetEntry skips a spawn while one is still crossing —
+		// so two birds is the most that is ever up at once.
+		gapMs: [14000, 30000],
+		// Inclusive, and picked as a flat integer rather than by rounding a float. One
+		// bird on its own is worth having in the mix: a lone gull reads as different
+		// weather to a pair.
+		count: [1, 2],
 		// The band matters more than the size did. At 34-64% most of a flock was crossing
 		// the dark top of the sky, where a dark silhouette has nothing to be a silhouette
 		// against — they were rendering perfectly and reading as nothing. Down here they
@@ -1087,13 +1089,15 @@ export const ENTRY = {
 		// cells on half pixels and the whole point of it is that they do not. One scale
 		// per flock, so the group reads as being at one distance.
 		scale: [3, 5],
-		// The gap to the next bird along, rolled fresh for every one of them. This used
-		// to be a single roll multiplied by the bird's index, which kept every gap in a
-		// flock in step with the others — the spacing varied between flocks but was even
-		// within one, and an even formation reads as a machine rather than as birds.
-		gapPx: [16, 66],
-		// Vertical scatter, also per bird, so no two ride at the same height.
-		jitterPx: [-24, 24],
+		// Clear air from one bird's wingtip to the next, in sprite cells, rolled fresh for
+		// every bird. Cells rather than px so the spacing grows with the flock's scale (a
+		// nearer pair sits wider on screen) and every bird lands on the flock's one pixel
+		// grid. Measured wingtip to wingtip on purpose: the old left-edge-to-left-edge px
+		// gap was narrower than a bird, so a following gull started inside the one ahead.
+		// Independent rolls, not one roll times the index — an even rank reads as a machine.
+		gapCells: [10, 32],
+		// Vertical scatter, also per bird and in cells, so no two ride at the same height.
+		jitterCells: [-6, 6],
 		// wingbeat; each bird takes its own phase so the flock never flaps in unison
 		flapMs: [420, 700],
 		peak: [0.72, 0.92],

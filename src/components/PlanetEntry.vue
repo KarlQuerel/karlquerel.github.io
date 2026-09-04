@@ -306,6 +306,10 @@
 	// together reads as a machine.
 	const { items: flocks, remove: removeFlock } = useSkySpawner({
 		gapMs: ENTRY.flock.gapMs,
+		// Only while the sky layer is showing (hidden, a spawn never animates and never
+		// ends, so they pile up and all take off together on arrival) and only one flock
+		// at a time, which is what caps the sky at two birds.
+		active: () => starFade.value > 0 && flocks.value.length === 0,
 		make: () => {
 			const f = ENTRY.flock
 			const bird = ENTRY.bird
@@ -322,14 +326,16 @@
 					'--dur': `${Math.round(randIn(f.durMs))}ms`,
 					'--peak': randIn(f.peak).toFixed(2),
 				},
-				// Gaps accumulate from independent rolls rather than scaling one roll by
-				// the index, so the spacing inside a flock is uneven the way a real one is.
+				// Positions are counted in sprite cells and scaled once, so every bird in the
+				// flock sits on the same pixel grid. Gaps accumulate from independent rolls
+				// rather than scaling one roll by the index, so the spacing inside a flock is
+				// uneven the way a real one is.
 				birds: (() => {
 					let x = 0
 					return Array.from({ length: randInt(f.count) }, () => {
 						const at = {
-							left: Math.round(x),
-							top: Math.round(randIn(f.jitterPx)),
+							left: x * scale,
+							top: randInt(f.jitterCells) * scale,
 							w: bird.w * scale,
 							h: bird.h * scale,
 							sheet,
@@ -337,7 +343,8 @@
 							// its own phase, so the wingbeats never line up
 							delay: Math.round(Math.random() * flap),
 						}
-						x += randIn(f.gapPx)
+						// wingtip to wingtip: the bird's own width, then clear air
+						x += bird.w + randInt(f.gapCells)
 						return at
 					})
 				})(),
