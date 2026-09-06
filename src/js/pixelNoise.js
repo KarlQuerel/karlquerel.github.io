@@ -121,3 +121,41 @@ export function noise2(x, y, seed) {
 export function fbm2(x, y, seed) {
 	return 0.65 * noise2(x, y, seed) + 0.35 * noise2(x * 2.6, y * 2.6, seed + 17)
 }
+
+// Turbulence: `octaves` of noise, each half the size and half the weight of the last,
+// normalised to 0..1. Two octaves make billows; four make cloud, with detail all the
+// way down to the cell.
+export function turbulence(x, y, seed, octaves) {
+	let sum = 0
+	let norm = 0
+	let amp = 1
+	let freq = 1
+	for (let o = 0; o < octaves; o++) {
+		sum += amp * noise2(x * freq, y * freq, seed + o * 31)
+		norm += amp
+		freq *= 2
+		amp *= 0.5
+	}
+	return sum / norm
+}
+
+// The 2D ridged multifractal (see ridged1): noise folded at its middle into sharp
+// crests with long flanks, detail gathering on the crests — filaments and the knots
+// where they cross, which is the shape dust takes. Roughly 0..1.
+export function ridged2(x, y, seed, octaves) {
+	let sum = 0
+	let norm = 0
+	let amp = 0.5
+	let freq = 1
+	let prev = 1
+	for (let o = 0; o < octaves; o++) {
+		let n = 1 - Math.abs(2 * noise2(x * freq, y * freq, seed + o * 31) - 1)
+		n *= n
+		sum += n * amp * prev
+		norm += amp
+		prev = n
+		freq *= 2.1
+		amp *= 0.5
+	}
+	return sum / norm
+}

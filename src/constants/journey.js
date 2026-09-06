@@ -526,50 +526,107 @@ export const DEPARTURE_RIDGE = {
 			wobbleFreq: 5,
 			shades: ['ink', 'deep', 'slate'],
 		},
-		// The galaxy: a band from `from` to `to` (shares of the frame), `width` of the
-		// frame's height across, its middle wandering `wander` of the half-width and its
-		// width swelling by `swell` over `wanderCells` along the run — one width on a
-		// ruled line reads as a bar. A dark mantle spans the band on `base` of its
-		// profile; a bright spine, spineWidth of the half-width wide, carries the rest,
-		// and the cloud multiplies both, so the band ends where the cloud runs out. The
-		// cloud is noise over cloudCells with wispMix of finer noise over wispCells laid
-		// on it, both sampled through a warp of themselves (`warp` cells over warpCells)
-		// so they billow, stretched between cloudFloor and cloudCeil, scaled by `density`
-		// and quantised onto `haze` (transparent first) with the dither held to `seam`.
-		// Where a second noise over laneCells falls below laneBelow, a dust lane cuts
-		// laneCut steps out. Stars: a cell's chance is `stars` (faint, one cell, on
-		// `faint`) or brightStars (a small cross: a `bright` core with brightArm arms),
-		// times the haze squared so they gather where it is thick, times clusterGain
-		// inside clusters (a third noise over clusterCells above clusterAbove).
+		// The galaxy (js/sky.js): a band from `from` to `to` (shares of the frame), `width`
+		// of the frame's height across, bowing `bow` half-widths toward the top at its middle
+		// and its spine wandering `wander` of the half-width over wanderCells along the run.
+		// Its light is `amp` at the spine falling off as 1 / (1 + rel²)^falloff — a soft core
+		// with long wings — gaining `bulge` and widening by bulgeWiden around bulgeAt over
+		// bulgeWidth of the run, and tapering to 1 - taper of itself at the run's start.
+		// Each of `clouds` multiplies it by e^(depth × (turbulence - ½)), the turbulence over
+		// its cells in its octaves, drawn out its stretch along the run — a coarse one to
+		// clump and thin the band and fray its edges, a fine one for grain. Dust sits in
+		// front: `rifts`
+		// are lanes down the run, each spanning `span` of it (fading in and out over `ease`),
+		// `offset` half-widths off the spine wandering by `wander` over wanderCells, `width`
+		// half-widths wide swelling by `swell`, taking `depth` of the light; `dust` is a ridged
+		// turbulence over its cells in its octaves, drawn out its stretch, absorbing
+		// e^(-depth × lanes^power) within `reach` half-widths of the plane. The result is
+		// exposed like film, 1 - e^(-light), and quantised onto `haze` (transparent first)
+		// dithered `seam` wide on the 2×2 matrix — a quarter, a checker, three quarters, the
+		// hand's own patterns. Past `reach` half-widths
+		// nothing is drawn. Stars: a cell's chance is `stars` (faint, one cell, on `faint`
+		// skewed to the dim end by faintSkew) or brightStars (a small cross: a `bright` core
+		// with brightArm arms), times the light to the power starPow so they gather where it
+		// is and tail off past its last step — starThrough of that light is read before the
+		// dust, for the stars in front of it — times clusterGain inside clusters (a noise over
+		// clusterCells above clusterAbove); or `sparks` (one pale cell on `spark`) times the
+		// light to the power sparkPow, so they pack into the thick of it and nowhere else.
 		galaxy: {
-			from: [0, 0.04],
+			from: [0, 0.08],
 			to: [1, 0.38],
-			width: 0.44,
-			wander: 0.45,
-			swell: 0.7,
-			wanderCells: 3,
-			density: 0.9,
-			seam: 0.07,
-			base: 0.3,
-			spineWidth: 0.45,
-			cloudCells: 12,
-			wispCells: 4.5,
-			wispMix: 0.3,
-			cloudFloor: 0.28,
-			cloudCeil: 0.74,
-			warp: 14,
-			warpCells: 26,
-			laneCells: 19,
-			laneBelow: 0.38,
-			laneCut: 1,
-			haze: ['ink', 'deep', 'brine', 'tide'],
-			stars: 0.2,
-			brightStars: 0.012,
+			width: 0.18,
+			bow: 0.15,
+			wander: 0.8,
+			wanderCells: 2.5,
+			reach: 2.2,
+			amp: 1,
+			taper: 0.45,
+			falloff: 2.4,
+			bulge: 1,
+			bulgeWiden: 0.15,
+			bulgeAt: 0.7,
+			bulgeWidth: 0.3,
+			clouds: [
+				{
+					cells: 36,
+					octaves: 2,
+					stretch: 2.5,
+					depth: 1.4,
+				},
+				{
+					cells: 6,
+					octaves: 3,
+					stretch: 4,
+					depth: 0.8,
+				},
+			],
+			// the Great Rift down most of the run, and the fork that leaves it halfway
+			rifts: [
+				{
+					span: [0.12, 0.95],
+					ease: 0.15,
+					offset: -0.25,
+					wander: 0.6,
+					wanderCells: 4,
+					width: 0.4,
+					swell: 0.7,
+					depth: 0.6,
+				},
+				{
+					span: [0.35, 0.8],
+					ease: 0.12,
+					offset: 0.45,
+					wander: 0.5,
+					wanderCells: 5,
+					width: 0.2,
+					swell: 0.6,
+					depth: 0.5,
+				},
+			],
+			dust: {
+				cells: 10,
+				octaves: 3,
+				stretch: 3,
+				depth: 1.5,
+				power: 1.6,
+				reach: 1.3,
+			},
+			seam: 0.45,
+			// a whisper a step or two above the sky, dithered the whole way like the sun's glow
+			haze: ['ink', 'deep'],
+			stars: 0.12,
+			starPow: 1.6,
+			starThrough: 0.15,
+			sparks: 0.02,
+			sparkPow: 3,
+			brightStars: 0.004,
 			clusterCells: 12,
 			clusterAbove: 0.56,
-			clusterGain: 3,
-			faint: ['slate', 'ash'],
-			bright: ['stone', 'bone', 'chalk'],
+			clusterGain: 1.6,
+			faint: ['zinc', 'ash', 'frost'],
+			faintSkew: 2,
+			spark: ['stone', 'bone'],
+			bright: ['chalk', 'cream', 'star'],
 			brightArm: 'ash',
 		},
 		// Meteors, on the shared spawner (useSkySpawner): rare — one every ten to twenty

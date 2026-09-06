@@ -1,17 +1,18 @@
 // The departure's sky, drawn once on the ground's grid. Black — there is no air — with
 // two things on it: the glow of the sun just off frame to the left, low on that
 // horizon, which is the one thing in the scene that shows where every lit flank gets
-// its light; and the galaxy, billows of haze with dust lanes carved through them and
-// stars gathered where the haze is thick. Both are drawn the way the ground is: solid
-// steps with the dither held to the seams, since a checker laid across a soft gradient
-// reads as wallpaper and not as cloud. The bright stars are DOM glints
-// (DepartureRidge.vue), so they can breathe on a stepped clock without a redraw.
+// its light; and the galaxy, the band of our own seen edge-on from inside it, with
+// lanes of dust down its length and stars gathered where the light is. Both are soft
+// things, so both are dithered as gradients rather than cut into steps — the one place
+// in the frame that is, since a glow drawn as solid steps reads as a shape, and a tidy
+// pass turns dither into blocks. The bright stars are DOM glints (DepartureRidge.vue),
+// so they can breathe on a stepped clock without a redraw.
 
 import { DEPARTURE_RIDGE } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
 import { clamp01 } from './math.js'
-import { fbm1, fbm2, hash2, seamIndex } from './pixelNoise.js'
-import { cellFor, tidySprite } from './ridge.js'
+import { fbm1, fbm2, hash2, ridged2, seamIndex, turbulence } from './pixelNoise.js'
+import { cellFor } from './ridge.js'
 
 export function drawSky(el, frame) {
 	const { sunGlow: S, galaxy: G } = DEPARTURE_RIDGE.sky
@@ -33,70 +34,126 @@ export function drawSky(el, frame) {
 	}
 	const seed = DEPARTURE_RIDGE.ridgeSeed + 5
 
-	// The galaxy: a band across the frame — a wide dark mantle with a narrow bright spine
-	// down its middle, the way the real one reads from a dark place. The haze is noise
-	// sampled through a warp of itself, which is what turns a gradient into billows,
-	// with finer wisps laid over the big ones; quantised to solid steps on a ramp that
-	// walks from violet up into rose, and dust lanes that cut whole steps out.
+	// The galaxy: a river of unresolved stars, which is what it is — a broad soft arc of
+	// light, brightest and widest toward the bulge, mottled by cloud and dimmed by lanes
+	// of dust, all drawn out along its length. It is one smooth field: a profile with
+	// long wings, a turbulence that multiplies it the way cloud does, an absorption that
+	// takes from it the way dust does — and no threshold anywhere, since a threshold makes
+	// an edge and the real thing has none. Dithered the whole way like the sun's glow, so
+	// the two soft things in the frame speak one language, and the stars thin with the
+	// light so the band dissolves into the sky instead of ending on a line.
 	const haze = G.haze.map(name => PALETTE[name])
 	const faint = G.faint.map(name => PALETTE[name])
+	const spark = G.spark.map(name => PALETTE[name])
 	const bright = G.bright.map(name => PALETTE[name])
 	const arm = PALETTE[G.brightArm]
 	const ax = G.from[0] * w
 	const ay = G.from[1] * h
 	const bx = G.to[0] * w - ax
 	const by = G.to[1] * h - ay
+	const len = Math.hypot(bx, by)
 	const half = (G.width * h) / 2
-	// the band's middle and its half-width, both wandering along its length, and the
-	// furthest either can reach — past that a cell is out before any noise is sampled
-	const centreAt = t => (fbm1(t * G.wanderCells, seed + 51) - 0.5) * G.wander * half
-	const halfAt = t => half * (1 + (fbm1(t * G.wanderCells + 9.4, seed + 53) - 0.5) * G.swell)
-	const reach = half * (1 + (G.swell + G.wander) / 2)
+	// the spine bows like the great circle it is and wanders across its run; the bulge is
+	// a hump along it
+	const centreAt = t =>
+		(fbm1(t * G.wanderCells, seed + 51) - 0.5) * G.wander * half -
+		G.bow * half * 4 * t * (1 - t)
+	const bulgeAt = t => Math.exp(-(((t - G.bulgeAt) / G.bulgeWidth) ** 2))
+	const D = G.dust
+	// the stars, kept apart from each other: two stars touching read as one blob
 	const stars = []
+	const taken = new Uint8Array(w * h)
+	const free = (x, y, r) => {
+		for (let dy = -r; dy <= r; dy++) {
+			for (let dx = -r; dx <= r; dx++) {
+				if (taken[(y + dy) * w + x + dx]) return false
+			}
+		}
+		return true
+	}
+	const star = (x, y, r, at) => {
+		if (x < r || y < r || x >= w - r || y >= h - r || !free(x, y, r)) return
+		taken[y * w + x] = 1
+		stars.push({ x, y, ...at })
+	}
 	for (let y = 0; y < h; y++) {
 		for (let x = 0; x < w; x++) {
-			const t = clamp01(((x - ax) * bx + (y - ay) * by) / (bx * bx + by * by))
-			const rx = x - ax - t * bx
-			const ry = y - ay - t * by
-			// signed, so a side of the band can be the near one and the middle can wander
-			const off = Math.hypot(rx, ry) * (ry * bx - rx * by < 0 ? -1 : 1)
-			if (Math.abs(off) >= reach) continue
-			const d = Math.abs(off - centreAt(t)) / halfAt(t)
-			if (d >= 1) continue
-			const wx = (fbm2(x / G.warpCells, y / G.warpCells, seed + 21) - 0.5) * G.warp
-			const wy = (fbm2(x / G.warpCells + 7.3, y / G.warpCells, seed + 23) - 0.5) * G.warp
-			const billow = fbm2((x + wx) / G.cloudCells, (y + wy) / G.cloudCells, seed)
-			const wisp = fbm2((x + wx) / G.wispCells, (y + wy) / G.wispCells, seed + 41)
-			const cloud = clamp01(
-				((1 - G.wispMix) * billow + G.wispMix * wisp - G.cloudFloor) /
-					(G.cloudCeil - G.cloudFloor)
-			)
-			// the mantle spans the band, the spine gathers its light — and the cloud
-			// carries both: a profile with a floor of its own ends on an iso-contour,
-			// the one ruled line a galaxy never has
-			const mantle = 1 - d * d
-			const spine = Math.max(0, 1 - (d / G.spineWidth) ** 2)
-			const g = G.density * mantle * (G.base + (1 - G.base) * spine) * cloud
-			let idx = seamIndex(clamp01(g), haze.length + 1, x, y, G.seam)
-			if (fbm2(x / G.laneCells, y / G.laneCells, seed + 3) < G.laneBelow) {
-				idx = Math.max(0, idx - G.laneCut)
+			const rx = x - ax
+			const ry = y - ay
+			const u = (rx * bx + ry * by) / len
+			const v = (ry * bx - rx * by) / len
+			const t = u / len
+			const bulge = bulgeAt(t)
+			const rel = (v - centreAt(t)) / (half * (1 + G.bulgeWiden * bulge))
+			// the light on this cell, and what it would be with no dust in the way — the
+			// stars in front of the dust see the second; both zero past the band's reach
+			let g = 0
+			let clear = 0
+			if (Math.abs(rel) < G.reach) {
+				// the light: a soft core with long wings, gaining toward the bulge and
+				// tapering away from it toward the far end of the run
+				let f =
+					(G.amp * (1 + G.bulge * bulge) * (1 - G.taper * (1 - t))) /
+					(1 + rel * rel) ** G.falloff
+				// cloud, at every scale it is given: turbulences drawn out along the run,
+				// each taken as a power so bright and dark are both gentle and neither has a
+				// floor or a ceiling to end on — the coarse one is what clumps and thins the
+				// band along its length and frays its edges, the fine one is the grain
+				for (let k = 0; k < G.clouds.length; k++) {
+					const c = G.clouds[k]
+					f *= Math.exp(
+						c.depth *
+							(turbulence(
+								u / c.stretch / c.cells,
+								v / c.cells,
+								seed + 21 + k,
+								c.octaves
+							) -
+								0.5)
+					)
+				}
+				clear = 1 - Math.exp(-f)
+				// dust in front of the light: the rifts down the run, and a ridged turbulence
+				// of lanes and knots absorbing by its depth, both hugging the plane where dust
+				// lies
+				for (let k = 0; k < G.rifts.length; k++) {
+					const r = G.rifts[k]
+					const path =
+						r.offset + (fbm1(t * r.wanderCells, seed + 71 + k) - 0.5) * r.wander
+					const width =
+						r.width *
+						(1 + (fbm1(t * r.wanderCells + 3.1, seed + 81 + k) - 0.5) * r.swell)
+					const open = Math.min(
+						clamp01((t - r.span[0]) / r.ease),
+						clamp01((r.span[1] - t) / r.ease)
+					)
+					f *= 1 - r.depth * open * Math.exp(-(((rel - path) / width) ** 2))
+				}
+				const lanes = ridged2(u / D.stretch / D.cells, v / D.cells, seed + 25, D.octaves)
+				f *= Math.exp(-D.depth * lanes ** D.power * Math.exp(-((rel / D.reach) ** 2)))
+				// exposed like film, so piles of light brighten ever more slowly and the top
+				// of the ramp is kept for the heart of the bulge
+				g = 1 - Math.exp(-f)
+				const idx = seamIndex(g, haze.length + 1, x, y, G.seam)
+				if (idx > 0) put(x, y, haze[idx - 1])
 			}
-			if (idx > 0) put(x, y, haze[idx - 1])
-			// stars gather where the haze is thick, and thicker still in clusters: a dense
-			// faint tier of single cells, and a sparse bright tier drawn as small crosses
+			// the stars are the band: a faint tier of single cells that thins with the light
+			// and runs on well past its last step, so the band's grain tails off into the
+			// sky's own stars instead of stopping; pale sparks where the light is thickest,
+			// which is stars too close to tell apart; and a sparse bright tier drawn as small
+			// crosses. The faint and bright tiers gather in clusters, and starThrough of them
+			// sit in front of the dust, so a lane is dark but not empty.
 			const cluster = fbm2(x / G.clusterCells, y / G.clusterCells, seed + 31) > G.clusterAbove
-			const weight = g * g * (cluster ? G.clusterGain : 1)
+			const lit = g + (clear - g) * G.starThrough
+			const weight = lit ** G.starPow * (cluster ? G.clusterGain : 1)
 			const roll = hash2(x, y, seed + 7)
-			if (roll < G.brightStars * weight) stars.push({ x, y, big: true })
-			else if (roll < G.stars * weight) stars.push({ x, y, big: false })
+			if (roll < G.brightStars * weight) star(x, y, 2, { tier: bright, cross: true })
+			else if (roll < G.sparks * g ** G.sparkPow) star(x, y, 1, { tier: spark })
+			else if (roll < G.stars * weight) star(x, y, 1, { tier: faint, skew: G.faintSkew })
 		}
 	}
-	// tidy the clouds, then the glow and the stars go on — a star is meant to stand alone
-	tidySprite(img, w, h, DEPARTURE_RIDGE.moon.tidyPasses)
-	// The sun's glow, last onto whatever is still sky and after the tidy: it is the one
-	// soft thing in the frame, a dithered falloff about a centre on the horizon off
-	// frame left, and a tidy would gather its dither into flat blocks. Faint by design —
-	// no air carries it.
+	// The sun's glow onto whatever is still sky: a dithered falloff about a centre on
+	// the horizon off frame left. Faint by design — no air carries it.
 	const glow = S.shades.map(name => PALETTE[name])
 	const sx = S.x * w
 	const sy = S.y * h
@@ -112,23 +169,24 @@ export function drawSky(el, frame) {
 			if (idx > 0) put(x, y, glow[idx - 1])
 		}
 	}
+	// the stars go on last — a star is meant to stand alone on whatever is behind it
 	for (const star of stars) {
-		const shade = hash2(star.x, star.y, seed + 9)
-		if (!star.big) {
-			put(star.x, star.y, faint[Math.floor(shade * faint.length)])
-			continue
-		}
-		for (const [dx, dy] of [
-			[-1, 0],
-			[1, 0],
-			[0, -1],
-			[0, 1],
-		]) {
-			if (star.x + dx >= 0 && star.x + dx < w && star.y + dy >= 0 && star.y + dy < h) {
-				put(star.x + dx, star.y + dy, arm)
+		if (star.cross) {
+			for (const [dx, dy] of [
+				[-1, 0],
+				[1, 0],
+				[0, -1],
+				[0, 1],
+			]) {
+				if (star.x + dx >= 0 && star.x + dx < w && star.y + dy >= 0 && star.y + dy < h) {
+					put(star.x + dx, star.y + dy, arm)
+				}
 			}
 		}
-		put(star.x, star.y, bright[Math.floor(shade * bright.length)])
+		// a tier's shade is a roll, skewed toward the dim end where the tier says so —
+		// most of a star field is at the edge of seeing
+		const shade = hash2(star.x, star.y, seed + 9) ** (star.skew ?? 1)
+		put(star.x, star.y, star.tier[Math.floor(shade * star.tier.length)])
 	}
 	ctx.putImageData(img, 0, 0)
 	return { cols: w, rows: h, cell }
