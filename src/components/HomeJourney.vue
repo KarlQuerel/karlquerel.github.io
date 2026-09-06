@@ -583,8 +583,7 @@
 	.journey__station-head {
 		position: relative;
 		z-index: 1;
-		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
-			calc(var(--my, 0) * var(--depth, 0) * 1px);
+		@include lean;
 		max-width: min(64rem, 92vw);
 		margin: 0 auto 2.5rem;
 		padding: 1.75rem 1.5rem 2rem;
@@ -595,8 +594,7 @@
 	.journey__station-body {
 		position: relative;
 		z-index: 1;
-		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
-			calc(var(--my, 0) * var(--depth, 0) * 1px);
+		@include lean;
 	}
 
 	// crossing a lit limb, the letters need holding off it from every side

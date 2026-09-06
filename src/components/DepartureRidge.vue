@@ -204,6 +204,8 @@
 </script>
 
 <style scoped lang="scss">
+	@use '@/styles/mixins' as *;
+
 	.ridge {
 		position: absolute;
 		inset: 0;
@@ -217,8 +219,7 @@
 		opacity: var(--fade, 1);
 		top: calc(var(--depth, 0) * -1px);
 		left: calc(var(--depth, 0) * -1px);
-		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
-			calc(var(--my, 0) * var(--depth, 0) * 1px);
+		@include lean;
 		image-rendering: pixelated;
 	}
 
@@ -231,8 +232,7 @@
 		width: calc(var(--cell, 6) * 1px);
 		height: calc(var(--cell, 6) * 1px);
 		background: var(--core);
-		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
-			calc(var(--my, 0) * var(--depth, 0) * 1px);
+		@include lean;
 
 		&::before,
 		&::after {
@@ -320,8 +320,7 @@
 		left: calc(var(--depth, 0) * -1px);
 		display: block;
 		transform-origin: bottom center;
-		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
-			calc(var(--my, 0) * var(--depth, 0) * 1px);
+		@include lean;
 		// hard-edged silhouette, like the rest of the sprite work
 		image-rendering: pixelated;
 	}

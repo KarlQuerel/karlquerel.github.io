@@ -9,12 +9,13 @@ const ROUTES = [
 	{ path: '/about', title: 'Karl Querel • Software Engineer', lands: '/#work' },
 	{ path: '/contact', title: 'Karl Querel • Software Engineer', lands: '/#contact' },
 	{ path: '/sport', title: 'Sport • Karl Querel' },
-	// the hero cinematic — the heaviest component, and the one the game work builds on
 	// the WebGL flyby — its shaders only ever compile at runtime, so this is what
 	// catches a GLSL error (the renderer logs compile failures to the console)
 	{ path: '/lab', title: 'Lab • Karl Querel' },
 	{ path: '/terminal', title: 'Terminal • Karl Querel' },
-	{ path: '/game', title: 'Signal Lost • Karl Querel' },
+	// the game is unbuilt: its URL lands on the holding screen (src/constants/game.js)
+	{ path: '/under-construction', title: 'Under Construction • Karl Querel' },
+	{ path: '/game', title: 'Under Construction • Karl Querel', lands: '/under-construction' },
 	{ path: '/definitely-not-a-page', title: '404 • Karl Querel' },
 ]
 

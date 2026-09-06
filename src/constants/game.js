@@ -1,27 +1,153 @@
-// The game is still being built — /game serves the holding screen until this
-// flips. Everything under components/game/ is finished and wired; the flag is
-// the only thing standing between it and the route.
-export const GAME_READY = false
+// The game is being built from nothing, on /game. It ships when GAME_SHIPPED flips;
+// until then the route exists only on the dev server, and every build sends /game to
+// /under-construction (src/main.js) — the flag folds to false at build time, so the
+// game's page is not even in the bundle.
+export const GAME_SHIPPED = false
+export const GAME_READY = GAME_SHIPPED || import.meta.env.DEV
 
-// Copy for the holding screen (GameHolding.vue) — the heading is the whole page.
+// The holding screen (GameHolding.vue): the heading over two strips of the departure's
+// moon — a far band of low hills and the near plain, each grown to its heightVh of the
+// frame with its horizon at `horizon` of it, leaning with the cursor at its own depth
+// — and a worksite standing on the near plain at `at` of the width. The site is a char
+// grid on the shared palette (`legend` maps a char to a PALETTE name, '.' is sky) in
+// two layouts, `wide` and `narrow`, the narrow one for frames too few cells across for
+// the wide one; row `foot` stands on the ground's horizon and the rows under it are the
+// shadows things throw on the regolith. The beacon on the mast is the one thing that
+// moves: a DOM cell at the layout's [col, row], blinking on a stepped clock.
 export const GAME_HOLDING = {
 	lead: 'Under ',
 	accent: 'construction',
-}
-
-// Timeline of the /game crash intro, in seconds since mount: warp in, cruise,
-// drop out onto the planet, impact, cut to black. Tune the feel here.
-export const CRASH_INTRO = {
-	warpRamp: 1.4, // 0 → full lightspeed
-	warpHold: 4.0, // cruise ends — the drop-out begins
-	arrival: 6.2, // planet fully revealed, warp gone
-	impact: 7.4, // white flash peak, shake starts
-	blackout: 8.6, // fully black → hand over to the first scene
-	shakeLead: 0.3, // shake starts this long before impact
-	captions: [
-		{ at: 0.4, text: 'EMERGENCY DROP FROM HYPERSPACE' },
-		{ at: 4.2, text: 'GRAVITY WELL CAPTURE - KEPLER-442B' },
-		{ at: 6.4, text: 'BRACE FOR IMPACT' },
-	],
-	skip: 'SKIP >>',
+	site: {
+		far: { heightVh: 18, horizon: 0.42 },
+		near: { heightVh: 40, horizon: 0.8 },
+		at: 0.54,
+		foot: 43,
+		// painted steel in the warm rock ramp — lit `A`/`D` on the left and top, since the
+		// moon's sun is at -x, `C` mid, `B`/`R` in shadow — with a `K` outline so it stands in
+		// front of the cold ground; `E` lights and stripes; panels and crates on the pale ramp
+		legend: {
+			A: 'amber',
+			D: 'dune',
+			C: 'clay',
+			B: 'brick',
+			R: 'rust',
+			E: 'ember',
+			K: 'pitch',
+			o: 'stone',
+			b: 'bone',
+			c: 'chalk',
+			a: 'ash',
+			s: 'soot',
+			t: 'steel',
+			z: 'zinc',
+			f: 'frost',
+			r: 'rime',
+		},
+		wide: {
+			beacon: [36, 0],
+			rows: [
+				'................................KKKKDKKKKKKKKK..............................',
+				'........................KKKKKKKKCCCCCCCCCCCCCCKKKKKKKKKKKKKKKKKK............',
+				'..................KKKKKKCCCCCCCC...ACB........CCCCCCCCCCCCCCCCCCKKKKKKKKKK..',
+				'.................KBCCCCCDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDCCCCCCCCCBK.',
+				'.................KB.C.C.C.C.C.C.CACCCCCBC.C.C.C.C.C.C.C.C.C.C.C.C.C.C.C.CBK.',
+				'.................KBC.C.C.C.C.C.C.ACCCCCB.C.C.C.C.C.C.C.C.C.C.C.C.C.C.C.C.BK.',
+				'.................KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK.',
+				'..................KoooooaKKKKKKKKDAACCCBBBBBBKKKKKKKKKKKKKBCBKKKKKKKKKKKKK..',
+				'..................KoooooaK......KDAAAAABAEEABK............KRK...............',
+				'..................KoooooaK.......KDDDDDKAAACBK............KRK...............',
+				'..................KoooooaK.......KACCCBKRRRRRK............KRK...............',
+				'..................KaaaaaaK.......KAC.CBKKKKKK.............KRK...............',
+				'...................KKKKKK........KA.C.BK..................KRK...............',
+				'.................................KAC.CBK..................KRK...............',
+				'.................................KACCCBK..................KRK...............',
+				'.................................KAC.CBK..................KRK...............',
+				'.................................KA.C.BK..................KRK...............',
+				'.................................KAC.CBK..................KRK...............',
+				'.................................KACCCBK..................KRK...............',
+				'.................................KAC.CBK..................KRK...............',
+				'.................................KA.C.BK..................KRK...............',
+				'.................................KAC.CBK..................KRK...............',
+				'.................................KACCCBK.................KACBK..............',
+				'.................................KAC.CBK................KKKBKKK.............',
+				'.................................KA.C.BK...............KccccbbaK............',
+				'.................................KAC.CBK...............KcbbbbaaK............',
+				'.................................KACCCBK...............KbbbbaaK.............',
+				'.................................KAC.CBK................KKKKKK..............',
+				'.................................KA.C.BK..................KKKKKKK.....KKK...',
+				'.................................KAC.CBK.................KAAAAAAAK...KEEEK..',
+				'.................................KACCCBK.................KCCKBKCCK....KACBK.',
+				'.................................KAC.CBK................KCKKKBKKKCK....KBK..',
+				'.................................KA.C.BK...............KCK..KBK..KCK...KBK..',
+				'.................................KAC.CBK..KKKKKKKK....KCK...KBK...KCK..KBK..',
+				'.................................KACCCBK.KDDDDDDDDK..KCK....KBK....KCK.KBK..',
+				'.................................KAC.CBK.KEKKEKKEK...KCK....KBK.....KCKKBK..',
+				'.................................KA.C.BK..KEKKEKKEK.KCK.....KBK.....KCKKBK..',
+				'............KKKKK................KAC.CBK..KKEKKEKK.KCKKKKKKKKKK......KCKBK..',
+				'...........KcccbaK...............KACCCBK.KBBBBBBBBKKcbbbcbbbcbbK......KKBK..',
+				'.........KKKbbbaaKKK.....KKKK....KAC.CBK..KKKBKKKK.KbbbabbbabbbKKKKKKKKKBK..',
+				'........Kcccba.cccbaK...KrfftK...KA.C.BK....KBK....KcbbbcbbbcbbbcbbbcbbKBK..',
+				'......KKKbbbaa.bbbaaKKKKEffzztK..KAC.CBK....KBK....KbbbabbbabbbabbbabbbKBK..',
+				'.....KcccbaKcccbaKcccbaKsKssKsK.KAACCCBBK...KBK....KcbbbcbbbcbbbcbbbcbbKBK..',
+				'.....KbbbaaKbbbaaKbbbaaKsKssKsKKAABBBBBBBK..KBK....KbbbabbbabbbabbbabbbKBK..',
+				'.......................KKKK.............KKKKKKKKKKK....................KKKKK',
+				'.......................KKK.............KKKKKKKKK.......................KKKKK',
+				'......................................KKKKKKK..........................KKK..',
+				'.....................................KKKKK..................................',
+			],
+		},
+		narrow: {
+			beacon: [25, 0],
+			rows: [
+				'.....................KKKKDKKKKKKK.......................',
+				'.............KKKKKKKKCCCCCCCCCCCCKKKKKKKKKKKKKK.........',
+				'........KKKKKCCCCCCCC...ACB......CCCCCCCCCCCCCCKKKKKKKK.',
+				'.......KBCCCCDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDCCCCCCCBK',
+				'.......KB.C.C.C.C.C.C.ACCCCCB.C.C.C.C.C.C.C.C.C.C.C.C.BK',
+				'.......KBC.C.C.C.C.C.CACCCCCBC.C.C.C.C.C.C.C.C.C.C.C.CBK',
+				'.......KBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBK',
+				'........KoooooaKKKKKKKDAACCCBBBBBBKKKKKKKKBCBKKKKKKKKKK.',
+				'........KoooooaK.....KDAAAAABAEEABK.......KRK...........',
+				'........KoooooaK......KDDDDDKAAACBK.......KRK...........',
+				'........KoooooaK......KACCCBKRRRRRK.......KRK...........',
+				'........KaaaaaaK......KAC.CBKKKKKK........KRK...........',
+				'.........KKKKKK.......KA.C.BK.............KRK...........',
+				'......................KAC.CBK.............KRK...........',
+				'......................KACCCBK.............KRK...........',
+				'......................KAC.CBK.............KRK...........',
+				'......................KA.C.BK.............KRK...........',
+				'......................KAC.CBK.............KRK...........',
+				'......................KACCCBK.............KRK...........',
+				'......................KAC.CBK.............KRK...........',
+				'......................KA.C.BK.............KRK...........',
+				'......................KAC.CBK.............KRK...........',
+				'......................KACCCBK............KACBK..........',
+				'......................KAC.CBK...........KKKBKKK.........',
+				'......................KA.C.BK..........KccccbbaK........',
+				'......................KAC.CBK..........KcbbbbaaK........',
+				'......................KACCCBK..........KbbbbaaK.........',
+				'......................KAC.CBK...........KKKKKK..........',
+				'......................KA.C.BK...........................',
+				'......................KAC.CBK...........................',
+				'......................KACCCBK.............KKKKKKK.......',
+				'......................KAC.CBK............KAAAAAAAK......',
+				'......................KA.C.BK............KCKKBKKCK......',
+				'......................KAC.CBK..KKKKKKKK.KCK.KBK.KCK.....',
+				'......................KACCCBK.KDDDDDDDDKCK..KBK..KCK....',
+				'......................KAC.CBK.KEKKEKKEKCK...KBK...KCK...',
+				'......................KA.C.BK..KEKKEKKECK...KBK...KCK...',
+				'......................KAC.CBK..KKEKKEKKKKKKKKKK....KCK..',
+				'......................KACCCBK.KBBBBBBBBbbbcbbbcK....K...',
+				'....KKKKK.............KAC.CBK..KKKBKKKbbbabbbabKKKKKK...',
+				'...KcccbaK............KA.C.BK....KBK.KcbbbcbbbcbbbcbbK..',
+				'.KKKbbbaaKKK..........KAC.CBK....KBK.KbbbabbbabbbabbbK..',
+				'KcccbaKcccbaK........KAACCCBBK...KBK.KcbbbcbbbcbbbcbbK..',
+				'KbbbaaKbbbaaK.......KAABBBBBBBK..KBK.KbbbabbbabbbabbbK..',
+				'.............................KKKKKKKKKKK.............KKK',
+				'............................KKKKKKKKK................KKK',
+				'...........................KKKKKKK...................KKK',
+				'..........................KKKKK.........................',
+			],
+		},
+	},
 }

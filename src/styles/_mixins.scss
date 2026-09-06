@@ -155,3 +155,10 @@
 		}
 	}
 }
+
+// A layer that leans with the cursor: --mx/--my come from the scene's container
+// (usePointerParallax), and the layer takes its own share of them through --depth. On
+// `translate`, never `transform` — that belongs to scroll-scrubbed motion.
+@mixin lean {
+	translate: calc(var(--mx, 0) * var(--depth, 0) * 1px) calc(var(--my, 0) * var(--depth, 0) * 1px);
+}

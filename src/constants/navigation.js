@@ -8,8 +8,10 @@ export const JOURNEY_STOPS = [
 	{ to: '/#contact', label: 'Contact' },
 ]
 
-// The GAME chip riding the journey chrome, one rung under the way-out chip.
-export const GAME_LINK = { to: '/game', label: 'Game' }
+// The GAME chip riding the journey chrome, one rung under the way-out chip. It points
+// at the holding screen, not at /game: that URL is where the game is being built, and
+// stays unlinked until it ships (src/constants/game.js).
+export const GAME_LINK = { to: '/under-construction', label: 'Game' }
 
 // The one-chip way home on the chromeless pages (terminal, 404, the game's
 // holding screen) — there is no navbar, and a page reached by link needs a door.

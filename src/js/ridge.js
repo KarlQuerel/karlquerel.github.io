@@ -690,12 +690,13 @@ export function drawMoon(el, band, visitSeed, frame) {
 	const skyline = band.hills
 		? paintHills(put, w, h, yH, band.hills, seed, M.sun, !band.plain)
 		: null
-	// the cut, for the caller to size the canvas by and to hang the destination from:
-	// where the hills top out, per column, in rows
+	// the cut, for the caller to size the canvas by and to stand things on: the plain's
+	// far edge per column, and where the hills top out, both in rows
 	const cut = {
 		cols: w,
 		rows: h,
 		cell,
+		horizon: yH,
 		hillTop: skyline && skyline.map((s, x) => Math.round(yH[x] - s)),
 	}
 	const P = band.plain

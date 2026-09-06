@@ -2,6 +2,7 @@ import './styles/main.scss'
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { prefersReducedMotion } from './composables/usePrefersReducedMotion.js'
+import { GAME_READY } from './constants/game.js'
 import App from './App.vue'
 
 // every route is lazy so the Firebase-carrying pages stay out of the entry chunk
@@ -34,10 +35,18 @@ const routes = [
 		meta: { title: 'Sport' },
 	},
 	{
-		// unlinked while the journey fronts the site; reachable by URL for dev
+		// the game's holding screen: a moon worksite, until the game ships
+		path: '/under-construction',
+		component: () => import('./components/game/GameHolding.vue'),
+		meta: { title: 'Under Construction' },
+	},
+	{
+		// the game itself, on the dev server only until GAME_SHIPPED — a build sends
+		// visitors to the holding screen and leaves the page out of the bundle
 		path: '/game',
-		component: () => import('./components/game/GamePage.vue'),
-		meta: { title: 'Signal Lost' },
+		...(GAME_READY
+			? { component: () => import('./components/game/GamePage.vue'), meta: { title: 'Game' } }
+			: { redirect: '/under-construction' }),
 	},
 	{
 		path: '/:pathMatch(.*)*',

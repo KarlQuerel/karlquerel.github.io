@@ -1,42 +1,12 @@
 <template>
-	<GameHolding v-if="!GAME_READY" />
-	<div v-else class="game">
-		<CrashIntro v-if="!introDone" @done="introDone = true" />
-		<!-- keyed so every scene change replays the fade-in -->
-		<GameScene v-else :key="sceneId" :scene="scene" @choose="choose" />
+	<!-- The game, being built from nothing. Reached at /game on the dev server only: a
+	     build sends visitors to /under-construction and leaves this page out of the
+	     bundle (src/constants/game.js). -->
+	<div class="content">
+		<HomeChip />
 	</div>
 </template>
 
 <script setup>
-	import { computed, ref } from 'vue'
-	import { useRouter } from 'vue-router'
-	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
-	import { GAME_READY } from '@/constants/game'
-	import { GAME_SCENES, START_SCENE } from '@/data/gameScenes.js'
-	import CrashIntro from './CrashIntro.vue'
-	import GameHolding from './GameHolding.vue'
-	import GameScene from './GameScene.vue'
-
-	// motion-sensitive visitors skip the cinematic and wake straight in the wreck
-	const introDone = ref(prefersReducedMotion())
-	const router = useRouter()
-
-	const sceneId = ref(START_SCENE)
-	const scene = computed(() => GAME_SCENES[sceneId.value])
-
-	function choose(option) {
-		if (option.route) {
-			router.push(option.route)
-			return
-		}
-		sceneId.value = option.to
-	}
+	import HomeChip from '../HomeChip.vue'
 </script>
-
-<style scoped lang="scss">
-	.game {
-		position: relative;
-		width: min(100%, 72rem);
-		height: 100%;
-	}
-</style>

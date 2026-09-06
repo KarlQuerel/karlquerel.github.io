@@ -45,6 +45,15 @@ const ROUTES = [
 		noindex: true,
 	},
 	{
+		// the game's holding screen: snapshotted so the URL answers 200, unlisted
+		path: '/under-construction',
+		dir: 'under-construction',
+		title: 'Under Construction • Karl Querel',
+		description: 'Something is being built here.',
+		render: true,
+		noindex: true,
+	},
+	{
 		path: '/terminal',
 		dir: 'terminal',
 		title: 'Terminal • Karl Querel',
@@ -60,6 +69,8 @@ const ROUTES = [
 const REDIRECTS = [
 	{ dir: 'about', to: '/#work' },
 	{ dir: 'contact', to: '/#contact' },
+	// the game, until it ships (src/constants/game.js)
+	{ dir: 'game', to: '/under-construction' },
 ]
 
 // Swap a single-tag element matched by `pattern` for `replacement`, tolerating the
