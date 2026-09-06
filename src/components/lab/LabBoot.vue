@@ -64,6 +64,9 @@
 		done: { type: Boolean, required: true },
 	})
 
+	// the cover has finished leaving and is drawing nothing — the host can unmount it
+	const emit = defineEmits(['gone'])
+
 	// The K from the favicon - the site's logo, pixel for pixel. Not an image: the loader
 	// is the first thing on screen and cannot wait for an asset to arrive before it has a
 	// logo.
@@ -139,14 +142,24 @@
 		raf = requestAnimationFrame(tick)
 	}
 
+	// The cover is spent. Its own root is gone from here, but the clock has to stop
+	// with it and the host has to be told: this is mounted for the life of the page,
+	// so a tick left running is a tick running behind every route you go on to.
+	function dismiss() {
+		gone.value = true
+		cancelAnimationFrame(raf)
+		raf = 0
+		emit('gone')
+	}
+
 	function finish() {
-		if (leaving.value) gone.value = true
+		if (leaving.value) dismiss()
 	}
 
 	function leave() {
 		// a fade nobody asked for is still motion; reduced motion just cuts
 		if (prefersReducedMotion()) {
-			gone.value = true
+			dismiss()
 			return
 		}
 		leaving.value = true

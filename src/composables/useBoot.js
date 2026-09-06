@@ -36,5 +36,10 @@ export function useBoot() {
 		finish() {
 			cut.value = true
 		},
+		// the cover has gone: drop it out of the shell, so no part of the boot is left
+		// mounted — and ticking — behind the page it was covering
+		dismiss() {
+			active.value = false
+		},
 	}
 }

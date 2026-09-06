@@ -7,7 +7,7 @@
 			     starfield and the chrome, until the departure has cut its ground. Painted
 			     the site's black, not the lab's ground. -->
 			<div v-if="active" class="app-boot">
-				<LabBoot :progress="progress" :ceiling="ceiling" :done="done" />
+				<LabBoot :progress="progress" :ceiling="ceiling" :done="done" @gone="dismiss" />
 			</div>
 		</Teleport>
 		<main class="app-main">
@@ -49,7 +49,7 @@
 		.getRoutes()
 		.filter(r => r.path === '/' || r.redirect?.path === '/')
 		.map(r => r.path)
-	const { active, progress, ceiling, done, start } = useBoot()
+	const { active, progress, ceiling, done, start, dismiss } = useBoot()
 	if (landingPaths.includes(window.location.pathname.replace(/\/$/, '') || '/')) start()
 
 	// the shell's inline cover (index.html) hands over to the boot once it is painted
