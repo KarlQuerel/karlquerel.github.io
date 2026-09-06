@@ -1,0 +1,1 @@
+const o=[{to:"/#top",label:"Home"},{to:"/#work",label:"Work"},{to:"/#life",label:"Life"},{to:"/#contact",label:"Contact"}],t={to:"/under-construction",label:"Game"},e={to:"/",label:"Home"};export{t as G,e as H,o as J};
