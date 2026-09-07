@@ -1,10 +1,5 @@
-// The planet's surface shader, lifted out of PixelPlanet.vue so it can run either
-// on the main thread or inside a worker (see planet.worker.js) from one definition.
-// Nothing here touches the DOM: `draw` writes RGBA bytes into a buffer the caller
-// owns, which is what lets the same code serve both.
-//
-// One shader per visit — the seed fixes the terrain and the basins, so a shader
-// built with the same seed on either thread paints the same world.
+// The planet's surface shader, lifted out of PixelPlanet.vue so it can run either on the main
+// thread or inside a worker (see planet.worker.js) from one definition.
 
 import { PALETTE } from '../constants/palette.js'
 import { PLANET } from '../constants/planet.js'
@@ -14,9 +9,7 @@ import { ditherIndex, ditherThreshold } from './pixelNoise.js'
 // `res` is the sprite's side in cells, `seed` this visit's world, and `palette` an
 // optional override of named PALETTE entries (e.g. EARTH_PALETTE).
 export function createPlanetShader({ res, seed, palette: override = null }) {
-	// The palette, and the ramps resolved out of it once — neither changes live. Every
-	// pixel the shader writes is one of these entries exactly: it picks a step, never
-	// a blend, which is what keeps the rendered planet on a countable palette.
+	// The palette, and the ramps resolved out of it once — neither changes live.
 	const palette = { ...PALETTE, ...override }
 	const RAMPS = PLANET.bands.map(([name]) => PLANET.ramps[name].map(c => palette[c]))
 	const CLOUD_RAMP = PLANET.cloudRamp.map(c => palette[c])
@@ -75,8 +68,6 @@ export function createPlanetShader({ res, seed, palette: override = null }) {
 	}
 
 	// Fractal elevation over the sphere — the bands and the sea-glint mask read it.
-	// The basins press smooth circular dents into it: where a floor drops below sea
-	// level the dent floods, and the world gains a round sea.
 	function elevation(px, py, pz) {
 		const s = PLANET.noiseScale
 		let n = fbm(px * s, py * s, pz * s)
@@ -161,9 +152,7 @@ export function createPlanetShader({ res, seed, palette: override = null }) {
 		// how thin the deck is right now — scales the cover, so thinning opens the
 		// deck into scattered dither rather than fading it
 		const thin = cloudThin
-		// this visit's storm centre: a unit vector in cloud space, so it rides the
-		// shell. Longitude is seeded around faceLon rather than the whole circle, so
-		// the storm faces the camera while the stations are read.
+		// this visit's storm centre: a unit vector in cloud space, so it rides the shell.
 		const st = PLANET.storm
 		const lonS = st.faceLon + (hash3(11, 23, 5) - 0.5) * st.lonJitter
 		const latS = st.latMin + (st.latMax - st.latMin) * hash3(17, 3, 29)
@@ -185,14 +174,8 @@ export function createPlanetShader({ res, seed, palette: override = null }) {
 		const u2z = -sty * u1x
 		const bandPhase = hash3(29, 41, 3) * Math.PI * 2
 
-		// Cloud cover at a cloud-space point (0..opacity) — the deck overhead and the
-		// shadow it casts both read this one field. The storm warps the domain first:
-		// inside its cap the sample rotates around the storm axis (Rodrigues), hardest
-		// at the centre, so the fbm streaks bend into a spiral; the wall fills and the
-		// eye clears on the same falloff. `stormT` (the falloff, 0 outside the cap)
-		// and `stormN` (the warped noise there) are left holding the last sample's
-		// values so the shading step can texture the wall — read them before the
-		// shadow sample overwrites them.
+		// Cloud cover at a cloud-space point (0..opacity) — the deck overhead and the shadow it casts both
+		// read this one field.
 		let stormT = 0
 		let stormN = 0
 		function cloudCoverAt(cx, cy, cz) {
@@ -215,12 +198,10 @@ export function createPlanetShader({ res, seed, palette: override = null }) {
 				wx = cx * ca + (sty * cz - stz * cy) * sa + stx * k
 				wy = cy * ca + (stz * cx - stx * cz) * sa + sty * k
 				wz = cz * ca + (stx * cy - sty * cx) * sa + stz * k
-				// Rainbands: the boost is cut by angle into spiral arms that wind
-				// outward, instead of filling the cap — a flat radial boost thresholds
-				// along its own circular contour and reads as a pasted white circle.
-				// φ is the sample's angle around the storm axis (unwarped, so the
-				// bands hold still while the fbm shreds under them); the phase runs
-				// with (1 − t) so each arm trails away from the eye.
+				// Rainbands: the boost is cut by angle into spiral arms that wind outward, instead of filling the
+				// cap — a flat radial boost thresholds along its own circular contour and reads as a pasted white
+				// circle. φ is the sample's angle around the storm axis (unwarped, so the bands hold still while
+				// the fbm shreds under them); the phase runs with (1 − t) so each arm trails away from the eye.
 				const px = cx - stx * dot
 				const py = cy - sty * dot
 				const pz = cz - stz * dot
@@ -235,11 +216,9 @@ export function createPlanetShader({ res, seed, palette: override = null }) {
 			const cn = fbm(wx * cl.scale + 41, wy * cl.scale, wz * cl.scale, cl.octaves) + bump
 			if (stormT > 0) stormN = cn
 			if (cn <= cl.cover - cl.blend) return 0
-			// The wall solidifies where the storm is dense: a hurricane wall is not
-			// 72% cloud with ground dithering through — at fixed opacity the whole
-			// interior becomes one uniform checker and reads as wallpaper. Ambient
-			// decks keep cl.opacity; the texture inside the solid wall comes from
-			// the shading step reading stormN.
+			// The wall solidifies where the storm is dense: a hurricane wall is not 72% cloud with ground
+			// dithering through — at fixed opacity the whole interior becomes one uniform checker and reads as
+			// wallpaper.
 			const op =
 				bump > 0
 					? cl.opacity + (1 - cl.opacity) * Math.min(1, bump * st.solidify)
@@ -251,10 +230,7 @@ export function createPlanetShader({ res, seed, palette: override = null }) {
 			return cover * (1 - thin)
 		}
 
-		// The sweep is bounded to the halo's disc rather than to the sprite's square. A
-		// cell outside `haloReach` takes no colour at all — it is left at the transparent
-		// zero it was allocated with — so the two fifths of the square that are corners
-		// were paying the loop to decide nothing. Same pixels written, same values.
+		// The sweep is bounded to the halo's disc rather than to the sprite's square.
 		for (let y = row0; y <= row1; y++) {
 			const dy = (y + 0.5 - center) / radius
 			const span = radius * Math.sqrt(Math.max(0, reach2 - dy * dy))
@@ -265,11 +241,8 @@ export function createPlanetShader({ res, seed, palette: override = null }) {
 				const dx = (x + 0.5 - center) / radius
 				const d2 = dx * dx + dy * dy
 
-				// Outside the disc: the atmosphere, in stepped layers rather than one
-				// falloff, and lit the way the ground is — a bright crescent on the sun
-				// side thinning to a bare edge on the night limb. Layers with a
-				// measurable thickness are what give the globe a radius; a smooth glow
-				// only ever gives it a light.
+				// Outside the disc: the atmosphere, in stepped layers rather than one falloff, and lit the way the
+				// ground is — a bright crescent on the sun side thinning to a bare edge on the night limb.
 				if (d2 > 1) {
 					const dist = Math.sqrt(d2)
 					if (dist < haloReach) {
@@ -308,9 +281,8 @@ export function createPlanetShader({ res, seed, palette: override = null }) {
 				const sz = -dx * sinS + nz * cosS
 				const n = elevation(sx, ny, sz)
 
-				// One dither slot for this pixel, shared by every decision below — which
-				// ramp we are on, and how far up it. Two grids would beat against each
-				// other and the surface would crawl.
+				// One dither slot for this pixel, shared by every decision below — which ramp we are on, and how
+				// far up it.
 				const thr = ditherThreshold(x, y)
 
 				// The cloud shell picks the ramp rather than a colour to blend toward.
@@ -335,20 +307,17 @@ export function createPlanetShader({ res, seed, palette: override = null }) {
 					ditherIndex(diff * relief, LEVELS, x, y) +
 					ditherIndex(d2 * d2 * diff, PLANET.rimLevels, x, y)
 
-				// The storm wall is promoted toward the ramp's white top by its own
-				// falloff — scaled by daylight so the cyclone's night side stays night,
-				// and by the warped noise, which the domain warp has already bent into
-				// spirals: a flat promotion paints the whole wall the same white, where
-				// this one draws the striations inside it.
+				// The storm wall is promoted toward the ramp's white top by its own falloff — scaled by daylight
+				// so the cyclone's night side stays night, and by the warped noise, which the domain warp has
+				// already bent into spirals: a flat promotion paints the whole wall the same white, where this one
+				// draws the striations inside it.
 				if (onCloud && inStorm > 0) {
 					const tex = Math.min(1, Math.max(0, (stormTex - cl.cover) * st.texGain))
 					step += ditherIndex(inStorm * diff * tex, st.whitenLevels, x, y)
 				}
 
-				// A deck between this ground and the sun demotes the step: the displaced
-				// shadow is what proves the clouds float above the surface rather than
-				// being painted on it. Same field (storm included), same threshold — and
-				// day side only, since night has no sun to block.
+				// A deck between this ground and the sun demotes the step: the displaced shadow is what proves the
+				// clouds float above the surface rather than being painted on it.
 				let shaded = false
 				if (!onCloud && diff > 0) {
 					const ox = dx + ltx * so
