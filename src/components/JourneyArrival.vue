@@ -59,8 +59,6 @@
 	})
 
 	// Travel is what turns a mote into a streak, so it climbs across the whole entry.
-	// The fade brings the field up as the descent bites and takes it out once we are
-	// under the deck — streaks past that point would read as still falling.
 	const dustTravel = computed(() => props.progress * ARRIVAL.dustTravel)
 	const dustFade = computed(() =>
 		smoothstep(riseFall(props.progress, ARRIVAL.dustFrom, ARRIVAL.dustFull, ARRIVAL.dustOut))
@@ -74,10 +72,7 @@
 	// The chip is the last thing out, behind the heading and every portal.
 	const REPORT_INDEX = CONTACT_CHANNELS.length + 1
 
-	// One item's place in the queue: it is up once the surface window reaches it. Only
-	// the trigger is scrolled — the pop itself runs on its own clock in the stylesheet,
-	// so it always plays whole. Scrubbed off scroll, a fast flick through the runway
-	// played the entire reveal inside one frame and a slow one parked a tile half-risen.
+	// One item's place in the queue: it is up once the surface window reaches it.
 	const threshold = index => ARRIVAL.contactFadeStart + index * ARRIVAL.contactStagger
 	const revealed = index => props.progress > threshold(index)
 
@@ -123,11 +118,7 @@
 		pointer-events: auto;
 	}
 
-	// The surface content lands tile by tile, each on its own clock once its threshold
-	// is crossed. Stepped, because motion running on its own clock is stepped here —
-	// and the steps are what make the landing read as a landing rather than a fade.
-	// Long, at nearly half a second: this is the last thing the flight does, and a
-	// scroll fast enough to cross every threshold at once should still see five pops.
+	// The surface content lands tile by tile, each on its own clock once its threshold is crossed.
 	$pop-rise: 40px;
 	$pop-squash: 0.72;
 	$pop-span: 0.45s;
@@ -142,10 +133,9 @@
 		scale: $pop-squash;
 	}
 
-	// An animation rather than a transition, the same way the LIFE cards reveal: the
-	// report chip is a pinned-chip, and that mixin's own hover transition would win the
-	// `transition` property off a rule of equal specificity declared above it. An
-	// animation cannot be overridden that way, and leaves the chip's hover intact.
+	// An animation rather than a transition, the same way the LIFE cards reveal: the report chip is a
+	// pinned-chip, and that mixin's own hover transition would win the `transition` property off a
+	// rule of equal specificity declared above it.
 	.arrival__reveal.is-up {
 		visibility: visible;
 		animation: arrival-pop $pop-span steps($pop-steps, end) forwards;
@@ -184,8 +174,6 @@
 	}
 
 	// No page-head scrim here: its dark box edges harshly against the light dusk sky.
-	// The keyline carries the contrast instead — over a bright horizon and a lit ridge,
-	// the words need holding off the scene from every side.
 	.arrival__head {
 		margin: 0 auto;
 		padding: 1.75rem 1.5rem 2rem;
