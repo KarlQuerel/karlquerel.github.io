@@ -1,6 +1,5 @@
-// The flyby renderer: owns the GL context, the three programs, the art-grid sizing
-// and the frame loop. Everything about *where the camera goes* lives in
-// js/flybyPath.js; this file only uploads the answer and draws it.
+// The flyby renderer: owns the GL context, the three programs, the art-grid sizing and the frame
+// loop.
 
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { clamp01, smoothstep } from '../js/math.js'
@@ -278,17 +277,7 @@ export function useFlyby(canvasRef) {
 		return true
 	}
 
-	// The title plane, over the scene: nothing else is ever nearer than it is. One
-	// dissolve for the whole plane rather than per corner - the letter is metres wide
-	// by the time we are inside it, and a per-vertex fade leaves the far end of the
-	// name hanging on as a pale slab while the near end has gone.
-	// Held much later than it used to be. Threading the gap only needed the words solid
-	// until they cleared the frame edges; threading the Q needs the letter solid while
-	// it is the frame - at tz=0.7 its ink spans 46 degrees against a 52-degree frame,
-	// and the counter the flight goes through is a 7-degree slot floor to ceiling. The
-	// floor is not a taste call: the vertex shader drops any corner nearer than z=0.3,
-	// so the plane has to be gone before then or it vanishes in one frame instead of
-	// dissolving.
+	// The title plane, over the scene: nothing else is ever nearer than it is.
 	function drawTitlePlane(cam) {
 		const trel = sub(TITLE_PLANE.pos, cam.eye)
 		const tz = dot(trel, cam.fwd)
@@ -314,12 +303,10 @@ export function useFlyby(canvasRef) {
 		gl.uniform1f(TU.uTW, planeW)
 		gl.uniform1f(TU.uTH, (planeW * texSize[1]) / texSize[0])
 		gl.uniform1f(TU.uFade, tfade)
-		// Snap the plane onto the art grid. The pointer look slides the title forty-odd
-		// art pixels across a full sweep, and the plane samples its texture NEAREST at
-		// one texel per pixel: move it by a fraction of a pixel and every stroke in the
-		// name gains or loses a pixel on its own, which is the letters chattering rather
-		// than gliding. Holding the anchor on a pixel boundary keeps the texel grid in
-		// step with the pixel grid, so the whole word steps as one piece.
+		// Snap the plane onto the art grid. The pointer look slides the title forty-odd art pixels across
+		// a full sweep, and the plane samples its texture NEAREST at one texel per pixel: move it by a
+		// fraction of a pixel and every stroke in the name gains or loses a pixel on its own, which is the
+		// letters chattering rather than gliding.
 		const snap = (v, n) => (Math.round((v * n) / 2) * 2) / n - v
 		gl.uniform2f(
 			TU.uSnap,
@@ -526,16 +513,8 @@ export function useFlyby(canvasRef) {
 		window.addEventListener('resize', onResize, { passive: true })
 		if (!still) window.addEventListener('pointermove', onPointerMove, { passive: true })
 		draw(performance.now())
-		// draw() only queues work, so the step cannot end here or the cover comes off a
-		// canvas the GPU has not filled yet. This one-pixel read blocks until it has.
-		//
-		// It does block the main thread, which freezes the loader's own animation for the
-		// length of the frame - the five steps above take ~160ms of yields, so the loader
-		// is already on screen by the time it happens, and it resumes at 100%. That is the
-		// right trade on real hardware, where a first frame is tens of milliseconds. Under
-		// a software rasteriser it is seconds and the freeze is obvious. The proper fix is
-		// a WebGL2 fenceSync polled from rAF, which is non-blocking; WebGL1 has no such
-		// thing, and asking for a WebGL2 context is a bigger change than this route needs.
+		// draw() only queues work, so the step cannot end here or the cover comes off a canvas the GPU has
+		// not filled yet.
 		gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4))
 		if (!(await step('frame'))) return
 
