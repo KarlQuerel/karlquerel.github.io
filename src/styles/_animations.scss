@@ -1,9 +1,0 @@
-// Stepped entrance for list items (Contact cards): slide in from the left in
-// 4 chunky frames. Components animate their own selectors and handle their own
-// reduced-motion resets; only the keyframes are shared.
-@keyframes item-in {
-	to {
-		opacity: 1;
-		transform: translateX(0);
-	}
-}
