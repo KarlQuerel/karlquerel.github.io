@@ -1,8 +1,6 @@
 import { onScopeDispose } from 'vue'
 
-// Coalesces a high-frequency handler (scroll/resize) into at most one call per
-// animation frame. Returns the throttled function; the pending frame is
-// cancelled automatically when the surrounding component/scope is torn down.
+// Coalesces a high-frequency handler (scroll/resize) into at most one call per animation frame.
 export function useRafThrottle(fn) {
 	let rafId = 0
 
