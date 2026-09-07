@@ -110,9 +110,7 @@
 		return { opacity: t.toFixed(3), display: t > 0 ? null : 'none' }
 	})
 
-	// Each cloud rushes up past the camera inside its own window of the drop. It
-	// swells and fans away from centre as it closes — the perspective is what
-	// makes the deck read as something we are flying into rather than past.
+	// Each cloud rushes up past the camera inside its own window of the drop.
 	function cloudStyle(cloud, i) {
 		// variants cycle by position in the deck, so no two neighbours match
 		const sprite = cloudSprites.value[i % ENTRY.cloud.variants]
@@ -146,9 +144,8 @@
 		}
 	}
 
-	// The chimney's plume: where it hangs comes back from the cut, since only the cut
-	// knows where the range put the habitat. It rides the near band's own box and
-	// beat, so it lifts into place with the rock it stands on.
+	// The chimney's plume: where it hangs comes back from the cut, since only the cut knows where the
+	// range put the habitat.
 	const vent = ref(null)
 	const smoke = computed(() => {
 		if (!vent.value) return null
@@ -170,11 +167,9 @@
 			'--smoke': `rgb(${PALETTE[S.shade].join(',')})`,
 		}
 	})
-	// Evenly staggered, so a handful of squares reads as one continuous column — and
-	// staggered backwards, so the column is already full on the frame it appears on
-	// rather than building itself over a whole period while you watch. Each puff takes
-	// its own share of the wind, or the column comes up dead straight and reads as a
-	// stack of boxes rather than as smoke.
+	// Evenly staggered, so a handful of squares reads as one continuous column — and staggered
+	// backwards, so the column is already full on the frame it appears on rather than building itself
+	// over a whole period while you watch.
 	const puffStyle = i => {
 		const S = ENTRY.smoke
 		const wander = S.driftMin + (1 - S.driftMin) * 2 * hash1(i, ENTRY.ridgeSeed)
@@ -302,8 +297,6 @@
 	})
 
 	// A flock: one container crossing the frame, with its birds strung out inside it.
-	// The formation is loose on purpose — a rank of evenly spaced birds all beating
-	// together reads as a machine.
 	const { items: flocks, remove: removeFlock } = useSkySpawner({
 		gapMs: ENTRY.flock.gapMs,
 		// Only while the sky layer is showing (hidden, a spawn never animates and never
@@ -326,10 +319,8 @@
 					'--dur': `${Math.round(randIn(f.durMs))}ms`,
 					'--peak': randIn(f.peak).toFixed(2),
 				},
-				// Positions are counted in sprite cells and scaled once, so every bird in the
-				// flock sits on the same pixel grid. Gaps accumulate from independent rolls
-				// rather than scaling one roll by the index, so the spacing inside a flock is
-				// uneven the way a real one is.
+				// Positions are counted in sprite cells and scaled once, so every bird in the flock sits on the
+				// same pixel grid.
 				birds: (() => {
 					let x = 0
 					return Array.from({ length: randInt(f.count) }, () => {
@@ -379,11 +370,8 @@
 		}
 	}
 
-	// A cumulus as a union of irregular lobes with a noise-warped boundary. Lobes
-	// alone scallop into clip art; noise alone drifts into an amoeba. Together
-	// the shape stays readable while the edge stays believable. Each lobe then
-	// shades under its own crown, so the sprite has volume rather than a flat
-	// top-to-bottom ramp.
+	// A cumulus as a union of irregular lobes with a noise-warped boundary. Lobes alone scallop into
+	// clip art; noise alone drifts into an amoeba.
 	function drawCloud(seed) {
 		const cfg = ENTRY.cloud
 		const { spriteW: w, spriteH: h } = cfg
@@ -495,9 +483,7 @@
 		return el.toDataURL()
 	}
 
-	// The dusk sky, cut on the same grid the ranges are, with the sun and its corona
-	// drawn into it. One canvas rather than a gradient plus a sprite: the glow has to
-	// dither into the sky on the same grid, or it reads as a light pasted over a wash.
+	// The dusk sky, cut on the same grid the ranges are, with the sun and its corona drawn into it.
 	function drawSky(el, box) {
 		const cell = ENTRY.ridgeCellPx
 		const w = Math.max(8, Math.round(box.w / cell))
@@ -529,10 +515,8 @@
 				if (d <= sun.r) col = disc
 				else if (d <= sun.r + 1.5) col = rim
 				else {
-					// Haze at altitude plus grain, both in ramp steps, so the bands
-					// stop being level sets of a smooth field — see ENTRY.skyField.
-					// The colour is untouched: this only decides which of the twelve
-					// entries a cell lands on, so the sky is still exactly its ramp.
+					// Haze at altitude plus grain, both in ramp steps, so the bands stop being level sets of a smooth
+					// field — see ENTRY.skyField.
 					const lit =
 						rung +
 						(fbm2(x / F.driftCells, y / F.driftRows, ENTRY.ridgeSeed) - 0.5) *
@@ -559,9 +543,8 @@
 		ctx.putImageData(img, 0, 0)
 	}
 
-	// One seed per visit for the weather — clouds, twinklers, star tiles — so no
-	// two visits share a sky. The ranges are NOT on it: they cut from the authored
-	// ENTRY.ridgeSeed, so every visit lands in the composition chosen by eye.
+	// One seed per visit for the weather — clouds, twinklers, star tiles — so no two visits share a
+	// sky.
 	let visitSeed = 1
 
 	function cut() {
@@ -620,11 +603,8 @@
 		image-rendering: pixelated;
 	}
 
-	// Stars only over the dark upper sky — masked out well before the horizon
-	// glow, since a bright horizon washes them out.
-	// Mouse parallax rides `translate`, leaving `transform` to the scroll-scrubbed
-	// motion on the same elements. Each layer bleeds by its own depth so the
-	// shift can never uncover an edge.
+	// Stars only over the dark upper sky — masked out well before the horizon glow, since a bright
+	// horizon washes them out.
 	.entry__stars,
 	.entry__cloud,
 	.entry__ridge,
@@ -833,9 +813,8 @@
 		}
 	}
 
-	// Inside the deck: cloud closes right over the lens. Deliberately a flat
-	// wash — any shaped gradient at full-frame size reads as a shape sitting on
-	// the screen. All the form here comes from the puff sprites in front of it.
+	// Inside the deck: cloud closes right over the lens. Deliberately a flat wash — any shaped
+	// gradient at full-frame size reads as a shape sitting on the screen.
 	.entry__deck {
 		position: absolute;
 		inset: 0;
