@@ -1,8 +1,5 @@
-// The landing's boot, shared between the shell that shows it (App.vue) and the scene
-// that fills it (HomeJourney → DepartureRidge). It lives in the shell rather than in
-// the landing because the landing is a lazy chunk: anything inside it arrives after
-// the starfield, and the whole point of the boot is that nothing arrives before it.
-// One module-level state, since there is one boot per page load.
+// The landing's boot, shared between the shell that shows it (App.vue) and the scene that fills it
+// (HomeJourney → DepartureRidge).
 
 import { computed, ref } from 'vue'
 import { LANDING_BOOT } from '@/constants/journey'
