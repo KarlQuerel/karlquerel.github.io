@@ -1,22 +1,16 @@
 // Drives the WORK and LIFE stations of the landing journey (HomeJourney.vue).
 
-// Station headings, rendered by PageTitle (see also CONTACT_HEADING /
-// SPORT_HEADING — one heading shape across the whole site). Trailing space on
-// `lead` is intentional: it separates the lead from the accent.
+// Station headings, rendered by PageTitle (see also CONTACT_HEADING / SPORT_HEADING — one heading
+// shape across the whole site).
 export const ABOUT_HEADINGS = {
 	work: { lead: 'How I got ', accent: 'here' },
 	life: { lead: 'Off the ', accent: 'clock' },
 }
 
-// Career timeline, oldest first. `type` ('job' | 'study') tints the badge; `current`
-// flags the present role (gold); `emblem` is the sprite on the rail; `detail` is an
-// optional one-line caption on it, kept to the milestones that carry the story — bare
-// rows read as the run-up between them.
-// `chapter` adds a divider above the card. Kept to the one turn in the whole run that
-// is worth calling out: sprinkled over the schools and the desks as well, it stopped
-// marking the pivot and just became furniture between rows.
-// Jobs: career-defining roles only. `from`/`to` are the rail's tick labels: a `to` that
-// matches the next entry's `from` is drawn once, so keep contiguous periods exact.
+// Career timeline, oldest first. `type` ('job' | 'study') tints the badge; `current` flags the
+// present role (gold); `emblem` is the sprite on the rail; `detail` is an optional one-line
+// caption on it, kept to the milestones that carry the story — bare rows read as the run-up
+// between them.
 export const CAREER_TIMELINE = [
 	{
 		type: 'study',
