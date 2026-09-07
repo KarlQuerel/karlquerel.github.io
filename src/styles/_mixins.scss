@@ -1,8 +1,7 @@
 @use 'variables';
 
-// The static "window onto the void" chrome: the shared hairline frame + radius
-// over a translucent dark fill that lets the starfield through. Every panel and
-// card on the site uses this so its border can be re-skinned from one token.
+// The static "window onto the void" chrome: the shared hairline frame + radius over a translucent
+// dark fill that lets the starfield through.
 @mixin void-panel($bg: rgba(0, 0, 0, 0.5)) {
 	background: $bg;
 	border: variables.$void-border;
@@ -29,9 +28,8 @@
 	}
 }
 
-// Pinned bottom-right action chip (the bug-report chip): a borderless
-// void-button that stays reachable while its host is on screen, sitting
-// under the star toggle (50) and the nav overlay.
+// Pinned bottom-right action chip (the bug-report chip): a borderless void-button that stays
+// reachable while its host is on screen, sitting under the star toggle (50) and the nav overlay.
 @mixin pinned-chip {
 	position: fixed;
 	bottom: 1rem;
@@ -50,12 +48,10 @@
 	padding: 0.5rem 0.9rem;
 	@include void-button($lift: -2px, $bg: transparent);
 
-	// No backing and no frame. A filled box pinned over the scene reads as a panel
-	// floating in front of it, which is the fault the station headings and the arrival
-	// heading both refuse a scrim to avoid; the keyline is what they carry instead, so
-	// these words sit in the scene the same way. px units, not em — a fraction of an em
-	// at this size rounds away to nothing. The padding stays: with no box left to draw,
-	// it is the only thing holding the tap target open.
+	// No backing and no frame. A filled box pinned over the scene reads as a panel floating in front
+	// of it, which is the fault the station headings and the arrival heading both refuse a scrim to
+	// avoid; the keyline is what they carry instead, so these words sit in the scene the same way. px
+	// units, not em — a fraction of an em at this size rounds away to nothing.
 	& {
 		border: 0;
 		@include pixel-keyline($unit: 1px, $halo: 6px);
@@ -70,14 +66,9 @@
 	}
 }
 
-// A keyline the whole way round rather than a drop shadow. Display type sitting over
-// the world — a lit limb, a dusk sky, a ridge — has to be held off it from every side,
-// which one-directional shadows cannot do. The halo behind it is the glow the type
-// carried before, so an accent word can keep its own colour there and still take the
-// border. `$unit` is one unit of the glyph's own grid:
-// in em so it stays a keyline at any size instead of becoming a smear, or in px for
-// type small enough that a fraction of an em would round away to nothing. The canvas
-// title paints the same thing by hand, see HeroTitle.vue.
+// A keyline the whole way round rather than a drop shadow. Display type sitting over the world — a
+// lit limb, a dusk sky, a ridge — has to be held off it from every side, which one-directional
+// shadows cannot do.
 @mixin pixel-keyline($unit: 0.08em, $halo: 0.4em, $halo-colour: rgba(0, 0, 0, 0.9)) {
 	text-shadow:
 		#{$unit} #{$unit} 0 variables.$black,
@@ -102,21 +93,8 @@
 	);
 }
 
-// Scrim-backed heading panel shared by every page-level title, so each gets
-// the same wash and padding.
-@mixin page-head {
-	@include void-scrim($size: 120% 130%);
-	max-width: min(46rem, 94vw);
-	margin: 0 auto;
-	padding: 1.75rem 1.5rem 2rem;
-}
-
-// The interactive counterpart, used by every clickable button on the site so
-// they read as one system. Text rests near-white and shifts to $yellow on hover
-// / focus (the shared site-wide convention), over a warm yellow starlight bloom +
-// weightless lift. Pass a smaller $lift for compact buttons, or a custom $bg
-// (e.g. a radial fade) for the larger portals. Include this LAST in a rule — it
-// emits nested states, so trailing declarations warn.
+// The interactive counterpart, used by every clickable button on the site so they read as one
+// system.
 @mixin void-button($lift: -4px, $bg: rgba(0, 0, 0, 0.35)) {
 	@include void-panel($bg);
 	color: variables.$text-interactive;
@@ -157,8 +135,7 @@
 }
 
 // A layer that leans with the cursor: --mx/--my come from the scene's container
-// (usePointerParallax), and the layer takes its own share of them through --depth. On
-// `translate`, never `transform` — that belongs to scroll-scrubbed motion.
+// (usePointerParallax), and the layer takes its own share of them through --depth.
 @mixin lean {
 	translate: calc(var(--mx, 0) * var(--depth, 0) * 1px) calc(var(--my, 0) * var(--depth, 0) * 1px);
 }
