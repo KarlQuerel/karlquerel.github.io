@@ -16,14 +16,9 @@ export function riseFall(t, rise, full, fall) {
 	return Math.min(up, down)
 }
 
-// Monotone cubic (Fritsch–Carlson) slopes for a keyframed channel: each knot's
-// slope is the average of its neighbouring secants, limited so the curve can
-// never overshoot the values it passes through. That limit is why the camera
-// track can't use a plain Catmull-Rom — `reveal` and `fade` have to stay inside
-// 0..1, and a scale that dips under its keyframe pops the globe. Where a channel
-// keeps heading the same way the slope survives the knot, so the camera carries
-// speed through a keyframe instead of easing to a stop at every one of them; it
-// only stops where the channel actually turns around.
+// Monotone cubic (Fritsch–Carlson) slopes for a keyframed channel: each knot's slope is the
+// average of its neighbouring secants, limited so the curve can never overshoot the values it
+// passes through.
 export function monotoneSlopes(xs, ys) {
 	const n = xs.length
 	const m = new Array(n).fill(0)
