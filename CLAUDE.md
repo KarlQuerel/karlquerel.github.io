@@ -119,7 +119,15 @@ When touching existing code, always:
 
 - **Never create a new branch on this repo. Always make changes directly on the main branch (`master`).** This applies to everything — features, visual iterations, refactors, and risky changes alike. No feature branches, no worktree branches.
 - **Never use git worktrees.** Edit the checkout directly on `master`. If a worktree exists, remove it (`git worktree remove` / `git worktree prune`). Karl is the only dev here, so isolation only adds friction.
-- Commit messages: conventional commits (`feat:`, `fix:`, `refactor:`, `chore:`).
+- Commit messages: conventional commits (`feat:`, `fix:`, `refactor:`, `chore:`), one line.
+- **Commit small and often — many focused commits beat few large ones.** Default to **one commit
+  per changed file**, so a sweep across twenty files lands as twenty commits rather than one.
+  Each file appears in exactly one commit; fold a follow-up fix into the commit that owns the
+  file (`git reset --soft` + recommit) rather than stacking a fixup on top.
+- Two files share a commit only when splitting them would leave a commit that does not build
+  (a deleted partial and the `@use` that referenced it, a renamed export and its caller).
+- Every commit must carry a real change. No empty commits, no backdating, no reformatting churn
+  to pad the graph — the count is a by-product of granularity, never the goal itself.
 - Publishing is automatic: every push to `master` runs CI (`.github/workflows/ci.yml`) and, if format/lint/build/tests pass, deploys the built `dist/` to the `gh-pages` branch. `npm run deploy` is only a manual fallback.
 
 ---
