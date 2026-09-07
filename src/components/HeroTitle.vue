@@ -1,11 +1,5 @@
 <template>
-	<!-- The name and the role, painted once into a sprite and then magnified rather
-	     than re-typeset. The text itself stays in the DOM, laid out but never painted:
-	     it is what the sprite is measured from, what screen readers and crawlers get,
-	     and what keeps the type metrics in the stylesheet where the rest of the site's
-	     are. Scaling live text meant re-rasterising every glyph on every scrolled
-	     frame; a sprite is one texture, and NEAREST magnification is the direction
-	     pixel art should break — chunky, not soft. -->
+	<!-- The name and the role, painted once into a sprite and then magnified rather than re-typeset. -->
 	<div class="title">
 		<div ref="textEl" class="title__text" aria-hidden="true">
 			<span class="title__name">
@@ -52,21 +46,12 @@
 	const cueEl = ref(null)
 	const canvasEl = ref(null)
 
-	// Where the corridor sits relative to the sprite's own centre, in px, both axes —
-	// the point the flight aims at, measured off the real layout rather than estimated
-	// from character counts. The title is centred in the lockup, so an offset from one
-	// centre is an offset from the other, and the flight scales about it.
+	// Where the corridor sits relative to the sprite's own centre, in px, both axes — the point the
+	// flight aims at, measured off the real layout rather than estimated from character counts.
 	const emit = defineEmits(['axis'])
 
-	// The scale the flight currently has the lockup at.
-	//
-	// getBoundingClientRect() reports boxes AFTER ancestor transforms, and the pass
-	// scales this lockup up to HERO_FLYBY.nearScale. So any repaint landing while the
-	// page is scrolled past the hero — a window resize, or a phone hiding its URL bar
-	// mid-scroll — measured a six-times-inflated box and cut a sprite to match it. The
-	// title was then mismatched the moment you scrolled back to the top, which is
-	// exactly the "scroll to the end and back" break. offsetWidth is the untransformed
-	// layout width, so the ratio between them is the factor to divide back out.
+	// The scale the flight currently has the lockup at.  getBoundingClientRect() reports boxes AFTER
+	// ancestor transforms, and the pass scales this lockup up to HERO_FLYBY.nearScale.
 	function liveScale(el) {
 		const laid = el.offsetWidth
 		if (!laid) return 1
@@ -75,9 +60,8 @@
 		return Math.abs(k - 1) < 0.01 ? 1 : k
 	}
 
-	// Everything the paint needs comes off the laid-out text, so the stylesheet stays
-	// the one place the type is described — including whatever the breakpoints and any
-	// wrapping did to it. Every measured length divides by `k` back into layout space.
+	// Everything the paint needs comes off the laid-out text, so the stylesheet stays the one place
+	// the type is described — including whatever the breakpoints and any wrapping did to it.
 	function measure(el, k, bloom = false) {
 		const box = textEl.value.getBoundingClientRect()
 		const own = el.getBoundingClientRect()
@@ -151,12 +135,8 @@
 			measure(cueEl.value, k),
 		]
 
-		// The corridor: through the counter of the Q — the one glyph with a porthole,
-		// and by luck of the name dead on its centre (glyph six of eleven). Vertically
-		// the middle of the row it sits on — which is not the sprite's middle, since
-		// the role and the cue hang below — offset onto the counter's own square.
-		// Stacked into two rows on a narrow frame there is no single letter to thread,
-		// so the corridor stays the horizontal band between the rows, as before.
+		// The corridor: through the counter of the Q — the one glyph with a porthole, and by luck of the
+		// name dead on its centre (glyph six of eleven).
 		const [first, last, , cue] = runs
 		const stacked = Math.abs(first.mid - last.mid) > 1
 		const qMid = last.x + last.size / 2 + HERO_FLYBY.qAxis.x * last.size
@@ -168,17 +148,13 @@
 				box.height / 2,
 		}
 
-		// The cue goes on the axis rather than on the block. The flight puts the corridor
-		// on the frame's centre, so the lockup as a whole sits off it — invisible on a
-		// name that spans most of the frame, but the one small line under it reads as
-		// off-centre. Its width is exact rather than measured: monospaced caps.
+		// The cue goes on the axis rather than on the block. The flight puts the corridor on the frame's
+		// centre, so the lockup as a whole sits off it — invisible on a name that spans most of the frame,
+		// but the one small line under it reads as off-centre.
 		cue.x =
 			box.width / 2 + axis.x - (cue.text.length * (cue.size + cue.spacing) - cue.spacing) / 2
-		// Halo and bloom as their own passes — blurring under the per-glyph loop instead
-		// would stack each glyph's shadow on the next and smear the lot — then the
-		// keyline, then the letters crisp on top. The keyline is the one that carries
-		// legibility once the words are crossing a lit limb or a cloud deck; the blurred
-		// passes are the glow the live type used to get from its text-shadows.
+		// Halo and bloom as their own passes — blurring under the per-glyph loop instead would stack each
+		// glyph's shadow on the next and smear the lot — then the keyline, then the letters crisp on top.
 		if (!props.bare) {
 			for (const [colour, blur, bloomOnly] of [
 				[HERO_FLYBY.plateShadow, HERO_FLYBY.plateShadowBlur, false],
@@ -199,9 +175,8 @@
 		}
 		for (const run of runs) drawRun(ctx, run, dpr)
 
-		// The porthole, cut last so nothing can silt it up again: the Q's counter is a
-		// window onto the planet we are flying at, and every pass above spills into it.
-		// Nothing of the face lives inside the square, so clearing it costs no ink.
+		// The porthole, cut last so nothing can silt it up again: the Q's counter is a window onto the
+		// planet we are flying at, and every pass above spills into it.
 		if (!stacked) {
 			const port = HERO_FLYBY.qPort * last.size * dpr
 			ctx.clearRect(
