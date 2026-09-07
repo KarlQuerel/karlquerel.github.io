@@ -22,20 +22,16 @@
 	const props = defineProps({
 		// 0 → far-off dot, 1 → arrived and full size. Drives scale and opacity.
 		reveal: { type: Number, default: 1 },
-		// False parks the shader. The globe keeps its canvas and its seed — it is the
-		// same world when it comes back — but a sweep of the sprite that lands under an
-		// opacity of nought is the most expensive way there is to draw nothing, and the
-		// entry is exactly where it happens: `roll` spins the planet two thirds of a
-		// turn while it fades out behind the atmosphere, so it redraws hardest at the
-		// one moment nobody can see it and the cloud deck needs the frame.
+		// False parks the shader. The globe keeps its canvas and its seed — it is the same world when it
+		// comes back — but a sweep of the sprite that lands under an opacity of nought is the most
+		// expensive way there is to draw nothing, and the entry is exactly where it happens: `roll` spins
+		// the planet two thirds of a turn while it fades out behind the atmosphere, so it redraws hardest
+		// at the one moment nobody can see it and the cloud deck needs the frame.
 		awake: { type: Boolean, default: true },
-		// Longitude in radians. null → the planet free-spins on the clock over
-		// PLANET.spinSeconds. A number → the caller owns the angle (a scroll-driven
-		// orbit), and each change schedules a redraw instead of an idle loop running.
+		// Longitude in radians. null → the planet free-spins on the clock over PLANET.spinSeconds.
 		spin: { type: Number, default: null },
-		// Sun yaw in radians around the view's vertical axis. 0 keeps the fixed
-		// upper-left key light; the landing journey sweeps it so the terminator
-		// advances while you orbit.
+		// Sun yaw in radians around the view's vertical axis. 0 keeps the fixed upper-left key light; the
+		// landing journey sweeps it so the terminator advances while you orbit.
 		lightYaw: { type: Number, default: 0 },
 		// 0 → full cloud deck, 1 → clear skies. The journey raises it as the camera
 		// dives: at landing magnification the deck stops reading as weather above
@@ -67,12 +63,8 @@
 	// this visit's world, fixed here so both threads' shaders roll the same terrain
 	const seed = Math.floor(Math.random() * 1e5) + 1
 
-	// One buffer for the sprite, ping-ponged with the worker (see planet.worker.js) so
-	// a frame allocates nothing. Holding it is what permits a sweep, so `pixels` being
-	// null reads as "one is in flight" — and that is the whole of the pacing. A fixed
-	// frame budget can only ask for sweeps faster than the machine can run them; this
-	// asks for the next one when the last has landed, so a slow machine spins the
-	// globe slower instead of dropping every frame of the scroll around it.
+	// One buffer for the sprite, ping-ponged with the worker (see planet.worker.js) so a frame
+	// allocates nothing.
 	let pixels = new Uint8ClampedArray(res * res * 4)
 	let worker = null
 	// the same shader on this thread: the first frame, and the fall-back where a
@@ -88,15 +80,8 @@
 	let drawnYaw = 0
 	let drawnThin = 0
 
-	// A redraw that cannot move a single art pixel costs a full sweep of the sprite to
-	// produce the picture already on screen. The globe is `res` cells around, so the
-	// surface has to turn by 2π/res before any cell can land on a different sample —
-	// and a scrolled frame advances the spin by roughly a third of that, so most of
-	// the redraws the orbit used to run were identical to the one before. Judging the
-	// pending angle against the drawn one instead of against a frame budget skips
-	// those, and it is not a stepped orbit: the globe's position and scale are CSS and
-	// stay continuous, and a texture that has moved less than one of its own pixels
-	// has by definition nothing to show.
+	// A redraw that cannot move a single art pixel costs a full sweep of the sprite to produce the
+	// picture already on screen.
 	const cellTurn = (2 * Math.PI) / res
 	function moved() {
 		return (
@@ -140,9 +125,8 @@
 		if (props.spin !== null) scheduleDraw()
 	}
 
-	// A worker that cannot run must not take the globe down with it: the sweep comes
-	// back to this thread and carries on. The buffer went with the failed post, so the
-	// picture has to be built again from scratch.
+	// A worker that cannot run must not take the globe down with it: the sweep comes back to this
+	// thread and carries on.
 	function dropWorker() {
 		if (worker) worker.terminate()
 		worker = null
