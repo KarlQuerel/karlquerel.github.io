@@ -1,9 +1,5 @@
-// The flight: scroll position in, camera basis out. Nothing here touches WebGL or the
-// DOM, so the whole flight can be reasoned about — and re-tuned — without going near
-// the renderer. All of it is pure except the roll, which carries a second-order
-// response and so needs somewhere to keep its velocity between frames; the caller owns
-// that state (see createRollState) rather than this module holding a global, so a
-// remount starts level instead of inheriting the last visit's horizon.
+// The flight: scroll position in, camera basis out. Nothing here touches WebGL or the DOM, so the
+// whole flight can be reasoned about — and re-tuned — without going near the renderer.
 
 import { clamp01, hermite, smoothstep } from './math.js'
 import { add, cross, dot, lerp, mul, norm, slerp, sub } from './vec3.js'
@@ -88,11 +84,9 @@ const chordAt = s => sub(camAt(Math.min(1, s + HEADING_SPAN)), camAt(Math.max(0,
 const headingAt = s => norm(chordAt(s))
 const speedAt = s => Math.hypot(...chordAt(s)) / (2 * HEADING_SPAN)
 
-// The bank a coordinated turn asks for at scroll `s`. Yaw rate is how fast the heading
-// swings about the vertical; multiplied by speed that is the sideways acceleration the
-// turn is producing, and atan of it over BANK_GRAVITY is the angle that puts the lift
-// vector where it cancels that. Speed is half the point: the same turn rate flown twice
-// as fast needs twice the bank, and this path's speed varies twenty-fold end to end.
+// The bank a coordinated turn asks for at scroll `s`. Yaw rate is how fast the heading swings
+// about the vertical; multiplied by speed that is the sideways acceleration the turn is producing,
+// and atan of it over BANK_GRAVITY is the angle that puts the lift vector where it cancels that.
 function bankAt(s, still) {
 	const level = norm(cross(headingAt(s), UP))
 	const dh = sub(headingAt(Math.min(1, s + BANK_SPAN)), headingAt(Math.max(0, s - BANK_SPAN)))
@@ -118,10 +112,9 @@ function stepRoll(state, target, dt) {
 	return state.angle
 }
 
-// Full camera state at scroll `p`. `lookX/lookY` are the eased pointer position in
-// -1..1; `still` is prefers-reduced-motion, which drops the pointer look and most of
-// the bank but never the flight itself — that is the reader's own scrolling.
-// `rollState` is from createRollState and is advanced in place by `dt` seconds.
+// Full camera state at scroll `p`. `lookX/lookY` are the eased pointer position in -1..1; `still`
+// is prefers-reduced-motion, which drops the pointer look and most of the bank but never the
+// flight itself — that is the reader's own scrolling.
 export function sampleFlight(p, lookX, lookY, still, rollState, dt) {
 	// how far out of the still frame we are: drives the dust and the pointer look
 	const wake = smoothstep(clamp01((p - WAKE_START) / WAKE_SPAN))
@@ -136,10 +129,9 @@ export function sampleFlight(p, lookX, lookY, still, rollState, dt) {
 	// just growing in the middle
 	const f = focusAt(p)
 	const aimAt = b => norm(sub(TARGETS[b].c, pos))
-	// Turn the flight direction toward the world being watched. While the two
-	// keyframes name the same world that is one rotation; across a handover the
-	// pulls cross-fade, which beats switching the target index and snapping the
-	// view across whatever angle separates them.
+	// Turn the flight direction toward the world being watched. While the two keyframes name the same
+	// world that is one rotation; across a handover the pulls cross-fade, which beats switching the
+	// target index and snapping the view across whatever angle separates them.
 	if (f.b0 === f.b1) {
 		const w = lerp(f.w0, f.w1, f.t)
 		if (w > 0) fwd = slerp(fwd, aimAt(f.b0), w)
@@ -158,16 +150,12 @@ export function sampleFlight(p, lookX, lookY, still, rollState, dt) {
 		fwd = norm(add(fwd, add(mul(rref, lookX * amt), mul(cross(rref, fwd), -lookY * amt))))
 	}
 
-	// Roll, read forward: a pilot rolls into a turn before the nose comes round, so the
-	// bank is sampled a little ahead of where the flight actually is. The spring then
-	// takes its own time to arrive, handing some of that lead back as lag - which is the
-	// airframe, and the two together are what anticipation feels like.
+	// Roll, read forward: a pilot rolls into a turn before the nose comes round, so the bank is
+	// sampled a little ahead of where the flight actually is.
 	const roll = stepRoll(rollState, bankAt(Math.min(1, p + BANK_LEAD), still), dt)
 
-	// Roll about the axis the flight is travelling down, not the one the camera happens
-	// to be looking down. An airframe rolls about its own length; by the arrival the
-	// focus pull has the gaze better than half way off the velocity vector, and rolling
-	// about that turned the horizon around an axis nothing was moving along.
+	// Roll about the axis the flight is travelling down, not the one the camera happens to be looking
+	// down.
 	const rt = norm(cross(travel, UP))
 	const ut = cross(rt, travel)
 	const cr = Math.cos(roll)
