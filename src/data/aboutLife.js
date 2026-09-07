@@ -1,9 +1,7 @@
-// Drives the journey's LIFE station (AboutLife.vue). One entry per paragraph;
-// a `\n` inside an entry breaks the line without opening a paragraph gap — it joins
-// beats meant to be read in one breath, so keep it for those and give anything past
-// ~45 words its own entry instead, or it sets as a slab with nowhere to rest.
-// The first entry of every section is its lede: keep it a short topic sentence, since
-// AboutLife sets it apart as the way into the card.
+// Drives the journey's LIFE station (AboutLife.vue). One entry per paragraph; a `\n` inside an
+// entry breaks the line without opening a paragraph gap — it joins beats meant to be read in one
+// breath, so keep it for those and give anything past ~45 words its own entry instead, or it sets
+// as a slab with nowhere to rest.
 export const ABOUT_ME = [
 	'I come from a multicultural background.',
 	'Born in France to a Lebanese mother, I spent my teenage years in Lebanon before coming back to Europe.',
@@ -21,8 +19,6 @@ export const DOG_LINES = [
 ]
 
 // Photo decks (public/assets/about/) — 800×800 webp squares cropped around each dog.
-// First photo is the resting frame; clicking the deck cycles through them.
-// `years` sits under the name: a closed range for Lesko, open for Yako.
 export const DOGS = [
 	{
 		name: 'Lesko',
