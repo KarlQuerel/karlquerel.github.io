@@ -2,10 +2,9 @@
 
 html {
 	height: 100%;
-	// Always reserve the scrollbar gutter. Routes toggle `overflow: hidden` below,
-	// which would otherwise add or remove the scrollbar on navigation and shift
-	// every centred fixed element sideways by half its width. A stable gutter
-	// keeps the viewport width constant across pages.
+	// Always reserve the scrollbar gutter. Routes toggle `overflow: hidden` below, which would
+	// otherwise add or remove the scrollbar on navigation and shift every centred fixed element
+	// sideways by half its width.
 	scrollbar-gutter: stable;
 }
 
@@ -75,9 +74,8 @@ html:not(.page-scrollable) #app {
 	overflow: hidden;
 }
 
-// .app-root sits between #app and .app-main; without flex-fill it collapses to
-// content height and the page can't center vertically. Carry the flex column
-// through so .app-main can take the remaining height and center its child.
+// .app-root sits between #app and .app-main; without flex-fill it collapses to content height and
+// the page can't center vertically.
 html:not(.page-scrollable) #app .app-root {
 	flex: 1 1 auto;
 	min-height: 0;
