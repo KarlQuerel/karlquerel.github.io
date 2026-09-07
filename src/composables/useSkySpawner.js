@@ -2,20 +2,8 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { prefersReducedMotion } from './usePrefersReducedMotion'
 
 // Occasional short-lived decorative elements crossing a sky — a meteor, a flock.
-// Each is spawned after a random gap, carries its own CSS custom properties, and
-// removes itself when its animation ends.
-//
-// The spawning is the boring part. What this exists for is the two things that go
-// wrong without it, both already learned the hard way in SpaceBackground.vue: a
-// hidden tab never fires `animationend`, so anything spawned while it is hidden piles
-// up forever and all arrives at once on return; and a timer that outlives the
-// component keeps pushing into a ref nobody is rendering.
-//
-// `gapMs` is a [min, max] range and `make` is called per spawn — it returns whatever
-// that item needs, spread onto it, so one crossing can be a single streak and another
-// a whole formation. `active` says whether the sky is on stage at all: a scene that has
-// scrolled away is display:none, where nothing animates and nothing ends, so spawning
-// into it would pile up just as a hidden tab does.
+// Exists for two failures: a hidden tab never fires `animationend`, so spawns pile up and all
+// arrive at once on return; and a timer outliving the component pushes into a dead ref.
 export function useSkySpawner({ gapMs, make, active = () => true }) {
 	const items = ref([])
 	let nextId = 0
