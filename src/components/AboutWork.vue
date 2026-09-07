@@ -116,6 +116,7 @@
 
 	.ztl-row {
 		@include void-scrim($at: 34% 50%);
+		border-radius: 30px;
 		position: relative;
 		min-height: 4.6rem;
 		padding: 0.4rem 0 0.4rem var(--about-gutter);
@@ -144,6 +145,7 @@
 		letter-spacing: 0.08em;
 		padding: 0.2rem 0.15rem;
 		background: rgba(0, 0, 0, 0.85);
+		border-radius: 30px;
 		color: rgba($yellow, 0.72);
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 	}
@@ -165,6 +167,7 @@
 		height: $badge;
 		// tight padding lets the sprite fill the frame
 		padding: 0.16rem;
+		border-radius: 30px;
 	}
 
 	// type-tinted frame doubles as the education / experience signal
@@ -261,6 +264,7 @@
 		text-align: left;
 		// the same borderless dark wash the LIFE cards carry
 		background: rgba(0, 0, 0, 0.3);
+		border-radius: 30px;
 	}
 
 	.ztl-kind {
