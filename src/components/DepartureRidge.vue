@@ -1,8 +1,6 @@
 <template>
-	<!-- The ground the flight leaves from: a moon across the foot of the opening frame,
-	     three layers of one ground dropping away as the camera lifts over them.
-	     Scroll owns the climb, the cursor owns the lean. Decorative — drawn by
-	     drawMoon in js/ridge.js. -->
+	<!-- The ground the flight leaves from: a moon across the foot of the opening frame, three layers
+	     of one ground dropping away as the camera lifts over them. -->
 	<div ref="rootEl" class="ridge" :style="ridgeStyle" aria-hidden="true">
 		<!-- the sky: the sun's glow and the galaxy, on the ground's grid -->
 		<canvas ref="skyEl" class="ridge__sky" :style="skyStyle" />
@@ -53,10 +51,9 @@
 	// and its landing — what the landing's boot screen waits on
 	const emit = defineEmits(['progress', 'ready'])
 
-	// --mx/--my come from the flight container (usePointerParallax); each band takes
-	// its own share of them through --depth, and that difference is the relief.
-	// --fade is for the sky alone: the ground leaves by dropping out of frame, and
-	// only what sits at infinity has to fade instead.
+	// --mx/--my come from the flight container (usePointerParallax); each band takes its own share of
+	// them through --depth, and that difference is the relief. --fade is for the sky alone: the ground
+	// leaves by dropping out of frame, and only what sits at infinity has to fade instead.
 	const ridgeStyle = computed(() => ({
 		display: gone.value < 1 ? null : 'none',
 		'--fade': (1 - gone.value).toFixed(3),
@@ -79,13 +76,11 @@
 		}
 	}
 
-	// The glints hold still while the ground drops away — a star sits at infinity, so
-	// the climb owes it no motion. They only leave with the scene's fade. One cell
-	// each (--cell, set at the cut), a core with four arms breathing on a stepped clock.
+	// The glints hold still while the ground drops away — a star sits at infinity, so the climb owes
+	// it no motion.
 	const rgb = name => `rgb(${PALETTE[name].join(',')})`
-	// Every canvas is sized to exactly the cells it was cut on (see gridFor), never
-	// stretched to the frame — that is what keeps each cell a whole number of device
-	// pixels. The sizes come back from the cut.
+	// Every canvas is sized to exactly the cells it was cut on (see gridFor), never stretched to the
+	// frame — that is what keeps each cell a whole number of device pixels.
 	const sizes = ref({ sky: null, bands: [] })
 	const sized = cut =>
 		cut ? { width: `${cut.cols * cut.cell}px`, height: `${cut.rows * cut.cell}px` } : {}
@@ -104,10 +99,9 @@
 		top: `${glint.y * 100}%`,
 		...glintVars(glint, RIDGE.sky.glintDepth),
 	})
-	// Meteors, rolled per crossing: where they enter. The head is the element, the tail
-	// its shadows a cell up and left per step behind it; the stepping is in the timing
-	// function, one step per cell, so the streak is never between cells. None spawn
-	// once the scene has left the frame.
+	// Meteors, rolled per crossing: where they enter. The head is the element, the tail its shadows a
+	// cell up and left per step behind it; the stepping is in the timing function, one step per cell,
+	// so the streak is never between cells.
 	const M = RIDGE.sky.meteor
 	const tail = M.shades
 		.slice(1)
@@ -120,9 +114,8 @@
 		gapMs: M.gapMs,
 		active: () => gone.value < 1,
 		make: () => {
-			// entered on the grid, and run out until the tail too has left the frame —
-			// by the right edge or behind the ridge, whichever the entry point meets
-			// first. A streak that stops in open sky reads as a dropped frame.
+			// entered on the grid, and run out until the tail too has left the frame — by the right edge or
+			// behind the ridge, whichever the entry point meets first.
 			const cell = cellFor(frame)
 			const left = Math.round((randIn(M.x) * frame.w) / cell) * cell
 			const top = Math.round((randIn(M.y) * frame.h) / cell) * cell
@@ -155,10 +148,8 @@
 	const skyEl = ref(null)
 	const bandEls = []
 
-	// Cut from the authored RIDGE.ridgeSeed — the opening frame is a composition, not a
-	// roll; a reshape re-cuts the same ground. The drawing happens off the main thread
-	// where it can (js/departureCut.js), so the title, the stars and the planet paint at
-	// once and the ground arrives when it is ready.
+	// Cut from the authored RIDGE.ridgeSeed — the opening frame is a composition, not a roll; a
+	// reshape re-cuts the same ground.
 	let cutter = null
 	function cut() {
 		frame = { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 }
@@ -223,9 +214,8 @@
 		image-rendering: pixelated;
 	}
 
-	// A pixel star, five cells across: one cell of core; arms one cell out, drawn as
-	// shadows so they can breathe without the core; and tips two cells out that blink
-	// on the off-beat. Both motions are on their own clock, so they are stepped.
+	// A pixel star, five cells across: one cell of core; arms one cell out, drawn as shadows so they
+	// can breathe without the core; and tips two cells out that blink on the off-beat.
 	.ridge__glint {
 		position: absolute;
 		opacity: var(--fade, 1);
@@ -311,9 +301,8 @@
 		}
 	}
 
-	// Anchored to the foot of the frame and grown from there, so the swell pushes the
-	// crests up rather than sliding the whole band around. Each bleeds past the edges
-	// by its own depth, so the cursor's lean can never uncover one.
+	// Anchored to the foot of the frame and grown from there, so the swell pushes the crests up rather
+	// than sliding the whole band around.
 	.ridge__band {
 		position: absolute;
 		bottom: calc(var(--depth, 0) * -1px);
