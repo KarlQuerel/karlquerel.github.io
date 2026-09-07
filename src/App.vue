@@ -30,10 +30,7 @@
 
 	const SCROLLABLE_PATHS = ['/', '/sport', '/lab']
 
-	// Unlisted pages with no site chrome at all — no drifting starfield behind the
-	// text. Reached by URL, so nothing to navigate from.
-	// /lab is here for a different reason than /sport: it paints its own sky in a
-	// shader and carries its own chrome, so the site's would only be drawn underneath.
+	// Unlisted pages with no site chrome at all — no drifting starfield behind the text.
 	const BARE_PATHS = ['/sport', '/lab']
 
 	// Component names (see defineOptions) kept mounted across navigation.
