@@ -1,9 +1,7 @@
 <template>
-	<!-- /under-construction, where /game lands until the game ships (GAME_SHIPPED): the
-	     heading over two strips of the departure's moon — far hills and the near plain,
-	     leaning with the cursor at their own depths — with a crane worksite on the near
-	     plain. Still, but for the beacon on the mast: a DOM cell, so it can blink on a
-	     stepped clock without a redraw. Decorative but for the heading. -->
+	<!-- /under-construction, where /game lands until the game ships (GAME_SHIPPED): the heading over
+	     two strips of the departure's moon — far hills and the near plain, leaning with the cursor at
+	     their own depths — with a crane worksite on the near plain. -->
 	<div class="content holding">
 		<HomeChip />
 		<PageTitle :lead="GAME_HOLDING.lead" :accent="GAME_HOLDING.accent" />
@@ -99,8 +97,23 @@
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
+	// No $page-pad-top here: .app-main already centres this block, so a top-anchored
+	// pad only pushes the heading down onto the crane's jib on short frames.
 	.holding {
-		padding: $page-pad-top 1rem 0;
+		padding: 0 1rem;
+	}
+
+	// The heading is the whole page, so it takes a whole step up wherever there is room for it.
+	@media (min-width: #{$breakpoint-mobile}) {
+		.holding :deep(.page-heading) {
+			font-size: px8(3);
+		}
+	}
+
+	@media (min-width: #{$breakpoint-desktop}) {
+		.holding :deep(.page-heading) {
+			font-size: px8(4);
+		}
 	}
 
 	// the scene fills the viewport behind the heading
