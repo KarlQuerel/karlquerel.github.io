@@ -42,9 +42,8 @@
 	import PixelFlag from '@/components/PixelFlag.vue'
 	import PixelEmblem from '@/components/PixelEmblem.vue'
 
-	// A closing year is dropped when the next entry opens on it, so a shared boundary is
-	// drawn once — the surviving tick is the next row's start. What's left is a strictly
-	// increasing axis; only the open-ended current role still carries a closing tick.
+	// A closing year is dropped when the next entry opens on it, so a shared boundary is drawn once —
+	// the surviving tick is the next row's start.
 	const ROWS = CAREER_TIMELINE.map((item, i) => ({
 		...item,
 		end: CAREER_TIMELINE[i + 1]?.from === item.to ? null : item.to,
@@ -195,20 +194,9 @@
 		height: 100%;
 	}
 
-	// The node powers up while its entry is being read. The hover lands on the ROW, not
-	// on the badge: the badge is decorative and aria-hidden, so a hover that only fired
-	// on a 2.6rem square would promise a click that is not there — and it would be a
-	// 2.6rem target. Lighting the whole entry's node instead reads as "this is the one
-	// you are on", and it can be hit from anywhere in the row.
-	//
-	// A halo of spread with no blur: concentric hard rings, which is what a glow looks
-	// like on a pixel grid. A blurred bloom is the one thing in this scene that would
-	// be resolution-independent, and nothing else here is. Nothing moves, either — the
-	// badge is a node sitting on the journey's own route line, and a node that lifts
-	// off its rail on hover stops being a node.
-	// `$k` is how far up it is turned: the current post wears a low one at rest and
-	// every node takes a full one under the cursor, so the two are the same light at
-	// two strengths rather than two different ideas of what a lit node looks like.
+	// The node powers up while its entry is being read. The hover lands on the ROW, not on the badge:
+	// the badge is decorative and aria-hidden, so a hover that only fired on a 2.6rem square would
+	// promise a click that is not there — and it would be a 2.6rem target.
 	@mixin node-lit($c, $k: 1) {
 		border-color: rgba($c, 0.6 + 0.35 * $k);
 		box-shadow:
@@ -292,9 +280,8 @@
 		color: $tag-experience;
 	}
 
-	// prose face, not display: Press Start 2P advances a full 1em per glyph, so a
-	// spelled-out degree ate three lines. Departure Mono at 22px holds nearly the
-	// same weight at 0.64em, and 22 is on its 11px grid.
+	// prose face, not display: Press Start 2P advances a full 1em per glyph, so a spelled-out degree
+	// ate three lines.
 	.ztl-title {
 		margin: 0;
 		font-family: $font-terminal;
@@ -343,17 +330,15 @@
 	.ztl-detail {
 		// 64ch of text plus the hanging chevron; the About column caps this well before it bites
 		max-width: calc(64ch + #{$chevron});
-		// Set off from the stack above rather than spaced like another line of it: title,
-		// institution and location are one block answering what and where, and this is
-		// the sentence that says why it mattered. At the card's own 0.3rem gap it read as
-		// a fourth label on the pile.
+		// Set off from the stack above rather than spaced like another line of it: title, institution and
+		// location are one block answering what and where, and this is the sentence that says why it
+		// mattered.
 		margin: 0.85rem 0 0;
 		font-family: $font-terminal;
-		// A step below the LIFE prose rather than half of it. This caption is the line
-		// that carries the story for its milestone, and at the 11px floor it was the
-		// smallest type in the station — set under the institution above it and level
-		// with a location label. 16px keeps it subordinate to the 22px title without
-		// making the most interesting text on the row the hardest to read.
+		// A step below the LIFE prose rather than half of it. This caption is the line that carries the
+		// story for its milestone, and at the 11px floor it was the smallest type in the station — set
+		// under the institution above it and level with a location label. 16px keeps it subordinate to the
+		// 22px title without making the most interesting text on the row the hardest to read.
 		font-size: $type-prose-md;
 		line-height: 1.45;
 		// global `p` is centred (_layout.scss) — the card reads as a left-aligned stack
