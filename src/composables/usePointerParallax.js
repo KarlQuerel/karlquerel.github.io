@@ -2,16 +2,9 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { prefersReducedMotion } from './usePrefersReducedMotion'
 import { FINE_POINTER_QUERY, POINTER_EASE } from '@/constants/viewport'
 
-// Mouse parallax, the one contract every scene layer shares: axes normalised to
-// -1..1 and negated, published as --mx/--my on a container, and each layer inside it
-// multiplies them by its own --depth. Layers ride the CSS `translate` property with
-// it, which keeps the lean off `transform` — that belongs to the scroll-scrubbed
-// motion. Nearer layers take a bigger depth; the parallax between them is the relief.
-// Canvas layers (FlightDust) take the same numbers through `pointer` instead, and
-// project them per element rather than sliding the frame as one sheet.
-//
-// Touch devices have no cursor and their drag-scrolls fire pointermove, so they skip
-// it entirely, as does reduced motion: the style then stays at a resting 0.
+// Mouse parallax, the one contract every scene layer shares: axes normalised to -1..1 and negated,
+// published as --mx/--my on a container, and each layer inside it multiplies them by its own
+// --depth.
 export function usePointerParallax() {
 	const pointer = ref({ x: 0, y: 0 })
 
@@ -20,9 +13,8 @@ export function usePointerParallax() {
 		'--my': pointer.value.y,
 	}))
 
-	// The cursor sets where the lean is headed; a frame loop closes the distance, so the
-	// layers drift into place instead of snapping. It runs only while there is distance
-	// left to close and stops itself the moment there is not.
+	// The cursor sets where the lean is headed; a frame loop closes the distance, so the layers drift
+	// into place instead of snapping.
 	const target = { x: 0, y: 0 }
 	let frame = 0
 
