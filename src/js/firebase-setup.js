@@ -10,9 +10,8 @@ const firebaseConfig = {
 	measurementId: 'G-7EEMWQS33Z',
 }
 
-// Lazy handle: the Firestore SDK (the bulk of the old Terminal chunk) loads via
-// dynamic import on first use, off the route's critical path. Memoised so
-// initializeApp runs once. lite SDK: REST-only, no realtime listeners.
+// Lazy handle: the Firestore SDK (the bulk of the old Terminal chunk) loads via dynamic import on
+// first use, off the route's critical path.
 let handlePromise = null
 
 function getHandle() {
@@ -32,9 +31,8 @@ function getHandle() {
 	return handlePromise
 }
 
-// Writes are single merged setDoc calls with atomic increments — no
-// read-before-write round trip, no lost updates between concurrent visitors,
-// and merge creates the doc on first write.
+// Writes are single merged setDoc calls with atomic increments — no read-before-write round trip,
+// no lost updates between concurrent visitors, and merge creates the doc on first write.
 export async function trackTerminalVisit() {
 	try {
 		const { firestore, statsRef } = await getHandle()
