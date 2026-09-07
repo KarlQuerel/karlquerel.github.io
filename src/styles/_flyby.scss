@@ -1,7 +1,6 @@
 // The lab flyby's own palette, deliberately separate from the site's void tokens in
-// _variables.scss: it is sampled against this shader's output rather than the site's
-// design system, and the lab is where that look is being tried out. Shared by LabPage
-// and LabBoot so the loader and the page it uncovers cannot drift apart.
+// _variables.scss: it is sampled against this shader's output rather than the site's design
+// system, and the lab is where that look is being tried out.
 
 @use 'variables';
 
@@ -17,7 +16,6 @@ $flyby-outline:
 	-1px 1px 0 variables.$black,
 	1px 1px 0 variables.$black;
 
-// Sampled off the opening frame: on a slow GPU the first paint is this gradient rather
-// than a black card, and the canvas lands on top of something close. The loader sits on
-// the same ground, so uncovering the flight is not a change of backdrop.
+// Sampled off the opening frame: on a slow GPU the first paint is this gradient rather than a
+// black card, and the canvas lands on top of something close.
 $flyby-ground: $flyby-void linear-gradient(180deg, #08080f, #1a1a2c 45%, #24243d 62%, #141420) fixed;
