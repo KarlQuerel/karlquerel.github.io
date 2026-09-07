@@ -11,24 +11,9 @@ export const STAR_COLORS = [
 	'#d3d3d3', // $light-gray
 ]
 
-// Parallax depth planes, far → near. Each is one repeating, GPU-drifted <div>
-// layer, inset by one tile so it can translate a full tile and loop seamlessly.
-//   count     stars placed in the tile
-//   size      base dot diameter (px) — nearer reads bigger; jittered per dot
-//   alpha     [min, max] opacity range
-//   tile      [w, h] (px) of the repeating pattern; its aspect sets drift angle
-//   duration  seconds for one full drift loop — nearer reads faster
-//   depth     pixels the layer shifts under mouse parallax — nearer moves more
-//   dir       [x, y] drift direction signs, alternated for a livelier sky
-//
-// Three planes rather than four: every plane is a full-screen layer the
-// compositor re-composites each frame as it drifts, and that per-frame cost was
-// the homepage's remaining lag.
-//
-// Tile size is a memory/repeat trade-off: each layer's GPU surface is viewport
-// + one tile of bleed, so big tiles cost real texture memory on every route.
-// These are the smallest tiles whose repeat still doesn't read on screen.
-// Density (count/area), drift speed (px/s) and aspect match the old sky.
+// Parallax depth planes, far -> near. Each is one repeating, GPU-drifted <div> layer, inset by
+// one tile so it can translate a full tile and loop seamlessly. Three planes rather than four:
+// each is a full-screen layer the compositor redraws every frame, and that was the homepage lag.
 export const STAR_LAYERS = [
 	{
 		count: 18,
@@ -62,17 +47,13 @@ export const STAR_LAYERS = [
 // Per-dot size multiplier so dots vary instead of reading as one stamped disc.
 export const STAR_SIZE_JITTER = [0.75, 1.25]
 
-// Vertical scroll parallax: px of layer shift per px scrolled, per depth unit —
-// scrolling streams the near planes past faster, so the camera reads as
-// travelling. Fine-pointer devices only: phones keep stars static during
-// scroll, because full-rate layer recomposits were the mobile lag (see below).
+// Vertical scroll parallax: px of layer shift per px scrolled, per depth unit — scrolling streams
+// the near planes past faster, so the camera reads as travelling.
 export const SCROLL_PARALLAX = 0.004
 
-// Device pixels of travel per drift step. Stepped (not linear) drift lets the
-// compositor skip the frames between hops — linear drift recomposited the
-// full screen every vsync, the main scroll-lag cost on phones. Sizing the step
-// by distance instead of by a fixed clock is what keeps the hop invisible: a
-// 1s cadence made the near plane jump 2.6px, wider than its own dots.
+// Device pixels of travel per drift step. Stepped (not linear) drift lets the compositor skip the
+// frames between hops — linear drift recomposited the full screen every vsync, the main scroll-lag
+// cost on phones.
 export const DRIFT_STEP_DEVICE_PX = 1
 
 // Sparse comet streaks. Tints echo the starfield, weighted toward plain white.
