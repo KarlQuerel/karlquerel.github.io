@@ -1,7 +1,4 @@
-// Adds `is-visible` the first time an element scrolls into view, then stops
-// observing. Honours reduced-motion / missing IntersectionObserver by revealing
-// immediately, so content is never trapped off-screen. Import as `vReveal` to
-// use it as `v-reveal` inside a component.
+// Adds `is-visible` the first time an element scrolls into view, then stops observing.
 
 import { prefersReducedMotion } from '../composables/usePrefersReducedMotion.js'
 
