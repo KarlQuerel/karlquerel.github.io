@@ -8,9 +8,8 @@
 	src: url('/assets/fonts/press-start-2p-latin.woff2') format('woff2');
 }
 
-// Departure Mono is an 11px bitmap design: it renders without antialiasing only
-// at whole multiples of 11 (11px, 22px), so prose steps between those two rather
-// than scaling fluidly. See $font-terminal in _variables.scss.
+// Departure Mono is an 11px bitmap design: it renders without antialiasing only at whole multiples
+// of 11 (11px, 22px), so prose steps between those two rather than scaling fluidly.
 @font-face {
 	font-family: 'Departure Mono';
 	font-style: normal;
