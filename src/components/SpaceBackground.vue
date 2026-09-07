@@ -90,9 +90,7 @@
 	// one parallax plane: its pre-rendered dot tile + drift vars
 	function buildLayer(layer, id) {
 		const [w, h] = layer.tile
-		// bleed only the two trailing edges (leading never uncovers); pad covers the
-		// mouse parallax. Scroll parallax lifts the layer up to one tile, so it
-		// needs the bottom bled by a full tile whichever way the drift runs.
+		// bleed only the two trailing edges (leading never uncovers); pad covers the mouse parallax.
 		const [dirX, dirY] = layer.dir
 		const pad = layer.depth + 8
 		return {
@@ -127,9 +125,8 @@
 	const starLayers = layerSpecs.map((layer, i) => buildLayer(layer, i))
 	const layerEls = []
 
-	// Streaming the planes past at depth-scaled rates as the page scrolls — the
-	// "camera is travelling" cue. Wrapped per tile height (the pattern repeats,
-	// so a whole-tile jump is invisible) and quantised to whole pixels.
+	// Streaming the planes past at depth-scaled rates as the page scrolls — the "camera is travelling"
+	// cue.
 	const onScrollParallax = useRafThrottle(() => {
 		const y = window.scrollY
 		layerSpecs.forEach((spec, i) => {
