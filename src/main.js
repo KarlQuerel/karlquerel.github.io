@@ -58,9 +58,7 @@ const routes = [
 const router = createRouter({
 	history: createWebHistory('/'),
 	routes,
-	// hash links land on their station; back/forward restores; the rest start at
-	// the top. The glide is for in-page hops only — a fresh visit (no matched
-	// `from`) lands instantly, and reduced motion always does.
+	// hash links land on their station; back/forward restores; the rest start at the top.
 	scrollBehavior(to, from, savedPosition) {
 		if (savedPosition) return savedPosition
 		if (to.hash) {
