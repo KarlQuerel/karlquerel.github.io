@@ -1,6 +1,5 @@
-// The landing journey's stations, in flight order. The rail tracks these and
-// lets you jump between them. These are positions on one page, not routes.
-// Keep in step with the `stops` thresholds in HomeJourney.vue.
+// The landing journey's stations, in flight order. The rail tracks these and lets you jump between
+// them.
 export const JOURNEY_STOPS = [
 	{ to: '/#top', label: 'Home' },
 	{ to: '/#work', label: 'Work' },
@@ -8,9 +7,7 @@ export const JOURNEY_STOPS = [
 	{ to: '/#contact', label: 'Contact' },
 ]
 
-// The GAME chip riding the journey chrome, one rung under the way-out chip. It points
-// at the holding screen, not at /game: that URL is where the game is being built, and
-// stays unlinked until it ships (src/constants/game.js).
+// The GAME chip riding the journey chrome, one rung under the way-out chip.
 export const GAME_LINK = { to: '/under-construction', label: 'Game' }
 
 // The one-chip way home on the chromeless pages (terminal, 404, the game's
