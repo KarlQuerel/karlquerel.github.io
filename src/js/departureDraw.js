@@ -1,6 +1,5 @@
-// The departure's sprites as one step per canvas, so the same drawing can be run in one
-// go by a worker or spread over animation frames on the main thread (departureCut.js).
-// `canvases` is { sky, bands[] }; each step fills its slot in `out`.
+// The departure's sprites as one step per canvas, so the same drawing can be run in one go by a
+// worker or spread over animation frames on the main thread (departureCut.js).
 
 import { DEPARTURE_RIDGE } from '../constants/journey.js'
 import { drawMoon } from './ridge.js'
