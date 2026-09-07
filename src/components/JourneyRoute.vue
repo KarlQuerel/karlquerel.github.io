@@ -1,8 +1,5 @@
 <template>
-	<!-- The route: the journey's own line, drawn in the page rather than the chrome.
-	     It runs in above the WORK station, threads the timeline as its spine, zigzags
-	     the whole frame between the LIFE chapters, and dives for the arrival. Only
-	     the flown stretch is drawn; the tip diamond is the camera, mid-viewport. -->
+	<!-- The route: the journey's own line, drawn in the page rather than the chrome. -->
 	<svg v-if="geo" v-bind="frame" class="route" :style="frameStyle" aria-hidden="true">
 		<defs>
 			<!-- The flown stretch, revealed by dash arithmetic in real units. One mask
@@ -40,12 +37,10 @@
 			/>
 		</g>
 	</svg>
-	<!-- The cursor rides its own layer, above the reading matter. The trace belongs
-	     behind it - a line threading the stations is scenery - but "you are here" is
-	     not scenery, and at the trace's own depth it spent most of the journey behind
-	     the station bodies: measured at 66 of 88 sampled scroll positions, on both a
-	     desktop and a phone viewport. Same box and same depth as the trace, so the
-	     two stay glued. -->
+	<!-- The cursor rides its own layer, above the reading matter. The trace belongs behind it - a line
+	     threading the stations is scenery - but "you are here" is not scenery, and at the trace's own
+	     depth it spent most of the journey behind the station bodies: measured at 66 of 88 sampled
+	     scroll positions, on both a desktop and a phone viewport. -->
 	<svg
 		v-if="geo && tip"
 		v-bind="frame"
@@ -68,9 +63,7 @@
 	import { smoothstep } from '@/js/math'
 
 	const props = defineProps({
-		// The camera sampled at an arbitrary scroll (HomeJourney owns the track). The
-		// route aims its dive at where the planet will be when the tip arrives, which
-		// is not the scroll being drawn - so a value would not do, it needs the curve.
+		// The camera sampled at an arbitrary scroll (HomeJourney owns the track).
 		camAt: { type: Function, required: true },
 	})
 
@@ -121,11 +114,8 @@
 	let orbit = [0, 1]
 	let vh = 0
 
-	// Where the planet's centre sits across the frame at the moment the tip reaches a
-	// given point on the page - the same placement PlanetStage makes, an offset from
-	// the frame's middle in vw. The camera is sampled at the scroll that puts the tip
-	// on `y`, not at the scroll being drawn: the dive has to aim where the world will
-	// be, not where it is.
+	// Where the planet's centre sits across the frame at the moment the tip reaches a given point on
+	// the page - the same placement PlanetStage makes, an offset from the frame's middle in vw.
 	function planetXAt(y, w, h) {
 		const cam = props.camAt(clamp(y - vh * ROUTE.tipFrac, 0, Math.max(0, h - vh)))
 		return w / 2 + (cam.x / 100) * window.innerWidth
@@ -172,10 +162,6 @@
 		const xG = xS + runIn
 		const resume1 = Math.round(headBox.bottom + m)
 		// The heading only matters when the rail would actually cross its letters.
-		// The face is monospaced, so the widest the glyphs can reach is exact
-		// arithmetic - and a heading wrapped to two lines only overestimates, which
-		// errs toward the late start below. Clear of the letters, the line runs
-		// straight through and the timeline reads whole.
 		const headText = workHead.querySelector('.page-heading')
 		let headClear = false
 		if (headText) {
@@ -186,9 +172,8 @@
 			const glyphHalf = (chars * (size + tracking) - tracking) / 2
 			headClear = Math.abs(xS - w / 2) > glyphHalf + 24
 		}
-		// LIFE reads in a wider column than WORK, so its stretch runs in the left
-		// gutter, clear of the prose - the trace jogs out after the timeline and
-		// jogs back for the dive. Headings only ever meet it across empty padding.
+		// LIFE reads in a wider column than WORK, so its stretch runs in the left gutter, clear of the
+		// prose - the trace jogs out after the timeline and jogs back for the dive.
 		const lifeSlots = [...track.querySelectorAll('#life .life-slot')]
 		let xL = Math.max(
 			20,
@@ -205,13 +190,10 @@
 		orbit = [arrivalBox.top, runway]
 		const yEnd = Math.round(arrivalBox.top + vh * 0.5 + runway * ROUTE.endRunFrac)
 
-		// The zigzag: a flank beside each life chapter - left of the cards, then
-		// right of them, alternating - crossing the frame in the fixed gap between
-		// chapters on a hexagonal jog: a short 45 chamfer off each flank and a
-		// straight run between them, corners nearly sharp like a hexagon's vertices.
-		// Centred in its gap, because the gap is one even beat and a turn off its
-		// middle reads as a mistake; a gap or frame too tight for the shape skips
-		// the crossing and the flank simply continues.
+		// The zigzag: a flank beside each life chapter - left of the cards, then right of them,
+		// alternating - crossing the frame in the fixed gap between chapters on a hexagonal jog: a short
+		// 45 chamfer off each flank and a straight run between them, corners nearly sharp like a hexagon's
+		// vertices.
 		const xR = w - xL
 		const pad = ROUTE.crossPadPx
 		const weave = []
@@ -220,9 +202,8 @@
 		for (let k = 1; k < lifeSlots.length; k++) {
 			const target = k % 2 ? xR : xL
 			if (target === lane) continue
-			// the slot, not the card inside it: the card rides the reveal's translate
-			// until it has been seen once, and a measure taken before then lands the
-			// jog off the gap's true centre. The slot hugs the card and never moves.
+			// the slot, not the card inside it: the card rides the reveal's translate until it has been seen
+			// once, and a measure taken before then lands the jog off the gap's true centre.
 			const slot = q => box(lifeSlots[q])
 			const gapTop = Math.max(slot(k - 1).bottom + pad, reach)
 			const gapBot = slot(k).top - pad
@@ -244,18 +225,9 @@
 			lane = target
 			reach = yJog + cham
 		}
-		// The dive aims at the world, not at the frame: the last leg is steered onto
-		// where the planet's centre will be when the tip lands, so the two arrive
-		// together by construction rather than by coincidence.
-		// On the camera as tuned today that is the frame's middle and nothing moves -
-		// every arrival keyframe holds x at 0 (see CAMERA.approach / .entry / .gone) -
-		// so this reads the same number the hardcoded centre did. It is here so the
-		// line still lands on the planet the day a keyframe brings it in off-axis.
-		// Same reason it is safe that a first measure can run before HomeJourney has
-		// built its track: the resting camera is centred too, and the observer on the
-		// track re-cuts the line as soon as there is one.
-		// Clamped well inside the frame - a dive that leaves the page is worse than
-		// one that is a little off.
+		// The dive aims at the world, not at the frame: the last leg is steered onto where the planet's
+		// centre will be when the tip lands, so the two arrive together by construction rather than by
+		// coincidence.
 		const xAim = Math.round(
 			clamp(planetXAt(yEnd, w, h), w * ROUTE.diveAimBand, w * (1 - ROUTE.diveAimBand))
 		)
@@ -277,21 +249,17 @@
 						[xS, yG + runIn],
 					]
 				: [[xS, yG]]
-		// A heading the rail would cross is not skirted with a stub and a gap any
-		// more: on a phone the stranded run above it read as the line breaking off
-		// right beside the words, with the dart parked on the dead end. The route
-		// now simply starts below the heading, gated by its own waypoint.
+		// A heading the rail would cross is not skirted with a stub and a gap any more: on a phone the
+		// stranded run above it read as the line breaking off right beside the words, with the dart parked
+		// on the dead end.
 		const subpaths = headClear ? [[...head, ...trunk]] : [[[xS, resume1], ...trunk]]
 
 		segs = []
 		total = 0
 		const subs = []
-		// Corners are flown, not cornered: every interior vertex becomes a small arc
-		// (a quadratic with the vertex as its control), entered turnPx short of the
-		// corner - or the vertex's own radius, where it carries one - and clamped so
-		// short legs stay sane. The arc is walked in steps rather than chorded, so the
-		// reveal masks ride the distances the browser really dashes and the tip's
-		// heading turns through the corner instead of holding one averaged angle.
+		// Corners are flown, not cornered: every interior vertex becomes a small arc (a quadratic with the
+		// vertex as its control), entered turnPx short of the corner - or the vertex's own radius, where
+		// it carries one - and clamped so short legs stay sane.
 		const quadAt = (a, c, b, t) => {
 			const u = 1 - t
 			return [
@@ -346,11 +314,10 @@
 			}
 			subs.push({ d, start, len: total - start })
 		}
-		// The tip crosses a turn at constant path speed. Scroll maps 1:1 to y on the
-		// straight verticals, but through a turn group - diagonals, arcs, and the
-		// horizontal run between them - the group's real y-extent is dealt out by
-		// arc length instead, so a screen-wide run costs the scroll it deserves
-		// rather than teleporting past in the horizontal's zero height.
+		// The tip crosses a turn at constant path speed. Scroll maps 1:1 to y on the straight verticals,
+		// but through a turn group - diagonals, arcs, and the horizontal run between them - the group's
+		// real y-extent is dealt out by arc length instead, so a screen-wide run costs the scroll it
+		// deserves rather than teleporting past in the horizontal's zero height.
 		let gi = 0
 		while (gi < segs.length) {
 			if (segs[gi].y2 - segs[gi].y1 >= segs[gi].len * 0.92) {
@@ -380,9 +347,7 @@
 			h,
 			subs,
 			d: subs.map(sub => sub.d).join(' '),
-			// The gate and the entry point carry the waypoint glyph, lit when the flown
-			// stretch reaches them. Nothing else: a diamond floating mid-line reads as
-			// a second cursor.
+			// The gate and the entry point carry the waypoint glyph, lit when the flown stretch reaches them.
 			nodes: headClear
 				? [
 						[xG, yG],
@@ -467,16 +432,14 @@
 		position: absolute;
 		top: 0;
 		left: 0;
-		// The trace: over the fixed stage (later in the DOM), under the station bodies
-		// at z 1 and the landscape headings at z -1... which sit below the stage
-		// anyway. The cursor overrides this - see .route--cursor.
+		// The trace: over the fixed stage (later in the DOM), under the station bodies at z 1 and the
+		// landscape headings at z -1... which sit below the stage anyway.
 		z-index: 0;
 		pointer-events: none;
 		shape-rendering: crispEdges;
-		// The cursor's lean, on the shared --mx/--my contract - at the station
-		// bodies' own depth, not a flavour of its own: the line threads the
-		// timeline's emblems, and any other depth shears it off them the moment
-		// the pointer moves.
+		// The cursor's lean, on the shared --mx/--my contract - at the station bodies' own depth, not a
+		// flavour of its own: the line threads the timeline's emblems, and any other depth shears it off
+		// them the moment the pointer moves.
 		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
 			calc(var(--my, 0) * var(--depth, 0) * 1px);
 	}
@@ -488,12 +451,9 @@
 		z-index: 3;
 	}
 
-	// The pattern rules stay scoped to the visible group: a bare `.route path` would
-	// also match the mask paths, and CSS outranks the dash attributes their reveal
-	// arithmetic lives in - the first version of this line lit end to end for
-	// exactly that reason.
-	// Only the stretch already flown exists - there is no preview of the route
-	// ahead, and the track is one flat gold from the gate to the tip.
+	// The pattern rules stay scoped to the visible group: a bare `.route path` would also match the
+	// mask paths, and CSS outranks the dash attributes their reveal arithmetic lives in - the first
+	// version of this line lit end to end for exactly that reason.
 	.route__flown path {
 		fill: none;
 		// the WORK spine's own cadence, so docking into it reads as one line
@@ -505,17 +465,12 @@
 		stroke: rgba($yellow, 0.8);
 	}
 
-	// A dark casing under the gold, the trick every chart drawn over terrain uses:
-	// the planet is the brightest thing on the page, and a bare 2px line at half
-	// alpha simply disappears into its lit limb. On the gold's own 12px period but
-	// a step longer at each end, so every dash carries its own outline and the line
-	// still reads as dashed rather than as a solid dark trace with gold on top.
-	// Both rules need the group in the selector: `.route__flown path` above would
-	// otherwise outrank a bare class and take the dash pattern back.
+	// A dark casing under the gold, the trick every chart drawn over terrain uses: the planet is the
+	// brightest thing on the page, and a bare 2px line at half alpha simply disappears into its lit
+	// limb.
 	.route__flown .route__casing {
-		// exactly one pixel of halo each side of the gold, and lighter than it: a
-		// casing that outweighs its line stops reading as gold-over-terrain and
-		// starts reading as a black line with a gold core
+		// exactly one pixel of halo each side of the gold, and lighter than it: a casing that outweighs
+		// its line stops reading as gold-over-terrain and starts reading as a black line with a gold core
 		stroke-width: 4px;
 		stroke: rgba($black, 0.6);
 		stroke-dasharray: 8 4;
@@ -526,19 +481,16 @@
 		fill: rgba($yellow, 0.9);
 	}
 
-	// Mask ink: a wide solid stroke of the same path, drawn to the flown length by
-	// dash arithmetic in real user units, set as attributes in the template. No dash
-	// property may appear here: CSS would override those attributes.
+	// Mask ink: a wide solid stroke of the same path, drawn to the flown length by dash arithmetic in
+	// real user units, set as attributes in the template.
 	.route__draw {
 		fill: none;
 		stroke: #fff;
 		stroke-width: 12px;
 	}
 
-	// You are here. The reserved gold at full strength - the current milestone - with
-	// the one self-running motion on the line, stepped as the house rules ask. A dart
-	// rather than a diamond: it is turned onto the path's own tangent every frame, and
-	// a square would show nothing for it - four-fold symmetry hides every quarter turn.
+	// You are here. The reserved gold at full strength - the current milestone - with the one self-
+	// running motion on the line, stepped as the house rules ask.
 	.route__tip {
 		fill: $yellow;
 		filter: drop-shadow(0 0 4px rgba($yellow, 0.6));
