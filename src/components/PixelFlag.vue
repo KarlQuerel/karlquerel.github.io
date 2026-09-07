@@ -1,8 +1,6 @@
 <template>
-	<!-- Tiny pixel-art national flag — a spot of colour that anchors each timeline
-	     card's location and breaks up the white text. Decorative: the adjacent
-	     location text already names the country, so it's aria-hidden. crispEdges keeps
-	     the pixels hard; fills are driven by classes so no hex lives in the markup. -->
+	<!-- Tiny pixel-art national flag — a spot of colour that anchors each timeline card's location and
+	     breaks up the white text. -->
 	<span class="pixel-flag" aria-hidden="true">
 		<svg
 			v-if="country === 'france'"
