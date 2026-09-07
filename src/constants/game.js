@@ -5,15 +5,10 @@
 export const GAME_SHIPPED = false
 export const GAME_READY = GAME_SHIPPED || import.meta.env.DEV
 
-// The holding screen (GameHolding.vue): the heading over two strips of the departure's
-// moon — a far band of low hills and the near plain, each grown to its heightVh of the
-// frame with its horizon at `horizon` of it, leaning with the cursor at its own depth
-// — and a worksite standing on the near plain at `at` of the width. The site is a char
-// grid on the shared palette (`legend` maps a char to a PALETTE name, '.' is sky) in
-// two layouts, `wide` and `narrow`, the narrow one for frames too few cells across for
-// the wide one; row `foot` stands on the ground's horizon and the rows under it are the
-// shadows things throw on the regolith. The beacon on the mast is the one thing that
-// moves: a DOM cell at the layout's [col, row], blinking on a stepped clock.
+// The holding screen (GameHolding.vue): the heading over two strips of the departure's moon — a
+// far band of low hills and the near plain, each grown to its heightVh of the frame with its
+// horizon at `horizon` of it, leaning with the cursor at its own depth — and a worksite standing
+// on the near plain at `at` of the width.
 export const GAME_HOLDING = {
 	lead: 'Under ',
 	accent: 'construction',
