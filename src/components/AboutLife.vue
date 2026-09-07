@@ -141,7 +141,6 @@
 	// offset between the photo-deck cards peeking out behind each dog's frame
 	$stack-step: 6px;
 	// mat between a section image and its void frame
-	$media-mat: 5px;
 
 	.life {
 		display: flex;
@@ -173,6 +172,7 @@
 		padding: 1rem 1.1rem 1.2rem;
 		// borderless: just the dark wash, no void frame (matches the work timeline)
 		background: rgba(0, 0, 0, 0.3);
+		border-radius: 30px;
 	}
 
 	.life-card__title {
@@ -212,6 +212,10 @@
 		// the global `p { text-align: center }` would otherwise centre it
 		text-align: inherit;
 		color: rgba(255, 255, 255, 0.88);
+		// A black keyline, in px because this face is only crisp on its own 11px grid. Invisible
+		// against the sky; it is what keeps the prose legible where the planet's lit limb crosses
+		// the card, which on frames at or under 1024px is up to 8% of its area.
+		@include pixel-keyline($unit: 1px, $halo: 6px);
 	}
 
 	.life-card__line:last-child {
@@ -248,10 +252,10 @@
 		float: right;
 		width: min(15rem, 34%);
 		margin: 0.2rem 0 0.6rem 1.4rem;
-		// the art is near-black, so it needs a lighter mat between it and the border —
-		// without one the void hairline sits darker than the art and vanishes
-		padding: $media-mat;
-		@include void-panel(rgba(255, 255, 255, 0.06));
+		background: rgba(255, 255, 255, 0.06);
+		border-radius: 30px;
+		// the art fills the frame edge to edge, so the curve has to clip it
+		overflow: hidden;
 	}
 
 	.life-card__media img {
@@ -313,7 +317,7 @@
 		box-sizing: border-box;
 		background: rgba(0, 0, 0, 0.45);
 		border: $void-border;
-		border-radius: $void-radius;
+		border-radius: 30px;
 	}
 
 	.dog::before {
@@ -335,6 +339,7 @@
 		box-sizing: border-box;
 		padding: 0;
 		@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.45));
+		border-radius: 30px;
 	}
 
 	// square photo crops fill the frame edge to edge (inset by the padding);
@@ -349,6 +354,7 @@
 		padding: 0.6rem;
 		opacity: 0;
 		transition: opacity 0.35s steps(5, end);
+		border-radius: 30px;
 	}
 
 	.dog__photo.is-active {
