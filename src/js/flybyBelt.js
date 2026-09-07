@@ -1,11 +1,4 @@
 // The belt: the field of rock the flight threads on its way in to the destination.
-//
-// It used to be scattered across the system's own plane, which sounds right and looked
-// like nothing: that plane climbs as the corridor drops, so by z=-150 it sits fifteen
-// units above the flight and the whole field was out of frame above the camera for the
-// entire approach. A belt nobody flies through is set dressing for a shot we never take.
-// So it is scattered around the corridor's own centre line instead - still flattened, so
-// it reads as a belt rather than a tube, but centred on where the camera actually goes.
 
 import { camAt } from './flybyPath.js'
 import { add, cross, mul, norm } from './vec3.js'
@@ -42,10 +35,7 @@ export function buildBelt(count) {
 	let seed = BELT_SEED
 	const rnd = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296
 
-	// Nothing may sit nearer the centre line than the floor, however it got there. The
-	// family jitter below scatters members up to sixteen units off their family, which is
-	// easily enough to drop one back onto the flight line - so every rock is pushed out
-	// radially at the end rather than only the family centres being placed clear.
+	// Nothing may sit nearer the centre line than the floor, however it got there.
 	const clearHull = p => {
 		const [cx, cy] = corridorAt(p[2])
 		const dx = p[0] - cx
@@ -57,11 +47,9 @@ export function buildBelt(count) {
 		return [cx + dx * k, cy + dy * k, p[2]]
 	}
 
-	// Ring the corridor at a radius that never comes near the hull, flattened along the
-	// system plane's normal so the slab lies in the plane everything else obeys - it
-	// crosses the frame at the plane's own 13-degree tilt instead of sitting as a
-	// horizontal stripe at the camera's eye level. Weighted inward - most of a belt is
-	// the near gravel you actually pass, not the far stuff.
+	// Ring the corridor at a radius that never comes near the hull, flattened along the system plane's
+	// normal so the slab lies in the plane everything else obeys - it crosses the frame at the plane's
+	// own 13-degree tilt instead of sitting as a horizontal stripe at the camera's eye level.
 	const inPlane = norm(cross(RING_NORMAL, [0, 0, 1]))
 	const place = z => {
 		const [cx, cy] = corridorAt(z)
