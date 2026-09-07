@@ -1,11 +1,5 @@
-// HD pixel maps for the About-timeline emblems (see PixelEmblem.vue). One string
-// per row, one char per pixel, '.' = transparent. Char → fill class legend
-// (colours resolved in PixelEmblem.vue from theme tokens):
-//   K outline · S screen black · N phosphor green
-//   G/g/Y gold base/shade/light · W/w/d white/gray/dark-gray
-//   A/a/E azure base/shade/light · M/m/e mint base/shade/light
-//   R/r/q red base/shade/light
-// Regenerate with a paint script rather than editing pixels by hand.
+// HD pixel maps for the About-timeline emblems (see PixelEmblem.vue). One string per row, one char
+// per pixel, '.' = transparent.
 export const EMBLEM_PIXEL_MAPS = {
 	chart: [
 		'...W.................................W........',
