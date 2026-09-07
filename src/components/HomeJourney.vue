@@ -157,13 +157,9 @@
 	const nameWords = HOME_LANDING.name.split(' ')
 	const firstWords = nameWords.slice(0, -1).join(' ')
 	const lastWord = nameWords.at(-1)
-	// Where the corridor sits relative to the lockup's centre, in px, both axes —
-	// HeroTitle measures it off its own laid-out text and hands it up, so the numbers
-	// hold whatever the breakpoints and any wrapping did. The pass scales about that
-	// point and shifts it onto the frame's centre, which is where the mote field's
-	// vanishing point is and where the planet comes up.
-	// Portrait renders the vmin-sized globe far smaller, so the camera table swaps
-	// for a pushed-in set (see measure()).
+	// Where the corridor sits relative to the lockup's centre, in px, both axes — HeroTitle measures
+	// it off its own laid-out text and hands it up, so the numbers hold whatever the breakpoints and
+	// any wrapping did.
 	const portrait = ref(false)
 
 	// the headings answer the cursor too — less than the planet (see JOURNEY.parallax)
@@ -192,9 +188,8 @@
 		portrait.value = vh > track.clientWidth
 		const cameras = portrait.value ? CAMERA_PORTRAIT : CAMERA
 		dims.value = { trackH: track.offsetHeight, vh }
-		// the departure flies through the name at the planet, the camera
-		// comes around it, then stations dock as they enter; inside the pinned runway
-		// the limb blows out and hands off to the entry
+		// the departure flies through the name at the planet, the camera comes around it, then stations
+		// dock as they enter; inside the pinned runway the limb blows out and hands off to the entry
 		const arrivalTop = topOf(arrivalRef.value)
 		const runwayPx = (ARRIVAL.runwayVh / 100) * vh
 		// the run from the top of the page to the WORK dock: the whole flight out
@@ -239,13 +234,9 @@
 	// which keeps `light` to the beats that actually use it.
 	const CAM_CHANNELS = { x: 0, y: 0, scale: 1, fade: 1, roll: 0, tilt: 0, light: 0 }
 
-	// Slopes for those cubics, rebuilt only when the track is re-measured. Easing
-	// each segment on its own (a smoothstep per leg) parked the camera at every one
-	// of the fifteen keyframes and pushed it off again, which is what made the middle
-	// of the flight read as fifteen separate moves. Monotone slopes carry the speed
-	// through a knot wherever a channel keeps heading the same way, and stop only
-	// where it genuinely turns around — without ever overshooting the keyframes,
-	// which `fade` and `scale` both depend on.
+	// Slopes for those cubics, rebuilt only when the track is re-measured. Easing each segment on its
+	// own (a smoothstep per leg) parked the camera at every one of the fifteen keyframes and pushed it
+	// off again, which is what made the middle of the flight read as fifteen separate moves.
 	const camSlopes = computed(() => {
 		const pts = camTrack.value
 		if (pts.length < 2) return null
@@ -292,8 +283,6 @@
 	const spin = computed(() => (progress.value * JOURNEY.turns + cam.value.roll) * Math.PI * 2)
 
 	// The sun holds still in the world while you orbit — the terminator advances.
-	// The camera's `light` channel swings it faster through the beats where going
-	// around the planet is the point, which is what makes the circle read.
 	const lightYaw = computed(
 		() => (progress.value * JOURNEY.sunTurns + cam.value.light) * Math.PI * 2
 	)
@@ -302,12 +291,9 @@
 	// carries on into the void
 	const pass = computed(() => scrolled.value / ((dims.value.vh || 1) * HERO_FLYBY.runVh))
 
-	// Departure: the pass through the corridor. The name stands on a plane `titleZ`
-	// ahead, so its scale is what closing that gap does — the same travel the motes
-	// ride, which is what makes the two read as one movement instead of two effects.
-	// Since scale and offset-from-the-axis grow together, one scale about the corridor
-	// is the whole move. The words go on out past the frame edges; the dissolve is
-	// what ends the pass.
+	// Departure: the pass through the corridor. The name stands on a plane `titleZ` ahead, so its
+	// scale is what closing that gap does — the same travel the motes ride, which is what makes the
+	// two read as one movement instead of two effects.
 	const passScale = computed(() => 1 / (1 - flown(clamp01(pass.value)) / HERO_FLYBY.titleZ))
 	// bare plate through the gate - see HERO_FLYBY.bareFromScale
 	const plateBare = computed(() => passScale.value >= HERO_FLYBY.bareFromScale)
@@ -329,14 +315,8 @@
 		}
 	})
 
-	// How far down the corridor the camera has run, in world units — the one number
-	// the whole flight comes from. Spool up from a standstill, then close the gap so
-	// the zoom multiplies at a constant rate per scrolled px: at constant world speed
-	// perspective is a hyperbola, and the whole gate transit — most of nearScale —
-	// landed in the last few percent of the pass. Past the plane the old constant
-	// rate takes over on the same line as before, so the run to the void, the dust
-	// fades and the departure beats all keep their distances — and punching out of
-	// the gate back to speed is the beat the brake was setting up.
+	// How far down the corridor the camera has run, in world units — the one number the whole flight
+	// comes from.
 	function flown(p) {
 		const h = HERO_FLYBY.spoolUp
 		const d = p < h ? (p * p) / (2 * h) : p - h / 2
@@ -357,9 +337,7 @@
 		return { transform: `translate3d(${x}vw, ${y}vh, 0)` }
 	})
 
-	// The mote field: up as the flight starts, on through the pass, out again as the
-	// planet comes up. Measured on the pass's clock, past 1, so it outlasts the words
-	// and carries the empty stretch before the planet.
+	// The mote field: up as the flight starts, on through the pass, out again as the planet comes up.
 	const dust = computed(() =>
 		smoothstep(riseFall(pass.value, HERO_FLYBY.dustIn, HERO_FLYBY.dustFull, HERO_FLYBY.dustOut))
 	)
@@ -414,9 +392,8 @@
 		}
 	})
 
-	// The way out goes away once the descent starts rather than once it ends: it is
-	// gone by the time the first clouds are in frame, so the last stretch is the
-	// atmosphere and nothing else. The portals it pointed at surface further down.
+	// The way out goes away once the descent starts rather than once it ends: it is gone by the time
+	// the first clouds are in frame, so the last stretch is the atmosphere and nothing else.
 	const ctaStyle = computed(() => {
 		const there = smoothstep(
 			clamp01(
@@ -523,18 +500,14 @@
 		width: 100%;
 	}
 
-	// Departure viewport: the destination planet (PlanetStage) waits in the lower
-	// half. The hero itself is only the scroll the pass is spent over — the lockup
-	// rides the viewport, not the page.
+	// Departure viewport: the destination planet (PlanetStage) waits in the lower half.
 	.journey__hero {
 		min-height: 100vh;
 	}
 
-	// The flight rides the viewport, not the page: the corridor has to hold still on
-	// the camera's axis while the world moves past it, and the frame-filling letters
-	// of the pass have to clip at the frame edges instead of widening the page. The
-	// axis is the frame's centre — where the tunnel's vanishing point is, and where
-	// the planet comes up out of the gap once the words have gone.
+	// The flight rides the viewport, not the page: the corridor has to hold still on the camera's axis
+	// while the world moves past it, and the frame-filling letters of the pass have to clip at the
+	// frame edges instead of widening the page.
 	.journey__flight {
 		position: fixed;
 		inset: 0;
@@ -576,10 +549,8 @@
 		scroll-margin-top: $page-pad-top;
 	}
 
-	// Over the stage, not behind it: a title the limb swallows is a title unread, so
-	// the words stay above the planet and the keyline holds them off it. No scrim: a
-	// dark box behind type sitting on a lit limb reads as a panel floating in space,
-	// which is why the arrival heading carries none.
+	// Over the stage, not behind it: a title the limb swallows is a title unread, so the words stay
+	// above the planet and the keyline holds them off it.
 	.journey__station-head {
 		position: relative;
 		z-index: 1;
@@ -603,9 +574,8 @@
 		@include pixel-keyline;
 	}
 
-	// The accent word carries its own text-shadow, and a child's replaces what it would
-	// have inherited — so the yellow word needs the border stating again, with its glow
-	// as the halo behind it.
+	// The accent word carries its own text-shadow, and a child's replaces what it would have inherited
+	// — so the yellow word needs the border stating again, with its glow as the halo behind it.
 	.journey__station-head :deep(.page-heading__accent) {
 		@include pixel-keyline($halo: 0.5em, $halo-colour: rgba($yellow, 0.5));
 	}
@@ -657,8 +627,6 @@
 		}
 
 		// The stations run full-width here, so the chip rides straight over their copy.
-		// Small and dim it covers a fraction of what it did and reads as a quiet label;
-		// with no backing left it is the keyline that separates it from the prose behind.
 		.journey__cta {
 			padding: 0.45rem 0.65rem;
 			font-size: px8(1);
