@@ -154,10 +154,9 @@
 		color: $yellow;
 	}
 
-	// Phones keep the rail — with the nav trimmed it is the only route to the
-	// stations — but a left rail fights the reading column at this width, so it
-	// turns into a horizontal strip pinned along the bottom, out of the text and
-	// inside thumb reach. Labels go; the diamonds and the lit track carry it.
+	// Phones keep the rail — with the nav trimmed it is the only route to the stations — but a left
+	// rail fights the reading column at this width, so it turns into a horizontal strip pinned along
+	// the bottom, out of the text and inside thumb reach.
 	@media (max-width: $breakpoint-mobile) {
 		.rail {
 			@include void-panel(rgba($black, 0.55));
