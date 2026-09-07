@@ -1,9 +1,4 @@
-// Tracks the page scroll position over a tall wrapper element as a continuous
-// 0 -> 1 value. The wrapper acts as a scroll "runway": as it travels through the
-// viewport, progress goes 0 -> 1, driving animations like the hero crawl.
-//
-// Uses a viewport-relative getBoundingClientRect() measurement, so it is
-// unaffected by content rendered above the wrapper.
+// Tracks the page scroll position over a tall wrapper element as a continuous 0 -> 1 value.
 
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRafThrottle } from './useRafThrottle.js'
