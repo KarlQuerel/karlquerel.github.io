@@ -1,22 +1,5 @@
-// The one palette the procedural art draws from — the planet's surface, the ranges
-// at both ends of the trip, and the cloud decks. Two rules are what make those read
-// as one piece of art rather than three effects that happen to sit next to each
-// other:
-//
-//   1. Ramps hue-shift. A surface does not simply darken toward black: as it turns
-//      away from the sun its hue rotates toward the cool of the sky, and as it turns
-//      into the sun it rotates warm. Multiplying one base colour by a brightness is
-//      what gives you a low-resolution render; rotating hue along the ramp is what
-//      makes the same geometry read as pixel art.
-//   2. Ramps share their dark ends. Everything in this world bottoms out in the same
-//      violet-black, which is what ties a night ridge, an orbiting globe and a dusk
-//      range together — and it is also just true, since you cannot tell an ocean
-//      from a continent on the night side.
-//
-// Colours are [r, g, b] 0-255 and are named, not indexed, so a ramp reads as the
-// walk it is and two ramps can share a step without either owning it. Nothing in the
-// canvas art may invent a colour outside this file: the drawing code picks a step,
-// never a blend, so every pixel it paints is exactly one of these.
+// The one palette the procedural art draws from — the planet's surface, the ranges at both ends of
+// the trip, and the cloud decks.
 export const PALETTE = {
 	// The shared cool end. Every ramp starts somewhere in here.
 	void: [10, 8, 14],
@@ -31,12 +14,6 @@ export const PALETTE = {
 	foam: [140, 92, 88],
 
 	// Rock: violet-brown through red to a warm tan where the sun hits square on.
-	// Stepped finely on purpose: a ramp compresses for distance by picking adjacent
-	// entries, never by repeating one — a repeat costs the dither a boundary.
-	// `shale` and `garnet` are the rotation, not extra brightness steps: a ramp that
-	// only brightens reads as one colour under a dimmer, and the eye takes that for
-	// paint. Shadow sits in the sky's violet and swings through a cool red before it
-	// reaches the orange the sun actually puts on the rock.
 	shale: [52, 38, 58],
 	basalt: [50, 34, 40],
 	rust: [84, 46, 44],
