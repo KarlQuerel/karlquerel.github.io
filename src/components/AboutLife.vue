@@ -91,9 +91,8 @@
 	import { ABOUT_ME, DOG_LINES, DOGS, LIFE_SECTIONS } from '@/data/aboutLife'
 	import { reveal as vReveal } from '@/directives/reveal'
 
-	// One deck per dog: photos auto-cycle on a shared beat, looping. Hovering the
-	// decks pauses the cycle; clicking skips ahead (and restarts the beat, so the
-	// chosen photo gets a full stay). Reduced motion keeps the decks click-only.
+	// One deck per dog: photos auto-cycle on a shared beat, looping. Hovering the decks pauses the
+	// cycle; clicking skips ahead (and restarts the beat, so the chosen photo gets a full stay).
 	const activeIndexes = ref({})
 	let deckTimer = null
 	let autoCycles = false
@@ -153,11 +152,9 @@
 		text-align: left;
 	}
 
-	// The slots hug their cards, and one fixed gap carries the rhythm — equal
-	// whatever the cards' heights (DOGS runs past a screen, MUSIC is a fifth of
-	// one), where the old screen-per-section slots left every gap a different pair
-	// of leftover half-screens, and far too much of it. The route's crossings turn
-	// centred inside the gap.
+	// The slots hug their cards, and one fixed gap carries the rhythm — equal whatever the cards'
+	// heights (DOGS runs past a screen, MUSIC is a fifth of one), where the old screen-per-section
+	// slots left every gap a different pair of leftover half-screens, and far too much of it.
 	.life-slot {
 		display: grid;
 		place-items: center;
@@ -209,9 +206,8 @@
 		// would spend most widths antialiased. 22px puts ~54ch on the desktop column.
 		font-size: $type-prose;
 		line-height: 1.55;
-		// no tracking: the face is monospaced and already spaced, and an em-based
-		// value would land on half-pixels and undo the size choice above.
-		// A `\n` in the copy breaks the line without opening a paragraph gap.
+		// no tracking: the face is monospaced and already spaced, and an em-based value would land on
+		// half-pixels and undo the size choice above.
 		white-space: pre-line;
 		// the global `p { text-align: center }` would otherwise centre it
 		text-align: inherit;
@@ -246,8 +242,6 @@
 	}
 
 	// section art floated into the prose, so the paragraphs after it wrap alongside.
-	// Framed like the dog photos: the art carries its own dark backdrop, so without
-	// the void border its rectangle reads as an accident rather than a picture.
 	.life-card__media {
 		// <picture> is inline by default, so width would be ignored once the float drops
 		display: block;
@@ -399,12 +393,10 @@
 	}
 
 	@media (max-width: $breakpoint-mobile) {
-		// Where the pixel grid loses. Departure Mono is crisp only at 11px and 22px:
-		// 22px leaves ~23ch on a phone, and 11px has an 8px cap — smaller than the
-		// VT323 it replaced, on the very axis this font was chosen for. 16px is
-		// off-grid (33% antialiased at DPR3) but is the comfortable reading size, and
-		// body prose is where softness shows least and legibility matters most.
-		// Titles, labels and chrome stay on-grid.
+		// Where the pixel grid loses. Departure Mono is crisp only at 11px and 22px: 22px leaves ~23ch on
+		// a phone, and 11px has an 8px cap — smaller than the VT323 it replaced, on the very axis this
+		// font was chosen for. 16px is off-grid (33% antialiased at DPR3) but is the comfortable reading
+		// size, and body prose is where softness shows least and legibility matters most.
 		.life-card__line {
 			font-size: $type-prose-md;
 		}
@@ -422,9 +414,6 @@
 		}
 
 		// Stacked, the art would split the opener from the paragraph it illustrates.
-		// Flex order moves it one slot down without touching the DOM order the
-		// desktop float depends on. Scoped by :has, so cards without art stay block
-		// — ordering an unscoped .dogs deck would jump it above the prose.
 		.life-card:has(.life-card__media) {
 			display: flex;
 			flex-direction: column;
