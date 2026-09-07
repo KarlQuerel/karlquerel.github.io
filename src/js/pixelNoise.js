@@ -1,6 +1,5 @@
-// Dependency-free 1D value noise plus the two shaping helpers the entry scene's
-// sprites are built from. Kept out of the component so the drawing code reads as
-// drawing code, and so anything else needing a seeded profile can reuse it.
+// Dependency-free 1D value noise plus the two shaping helpers the entry scene's sprites are built
+// from.
 
 import { smoothstep } from './math.js'
 
@@ -10,7 +9,7 @@ export function hash1(i, seed) {
 	return ((n ^ (n >>> 16)) >>> 0) / 4294967295
 }
 
-export function noise1(x, seed) {
+function noise1(x, seed) {
 	const i = Math.floor(x)
 	return hash1(i, seed) + (hash1(i + 1, seed) - hash1(i, seed)) * smoothstep(x - i)
 }
@@ -22,10 +21,8 @@ export function fbm1(x, seed) {
 	)
 }
 
-// Ridged multifractal: folding the noise at its midpoint turns rolling hills
-// into sharp crests with long flanks, which is what real mountains look like.
-// Each octave is weighted by the one above it, so detail gathers on the ridges
-// and the valleys stay smooth. Returns roughly 0..1.
+// Ridged multifractal: folding the noise at its midpoint turns rolling hills into sharp crests
+// with long flanks, which is what real mountains look like.
 export function ridged1(x, seed, octaves = 4) {
 	let sum = 0
 	let norm = 0
@@ -54,28 +51,16 @@ const BAYER4 = [
 	[15, 7, 13, 5],
 ]
 
-// This pixel's slot on the dither grid, 0..1. Exposed because a scene that dithers
-// more than one decision per pixel — which ramp, and how far up it — has to make both
-// against the same threshold, or the two patterns beat against each other.
-// `jitter` spreads a pixel's threshold across its own Bayer level instead of pinning
-// it to the middle. At 0 this is the plain ordered matrix — the right tool on a face,
-// where the pattern is small against the shape and the even spacing is what keeps an
-// edge clean. Over a big smooth field it is the wrong tool: every pixel sharing a
-// level shares a threshold, so they all flip together and the eye reads the lattice,
-// which is the halftone screen a dithered sky always turns into. Jittered, the level
-// still sets the average density — so the gradient is unchanged — but which pixels
-// inside it flip is no longer a grid.
+// This pixel's slot on the dither grid, 0..1. Exposed because a scene that dithers more than one
+// decision per pixel — which ramp, and how far up it — has to make both against the same
+// threshold, or the two patterns beat against each other.
 export function ditherThreshold(x, y, jitter = 0) {
 	const at = jitter ? 0.5 + (hash2(x, y, 9161) - 0.5) * jitter : 0.5
 	return (BAYER4[y & 3][x & 3] + at) / 16
 }
 
-// Pick an index into a `levels`-long ramp for brightness `lit` (0..1), dithering
-// between the two nearest steps by pixel position. `contrast` bends the fraction
-// between those two steps toward one or the other, so the checker gathers into a
-// narrow seam where the steps meet instead of tiling the whole band — the same
-// argument the ridge makes for its own faces, available to any ramp walked over a
-// large, slowly-varying area (the sky being the one that needed it).
+// Pick an index into a `levels`-long ramp for brightness `lit` (0..1), dithering between the two
+// nearest steps by pixel position.
 export function ditherIndex(lit, levels, x, y, contrast = 0) {
 	const v = lit * (levels - 1)
 	const i = Math.floor(v)
@@ -85,10 +70,8 @@ export function ditherIndex(lit, levels, x, y, contrast = 0) {
 	return Math.max(0, Math.min(levels - 1, i + step))
 }
 
-// Quantise `lit` onto a `levels`-long ramp with the dither confined to a seam of
-// half-width `seam` (in steps) either side of each boundary. Faces come out solid and
-// the checker gathers where two tones actually meet — dither as an edge tool, which
-// is how it is laid by hand. A seam of 0 is plain rounding.
+// Quantise `lit` onto a `levels`-long ramp with the dither confined to a seam of half-width `seam`
+// (in steps) either side of each boundary.
 export function seamIndex(lit, levels, x, y, seam, jitter = 0) {
 	const v = lit * (levels - 1)
 	const i = Math.floor(v)
@@ -108,7 +91,7 @@ export function hash2(ix, iy, seed) {
 	return ((n ^ (n >>> 16)) >>> 0) / 4294967295
 }
 
-export function noise2(x, y, seed) {
+function noise2(x, y, seed) {
 	const ix = Math.floor(x)
 	const iy = Math.floor(y)
 	const u = smoothstep(x - ix)
@@ -122,9 +105,8 @@ export function fbm2(x, y, seed) {
 	return 0.65 * noise2(x, y, seed) + 0.35 * noise2(x * 2.6, y * 2.6, seed + 17)
 }
 
-// Turbulence: `octaves` of noise, each half the size and half the weight of the last,
-// normalised to 0..1. Two octaves make billows; four make cloud, with detail all the
-// way down to the cell.
+// Turbulence: `octaves` of noise, each half the size and half the weight of the last, normalised
+// to 0..1.
 export function turbulence(x, y, seed, octaves) {
 	let sum = 0
 	let norm = 0
