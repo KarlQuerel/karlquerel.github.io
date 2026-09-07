@@ -65,10 +65,9 @@
 		el.height = h
 	}
 
-	// One frame of the field. A mote's depth wraps into a box that travels with the
-	// camera: it leaves at the near plane and comes back in at the far one, which is
-	// what makes a field of a few hundred read as endless. The tail runs along the way
-	// we are going, so length is speed rather than blur.
+	// One frame of the field. A mote's depth wraps into a box that travels with the camera: it leaves
+	// at the near plane and comes back in at the far one, which is what makes a field of a few hundred
+	// read as endless.
 	function draw() {
 		if (!ctx || props.fade <= 0.01) return
 		const { moteBox: box, moteTail, moteNear, moteLean } = HERO_FLYBY
