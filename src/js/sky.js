@@ -1,12 +1,8 @@
-// The departure's sky, drawn once on the ground's grid. Black — there is no air — with
-// two things on it: the glow of the sun just off frame to the left, low on that
-// horizon, which is the one thing in the scene that shows where every lit flank gets
-// its light; and the galaxy, the band of our own seen edge-on from inside it, with
-// lanes of dust down its length and stars gathered where the light is. Both are soft
-// things, so both are dithered as gradients rather than cut into steps — the one place
-// in the frame that is, since a glow drawn as solid steps reads as a shape, and a tidy
-// pass turns dither into blocks. The bright stars are DOM glints (DepartureRidge.vue),
-// so they can breathe on a stepped clock without a redraw.
+// The departure's sky, drawn once on the ground's grid. Black — there is no air — with two things
+// on it: the glow of the sun just off frame to the left, low on that horizon, which is the one
+// thing in the scene that shows where every lit flank gets its light; and the galaxy, the band of
+// our own seen edge-on from inside it, with lanes of dust down its length and stars gathered where
+// the light is.
 
 import { DEPARTURE_RIDGE } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
@@ -34,14 +30,9 @@ export function drawSky(el, frame) {
 	}
 	const seed = DEPARTURE_RIDGE.ridgeSeed + 5
 
-	// The galaxy: a river of unresolved stars, which is what it is — a broad soft arc of
-	// light, brightest and widest toward the bulge, mottled by cloud and dimmed by lanes
-	// of dust, all drawn out along its length. It is one smooth field: a profile with
-	// long wings, a turbulence that multiplies it the way cloud does, an absorption that
-	// takes from it the way dust does — and no threshold anywhere, since a threshold makes
-	// an edge and the real thing has none. Dithered the whole way like the sun's glow, so
-	// the two soft things in the frame speak one language, and the stars thin with the
-	// light so the band dissolves into the sky instead of ending on a line.
+	// The galaxy: a river of unresolved stars, which is what it is — a broad soft arc of light,
+	// brightest and widest toward the bulge, mottled by cloud and dimmed by lanes of dust, all drawn
+	// out along its length.
 	const haze = G.haze.map(name => PALETTE[name])
 	const faint = G.faint.map(name => PALETTE[name])
 	const spark = G.spark.map(name => PALETTE[name])
@@ -113,9 +104,8 @@ export function drawSky(el, frame) {
 					)
 				}
 				clear = 1 - Math.exp(-f)
-				// dust in front of the light: the rifts down the run, and a ridged turbulence
-				// of lanes and knots absorbing by its depth, both hugging the plane where dust
-				// lies
+				// dust in front of the light: the rifts down the run, and a ridged turbulence of lanes and knots
+				// absorbing by its depth, both hugging the plane where dust lies
 				for (let k = 0; k < G.rifts.length; k++) {
 					const r = G.rifts[k]
 					const path =
@@ -137,12 +127,10 @@ export function drawSky(el, frame) {
 				const idx = seamIndex(g, haze.length + 1, x, y, G.seam)
 				if (idx > 0) put(x, y, haze[idx - 1])
 			}
-			// the stars are the band: a faint tier of single cells that thins with the light
-			// and runs on well past its last step, so the band's grain tails off into the
-			// sky's own stars instead of stopping; pale sparks where the light is thickest,
-			// which is stars too close to tell apart; and a sparse bright tier drawn as small
-			// crosses. The faint and bright tiers gather in clusters, and starThrough of them
-			// sit in front of the dust, so a lane is dark but not empty.
+			// the stars are the band: a faint tier of single cells that thins with the light and runs on well
+			// past its last step, so the band's grain tails off into the sky's own stars instead of stopping;
+			// pale sparks where the light is thickest, which is stars too close to tell apart; and a sparse
+			// bright tier drawn as small crosses.
 			const cluster = fbm2(x / G.clusterCells, y / G.clusterCells, seed + 31) > G.clusterAbove
 			const lit = g + (clear - g) * G.starThrough
 			const weight = lit ** G.starPow * (cluster ? G.clusterGain : 1)
