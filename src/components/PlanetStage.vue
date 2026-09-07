@@ -50,9 +50,8 @@
 		return clamp01((props.cam.scale - from) / (to - from))
 	})
 
-	// the haze borrows the planet's atmosphere colour out of the shared palette, so the
-	// entry matches the limb; the globe takes its share of the cursor's lean, published
-	// on the journey root
+	// the haze borrows the planet's atmosphere colour out of the shared palette, so the entry matches
+	// the limb; the globe takes its share of the cursor's lean, published on the journey root
 	const stageStyle = {
 		'--atmosphere': PALETTE[PLANET.atmosphere].join(', '),
 		'--depth': JOURNEY.parallax.planet,
@@ -112,9 +111,8 @@
 			radial-gradient(55% 45% at 80% 74%, rgba(122, 64, 52, 0.09) 0%, transparent 70%);
 	}
 
-	// The keyframed camera owns `transform`; the cursor's lean rides `translate`, the
-	// same contract every other layer in the scene follows. A world answers least of
-	// the things in front of you, so its depth is small (see JOURNEY.parallax).
+	// The keyframed camera owns `transform`; the cursor's lean rides `translate`, the same contract
+	// every other layer in the scene follows.
 	.stage__planet {
 		position: absolute;
 		inset: 0;
