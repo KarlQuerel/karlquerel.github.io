@@ -6,9 +6,7 @@
 				<span ref="firstEl">{{ firstWords }}</span>
 				<span ref="lastEl">{{ lastWord }}</span>
 			</span>
-			<!-- the inner spans are inline on purpose: their boxes are the text's own, so
-			     the sprite is drawn where the glyphs actually sit whatever the block
-			     around them is aligned to -->
+			<!-- inline on purpose: their boxes are the text's own, so the sprite lands where the glyphs sit -->
 			<span class="title__role"
 				><span ref="roleEl">{{ role }}</span></span
 			>
@@ -34,8 +32,7 @@
 		role: { type: String, required: true },
 		// the scroll cue, on the plate with the rest so it flies with it
 		cue: { type: String, required: true },
-		// mid-transit the plate goes bare: ink and keyline only, since the blurred
-		// passes magnify into frame-sized washes inside the gate
+		// mid-transit the plate goes bare: the blurred passes magnify into frame-sized washes
 		bare: { type: Boolean, default: false },
 	})
 
@@ -46,12 +43,10 @@
 	const cueEl = ref(null)
 	const canvasEl = ref(null)
 
-	// Where the corridor sits relative to the sprite's own centre, in px, both axes — the point the
-	// flight aims at, measured off the real layout rather than estimated from character counts.
+	// Where the corridor sits from the sprite's centre (px), measured off the real layout.
 	const emit = defineEmits(['axis'])
 
-	// The scale the flight currently has the lockup at.  getBoundingClientRect() reports boxes AFTER
-	// ancestor transforms, and the pass scales this lockup up to HERO_FLYBY.nearScale.
+	// getBoundingClientRect reports boxes AFTER ancestor transforms, and the pass scales this lockup.
 	function liveScale(el) {
 		const laid = el.offsetWidth
 		if (!laid) return 1
@@ -60,32 +55,26 @@
 		return Math.abs(k - 1) < 0.01 ? 1 : k
 	}
 
-	// Everything the paint needs comes off the laid-out text, so the stylesheet stays the one place
-	// the type is described — including whatever the breakpoints and any wrapping did to it.
+	// Everything comes off the laid-out text, so the stylesheet stays the one place the type is described.
 	function measure(el, k, bloom = false) {
 		const box = textEl.value.getBoundingClientRect()
 		const own = el.getBoundingClientRect()
 		const style = getComputedStyle(el)
 		return {
 			x: (own.left - box.left) / k,
-			// canvas draws from the alphabetic baseline; the line box's middle plus half
-			// the cap height is close enough for a face with no descenders in caps
+			// canvas draws from the alphabetic baseline; the line box's middle plus half the cap height is close
 			mid: (own.top - box.top + own.height / 2) / k,
 			size: parseFloat(style.fontSize),
 			spacing: parseFloat(style.letterSpacing) || 0,
 			family: style.fontFamily,
 			colour: style.color,
 			text: el.textContent.trim().toUpperCase(),
-			// Only the role line carries the warm bloom. The name is white, and a
-			// yellow halo behind white type reads as the glow being the point; it
-			// holds the sky off itself with the keyline and the dark pass instead.
+			// Only the role line carries the bloom: a yellow halo behind white type reads as the glow being the point.
 			bloom,
 		}
 	}
 
-	// Press Start 2P is monospaced, so a run of caps is just the advance repeated —
-	// drawing glyph by glyph reproduces the CSS tracking exactly, on any engine, and
-	// lands every letter on a whole texel.
+	// Press Start 2P is monospaced, so drawing glyph by glyph reproduces the CSS tracking exactly.
 	function drawRun(ctx, run, dpr, colour = run.colour, dx = 0, dy = 0) {
 		ctx.font = `${run.size * dpr}px ${run.family}`
 		ctx.fillStyle = colour
@@ -115,8 +104,7 @@
 		if (!live.width || !live.height) return
 		// the box the type actually occupies, with any flight scale taken back out
 		const box = { width: live.width / k, height: live.height / k }
-		// One texel per device pixel at rest: crisp where it starts, chunky only once
-		// the flight has magnified it, which is the whole point of the sprite.
+		// One texel per device pixel at rest: crisp where it starts, chunky only once the flight magnifies it.
 		const dpr = Math.min(window.devicePixelRatio || 1, HERO_FLYBY.plateMaxDpr)
 		el.width = Math.round(box.width * dpr)
 		el.height = Math.round(box.height * dpr)
@@ -135,8 +123,7 @@
 			measure(cueEl.value, k),
 		]
 
-		// The corridor: through the counter of the Q — the one glyph with a porthole, and by luck of the
-		// name dead on its centre (glyph six of eleven).
+		// The corridor: through the Q's counter — the one glyph with a porthole, and dead on its centre.
 		const [first, last, , cue] = runs
 		const stacked = Math.abs(first.mid - last.mid) > 1
 		const qMid = last.x + last.size / 2 + HERO_FLYBY.qAxis.x * last.size
@@ -148,13 +135,10 @@
 				box.height / 2,
 		}
 
-		// The cue goes on the axis rather than on the block. The flight puts the corridor on the frame's
-		// centre, so the lockup as a whole sits off it — invisible on a name that spans most of the frame,
-		// but the one small line under it reads as off-centre.
+		// The cue goes on the axis, not the block: the lockup as a whole sits off the frame's centre.
 		cue.x =
 			box.width / 2 + axis.x - (cue.text.length * (cue.size + cue.spacing) - cue.spacing) / 2
-		// Halo and bloom as their own passes — blurring under the per-glyph loop instead would stack each
-		// glyph's shadow on the next and smear the lot — then the keyline, then the letters crisp on top.
+		// Halo and bloom as their own passes; under the per-glyph loop each shadow would smear the next.
 		if (!props.bare) {
 			for (const [colour, blur, bloomOnly] of [
 				[HERO_FLYBY.plateShadow, HERO_FLYBY.plateShadowBlur, false],
@@ -175,8 +159,7 @@
 		}
 		for (const run of runs) drawRun(ctx, run, dpr)
 
-		// The porthole, cut last so nothing can silt it up again: the Q's counter is a window onto the
-		// planet we are flying at, and every pass above spills into it.
+		// The porthole, cut last so nothing silts it up: every pass above spills into it.
 		if (!stacked) {
 			const port = HERO_FLYBY.qPort * last.size * dpr
 			ctx.clearRect(
@@ -240,8 +223,7 @@
 		color: $yellow;
 	}
 
-	// Quiet: the smallest step on the grid, widely tracked, and dim enough to read as
-	// an instruction rather than as part of the lockup.
+	// Quiet: the smallest step on the grid, widely tracked, dim enough to read as an instruction.
 	.title__cue {
 		display: block;
 		margin-top: 2.4rem;
@@ -252,8 +234,7 @@
 		color: rgba($white, 0.42);
 	}
 
-	// Over the text it was measured from, and leaning with the cursor on the shared
-	// --mx/--my contract.
+	// Over the text it was measured from, leaning with the cursor on the shared --mx/--my contract.
 	.title__plate {
 		position: absolute;
 		top: 0;

@@ -1,5 +1,4 @@
-// The landing's boot, shared between the shell that shows it (App.vue) and the scene that fills it
-// (HomeJourney → DepartureRidge).
+// The landing's boot, shared between the shell that shows it and the scene that fills it.
 
 import { computed, ref } from 'vue'
 import { LANDING_BOOT } from '@/constants/journey'
@@ -33,8 +32,7 @@ export function useBoot() {
 		finish() {
 			cut.value = true
 		},
-		// the cover has gone: drop it out of the shell, so no part of the boot is left
-		// mounted — and ticking — behind the page it was covering
+		// the cover has gone: drop it out of the shell so no part of the boot is left mounted and ticking
 		dismiss() {
 			active.value = false
 		},

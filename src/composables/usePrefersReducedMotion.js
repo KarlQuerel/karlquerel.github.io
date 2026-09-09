@@ -1,5 +1,4 @@
-// Shared, SSR-safe reduced-motion check. Call it when deciding whether to
-// animate, so the OS-level "reduce motion" preference is honoured in one place.
+// Shared, SSR-safe reduced-motion check, so the preference is honoured in one place.
 export function prefersReducedMotion() {
 	return (
 		typeof window !== 'undefined' &&

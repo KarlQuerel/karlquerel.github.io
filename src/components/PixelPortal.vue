@@ -40,9 +40,7 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 1.1rem;
-		// Fixed tile width (icon + horizontal padding) so every tile in a row is the
-		// same size regardless of label length — keeps icon spacing identical across
-		// the About hub and Contact, and lets a long label overflow symmetrically.
+		// Fixed tile width so every tile in a row matches regardless of label length.
 		width: calc(#{$portal-icon-size} + #{$portal-pad-x} * 2);
 		padding: $portal-pad-y $portal-pad-x;
 		text-decoration: none;
@@ -102,8 +100,7 @@
 	}
 
 	.portal__label {
-		// Natural width, kept on one line: the fixed-width tile lets a long label
-		// overflow symmetrically (centered over the icon) without widening the tile.
+		// Natural width on one line: the fixed tile lets a long label overflow symmetrically.
 		white-space: nowrap;
 		font-family: $font-pixel;
 		font-size: $portal-label-size;

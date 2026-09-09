@@ -1,5 +1,4 @@
-// Plain-array vec3 helpers for the flyby camera. Arrays rather than objects so
-// they hand straight to gl.uniform3fv without a copy.
+// Plain-array vec3 helpers for the flyby camera: arrays hand straight to gl.uniform3fv without a copy.
 
 export const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 export const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
@@ -18,8 +17,7 @@ export function norm(v) {
 
 export const lerp = (a, b, t) => a + (b - a) * t
 
-// Rotate a toward b by u of the angle between them. A linear blend cancels to
-// nothing when they point opposite ways; a rotation stays well defined.
+// Rotate a toward b by u of the angle between them; a linear blend would cancel when they oppose.
 export function slerp(a, b, u) {
 	const ang = Math.acos(Math.max(-1, Math.min(1, dot(a, b))))
 	if (ang < 1e-4) return b

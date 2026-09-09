@@ -1,11 +1,8 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { HISTORY_STORAGE_KEY, HISTORY_LIMIT } from '@/constants/terminal'
 
-// Owns the input line: current text, cursor column, tab-completion, readline
-// shortcuts and the recall history (persisted to localStorage so arrow-up
-// survives reloads). Everything is driven off `cursorPosition` (a
-// column index); the monospace font lets the component place the block cursor
-// with a simple `1ch` offset.
+// Owns the input line: text, cursor column, tab completion, readline shortcuts and recall history
+// (persisted so arrow-up survives reloads). The monospace face lets the caret sit at a `1ch` offset.
 export function useTerminalInput({
 	executeCommand,
 	commands,
@@ -37,8 +34,7 @@ export function useTerminalInput({
 		}
 	}
 
-	// Keep the cursor column in sync whenever the text changes (typing, tab,
-	// history recall). Field-level edits refine it via updateCursorPosition.
+	// Keep the cursor column in sync whenever the text changes; field edits refine it after.
 	watch(currentInput, newValue => {
 		cursorPosition.value = newValue.length
 	})
@@ -52,8 +48,7 @@ export function useTerminalInput({
 
 	const caretOf = el => el?.selectionStart ?? currentInput.value.length
 
-	// Replace the line and place the caret; the value-change watcher would snap
-	// the caret to the end, so we set the final position in the next tick.
+	// Replace the line and place the caret next tick — the value watcher would snap it to the end.
 	const setLine = (el, value, caret) => {
 		currentInput.value = value
 		nextTick(() => {
@@ -85,8 +80,7 @@ export function useTerminalInput({
 		return prefix
 	}
 
-	// Candidates for the token under completion: command names (or ./scripts)
-	// for the first word, theme names after `theme`, otherwise filesystem paths.
+	// Candidates for the token under completion: commands first, theme names after `theme`, else paths.
 	const tabCandidates = () => {
 		const parts = currentInput.value.split(' ')
 		if (parts.length === 1) {
@@ -137,9 +131,7 @@ export function useTerminalInput({
 		}
 	}
 
-	// The best continuation of what's typed: most-recent matching history entry
-	// first, then a command name. Only when the caret sits at the very end — a
-	// suggestion trailing a mid-line caret would just be noise.
+	// Best continuation: most-recent matching history, then a command name. Only with the caret at the end.
 	const suggestion = computed(() => {
 		const value = currentInput.value
 		if (!value || cursorPosition.value !== value.length) return ''
@@ -264,8 +256,7 @@ export function useTerminalInput({
 			event.preventDefault()
 			navigateHistory(-1)
 		} else if (event.key === 'ArrowRight' || event.key === 'End') {
-			// Accept the ghost suggestion when the caret is already at the end;
-			// otherwise let the key move the caret as usual.
+			// Accept the ghost suggestion when the caret is at the end; otherwise just move the caret.
 			if (
 				caretOf(event.target) === currentInput.value.length &&
 				acceptSuggestion(event.target)

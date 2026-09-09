@@ -1,7 +1,6 @@
 <template>
-	<!-- /under-construction, where /game lands until the game ships (GAME_SHIPPED): the heading over
-	     two strips of the departure's moon — far hills and the near plain, leaning with the cursor at
-	     their own depths — with a crane worksite on the near plain. -->
+	<!-- /under-construction, where /game lands until GAME_SHIPPED: the heading over two strips of the
+	     departure's moon, with a crane worksite on the near plain. -->
 	<div class="content holding">
 		<HomeChip />
 		<PageTitle :lead="GAME_HOLDING.lead" :accent="GAME_HOLDING.accent" />
@@ -29,13 +28,11 @@
 	const S = GAME_HOLDING.site
 	const { parallaxStyle } = usePointerParallax()
 
-	// two strips of the departure's ground: its low hills for the distance, its near
-	// plain for the site to stand on, each grown to the height this page wants
+	// two strips of the departure's ground: its low hills for distance, its near plain to stand on
 	const [, hills, plain] = DEPARTURE_RIDGE.bands
 	const bands = { far: { ...hills, ...S.far }, near: { ...plain, ...S.near } }
 
-	// every canvas is sized to exactly the cells it was cut on, never stretched, and
-	// bleeds past the frame by its depth so the lean can never uncover an edge
+	// every canvas is sized to the cells it was cut on, bleeding past the frame by its depth
 	const far = ref(null)
 	const near = ref(null)
 	// (the template hands the cuts over unwrapped)
@@ -55,8 +52,7 @@
 		const el = nearEl.value
 		const c = drawMoon(el, bands.near, seed, { ...frame, bleed: bands.near.depth })
 		near.value = c
-		// the layout the frame has room for, its foot row on the horizon under the mast
-		// and the rows below it lying on the ground as shadow
+		// the layout the frame has room for: its foot row on the horizon, the rows below it as shadow
 		const inner = frame.w / c.cell
 		const site = inner >= S.wide.rows[0].length ? S.wide : S.narrow
 		const cols = site.rows[0].length
@@ -97,8 +93,7 @@
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
-	// No $page-pad-top here: .app-main already centres this block, so a top-anchored
-	// pad only pushes the heading down onto the crane's jib on short frames.
+	// No $page-pad-top: .app-main already centres this, so a top pad pushes the heading onto the jib.
 	.holding {
 		padding: 0 1rem;
 	}

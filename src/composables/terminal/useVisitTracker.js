@@ -6,8 +6,7 @@ export function useVisitTracker() {
 	const commandStats = ref({})
 	const lastVisit = ref(null)
 
-	// firebase-setup already swallows Firestore errors and returns safe defaults,
-	// so these never reject — no second error-handling layer needed here.
+	// firebase-setup already swallows Firestore errors and returns safe defaults, so these never reject.
 	const loadVisitData = async () => {
 		const stats = await loadTerminalStats()
 		visitCount.value = stats.totalVisits

@@ -1,8 +1,7 @@
 @use 'variables';
 @use 'mixins';
 
-// Every bare button inherits the shared "window onto the void" look so nothing falls back to an
-// off-theme default.
+// Every bare button inherits the shared "window onto the void" look, so nothing falls back off-theme.
 button {
 	padding: 10px 20px;
 	font-size: variables.px8(2);

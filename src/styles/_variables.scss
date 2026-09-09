@@ -19,19 +19,14 @@ $font-terminal: 'Departure Mono', ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mo
 // Whole multiples of Departure Mono's 11px grid — the only crisp prose sizes.
 $type-prose: 22px;
 $type-prose-sm: 11px;
-// Deliberately OFF the grid, and the only prose size that is. Departure Mono is crisp only at 11px
-// and 22px, which leaves prose a straight 2:1 jump with no middle rung at all — and 11px has an
-// 8px cap, which is a label size, not a reading size. 16px is the standard body size; long prose
-// is where the softness reads least and the legibility counts most, so it is worth the antialias
-// anywhere text is there to be READ rather than to be labelled.
+// Deliberately OFF the grid, and the only prose size that is: Departure Mono is crisp at 11px and
+// 22px only, and 11px caps at 8px. 16px is the reading size, and prose is where softness shows least.
 $type-prose-md: 16px;
 // Press Start 2P is drawn on an 8px grid, so it is crisp only at 8/16/24.
 $type-title: 16px;
 $type-label: 8px;
 
-// Whole steps on each face's own grid. Type STEPS at breakpoints through these
-// rather than scaling: `clamp()` lands on fractional pixels at nearly every
-// viewport, and a bitmap glyph off its grid antialiases into mush.
+// Whole steps on each face's own grid: `clamp()` lands on fractional pixels and mush.
 @function px8($steps) {
 	@return $steps * 8px;
 }
@@ -39,8 +34,7 @@ $type-label: 8px;
 @function px11($steps) {
 	@return $steps * 11px;
 }
-// Plain system stack — deliberately off-theme, and only for the unlisted /sport page, which is
-// read mid-set and trades the pixel look for legibility.
+// Plain system stack, off-theme and only for /sport, which is read mid-set.
 $font-readable:
 	system-ui,
 	-apple-system,
@@ -50,22 +44,18 @@ $font-readable:
 	Arial,
 	sans-serif;
 
-// Terminal phosphor default. The alternate tints the in-terminal `theme`
-// command switches to (amber/blue/paper) live in constants/terminal.js.
+// Terminal phosphor default; the tints the `theme` command switches to live in constants/terminal.js.
 $phosphor-green: #33ff66;
 
-// About career-timeline type tags — cool phosphor hues, deliberately kept clear of the reserved
-// gold ($yellow = year accent + current milestone) so a category label never reads as "current".
+// Cool phosphor hues, kept clear of the reserved gold so a category never reads as "current".
 $tag-education: $light-blue;
 $tag-experience: $purple;
 
-// Top padding that clears the fixed star toggle + MENU hint, so a page
-// heading never slides under the chrome. Used by every route-level page.
+// Top padding that clears the fixed star toggle + MENU hint. Used by every route-level page.
 $chrome-clearance: 3.6rem;
 $chrome-clearance-mobile: 5.25rem;
 
-// Title-page top padding: drops the heading to ~15% of the viewport so it
-// breathes below the star; the floor keeps the chrome clear on short screens.
+// Title-page top padding: drops the heading to ~15% of the viewport, with a floor for short screens.
 $page-pad-top: clamp($chrome-clearance, 15vh, 10rem);
 
 // Shared WORK-timeline column: one centred column with a left gutter for the rail/badges.
@@ -73,8 +63,7 @@ $about-column: min(37rem, 94vw);
 $about-gutter: 4.6rem; // text inset; clears the emblem badge on the rail
 $about-gutter-mobile: 3.6rem;
 
-// Flag colours — factual national-flag imagery for the About timeline, not theme
-// tokens. Whites reuse $white.
+// Flag colours — factual national-flag imagery for the About timeline, not theme tokens.
 $flag-fr-blue: #0055a4;
 $flag-fr-red: #ef4135;
 $flag-ch-red: #d52b1e;
@@ -88,8 +77,7 @@ $terminal-chrome-border: #444;
 $terminal-dot-green: #27ca3f;
 $terminal-scrollbar-track: #111;
 
-// Large pixel heading shared across the personal pages — the About greeting and the Contact
-// heading — so page-level headings read as one size site-wide.
+// Large pixel heading shared across the personal pages, so page headings read as one size.
 $heading-pixel-size: 16px;
 // one whole step up once there is room; see PageTitle.vue
 $heading-pixel-size-lg: 24px;
@@ -100,20 +88,16 @@ $portal-row-gap: 3.5rem;
 // Z-Index
 $z-index-content: 1;
 
-// Unified "void" frame — the single source of truth for every panel, card, and
-// button border on the site. Change these to re-skin all chrome at once.
+// Unified "void" frame: the single source of truth for every panel, card and button border.
 $void-border-color: rgba(255, 255, 255, 0.1);
 $void-border: 1px solid $void-border-color;
-// Corner radius — a whisper of softness that keeps the crisp edge without going
-// full pixel-square.
+// Corner radius: a whisper of softness that keeps the crisp edge.
 $void-radius: 3px;
 
-// Interactive text convention: every button, link, and menu item rests at this near-white and
-// shifts to $yellow on hover / focus, so all hovers read as one system.
+// Every button, link and menu item rests here and shifts to $yellow, so all hovers read as one.
 $text-interactive: rgba(255, 255, 255, 0.88);
 
-// Secondary prose (timeline captions): warm off-white biased toward $yellow, so it
-// reads as chosen rather than dimmed without spending one of the type-coded hues.
+// Secondary prose: warm off-white biased toward $yellow, so it reads as chosen rather than dimmed.
 $text-caption: #e9e1cf;
 
 // Breakpoints

@@ -1,7 +1,5 @@
 <template>
-	<!-- The world outside the window: one planet, camera-choreographed by scroll.
-	     Fixed to the viewport; the keyframed transform (position + scale) and the
-	     scroll-driven spin carry the whole journey's depth. Decorative. -->
+	<!-- The world outside the window: one planet, camera-choreographed by scroll. Fixed to the viewport. -->
 	<div class="stage" :style="stageStyle" aria-hidden="true">
 		<!-- the faintest colour depth behind everything — space isn't pure black -->
 		<div class="stage__nebula" />
@@ -15,9 +13,7 @@
 				:cloud-thin="cloudThin"
 			/>
 		</div>
-		<!-- The world as a point of light, while it is still too small to be a disc —
-		     one dot, indistinguishable from the starfield, on the camera's axis, so at
-		     rest it sits in the Q's porthole and the flight goes at it. -->
+		<!-- The world as a point of light while it is too small to be a disc, on the camera's axis. -->
 		<span class="stage__spark" :style="sparkStyle" />
 		<!-- atmosphere on entry: haze rising from the horizon, in the planet's tint -->
 		<div class="stage__haze" :style="hazeStyle" />
@@ -43,15 +39,13 @@
 		haze: { type: Number, default: 0 },
 	})
 
-	// Under the deck by the dive: the globe's clouds thin away as the camera's
-	// scale channel climbs, so magnified terrain is never worn as a checker layer.
+	// Under the deck by the dive: clouds thin as the camera's scale climbs, so terrain is never checkered.
 	const cloudThin = computed(() => {
 		const { from, to } = JOURNEY.cloudThin
 		return clamp01((props.cam.scale - from) / (to - from))
 	})
 
-	// the haze borrows the planet's atmosphere colour out of the shared palette, so the entry matches
-	// the limb; the globe takes its share of the cursor's lean, published on the journey root
+	// the haze borrows the planet's atmosphere colour, so the entry matches the limb
 	const stageStyle = {
 		'--atmosphere': PALETTE[PLANET.atmosphere].join(', '),
 		'--depth': JOURNEY.parallax.planet,
@@ -59,8 +53,7 @@
 		'--spark-shade': `rgb(${PALETTE[JOURNEY.spark.shade].join(',')})`,
 	}
 
-	// The dot hands over to the globe across a window of the camera's scale channel:
-	// full while the disc is pixels, gone once it can hold the frame on its own.
+	// The dot hands over to the globe across a window of scale: full while the disc is pixels.
 	const sparkStyle = computed(() => {
 		const { fadeFrom, fadeTo } = JOURNEY.spark
 		const lit = 1 - clamp01((props.cam.scale - fadeFrom) / (fadeTo - fadeFrom))
@@ -71,8 +64,7 @@
 		}
 	})
 
-	// The camera fades the world out at the entry and the sky takes over. Past that
-	// the globe is worth nothing to draw and nothing to composite.
+	// Past the entry fade the globe is worth nothing to draw and nothing to composite.
 	const visible = computed(() => (props.cam.fade ?? 1) > 0)
 
 	const planetStyle = computed(() => ({
@@ -101,8 +93,7 @@
 		pointer-events: none;
 	}
 
-	// two barely-there colour fields, cool up-left and dust down-right, so the
-	// void has depth without ever reading as a background image
+	// two barely-there colour fields, so the void has depth without reading as a background image
 	.stage__nebula {
 		position: absolute;
 		inset: 0;
@@ -111,8 +102,7 @@
 			radial-gradient(55% 45% at 80% 74%, rgba(122, 64, 52, 0.09) 0%, transparent 70%);
 	}
 
-	// The keyframed camera owns `transform`; the cursor's lean rides `translate`, the same contract
-	// every other layer in the scene follows.
+	// The keyframed camera owns `transform`; the cursor's lean rides `translate`, as every layer does.
 	.stage__planet {
 		position: absolute;
 		inset: 0;
@@ -121,8 +111,7 @@
 		will-change: transform;
 	}
 
-	// On the camera's axis and centred on it, so it stands exactly where the globe
-	// grows out of. A star is at infinity: it never scales, it only fades.
+	// On the camera's axis, where the globe grows out of. A star is at infinity: it fades, never scales.
 	.stage__spark {
 		position: absolute;
 		top: 50%;
@@ -136,9 +125,7 @@
 			calc(var(--my, 0) * var(--depth, 0) * 1px);
 	}
 
-	// Densest at the horizon, thinning upward — but over an opaque black base, so
-	// altitude reads as darker air, never as holes to the starfield: once this is
-	// full, stars up there would read as space showing through the planet we entered.
+	// Densest at the horizon over an opaque base, so altitude reads as darker air, never as holes.
 	.stage__haze {
 		position: absolute;
 		inset: 0;

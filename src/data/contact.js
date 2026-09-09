@@ -1,14 +1,12 @@
 // Drives the contact arrival at the end of the landing journey (JourneyArrival.vue).
 
-// The page heading, rendered by PageTitle like every other page. Trailing space on
-// `lead` is intentional — it separates the lead from the accented word.
+// The page heading, rendered by PageTitle. Trailing space on `lead` separates it from the accent.
 export const CONTACT_HEADING = {
 	lead: 'Send me a ',
 	accent: 'signal',
 }
 
-// Each channel renders as an icon portal (PixelPortal), like the About hub.
-// `blank: true` opens the link in a new tab.
+// Each channel renders as a PixelPortal icon; `blank: true` opens in a new tab.
 export const CONTACT_CHANNELS = [
 	{
 		key: 'email',

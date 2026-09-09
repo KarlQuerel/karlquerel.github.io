@@ -42,8 +42,7 @@
 	import PixelFlag from '@/components/PixelFlag.vue'
 	import PixelEmblem from '@/components/PixelEmblem.vue'
 
-	// A closing year is dropped when the next entry opens on it, so a shared boundary is drawn once —
-	// the surviving tick is the next row's start.
+	// A closing year is dropped when the next entry opens on it, so a shared boundary is drawn once.
 	const ROWS = CAREER_TIMELINE.map((item, i) => ({
 		...item,
 		end: CAREER_TIMELINE[i + 1]?.from === item.to ? null : item.to,
@@ -70,9 +69,7 @@
 		list-style: none;
 	}
 
-	// No spine drawn here any more: the journey's route (JourneyRoute) runs straight
-	// through the timeline at --rail-center, so the career is one leg of the page's
-	// own line - track flown behind the reader, dotted plan ahead of them.
+	// No spine here: the journey's route (JourneyRoute) runs through the timeline at --rail-center.
 
 	// all of this lands under the caption, so it reads as the caption's own padding
 	.ztl-item {
@@ -84,8 +81,7 @@
 		padding-bottom: 0;
 	}
 
-	// chapter break: dashed rules flank the label and cut across the rail. Both flanks
-	// take flex: 1, so the label centres on the column on its own.
+	// chapter break: dashed rules flank the label; both flanks take flex: 1, so the label self-centres
 	.ztl-chapter {
 		display: flex;
 		align-items: center;
@@ -123,8 +119,7 @@
 		opacity: 0;
 	}
 
-	// badge rides the rail, centred against the text block. Years hang off it rather than
-	// stacking with it, so the badge holds its place whether or not this row closes a period.
+	// badge rides the rail, centred on the text block; years hang off it so the badge holds its place
 	.ztl-art {
 		position: absolute;
 		left: var(--rail-center);
@@ -197,9 +192,7 @@
 		height: 100%;
 	}
 
-	// The node powers up while its entry is being read. The hover lands on the ROW, not on the badge:
-	// the badge is decorative and aria-hidden, so a hover that only fired on a 2.6rem square would
-	// promise a click that is not there — and it would be a 2.6rem target.
+	// The hover lands on the ROW, not the badge: the badge is aria-hidden, and a 2.6rem target is small.
 	@mixin node-lit($c, $k: 1) {
 		border-color: rgba($c, 0.6 + 0.35 * $k);
 		box-shadow:
@@ -284,8 +277,7 @@
 		color: $tag-experience;
 	}
 
-	// prose face, not display: Press Start 2P advances a full 1em per glyph, so a spelled-out degree
-	// ate three lines.
+	// prose face, not display: Press Start 2P advances a full 1em per glyph, so a degree ate three lines
 	.ztl-title {
 		margin: 0;
 		font-family: $font-terminal;
@@ -295,12 +287,9 @@
 		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
 	}
 
-	// school / employer — type-tinted so the institution reads as its own beat instead
-	// of trailing off under the white title
+	// school / employer — type-tinted so the institution reads as its own beat
 	.ztl-school {
-		// prose face, not display: institution names are read, and Press Start 2P
-		// mangles the accents in "Grand Lycée Franco-Libanais" at this size — and read
-		// is also why it takes the 16px step rather than the 11px floor
+		// prose face: institution names are read, and Press Start 2P mangles the accents at this size
 		font-family: $font-terminal;
 		font-size: $type-prose-md;
 		line-height: 1.5;
@@ -329,29 +318,21 @@
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 	}
 
-	// caption closing the card. The terminal face keeps it subordinate to the pixel
-	// type above it, and the chevron echoes the terminal voice used across the site.
+	// caption closing the card: the terminal face keeps it subordinate to the pixel type above
 	.ztl-detail {
 		// 64ch of text plus the hanging chevron; the About column caps this well before it bites
 		max-width: calc(64ch + #{$chevron});
-		// Set off from the stack above rather than spaced like another line of it: title, institution and
-		// location are one block answering what and where, and this is the sentence that says why it
-		// mattered.
+		// Set off from the stack above: title, institution and location answer what and where; this is why.
 		margin: 0.85rem 0 0;
 		font-family: $font-terminal;
-		// A step below the LIFE prose rather than half of it. This caption is the line that carries the
-		// story for its milestone, and at the 11px floor it was the smallest type in the station — set
-		// under the institution above it and level with a location label. 16px keeps it subordinate to the
-		// 22px title without making the most interesting text on the row the hardest to read.
+		// A step below the LIFE prose: at the 11px floor this was the smallest type in the station.
 		font-size: $type-prose-md;
 		line-height: 1.45;
 		// global `p` is centred (_layout.scss) — the card reads as a left-aligned stack
 		text-align: left;
-		// captions soft-wrap to the column; `pretty` only trims a last-line orphan, where
-		// `balance` would shorten every line to match and leave the caption floating short
+		// `pretty` only trims a last-line orphan, where `balance` would leave the caption floating short
 		text-wrap: pretty;
-		// hanging indent: wrapped lines sit under the text, not back under the chevron,
-		// the way a wrapped command hangs off a terminal prompt
+		// hanging indent: wrapped lines sit under the text, as a wrapped command hangs off a prompt
 		padding-left: $chevron;
 		text-indent: -$chevron;
 		color: $text-caption;
@@ -367,8 +348,7 @@
 		border: 2px solid;
 		background:
 			linear-gradient(0deg, rgba($yellow, 0.16), rgba($yellow, 0.16)), rgba(0, 0, 0, 0.6);
-		// rings, not a 12px bloom: it was the one blurred glow left in a scene that
-		// quantises everything else, and it read as soft next to its own hover state
+		// rings, not a 12px bloom: it was the one blurred glow in a scene that quantises everything else
 		@include node-lit($yellow, 0.45);
 	}
 

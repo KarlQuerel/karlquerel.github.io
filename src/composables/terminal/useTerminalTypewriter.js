@@ -2,8 +2,7 @@ import TypeIt from 'typeit'
 import { ref, nextTick } from 'vue'
 import { prefersReducedMotion } from '../usePrefersReducedMotion.js'
 
-// Honour the user's OS-level motion preference: when reduced motion is on we
-// print output instantly instead of typing it out character-by-character.
+// Honour reduced motion: print output instantly instead of typing it out.
 export function useTerminalTypewriter() {
 	const welcomeTextRef = ref(null)
 	const showInputPrompt = ref(false)

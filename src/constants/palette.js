@@ -1,5 +1,4 @@
-// The one palette the procedural art draws from — the planet's surface, the ranges at both ends of
-// the trip, and the cloud decks.
+// The one palette the procedural art draws from: planet surface, both ranges, and the cloud decks.
 export const PALETTE = {
 	// The shared cool end. Every ramp starts somewhere in here.
 	void: [10, 8, 14],
@@ -34,9 +33,7 @@ export const PALETTE = {
 	cream: [214, 200, 190],
 	linen: [238, 230, 216],
 
-	// Night. The departure ridge is the one thing here lit by starlight instead of by
-	// the sun, so it gets the only cold ramp in the palette — which is exactly what
-	// makes leaving read as cold and arriving read as warm.
+	// Night. The departure ridge is lit by starlight, so it gets the only cold ramp in the palette.
 	pitch: [13, 15, 22],
 	soot: [17, 21, 31],
 	iron: [24, 29, 42],
@@ -45,8 +42,7 @@ export const PALETTE = {
 	frost: [66, 79, 102],
 	rime: [96, 112, 140],
 
-	// Air and light. `ember` is the site's own accent, so the chrome and the world
-	// are lit by the same yellow.
+	// Air and light. `ember` is the site's accent, so chrome and world share one yellow.
 	haze: [172, 120, 104],
 	ember: [255, 189, 46],
 	glow: [255, 231, 196],

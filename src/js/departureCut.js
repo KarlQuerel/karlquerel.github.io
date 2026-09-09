@@ -1,6 +1,4 @@
-// Cutting the departure's sprites without freezing the page. The scene is drawn once per frame
-// size, but that once is a few hundred milliseconds of height-field work on a slow machine, and
-// spent on the main thread it is a frozen first frame.
+// Cutting the departure's sprites without freezing the page: a few hundred ms of height-field work.
 
 import { drawSteps } from './departureDraw.js'
 

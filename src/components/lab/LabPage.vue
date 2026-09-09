@@ -6,9 +6,7 @@
 		     actually did rather than animating a guess -->
 		<LabBoot :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
 
-		<!-- Fixed chrome. Two things the flight was missing as a portfolio: the name is
-		     gone from about 17% of the scroll, where the title passes the camera, and the
-		     only way to reach Karl was ten screens away at the end. -->
+		<!-- Fixed chrome: the name is gone from ~17% of the scroll, and contact was ten screens away. -->
 		<div class="chrome">
 			<button class="chrome__mark" :class="{ on: markOn }" type="button" @click="toTop">
 				Karl Querel
@@ -76,8 +74,7 @@
 	const { supported, booting, bootProgress, bootCeiling, leg, wake, hint, arrive, markOn } =
 		useFlyby(canvas)
 
-	// With no WebGL there is no flight to arrive from, so the contact block is simply
-	// always up rather than waiting on a scroll position nothing is driving.
+	// With no WebGL there is no flight to arrive from, so the contact block is simply always up.
 	const landed = computed(() => (supported.value ? arrive.value : 1))
 
 	const hudStyle = computed(() => ({ opacity: wake.value }))
@@ -88,8 +85,7 @@
 	}))
 	const portalOn = i => landed.value > PORTAL_START + i * PORTAL_STAGGER
 
-	// Straight to the arrival. The scroll ease flies the whole path getting there, so
-	// the shortcut is also the fastest tour of the thing it is skipping.
+	// Straight to the arrival: the scroll ease flies the whole path, so the shortcut is also the tour.
 	const toEnd = () => window.scrollTo(0, document.documentElement.scrollHeight)
 	const toTop = () => window.scrollTo(0, 0)
 </script>
@@ -98,18 +94,15 @@
 	@use '@/styles/flyby' as *;
 
 	.flyby {
-		// Sampled off the opening frame: on a slow GPU the first paint is this gradient
-		// rather than a black card, and the canvas lands on top of something close.
+		// Sampled off the opening frame: on a slow GPU the first paint is this gradient, not a black card.
 		background: $flyby-ground;
 		color: $flyby-ink;
 		font-family: $font-pixel;
-		// `#app` centres text site-wide; the flight's copy column is read down the left
-		// edge, so it opts out the way SportPage does
+		// `#app` centres text site-wide; the flight's copy column is read down the left edge
 		text-align: left;
 	}
 
-	// Sized and placed from the renderer's resize(): the element has to be a whole
-	// number of device pixels per art pixel, which 100vw/100vh cannot promise.
+	// Sized from the renderer's resize(): whole device pixels per art pixel, which 100vw cannot promise.
 	.flyby__canvas {
 		position: fixed;
 		display: block;
@@ -128,15 +121,9 @@
 		pointer-events: none;
 	}
 
-	// Section heights are the flight plan, and they are solved rather than chosen. A card
-	// sits at its section's centre and is on screen for about a screen of scroll either
-	// side of it, so the height that puts a card at scroll fraction s is what places it:
-	// centre_vh = s*900 + 50, and each section starts where the last one ended. The two
-	// reveals own 0.19..0.26 (over the ridge) and 0.48..0.66 (the corridor moon letting
-	// go of the destination); text over either of those is text competing with the thing
-	// it came to introduce. So: WORK centres at s=0.33, in the clear water between them,
-	// and LIFE at s=0.75, over the destination once it has arrived. The first section is
-	// exactly one screen: any taller and its card centres below the fold.
+	// Section heights are the flight plan, solved rather than chosen: centre_vh = s*900 + 50, each
+	// section starting where the last ended. The reveals own 0.19..0.26 and 0.48..0.66, so WORK
+	// centres at s=0.33 between them and LIFE at s=0.75. The first section is exactly one screen.
 	.beat--still {
 		height: 100vh;
 	}
@@ -156,10 +143,7 @@
 		min-height: 60vh;
 	}
 
-	// One column, always left. The flight fills the frame from every angle by the end,
-	// so a fixed reading position beats alternating sides that the planets keep landing
-	// on. The scrim is banded rather than smooth, to sit with the renderer's own colour
-	// quantisation, and runs to the viewport edge so it reads as shade, not as a box.
+	// One column, always left: the flight fills the frame by the end, so a fixed reading position wins.
 	.card {
 		position: relative;
 		max-width: calc(30rem + 12vw);
@@ -177,8 +161,7 @@
 				rgba($flyby-void, 0.4) 70% 86%,
 				rgba($flyby-void, 0) 86%
 			);
-			// fade the shade out top and bottom too, or it reads as a black box on the
-			// opening frame where there is nothing behind it that needs covering
+			// fade the shade out top and bottom, or it reads as a black box on the opening frame
 			mask-image: linear-gradient(180deg, transparent, $black 30%, $black 70%, transparent);
 		}
 	}
@@ -223,8 +206,7 @@
 		}
 	}
 
-	// `text-align` too: the global `p, h1` rule in _layout.scss centres every paragraph
-	// on the site, and a direct element rule beats the root's inherited value.
+	// `text-align` too: the global `p, h1` rule centres every paragraph, and an element rule beats it.
 	p {
 		font-size: 11px;
 		line-height: 2;
@@ -282,8 +264,7 @@
 		justify-content: center;
 	}
 
-	// Hard pixel chrome rather than the site's void-button: this is the look the lab is
-	// testing, and softening it here would be testing the site's look instead.
+	// Hard pixel chrome, not the site's void-button: this is the look the lab is testing.
 	.portal {
 		display: block;
 		padding: 14px 18px;
@@ -356,10 +337,7 @@
 		}
 	}
 
-	// Bottom left, opposite the readout: the copy column scrolls up through the top left
-	// on its way out, and a wordmark there ends up interleaved between two lines of it.
-	// Raised only once the title itself has gone past, so the opening frame still gives
-	// nothing away.
+	// Bottom left, opposite the readout, and raised only once the title has gone past.
 	.chrome__mark {
 		position: fixed;
 		left: 6vw;
@@ -412,9 +390,7 @@
 	}
 
 	@media (max-width: 720px) {
-		// The card fills a narrow frame, so the scrim has to hold much further across it:
-		// the copy now lands at the ring pass, where the bands behind it are the brightest
-		// thing in the flight.
+		// The card fills a narrow frame, so the scrim has to hold further across it.
 		.card::before {
 			background: linear-gradient(
 				90deg,

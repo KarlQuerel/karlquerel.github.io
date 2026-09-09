@@ -47,13 +47,10 @@
 		// how far through the pass we are — what the ridge is gone by
 		pass: { type: Number, default: 0 },
 	})
-	// the cut's progress (done, and what the step in flight will bring it to, 0..1)
-	// and its landing — what the landing's boot screen waits on
+	// the cut's progress (done, and where the step in flight lands) and what the boot screen waits on
 	const emit = defineEmits(['progress', 'ready'])
 
-	// --mx/--my come from the flight container (usePointerParallax); each band takes its own share of
-	// them through --depth, and that difference is the relief. --fade is for the sky alone: the ground
-	// leaves by dropping out of frame, and only what sits at infinity has to fade instead.
+	// --mx/--my come from the flight container; each band's --depth share of them is the relief.
 	const ridgeStyle = computed(() => ({
 		display: gone.value < 1 ? null : 'none',
 		'--fade': (1 - gone.value).toFixed(3),
@@ -63,9 +60,7 @@
 		smoothstep(clamp01((props.pass - RIDGE.goneFrom) / (RIDGE.goneTo - RIDGE.goneFrom)))
 	)
 
-	// A band swells as we close on it and drops as we climb: one is the perspective,
-	// the other is the camera rising, and both come off the same travel — scaled by the
-	// band's own share of it, which is the parallax that reads as relief.
+	// A band swells as we close and drops as we climb, both off the same travel, scaled by its share.
 	function bandStyle(band, i) {
 		const swell = 1 + RIDGE.swellPerUnit * band.climb * props.travel
 		const drop = RIDGE.dropVhPerUnit * band.climb * props.travel
@@ -76,11 +71,9 @@
 		}
 	}
 
-	// The glints hold still while the ground drops away — a star sits at infinity, so the climb owes
-	// it no motion.
+	// The glints hold still while the ground drops away — a star at infinity owes the climb no motion.
 	const rgb = name => `rgb(${PALETTE[name].join(',')})`
-	// Every canvas is sized to exactly the cells it was cut on (see gridFor), never stretched to the
-	// frame — that is what keeps each cell a whole number of device pixels.
+	// Every canvas is sized to exactly the cells it was cut on, so a cell stays whole device pixels.
 	const sizes = ref({ sky: null, bands: [] })
 	const sized = cut =>
 		cut ? { width: `${cut.cols * cut.cell}px`, height: `${cut.rows * cut.cell}px` } : {}
@@ -99,9 +92,7 @@
 		top: `${glint.y * 100}%`,
 		...glintVars(glint, RIDGE.sky.glintDepth),
 	})
-	// Meteors, rolled per crossing: where they enter. The head is the element, the tail its shadows a
-	// cell up and left per step behind it; the stepping is in the timing function, one step per cell,
-	// so the streak is never between cells.
+	// Meteors rolled per crossing. The head is the element, the tail its shadows one cell back per step.
 	const M = RIDGE.sky.meteor
 	const tail = M.shades
 		.slice(1)
@@ -114,8 +105,7 @@
 		gapMs: M.gapMs,
 		active: () => gone.value < 1,
 		make: () => {
-			// entered on the grid, and run out until the tail too has left the frame — by the right edge or
-			// behind the ridge, whichever the entry point meets first.
+			// entered on the grid, and run out until the tail has left by the right edge or behind the ridge
 			const cell = cellFor(frame)
 			const left = Math.round((randIn(M.x) * frame.w) / cell) * cell
 			const top = Math.round((randIn(M.y) * frame.h) / cell) * cell
@@ -148,8 +138,7 @@
 	const skyEl = ref(null)
 	const bandEls = []
 
-	// Cut from the authored RIDGE.ridgeSeed — the opening frame is a composition, not a roll; a
-	// reshape re-cuts the same ground.
+	// Cut from the authored RIDGE.ridgeSeed: the opening frame is a composition, not a roll.
 	let cutter = null
 	function cut() {
 		frame = { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 }
@@ -161,9 +150,7 @@
 			const i = RIDGE.bands.findIndex(band => band.hills?.notch)
 			const band = RIDGE.bands[i]
 			const cut = cuts.bands[i]
-			// the star hangs `aboveCells` over the highest point the notch's crest reaches
-			// under it and its arms, whatever this frame made of the range; the canvas
-			// starts `depth` px left of the frame and ends at its foot
+			// the star hangs `aboveCells` over the highest point the notch's crest reaches under it
 			const x = Math.round(band.hills.notch.at * cut.cols)
 			const crest = Math.min(...cut.hillTop.slice(Math.max(0, x - 1), x + 2))
 			const top = frame.h + band.depth - cut.rows * cut.cell
@@ -203,8 +190,7 @@
 		pointer-events: none;
 	}
 
-	// Starts its bleed past the frame's corner, like the bands, so the lean never
-	// uncovers an edge; its size is the cut's, in whole cells.
+	// Starts its bleed past the frame's corner like the bands, so the lean never uncovers an edge.
 	.ridge__sky {
 		position: absolute;
 		opacity: var(--fade, 1);
@@ -214,8 +200,7 @@
 		image-rendering: pixelated;
 	}
 
-	// A pixel star, five cells across: one cell of core; arms one cell out, drawn as shadows so they
-	// can breathe without the core; and tips two cells out that blink on the off-beat.
+	// A pixel star, five cells across: a core, arms drawn as shadows so they breathe, blinking tips.
 	.ridge__glint {
 		position: absolute;
 		opacity: var(--fade, 1);
@@ -251,8 +236,7 @@
 		}
 	}
 
-	// a meteor is its head cell; the tail rides along as shadows. The travel is the same
-	// count of cells across and down, so every step lands it exactly one cell on.
+	// a meteor is its head cell, the tail rides as shadows; travel is equal cells across and down
 	.ridge__meteor {
 		position: absolute;
 		opacity: var(--fade, 1);
@@ -301,8 +285,7 @@
 		}
 	}
 
-	// Anchored to the foot of the frame and grown from there, so the swell pushes the crests up rather
-	// than sliding the whole band around.
+	// Anchored to the foot of the frame, so the swell pushes the crests up rather than sliding the band.
 	.ridge__band {
 		position: absolute;
 		bottom: calc(var(--depth, 0) * -1px);

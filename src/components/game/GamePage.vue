@@ -1,7 +1,5 @@
 <template>
-	<!-- The game, being built from nothing. Reached at /game on the dev server only: a
-	     build sends visitors to /under-construction and leaves this page out of the
-	     bundle (src/constants/game.js). -->
+	<!-- The game, being built from nothing. Dev server only: a build redirects and drops this page. -->
 	<div class="content">
 		<HomeChip />
 	</div>

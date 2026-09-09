@@ -22,10 +22,8 @@ export function useTerminalCommands({
 }) {
 	const router = useRouter()
 	const terminalHistory = ref([])
-	// True while a ./script "runs"; the component hides the input prompt and
-	// shows `spinnerFrame` so it reads like a shell that hasn't returned yet.
-	// The spinner is deliberately kept out of terminalHistory — it is transient
-	// UI, not a record, and parking it in history collides with the typewriter.
+	// True while a ./script "runs": the component hides the prompt and shows `spinnerFrame`. Kept out
+	// of terminalHistory — it is transient UI, and parking it there collides with the typewriter.
 	const isExecutingScript = ref(false)
 	const spinnerFrame = ref('')
 	const fs = useTerminalFs()
@@ -121,10 +119,7 @@ export function useTerminalCommands({
 		return outputs
 	}
 
-	// One owner for the spinner lifecycle: hides the input prompt and ticks the
-	// loader frames. `startSpinner` returns a stop() that restores the prompt;
-	// it backs both the fixed-duration runner (scripts / secret_game) and the
-	// wait-for-a-promise wrapper (location / stats / any async command).
+	// One owner for the spinner lifecycle. `startSpinner` returns a stop() that restores the prompt.
 	const SPINNER_FRAME_MS = 80
 	const INSTALL_SPIN_MS = 1500
 	const SECRET_GAME_SPIN_MS = 3200
@@ -144,8 +139,7 @@ export function useTerminalCommands({
 		}
 	}
 
-	// Fixed-duration spinner: optionally echo `intro`, spin for `runMs`, then run
-	// `finish` (push output, open a tab, …).
+	// Fixed-duration spinner: optionally echo `intro`, spin for `runMs`, then run `finish`.
 	const runWithSpinner = async ({ intro, runMs, finish }) => {
 		const stop = startSpinner()
 		try {
@@ -608,9 +602,7 @@ export function useTerminalCommands({
 			},
 		})
 
-	// Convert a command's line objects into the plain text the next pipe segment
-	// reads: drop image lines, take link text, strip generated <tags> and reverse
-	// escapeHtml's three entities so a value round-trips cleanly through a chain.
+	// Convert a command's line objects into plain text for the next pipe segment, so values round-trip.
 	const decodeEntities = text =>
 		text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
 
@@ -624,8 +616,7 @@ export function useTerminalCommands({
 			})
 			.join('\n')
 
-	// Run a single known command, returning its output (array or Promise) without
-	// touching history. null => not a known command (the caller picks the UX).
+	// Run a known command, returning its output without touching history. null => not a known command.
 	const runCommand = (command, args, stdin) => {
 		const handler = commands[command]
 		return typeof handler === 'function' ? handler(args, stdin) : null
@@ -710,9 +701,7 @@ export function useTerminalCommands({
 			return
 		}
 
-		// Split into pipeline segments (naive split — quoting is out of scope).
-		// A single command is just a length-1 pipeline with no stdin, so every
-		// existing command keeps its exact behaviour through this same loop.
+		// Split into pipeline segments (naive — quoting is out of scope); one command is a length-1 pipeline.
 		const segments = trimmedInput
 			.split('|')
 			.map(segment => segment.trim())
@@ -748,8 +737,7 @@ export function useTerminalCommands({
 					})
 					return
 				}
-				// Spin while we wait — unless the command already drives the
-				// spinner itself (e.g. secret_game sets it synchronously on call).
+				// Spin while we wait, unless the command already drives the spinner itself.
 				const stop = isExecutingScript.value ? null : startSpinner()
 				result
 					.then(resolved => {
@@ -765,8 +753,7 @@ export function useTerminalCommands({
 			if (isLast) {
 				terminalHistory.value.push(...output)
 			} else {
-				// `ls` short form is one space-joined row; break it into one entry
-				// per line so `ls | grep`/`wc` behave (long form already is).
+				// `ls` short form is one space-joined row; break it per line so `ls | grep`/`wc` behave.
 				stdin =
 					command === 'ls' && !/-\w*l/.test(args)
 						? toStdin(output)

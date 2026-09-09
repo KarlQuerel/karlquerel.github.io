@@ -1,9 +1,5 @@
-// Copy for the landing flyby's scroll beats. `key` is both the v-for key and the
-// section's SCSS modifier — the beat heights are the flight plan, so they live in
-// LabPage.vue's stylesheet next to the reasoning for each one.
-//
-// The contact arrival at the end reuses CONTACT_HEADING / CONTACT_CHANNELS from
-// data/contact.js: same links, same wording as the journey's own arrival.
+// Copy for the landing flyby's scroll beats. `key` is both the v-for key and the section's SCSS
+// modifier; the beat heights are the flight plan and live in LabPage.vue next to their reasoning.
 
 export const LAB_BEATS = [
 	// one screen of nothing: the opening frame is meant to read as a photograph
@@ -33,6 +29,5 @@ export const LAB_BEATS = [
 	{ key: 'entry' },
 ]
 
-// The name, for screen readers. It is drawn into the scene as geometry, so the
-// document still needs a real heading.
+// The name, for screen readers: it is drawn into the scene as geometry, so the document needs a heading.
 export const LAB_TITLE = 'Karl Querel — Software Engineer'

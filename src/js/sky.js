@@ -1,8 +1,4 @@
-// The departure's sky, drawn once on the ground's grid. Black — there is no air — with two things
-// on it: the glow of the sun just off frame to the left, low on that horizon, which is the one
-// thing in the scene that shows where every lit flank gets its light; and the galaxy, the band of
-// our own seen edge-on from inside it, with lanes of dust down its length and stars gathered where
-// the light is.
+// The departure's sky on the ground's grid: black, with the off-frame sun's glow and the galaxy edge-on.
 
 import { DEPARTURE_RIDGE } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
@@ -30,9 +26,7 @@ export function drawSky(el, frame) {
 	}
 	const seed = DEPARTURE_RIDGE.ridgeSeed + 5
 
-	// The galaxy: a river of unresolved stars, which is what it is — a broad soft arc of light,
-	// brightest and widest toward the bulge, mottled by cloud and dimmed by lanes of dust, all drawn
-	// out along its length.
+	// The galaxy: a broad soft arc of unresolved stars, brightest toward the bulge, mottled and dust-laned.
 	const haze = G.haze.map(name => PALETTE[name])
 	const faint = G.faint.map(name => PALETTE[name])
 	const spark = G.spark.map(name => PALETTE[name])
@@ -44,8 +38,7 @@ export function drawSky(el, frame) {
 	const by = G.to[1] * h - ay
 	const len = Math.hypot(bx, by)
 	const half = (G.width * h) / 2
-	// the spine bows like the great circle it is and wanders across its run; the bulge is
-	// a hump along it
+	// the spine bows like the great circle it is and wanders across its run; the bulge is a hump along it
 	const centreAt = t =>
 		(fbm1(t * G.wanderCells, seed + 51) - 0.5) * G.wander * half -
 		G.bow * half * 4 * t * (1 - t)
@@ -76,20 +69,15 @@ export function drawSky(el, frame) {
 			const t = u / len
 			const bulge = bulgeAt(t)
 			const rel = (v - centreAt(t)) / (half * (1 + G.bulgeWiden * bulge))
-			// the light on this cell, and what it would be with no dust in the way — the
-			// stars in front of the dust see the second; both zero past the band's reach
+			// the light on this cell, and what it would be with no dust in the way; both zero past the band's reach
 			let g = 0
 			let clear = 0
 			if (Math.abs(rel) < G.reach) {
-				// the light: a soft core with long wings, gaining toward the bulge and
-				// tapering away from it toward the far end of the run
+				// the light: a soft core with long wings, gaining toward the bulge and tapering from it
 				let f =
 					(G.amp * (1 + G.bulge * bulge) * (1 - G.taper * (1 - t))) /
 					(1 + rel * rel) ** G.falloff
-				// cloud, at every scale it is given: turbulences drawn out along the run,
-				// each taken as a power so bright and dark are both gentle and neither has a
-				// floor or a ceiling to end on — the coarse one is what clumps and thins the
-				// band along its length and frays its edges, the fine one is the grain
+				// cloud at every scale given: the coarse one clumps and frays the band, the fine one is the grain
 				for (let k = 0; k < G.clouds.length; k++) {
 					const c = G.clouds[k]
 					f *= Math.exp(
@@ -104,8 +92,7 @@ export function drawSky(el, frame) {
 					)
 				}
 				clear = 1 - Math.exp(-f)
-				// dust in front of the light: the rifts down the run, and a ridged turbulence of lanes and knots
-				// absorbing by its depth, both hugging the plane where dust lies
+				// dust in front of the light: rifts down the run plus lanes and knots, both hugging the plane
 				for (let k = 0; k < G.rifts.length; k++) {
 					const r = G.rifts[k]
 					const path =
@@ -121,16 +108,12 @@ export function drawSky(el, frame) {
 				}
 				const lanes = ridged2(u / D.stretch / D.cells, v / D.cells, seed + 25, D.octaves)
 				f *= Math.exp(-D.depth * lanes ** D.power * Math.exp(-((rel / D.reach) ** 2)))
-				// exposed like film, so piles of light brighten ever more slowly and the top
-				// of the ramp is kept for the heart of the bulge
+				// exposed like film, so piles of light brighten ever more slowly and the ramp's top is kept for the bulge
 				g = 1 - Math.exp(-f)
 				const idx = seamIndex(g, haze.length + 1, x, y, G.seam)
 				if (idx > 0) put(x, y, haze[idx - 1])
 			}
-			// the stars are the band: a faint tier of single cells that thins with the light and runs on well
-			// past its last step, so the band's grain tails off into the sky's own stars instead of stopping;
-			// pale sparks where the light is thickest, which is stars too close to tell apart; and a sparse
-			// bright tier drawn as small crosses.
+			// the stars are the band: a faint tier thinning with the light, pale sparks in the thick, and bright crosses
 			const cluster = fbm2(x / G.clusterCells, y / G.clusterCells, seed + 31) > G.clusterAbove
 			const lit = g + (clear - g) * G.starThrough
 			const weight = lit ** G.starPow * (cluster ? G.clusterGain : 1)
@@ -140,8 +123,7 @@ export function drawSky(el, frame) {
 			else if (roll < G.stars * weight) star(x, y, 1, { tier: faint, skew: G.faintSkew })
 		}
 	}
-	// The sun's glow onto whatever is still sky: a dithered falloff about a centre on
-	// the horizon off frame left. Faint by design — no air carries it.
+	// The sun's glow onto whatever is still sky: a dithered falloff, faint by design — no air carries it.
 	const glow = S.shades.map(name => PALETTE[name])
 	const sx = S.x * w
 	const sy = S.y * h
@@ -171,8 +153,7 @@ export function drawSky(el, frame) {
 				}
 			}
 		}
-		// a tier's shade is a roll, skewed toward the dim end where the tier says so —
-		// most of a star field is at the edge of seeing
+		// a tier's shade is a roll skewed toward the dim end: most of a star field is at the edge of seeing
 		const shade = hash2(star.x, star.y, seed + 9) ** (star.skew ?? 1)
 		put(star.x, star.y, star.tier[Math.floor(shade * star.tier.length)])
 	}

@@ -18,8 +18,7 @@ export const reveal = {
 					obs.unobserve(entry.target)
 				}
 			},
-			// huge top margin: jump-scrolls (End key, scrollbar drag) can skip an element
-			// past the viewport between frames — treat anything above as already seen
+			// huge top margin: a jump-scroll can skip an element past the viewport, so treat anything above as seen
 			{ rootMargin: '9999px 0px -12% 0px', threshold: 0.15 }
 		)
 		observer.observe(el)

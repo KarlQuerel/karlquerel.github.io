@@ -1,5 +1,4 @@
-// Shaded relief for the journey's ridgelines — the ground we leave from at the departure and the
-// range we land in at the arrival.
+// Shaded relief for the journey's ridgelines: the ground we leave from and the range we land in.
 
 import { DEPARTURE_RIDGE, ENTRY } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
@@ -15,17 +14,13 @@ import {
 	seamIndex,
 } from './pixelNoise.js'
 
-// One cell is the same size on every viewport, so the grid the departure and the arrival are
-// quantised onto never changes — a narrow frame just gets fewer cells. `dpr` snaps the cell to
-// whole device pixels: a 5.6px cell lands as a run of 5s and 6s and every dither wobbles with it.
+// One cell is the same size on every viewport; `dpr` snaps it to whole device pixels so dither cannot wobble.
 export function cellFor(frame) {
 	const cell = Math.max(ENTRY.ridgeCellPx, frame.w / ENTRY.ridgeMaxCells)
 	return frame.dpr ? Math.round(cell * frame.dpr) / frame.dpr : cell
 }
 
-// The grid a band is cut on. `frame.bleed` is how far (px) the sprite has to run past
-// the frame on each side so the cursor's lean can never uncover an edge; the caller
-// then sizes the canvas to exactly w × h cells instead of stretching it to the frame.
+// The grid a band is cut on. `frame.bleed` is how far past the frame the sprite runs, for the cursor's lean.
 function gridFor(band, frame) {
 	const cell = cellFor(frame)
 	const bleed = frame.bleed ?? 0
@@ -54,8 +49,7 @@ function openSprite(el, w, h) {
 	return { ctx, img, put }
 }
 
-// The tidy pass every sprite takes before its deliberate details are stamped: a cell whose four
-// neighbours all agree and disagree with it becomes what they are.
+// The tidy pass every sprite takes: a cell whose four neighbours all agree becomes what they are.
 export function tidySprite(img, w, h, passes) {
 	const cells = new Uint32Array(img.data.buffer)
 	for (let pass = 0; pass < passes; pass++) {
@@ -76,9 +70,7 @@ export function tidySprite(img, w, h, passes) {
 	}
 }
 
-// Each column is lit by the way its face turns, then darkened with depth into the mass, and the
-// result is dithered onto the band's ramp — the same trick the planet sprite uses, so the ridges
-// gain volume without leaving the grid.
+// Each column is lit by its facing, darkened with depth, then dithered onto the band's ramp.
 export function drawRidge(el, band, visitSeed, frame) {
 	const { w, h, cell } = gridFor(band, frame)
 	const { ctx, img, put } = openSprite(el, w, h)
@@ -90,15 +82,12 @@ export function drawRidge(el, band, visitSeed, frame) {
 	const snow = band.snow
 	const snowShades = snow ? snow.shades.map(name => PALETTE[name]) : null
 	const snowCrest = snow ? PALETTE[snow.crest] : null
-	// The crest walks a short ramp by facing instead of wearing one colour the whole way: bright where
-	// the slope faces the sun, dropping toward the band's own top shades in shade.
+	// The crest walks a short ramp by facing rather than wearing one colour the whole way.
 	const crestShades = [shades[levels - 2], shades[levels - 1], crest]
 	const snowCrestShades = snow
 		? [snowShades[snowShades.length - 2], snowShades[snowShades.length - 1], snowCrest]
 		: null
-	// The sun touches what is near it: arrival bands opt in with `sunGlow`, and cells within reach of
-	// the disc promote up their ramp with distance falloff — the backlit-ridge shot every dusk photo
-	// chases.
+	// The sun touches what is near it: `sunGlow` bands promote up their ramp with distance falloff.
 	const sun = band.sunGlow ? ENTRY.sun : null
 	const sunX = sun ? sun.x * w : 0
 	const sunY = sun ? (sun.y * frame.h - (frame.h - h * cell)) / cell : 0
@@ -106,13 +95,11 @@ export function drawRidge(el, band, visitSeed, frame) {
 	// the whole profile first, so a column can be compared with its neighbour
 	const profile = new Array(w)
 	for (let x = 0; x < w; x++) {
-		// walked at a fixed rate per cell: the crop shows as much of the range
-		// as it has room for, at the size the range is drawn everywhere else
+		// walked at a fixed rate per cell: the crop shows as much range as it has room for, at one size
 		const u = (x / ENTRY.ridgeRefCells) * band.freq
 		const seed = band.seed + visitSeed
 		const shape = ENTRY.ridgeBlend * ridged1(u, seed) + (1 - ENTRY.ridgeBlend) * fbm1(u, seed)
-		// The massif swell: tall clusters and low passes. Spans the frame rather than the range, so
-		// however narrow the crop there is still a tall stretch and a pass in view.
+		// The massif swell: tall clusters and low passes, spanning the frame so a narrow crop still has both.
 		const massif =
 			1 -
 			ENTRY.ridgeMassifDepth +
@@ -120,10 +107,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 		profile[x] = Math.min(ENTRY.ridgeCeiling, band.base + shape * band.amp * massif)
 	}
 
-	// Shading reads off a smoothed copy of the range, never the sharp one. `face` is a single value
-	// for a whole column, so differencing raw neighbours turns every local wiggle into a full-height
-	// stripe of one tone — which is what made these ranges read as a row of buildings rather than as
-	// rock.
+	// Shading reads off a smoothed copy: `face` is one value per column, so raw neighbours stripe.
 	const relief = new Array(w)
 	const blur = ENTRY.ridgeReliefBlur
 	for (let x = 0; x < w; x++) {
@@ -132,9 +116,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 		relief[x] = sum / (blur * 2 + 1)
 	}
 
-	// Snow is a cap, not a stratum: how far a column's summit pokes above the (ruffled) snowline sets
-	// how many cells of snow hang below its crest, so tall massifs carry deep caps and a peak just
-	// past the line gets a dusting.
+	// Snow is a cap, not a stratum: how far a summit pokes over the ruffled snowline sets its depth.
 	const faceAt = x => {
 		const span = ENTRY.ridgeSlopeSpan
 		const lo = relief[Math.max(0, x - span)]
@@ -192,32 +174,23 @@ export function drawRidge(el, band, visitSeed, frame) {
 		for (let y = yTop; y < h; y++) {
 			// the face is a band under the crest; below it the mass goes dark
 			const depth = Math.min(1, (y - yTop) / band.faceDepth)
-			// Crag texture in 2D — sampled per column only, it stripes. How MUCH of it a place carries varies
-			// on a far longer wavelength than the crags themselves: rock is shattered in one place and
-			// weathered smooth in the next, and it is that variation in texture density — not more texture
-			// everywhere — that stops one crag pattern tiling a whole massif.
+			// Crag texture in 2D. How MUCH a place carries varies on a far longer wavelength than the crags.
 			const vary = fbm2(x * vf, y * vf, band.seed + visitSeed + 67)
 			const rough =
 				(fbm2(x * rf, y * rf, band.seed + visitSeed + 5) - 0.5) *
 				ENTRY.ridgeRough *
 				(1 - ENTRY.ridgeRoughVary + 2 * ENTRY.ridgeRoughVary * vary)
 			let lit = clamp01((face + rough) * (1 - depth * ENTRY.ridgeDepthFade))
-			// Dither is for boundaries, not fill: the S-curve pushes the field toward
-			// solid steps, so the checker gathers into narrow bands where two tones
-			// actually meet instead of wallpapering whole faces.
+			// Dither is for boundaries, not fill: the S-curve gathers the checker where two tones meet.
 			lit += (smoothstep(lit) - lit) * ENTRY.ridgeContrast
-			// Skylight, applied after the curve rather than before it: a slope turned away from the sun still
-			// sits under an open sky, so its shade end is the cool bottom of the ramp and not black.
+			// Skylight after the curve, not before: a slope turned from the sun still sits under an open sky.
 			lit = ENTRY.ridgeAmbient + (1 - ENTRY.ridgeAmbient) * lit
-			// Aerial haze pools in the valleys. The air between the ranges scatters the low sun, so a range
-			// does not simply darken away from its crest — its foot lifts toward the palest step of its own
-			// ramp, which is the sky's own tone (the sky is cut from these same entries).
+			// Aerial haze pools in the valleys: a foot lifts toward the palest step of its ramp, the sky's own tone.
 			if (band.haze) {
 				const H = band.haze
 				lit += (1 - lit) * H.lift * clamp01((y - yTop) / (H.depth * h)) ** H.power
 			}
-			// Inside the cap, the same lit walked on the snow ramp — the cap keeps the facets and the shadow
-			// of the rock it sits on.
+			// Inside the cap, the same lit walked on the snow ramp, keeping the rock's facets and shadow.
 			const edge = capCells - (y - yTop)
 			const ramp =
 				snow &&
@@ -227,18 +200,15 @@ export function drawRidge(el, band, visitSeed, frame) {
 					? snowShades
 					: shades
 			const rampLen = ramp === shades ? levels : ramp.length
-			// Dither is for boundaries, not for fill: `seam` holds the checker to a narrow window either side
-			// of where two steps meet and leaves the rest of each band solid.
+			// `seam` holds the checker to a narrow window either side of a step and leaves the rest solid.
 			let idx = seamIndex(lit, rampLen, x, y, ENTRY.ridgeSeam)
-			// Strata: sparse darker seams undulating across the faces, so the rock reads as bedded stone
-			// rather than noise.
+			// Strata: sparse darker seams undulating across the faces, so rock reads as bedded stone.
 			if (ramp === shades && lit > ENTRY.strataMinLit) {
 				const bed = (y + bedShift) / ENTRY.strataSpacing
 				const which = Math.floor(bed)
 				// Each bed gets its own thickness and its own bite, hashed off its index.
 				const r = hash1(which, band.seed + visitSeed + 53)
-				// Nor do beds march at a fixed pitch: each seam sits a little off the regular grid, so consecutive
-				// seams land at uneven spacings and the eye stops counting them.
+				// Each seam sits a little off the regular grid, so the eye stops counting them.
 				const jitter = (hash1(which, band.seed + visitSeed + 89) - 0.5) * ENTRY.strataJitter
 				const off = (((bed - which - jitter) % 1) + 1) % 1
 				if (off < ENTRY.strataWidth * (0.4 + 1.6 * r)) {
@@ -251,8 +221,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 			}
 			put(x, y, ramp[idx])
 		}
-		// the lit rim along the very top of the ridge — snow-capped where a cap hangs, walked by facing
-		// like the mass below it, and warmed by the sun where the crest runs near the disc
+		// the lit rim along the top: snow-capped where a cap hangs, warmed where the crest runs near the disc
 		const crestRamp = snow && capCells > snow.minCap ? snowCrestShades : crestShades
 		const crestGlow = sun
 			? clamp01(1 - Math.hypot(x - sunX, yTop - sunY) / ENTRY.sunGlowCells)
@@ -260,8 +229,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 		put(x, yTop, crestRamp[ditherIndex(clamp01(face + crestGlow), crestRamp.length, x, yTop)])
 	}
 
-	// The habitat (band.habitat): one dome settled into the middle stretch — the journey was TO
-	// somewhere, and someone is home.
+	// The habitat (band.habitat): one dome in the middle stretch — the journey was TO somewhere.
 	let vent = null
 	const hab = band.habitat
 	if (hab) {
@@ -269,8 +237,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 		const rim = PALETTE[hab.rim]
 		const light = PALETTE[hab.light]
 		const half = (hab.w - 1) / 2
-		// wherever the middle stretch is lowest — a slope is fine, the footing
-		// buries the downhill edge and the dome reads as built into the mountain
+		// wherever the middle stretch is lowest; the footing buries the downhill edge
 		let hx = Math.round(w * 0.5)
 		for (let x = Math.round(w * 0.25); x < w * 0.75; x++) {
 			if (profile[x] < profile[hx]) hx = x
@@ -283,27 +250,21 @@ export function drawRidge(el, band, visitSeed, frame) {
 				Math.round(h * (1 - profile[Math.max(0, Math.min(w - 1, hx + dx))]))
 			)
 		}
-		// The shell is lit off a real surface normal, the way the ranges and the planet are: at each cell
-		// the hemisphere's normal is read from where the cell sits on the dome, and the sun and the sky
-		// are gathered on it separately.
+		// The shell is lit off a real surface normal, gathering sun and sky separately at each cell.
 		const sunDir = norm([ENTRY.ridgeLight, hab.sunUp, hab.sunFront])
 		const edgeShades = [shellShades[0], shellShades[2], shellShades[3], rim]
 		for (let dx = -half; dx <= half; dx++) {
 			const x = hx + dx
 			if (x < 0 || x >= w) continue
-			// The shell springs from `sink` cells UNDER the ground, so what stands above it is the top of a
-			// bigger dome rather than a whole half-ellipse resting on the surface.
+			// The shell springs from `sink` cells UNDER the ground, so what stands above is the top of a bigger dome.
 			const rise = Math.round((hab.h + hab.sink) * Math.sqrt(1 - (dx / (half + 0.5)) ** 2))
 			// A dome is its own shape, but it stands in the mountain's light and not in its own.
 			const u = dx / (half + 0.5)
 			const bedded = hab.bed + (1 - hab.bed) * clamp01(faceAt(x))
-			// The hill in front of it buries it. `base` is the LOWEST ground the shell spans, so every other
-			// column has ground standing above that line — and the shell was painted straight across it, over
-			// terrain that should have been in front.
+			// The hill in front buries it. `base` is the LOWEST ground the shell spans, so other columns stand above.
 			const ground = Math.round(h * (1 - profile[x]))
 			const foot = base + hab.sink
-			// what is left of this column once the hill in front has buried it; too
-			// little and it is a stray cell rather than part of the dome
+			// what is left of the column once the hill has buried it; too little is a stray cell
 			if (rise - Math.max(0, foot - ground) < hab.minRise) continue
 			let crownLit = 0
 			let footCourse = true
@@ -318,28 +279,22 @@ export function drawRidge(el, band, visitSeed, frame) {
 				)
 				crownLit = lit
 				if (y > ground) continue
-				// Panel seams, run as longitude and not as screen x. Taken across the width they came out as dead
-				// straight verticals — which is a cylinder's meridian, not a dome's, and it fought the very
-				// roundness the normal had just bought.
+				// Panel seams run as longitude, not screen x: across the width they came out as a cylinder's meridians.
 				const lon = Math.atan2(u, Math.max(nz, 1e-3))
 				const m = (lon / Math.PI + 0.5) * hab.panels
 				const onSeam =
 					v < hab.panelTop && Math.abs(m - Math.round(m)) * (1 / hab.panelSeam) < 1
-				// The base course: the lowest cell a column still shows is where the shell meets the ground, and
-				// it goes down a notch.
+				// The base course: the lowest cell a column shows is where shell meets ground, and it drops a notch.
 				const shade = clamp01(
 					lit - (onSeam ? hab.panelDip : 0) - (footCourse ? hab.footDip : 0)
 				)
 				footCourse = false
 				put(x, y, shellShades[seamIndex(shade, shellShades.length, x, y, ENTRY.ridgeSeam)])
 			}
-			// The crown is lit by the sky, not only by the sun. `lip` is how much of it is skylight — a floor
-			// under the sun term — so the top edge stays a step or two above the body the whole way round
-			// instead of going out with it on the shadow side.
+			// The crown is lit by the sky too. `lip` is the skylight floor, so the top edge stays above the body.
 			const edgeY = foot - rise + 1
 			if (edgeY <= ground) {
-				// Seamed, not checkered: a rim one cell thick that alternates shades cell by cell is a dotted
-				// line, and a dotted line does not read as an edge.
+				// Seamed, not checkered: a one-cell rim alternating shades is a dotted line, and that is not an edge.
 				const lip = clamp01(crownLit + hab.rimLift)
 				put(
 					x,
@@ -348,8 +303,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 				)
 			}
 		}
-		// the shell's ground shadow, thrown a few cells along the surface away from
-		// the sun — a shape without a shadow floats, whatever else it does
+		// the shell's ground shadow, thrown along the surface away from the sun — a shape without one floats
 		const shadowDir = -Math.sign(ENTRY.ridgeLight)
 		for (let i = 1; i <= hab.shadowLen; i++) {
 			const x = hx + (half + i) * shadowDir
@@ -358,9 +312,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 			if (i > hab.shadowLen - 2 && ditherThreshold(x, y) > 0.5) continue
 			put(x, y, shellShades[0])
 		}
-		// The worn path, running down the face toward the camera: a solid tread with a one-cell dithered
-		// fringe, widening as it nears and drifting as it goes — which is what turns the mass below the
-		// crest from a wall into ground receding in depth.
+		// The worn path down the face: a solid tread with a dithered fringe, widening as it nears.
 		const trailShades = hab.pathShades.map(name => PALETTE[name])
 		for (let y = base + 1; y < h; y++) {
 			const t = (y - base) / Math.max(1, h - 1 - base)
@@ -381,9 +333,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 				put(x, y, trailShades[ditherIndex(1 - t, trailShades.length, x, y)])
 			}
 		}
-		// The doorway's light on what it lands on. A dithered falloff about the door, squashed so it
-		// spreads along the ground it grazes rather than ballooning, and applied only where there is
-		// already something there to be lit — a pool laid over sky is the sticker this exists to avoid.
+		// The doorway's light, squashed along the ground and applied only where something is there to be lit.
 		const spillShades = hab.spillShades.map(name => PALETTE[name])
 		const R = hab.spillR
 		for (let sy = -R; sy <= R; sy++) {
@@ -398,8 +348,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 			}
 		}
 
-		// The entrance: an arch, not a slab — ember walls around a hotter core, the
-		// warm gradient being what reads as light from inside rather than paint.
+		// The entrance is an arch, not a slab: ember walls around a hotter core read as light from inside.
 		const glow = PALETTE[hab.glow]
 		put(hx - 1, base, light)
 		put(hx + 1, base, light)
@@ -424,25 +373,21 @@ export function drawRidge(el, band, visitSeed, frame) {
 		vent = { x: (vx + 0.5) / w, y: lip / h }
 	}
 
-	// No pixel stands alone — the same pass the departure's ground gets. A lone cell of one shade
-	// inside another is the tell of a generated sprite; a hand would have clustered it.
+	// No pixel stands alone: a lone cell inside another is the tell of a generated sprite.
 	tidySprite(img, w, h, ENTRY.tidyPasses)
 	ctx.putImageData(img, 0, 0)
 	return { cols: w, rows: h, cell, vent }
 }
 
-// Hills (band.hills) standing on the horizon row, built the way the plain is: a height field of
-// massifs behind the horizon, seen edge-on.
+// Hills standing on the horizon row, built as the plain is: a height field of massifs seen edge-on.
 function paintHills(put, w, h, yH, Hh, seed, sun, fillBelow) {
 	const M = DEPARTURE_RIDGE.moon
 	const shades = Hh.shades.map(name => PALETTE[name])
 	const crest = Hh.crest.map(name => PALETTE[name])
-	// the massifs: cones with concave flanks (`shape` > 1), scattered across the frame's
-	// width and back through `depth` cells of range
+	// the massifs: cones with concave flanks (`shape` > 1), scattered across the width and back through `depth`
 	const Pk = Hh.peaks
 	const count = Math.round((Pk.count * w) / ENTRY.ridgeRefCells)
-	// one per stride with a jitter, so the range runs the whole width instead of
-	// bunching where a roll happened to land; `big` are placed by hand
+	// one per stride with a jitter, so the range runs the whole width; `big` are placed by hand
 	const peaks = Pk.big.map(p => ({ ...p, x: p.at * w }))
 	for (let i = 0; i < count; i++) {
 		const u = (i + hash1(i * 5, seed + 3)) / count
@@ -472,9 +417,7 @@ function paintHills(put, w, h, yH, Hh, seed, sun, fillBelow) {
 	// the sun in the range's frame: x across, y up, z into the depth (away from us)
 	const len = Math.hypot(...sun)
 	const L = [sun[0] / len, sun[2] / len, -sun[1] / len]
-	// Each column's field is sampled once along the depth and kept: every row of the
-	// column then walks that array to its first hit instead of re-evaluating the field,
-	// which is most of what the range used to cost.
+	// Each column's field is sampled once along the depth and kept, instead of re-evaluated per row.
 	const K = Math.floor(Hh.depth / Hh.step)
 	const col = new Float32Array(K + 1)
 	const skyline = new Array(w)
@@ -511,20 +454,16 @@ function paintHills(put, w, h, yH, Hh, seed, sun, fillBelow) {
 	return skyline
 }
 
-// The departure's ground. A moon is not a skyline: what we look across is a surface receding to
-// its horizon, so a band here is a window onto a height field seen in perspective rather than a
-// profile lit by its own slope.
+// The departure's ground. A moon is not a skyline: a band is a height field seen in perspective.
 export function drawMoon(el, band, visitSeed, frame) {
 	const M = DEPARTURE_RIDGE.moon
 	const { w, h, cell } = gridFor(band, frame)
 	const { ctx, img, put } = openSprite(el, w, h)
 	const seed = band.seed + visitSeed
-	// counts are authored per ridgeRefCells of width, so a narrow frame shows a
-	// narrower crop of the same ground rather than a denser one
+	// counts are authored per ridgeRefCells of width, so a narrow frame crops rather than densifies
 	const per = n => Math.round((n * w) / ENTRY.ridgeRefCells)
 
-	// the plain's far edge, per column: a wander, and the limb's curve — the horizon
-	// of a small world bows away toward both edges of the frame
+	// the plain's far edge per column: a wander, plus the limb's curve bowing away toward both edges
 	const yH = new Array(w)
 	for (let x = 0; x < w; x++) {
 		const limb = band.curve * ((x - w / 2) / (w / 2)) ** 2
@@ -532,8 +471,7 @@ export function drawMoon(el, band, visitSeed, frame) {
 			h * band.horizon + limb + (fbm1(x / M.rollCells, seed + 21) - 0.5) * band.roll
 		)
 	}
-	// the sun as a unit vector, its direction along the ground for the shadow march,
-	// and which side of a thing it is on in screen x
+	// the sun as a unit vector, its direction along the ground, and which side of a thing it is on
 	const len = Math.hypot(...M.sun)
 	const [lx, ly, lz] = M.sun.map(v => v / len)
 	const along = Math.hypot(lx, ly)
@@ -545,8 +483,7 @@ export function drawMoon(el, band, visitSeed, frame) {
 	const skyline = band.hills
 		? paintHills(put, w, h, yH, band.hills, seed, M.sun, !band.plain)
 		: null
-	// the cut, for the caller to size the canvas by and to stand things on: the plain's
-	// far edge per column, and where the hills top out, both in rows
+	// the cut, to size the canvas by and stand things on: the plain's far edge and where the hills top out
 	const cut = {
 		cols: w,
 		rows: h,
@@ -564,9 +501,7 @@ export function drawMoon(el, band, visitSeed, frame) {
 	const levels = ramp.length
 	const rowsOf = x => h - 1 - yH[x]
 	const [sFar, sNear] = P.squash
-	// Screen → world. `squash` is a crater's vertical radius over its horizontal one, so a row toward
-	// the horizon covers 1/squash cells of ground: depth Y is that integrated down the band, 0 at the
-	// far edge and growing toward the camera.
+	// Screen -> world. `squash` is a crater's vertical radius over its horizontal, so depth Y integrates down.
 	const depthAt = (rows, t) =>
 		(rows * (Math.log(sFar + (sNear - sFar) * t) - Math.log(sFar))) / (sNear - sFar)
 	const toWorld = (x, y) => {
@@ -577,9 +512,7 @@ export function drawMoon(el, band, visitSeed, frame) {
 	const worldW = w * (1 + P.spread)
 	const worldD = depthAt(h - 1 - Math.round(h * band.horizon), 1)
 
-	// The crater field. Radius rolls as a power so most land small under a couple of
-	// broad basins; age flattens the bowl and wears the rim, which is what stops a
-	// field of one age reading as bubble wrap. Authored basins are placed by hand.
+	// The crater field: radius rolls as a power, and age flattens the bowl, so one age cannot read as bubble wrap.
 	const C = M.crater
 	const shape = (c, age) => ({
 		...c,
@@ -606,17 +539,13 @@ export function drawMoon(el, band, visitSeed, frame) {
 
 	// the field itself: swells and regolith texture, then every crater and boulder
 	const height = (X, Y) => {
-		// the regolith's grain runs across the frame: ground seen at a low angle shows
-		// its detail foreshortened into streaks, not specks
+		// the regolith's grain runs across the frame: low angles foreshorten detail into streaks
 		let hgt =
 			(fbm2(X / M.swell.cells, Y / M.swell.cells, seed) - 0.5) * M.swell.amp +
 			(fbm2(X / M.rough.cellsX, Y / M.rough.cellsY, seed + 5) - 0.5) * M.rough.amp
-		// a low rise along the band's far edge, so the near band has a lit face to
-		// stand on where it cuts across the far one
+		// a low rise along the band's far edge, so the near band has a lit face to stand on
 		if (P.rise) hgt += P.rise.amp * clamp01(1 - Y / P.rise.depth) ** 2
-		// Long lines across the plain (P.lines): each a sinuous fold — dug below the ground it is a rille,
-		// the crack a lava tube leaves when its roof falls in; raised above it, a wrinkle ridge, the
-		// mare's crust buckled.
+		// Long lines across the plain: dug below it a rille (a collapsed lava tube), raised above it a wrinkle ridge.
 		if (P.lines) {
 			for (const R of P.lines) {
 				const d =
@@ -659,8 +588,7 @@ export function drawMoon(el, band, visitSeed, frame) {
 		return hgt
 	}
 
-	// Albedo, separate from height: the large-scale light and dark of the ground — mare against
-	// highland, the bright blanket round a fresh crater, and the rays off the biggest basin.
+	// Albedo, separate from height: mare against highland, fresh-crater blankets, and the big basin's rays.
 	const big = craters.reduce((a, c) => (c.r > a.r ? c : a), craters[0])
 	const albedo = (X, Y) => {
 		let a = 1 + (fbm2(X / M.mare.cells, Y / M.mare.cells, seed + 3) - 0.5) * M.mare.amp
@@ -715,8 +643,7 @@ export function drawMoon(el, band, visitSeed, frame) {
 
 	tidySprite(img, w, h, M.tidyPasses)
 
-	// Micro-pocks: a dark cell with a lit cell on its sun side, the two-pixel crater every hand-drawn
-	// moon is textured with.
+	// Micro-pocks: a dark cell with a lit cell on its sun side — the two-pixel crater of every drawn moon.
 	for (let i = 0; i < per(P.pocks); i++) {
 		const x = Math.floor(hash1(i * 3, seed + 77) * w)
 		const t = hash1(i * 3 + 1, seed + 77) ** M.pockNearBias
@@ -728,16 +655,14 @@ export function drawMoon(el, band, visitSeed, frame) {
 		put(x + sunSide, y, ramp[Math.min(levels - 1, cur + 1)])
 	}
 
-	// the hand-placed boulders, as sprites over their bumps (see moon.boulderSprites),
-	// found back on screen from their place in the world
+	// the hand-placed boulders as sprites over their bumps, found back on screen from their world place
 	const S = M.boulderSprites
 	for (const b of P.boulders.big) {
 		const sprite = b.r >= S.bigFrom ? S.big : S.small
 		let x = Math.round(w / 2 + b.x)
 		let rows = rowsOf(x)
 		let t = (sFar * Math.exp((b.y * (sNear - sFar)) / rows) - sFar) / (sNear - sFar)
-		// the column depends on the spread at this depth, which depends on the column —
-		// one refinement lands it within a cell
+		// the column depends on the spread at this depth, which depends on the column; one refinement lands it
 		x = Math.round(w / 2 + b.x / (1 + P.spread * (1 - t)))
 		rows = rowsOf(x)
 		t = (sFar * Math.exp((b.y * (sNear - sFar)) / rows) - sFar) / (sNear - sFar)

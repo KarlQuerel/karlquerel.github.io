@@ -91,8 +91,7 @@
 	import { ABOUT_ME, DOG_LINES, DOGS, LIFE_SECTIONS } from '@/data/aboutLife'
 	import { reveal as vReveal } from '@/directives/reveal'
 
-	// One deck per dog: photos auto-cycle on a shared beat, looping. Hovering the decks pauses the
-	// cycle; clicking skips ahead (and restarts the beat, so the chosen photo gets a full stay).
+	// One deck per dog: photos cycle on a shared beat. Hover pauses, click skips and restarts the beat.
 	const activeIndexes = ref({})
 	let deckTimer = null
 	let autoCycles = false
@@ -134,9 +133,7 @@
 
 	// how far a card travels on its slide-in
 	$slide: 28px;
-	// the one gap between cards — fixed, so the rhythm is even whatever the cards'
-	// heights, and roomy enough for the route's crossing to turn inside it (two 45
-	// chamfers plus their card clearance need ~192px)
+	// the one gap between cards, fixed so the rhythm is even; the route's crossing needs ~192px to turn
 	$life-gap: 14rem;
 	// offset between the photo-deck cards peeking out behind each dog's frame
 	$stack-step: 6px;
@@ -151,9 +148,7 @@
 		text-align: left;
 	}
 
-	// The slots hug their cards, and one fixed gap carries the rhythm — equal whatever the cards'
-	// heights (DOGS runs past a screen, MUSIC is a fifth of one), where the old screen-per-section
-	// slots left every gap a different pair of leftover half-screens, and far too much of it.
+	// Slots hug their cards and one fixed gap carries the rhythm, equal whatever the cards' heights.
 	.life-slot {
 		display: grid;
 		place-items: center;
@@ -199,22 +194,17 @@
 
 	.life-card__line {
 		margin: 0 0 0.6rem;
-		// terminal font for prose: Press Start 2P stays on titles, Departure Mono
-		// carries the reading text
+		// terminal font for prose: Press Start 2P stays on titles, Departure Mono carries reading text
 		font-family: $font-terminal;
-		// stepped, not fluid: the face is crisp only on its 11px grid, so a clamp
-		// would spend most widths antialiased. 22px puts ~54ch on the desktop column.
+		// stepped, not fluid: the face is crisp only on its 11px grid, so a clamp would antialias.
 		font-size: $type-prose;
 		line-height: 1.55;
-		// no tracking: the face is monospaced and already spaced, and an em-based value would land on
-		// half-pixels and undo the size choice above.
+		// no tracking: the face is already spaced, and an em value would land on half-pixels
 		white-space: pre-line;
 		// the global `p { text-align: center }` would otherwise centre it
 		text-align: inherit;
 		color: rgba(255, 255, 255, 0.88);
-		// A black keyline, in px because this face is only crisp on its own 11px grid. Invisible
-		// against the sky; it is what keeps the prose legible where the planet's lit limb crosses
-		// the card, which on frames at or under 1024px is up to 8% of its area.
+		// A black keyline in px (this face is crisp only on its 11px grid), for where the lit limb crosses.
 		@include pixel-keyline($unit: 1px, $halo: 6px);
 	}
 
@@ -222,9 +212,7 @@
 		margin-bottom: 0;
 	}
 
-	// The way into the card. Departure Mono is crisp only at 11px and 22px, so a lede
-	// cannot be sized up without going soft — the hierarchy comes from a brighter white,
-	// the section's own accent as a margin rule, and the extra air under it instead.
+	// Departure Mono is crisp only at 11px and 22px, so hierarchy comes from colour and air, not size.
 	.life-card__lede {
 		position: relative;
 		margin-bottom: 1.3rem;
@@ -232,8 +220,7 @@
 		color: $white;
 	}
 
-	// the accent again, as a rule rather than a dot — colouring the sentence itself
-	// would put a whole line of prose in $purple on black, which is unreadable
+	// the accent as a rule, not a dot: a whole line of prose in $purple on black is unreadable
 	.life-card__lede::before {
 		content: '';
 		position: absolute;
@@ -291,8 +278,7 @@
 		box-shadow: 0 0 8px 1px rgba($light-blue, 0.55);
 	}
 
-	// the deck spans the text column, so the photos and the prose share one edge.
-	// Its own top margin reads as a section break, not another paragraph gap.
+	// the deck spans the text column, so photos and prose share one edge; its top margin is a break
 	.dogs {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -328,8 +314,7 @@
 		transform: translate($stack-step * 2, $stack-step * 2);
 	}
 
-	// the deck's top card: a void button so it reads as clickable, lifting off the
-	// stack on hover like every other button on the site
+	// the deck's top card: a void button, lifting off the stack on hover like every other button
 	.dog__stack {
 		position: relative;
 		z-index: 1;
@@ -342,8 +327,7 @@
 		border-radius: 30px;
 	}
 
-	// square photo crops fill the frame edge to edge (inset by the padding);
-	// only the active frame shows, swapped with a stepped crossfade on each click
+	// square crops fill the frame edge to edge; only the active frame shows, stepped-crossfaded
 	.dog__photo {
 		position: absolute;
 		inset: 0;
@@ -371,8 +355,7 @@
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 	}
 
-	// the years sit a step under the name — terminal font, caption warmth, so the
-	// closed range and the open one read as a pair without shouting
+	// the years sit a step under the name, so the closed range and the open one read as a pair
 	.dog__years {
 		display: block;
 		margin-top: 0.3rem;
@@ -399,10 +382,8 @@
 	}
 
 	@media (max-width: $breakpoint-mobile) {
-		// Where the pixel grid loses. Departure Mono is crisp only at 11px and 22px: 22px leaves ~23ch on
-		// a phone, and 11px has an 8px cap — smaller than the VT323 it replaced, on the very axis this
-		// font was chosen for. 16px is off-grid (33% antialiased at DPR3) but is the comfortable reading
-		// size, and body prose is where softness shows least and legibility matters most.
+		// Where the pixel grid loses: 16px is off-grid but is the comfortable reading size, and prose is
+		// where softness shows least and legibility matters most.
 		.life-card__line {
 			font-size: $type-prose-md;
 		}

@@ -1,7 +1,5 @@
-// Drives the journey's LIFE station (AboutLife.vue). One entry per paragraph; a `\n` inside an
-// entry breaks the line without opening a paragraph gap — it joins beats meant to be read in one
-// breath, so keep it for those and give anything past ~45 words its own entry instead, or it sets
-// as a slab with nowhere to rest.
+// Drives the journey's LIFE station. One entry per paragraph; a `\n` breaks the line without a
+// paragraph gap, so keep it for beats read in one breath and give anything long its own entry.
 export const ABOUT_ME = [
 	'I come from a multicultural background.',
 	'Born in France to a Lebanese mother, I spent my teenage years in Lebanon before coming back to Europe.',
@@ -68,8 +66,7 @@ export const LIFE_SECTIONS = [
 	{
 		id: 'games',
 		title: 'VIDEO GAMES',
-		// `beforeLine` renders the art ahead of that paragraph so the prose from
-		// there down wraps around it — the PS1 sits beside the beat it illustrates.
+		// `beforeLine` renders the art ahead of that paragraph so the prose wraps around it
 		media: {
 			src: '/assets/about/ps1.gif',
 			// a GIF can't be paused from CSS, so reduced motion gets the first frame

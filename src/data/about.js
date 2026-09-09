@@ -1,16 +1,13 @@
 // Drives the WORK and LIFE stations of the landing journey (HomeJourney.vue).
 
-// Station headings, rendered by PageTitle (see also CONTACT_HEADING / SPORT_HEADING — one heading
-// shape across the whole site).
+// Station headings, rendered by PageTitle — one heading shape across the whole site.
 export const ABOUT_HEADINGS = {
 	work: { lead: 'How I got ', accent: 'here' },
 	life: { lead: 'Off the ', accent: 'clock' },
 }
 
-// Career timeline, oldest first. `type` ('job' | 'study') tints the badge; `current` flags the
-// present role (gold); `emblem` is the sprite on the rail; `detail` is an optional one-line
-// caption on it, kept to the milestones that carry the story — bare rows read as the run-up
-// between them.
+// Career timeline, oldest first. `type` tints the badge, `current` flags the present role (gold),
+// `emblem` is the rail sprite, `detail` an optional caption kept to the milestones that carry it.
 export const CAREER_TIMELINE = [
 	{
 		type: 'study',

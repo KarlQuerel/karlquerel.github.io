@@ -59,8 +59,7 @@
 	// capped: past 2x a phone gains no visible sharpness for 2.25x the texture bytes
 	const dpr = Math.min(window.devicePixelRatio || 1, 2)
 
-	// paint the tile's dots once into a bitmap: re-rasterizing after GPU eviction then
-	// costs one texture blit instead of repainting dozens of stacked radial-gradients
+	// paint the tile's dots once into a bitmap: eviction then costs one blit, not dozens of gradients
 	function rasterizeTile(layer) {
 		const [w, h] = layer.tile
 		const canvas = document.createElement('canvas')
@@ -83,8 +82,7 @@
 		return canvas.toDataURL()
 	}
 
-	// scroll parallax is desktop-only: full-rate layer recomposits during scroll
-	// were the phone lag this component was tuned to avoid
+	// scroll parallax is desktop-only: full-rate recomposits during scroll were the phone lag
 	const scrollParallax = window.matchMedia(FINE_POINTER_QUERY).matches
 
 	// one parallax plane: its pre-rendered dot tile + drift vars
@@ -106,8 +104,7 @@
 				'--drift-x': `${dirX * w}px`,
 				'--drift-y': `${dirY * h}px`,
 				'--dur': `${layer.duration}s`,
-				// one step per device pixel of travel — the hop reads as continuous
-				// motion, yet the compositor still skips ~9 frames in 10
+				// one step per device pixel of travel: reads as continuous motion, yet skips ~9 frames in 10
 				'--drift-steps': Math.max(
 					1,
 					Math.round((Math.hypot(w, h) * dpr) / DRIFT_STEP_DEVICE_PX)
@@ -125,8 +122,7 @@
 	const starLayers = layerSpecs.map((layer, i) => buildLayer(layer, i))
 	const layerEls = []
 
-	// Streaming the planes past at depth-scaled rates as the page scrolls — the "camera is travelling"
-	// cue.
+	// Streaming the planes past at depth-scaled rates as the page scrolls — the "camera travelling" cue.
 	const onScrollParallax = useRafThrottle(() => {
 		const y = window.scrollY
 		layerSpecs.forEach((spec, i) => {
@@ -148,8 +144,7 @@
 		}
 	})
 
-	// halt the drift loops whenever the page isn't visible — or the journey's entry
-	// veil has covered the sky, where drift is invisible but still composited
+	// halt the drift loops when the page is hidden, or the entry veil has covered the sky
 	const covered = useBackdropCover()
 	const hidden = ref(false)
 	const paused = computed(() => hidden.value || covered.value)
@@ -162,8 +157,7 @@
 	let timer = 0
 
 	function spawnStar() {
-		// skip while hidden or covered — paused animations never fire animationend,
-		// so comets would pile up behind the veil
+		// skip while hidden or covered: paused animations never fire animationend, so comets would pile up
 		if (document.visibilityState === 'visible' && !covered.value) {
 			shootingStars.value.push({
 				id: nextId++,
@@ -193,8 +187,7 @@
 	onMounted(() => {
 		if (prefersReducedMotion()) return
 		document.addEventListener('visibilitychange', onVisibility)
-		// no cursor on touch devices — and their drag-scrolls fire pointermove,
-		// which would restyle every huge star layer mid-scroll
+		// no cursor on touch, and their drag-scrolls fire pointermove, restyling every star layer mid-scroll
 		if (scrollParallax) {
 			window.addEventListener('pointermove', onPointerMove, { passive: true })
 			window.addEventListener('scroll', onScrollParallax, { passive: true })
@@ -229,17 +222,13 @@
 		background-repeat: repeat;
 		translate: calc(var(--mx, 0) * var(--depth) * 1px)
 			calc(var(--my, 0) * var(--depth) * 1px + var(--sy, 0px));
-		// no will-change: the animation promotes the layer while it runs; a permanent
-		// hint would keep the ~full-screen textures resident even while paused
+		// no will-change: the animation promotes the layer while it runs; a permanent hint keeps it resident
 		animation: starDrift var(--dur) linear infinite;
-		// Default (touch / phones): hops of one device pixel, a few per second.
-		// The identical frames in between cost the compositor nothing — this is
-		// the scroll-lag fix, and the hop is too small to read as a stutter.
+		// Default (phones): hops of one device pixel. The identical frames between cost nothing.
 		animation-timing-function: steps(var(--drift-steps, 600), end);
 	}
 
-	// Desktop / trackpad can afford a full-rate composited transform, so drift
-	// smoothly there; phones keep the stepped hops above. Mirrors FINE_POINTER_QUERY.
+	// Desktop can afford a full-rate composited transform; phones keep the stepped hops.
 	@media (hover: hover) and (pointer: fine) {
 		.star-layer {
 			animation-timing-function: linear;

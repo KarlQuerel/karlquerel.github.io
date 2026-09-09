@@ -22,23 +22,16 @@
 	const props = defineProps({
 		// 0 → far-off dot, 1 → arrived and full size. Drives scale and opacity.
 		reveal: { type: Number, default: 1 },
-		// False parks the shader. The globe keeps its canvas and its seed — it is the same world when it
-		// comes back — but a sweep of the sprite that lands under an opacity of nought is the most
-		// expensive way there is to draw nothing, and the entry is exactly where it happens: `roll` spins
-		// the planet two thirds of a turn while it fades out behind the atmosphere, so it redraws hardest
-		// at the one moment nobody can see it and the cloud deck needs the frame.
+		// False parks the shader. The globe keeps its canvas and seed, but a sweep under zero opacity is
+		// the most expensive way to draw nothing — and the entry is exactly where it would happen.
 		awake: { type: Boolean, default: true },
 		// Longitude in radians. null → the planet free-spins on the clock over PLANET.spinSeconds.
 		spin: { type: Number, default: null },
-		// Sun yaw in radians around the view's vertical axis. 0 keeps the fixed upper-left key light; the
-		// landing journey sweeps it so the terminator advances while you orbit.
+		// Sun yaw in radians about the view's vertical. 0 keeps the fixed upper-left key light.
 		lightYaw: { type: Number, default: 0 },
-		// 0 → full cloud deck, 1 → clear skies. The journey raises it as the camera
-		// dives: at landing magnification the deck stops reading as weather above
-		// the ground and starts reading as a checker layer stacked on the mountains.
+		// 0 -> full cloud deck, 1 -> clear. At landing magnification a deck reads as a checker layer.
 		cloudThin: { type: Number, default: 0 },
-		// Optional override of named PALETTE entries — e.g. EARTH_PALETTE, which walks
-		// the same ramps through a different set of colours. Fixed at mount.
+		// Optional override of named PALETTE entries (e.g. EARTH_PALETTE). Fixed at mount.
 		palette: { type: Object, default: null },
 	})
 
@@ -63,25 +56,20 @@
 	// this visit's world, fixed here so both threads' shaders roll the same terrain
 	const seed = Math.floor(Math.random() * 1e5) + 1
 
-	// One buffer for the sprite, ping-ponged with the worker (see planet.worker.js) so a frame
-	// allocates nothing.
+	// One buffer, ping-ponged with the worker so a frame allocates nothing.
 	let pixels = new Uint8ClampedArray(res * res * 4)
 	let worker = null
-	// the same shader on this thread: the first frame, and the fall-back where a
-	// worker cannot be had
+	// the same shader on this thread: the first frame, and the fall-back where no worker can be had
 	let shader = null
-	// KeepAlive parks the component rather than unmounting it, so this is the only
-	// thing that stops a sweep running on behind whatever page you navigated to
+	// KeepAlive parks rather than unmounts, so this is the only thing that stops a sweep running on
 	let parked = false
 
-	// The last picture actually asked for, so a redraw can be judged against what is
-	// already there (or already on its way) rather than against the clock.
+	// The last picture asked for, so a redraw is judged against what is there rather than the clock.
 	let drawnSpin = null
 	let drawnYaw = 0
 	let drawnThin = 0
 
-	// A redraw that cannot move a single art pixel costs a full sweep of the sprite to produce the
-	// picture already on screen.
+	// A redraw that cannot move an art pixel costs a full sweep to produce the picture already on screen.
 	const cellTurn = (2 * Math.PI) / res
 	function moved() {
 		return (
@@ -97,9 +85,7 @@
 		ctx.putImageData(new ImageData(pixels, res, res), 0, 0)
 	}
 
-	// Ask for one sweep at `spin`. The angles it was asked for are recorded now rather
-	// than when it lands, so `moved` judges the picture on its way and a flung scroll
-	// does not queue a sweep per frame behind the one being drawn.
+	// Ask for one sweep at `spin`. Angles are recorded now, so a flung scroll cannot queue one per frame.
 	function render(spin) {
 		drawnSpin = spin
 		drawnYaw = props.lightYaw
@@ -125,8 +111,7 @@
 		if (props.spin !== null) scheduleDraw()
 	}
 
-	// A worker that cannot run must not take the globe down with it: the sweep comes back to this
-	// thread and carries on.
+	// A worker that cannot run must not take the globe down: the sweep comes back to this thread.
 	function dropWorker() {
 		if (worker) worker.terminate()
 		worker = null
@@ -147,8 +132,7 @@
 		rafId = requestAnimationFrame(loop)
 	}
 
-	// Driven mode: at most one sweep in flight, and always trailing to the latest
-	// angle, so a flung scroll still lands the orbit where it stopped.
+	// Driven mode: at most one sweep in flight, always trailing to the latest angle.
 	function scheduleDraw() {
 		if (drawId || !pixels || parked || !ctx) return
 		if (!props.awake || props.reveal <= 0 || prefersReducedMotion()) return
@@ -197,7 +181,6 @@
 		ctx = el.getContext('2d')
 		shader = createPlanetShader({ res, seed, palette: props.palette })
 		// the first frame on this thread, so the globe is ready the instant it reveals
-		// rather than a worker round-trip later
 		render(props.spin ?? 0)
 		// reduced motion never redraws, so it never needs a second thread
 		if (!prefersReducedMotion()) {
@@ -213,8 +196,7 @@
 		resume()
 	})
 
-	// kept alive under HomeJourney: onBeforeUnmount never fires on navigation, so the
-	// shader loop would keep burning a thread behind every other page
+	// kept alive under HomeJourney: onBeforeUnmount never fires on navigation
 	onDeactivated(() => {
 		parked = true
 		stopLoop()

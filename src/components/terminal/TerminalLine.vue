@@ -35,8 +35,7 @@
 
 	const emit = defineEmits(['register', 'unregister'])
 
-	// Typed lines are text that the parent animates character-by-character.
-	// Images carry their own animation, so they are never typed.
+	// Typed lines are animated character-by-character; images carry their own animation.
 	const animatable = computed(
 		() =>
 			(props.line.type === 'typewriter' || props.line.type === 'output') && !props.line.image

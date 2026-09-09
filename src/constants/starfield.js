@@ -1,7 +1,6 @@
 // Tunables for the decorative parallax starfield in SpaceBackground.vue.
 
-// Star palette, duplicated as hex from the SCSS palette in _variables.scss.
-// Weighted toward white for a calm sky.
+// Star palette, duplicated as hex from _variables.scss. Weighted toward white for a calm sky.
 export const STAR_COLORS = [
 	'#ffffff',
 	'#ffffff',
@@ -11,9 +10,7 @@ export const STAR_COLORS = [
 	'#d3d3d3', // $light-gray
 ]
 
-// Parallax depth planes, far -> near. Each is one repeating, GPU-drifted <div> layer, inset by
-// one tile so it can translate a full tile and loop seamlessly. Three planes rather than four:
-// each is a full-screen layer the compositor redraws every frame, and that was the homepage lag.
+// Parallax planes, far -> near, each a repeating drifted layer inset by one tile so it loops.
 export const STAR_LAYERS = [
 	{
 		count: 18,
@@ -47,22 +44,17 @@ export const STAR_LAYERS = [
 // Per-dot size multiplier so dots vary instead of reading as one stamped disc.
 export const STAR_SIZE_JITTER = [0.75, 1.25]
 
-// Vertical scroll parallax: px of layer shift per px scrolled, per depth unit — scrolling streams
-// the near planes past faster, so the camera reads as travelling.
+// Vertical scroll parallax: px of layer shift per px scrolled, per depth unit.
 export const SCROLL_PARALLAX = 0.004
 
-// Device pixels of travel per drift step. Stepped (not linear) drift lets the compositor skip the
-// frames between hops — linear drift recomposited the full screen every vsync, the main scroll-lag
-// cost on phones.
+// Device px of travel per drift step. Stepped, so the compositor can skip the frames between.
 export const DRIFT_STEP_DEVICE_PX = 1
 
-// Sparse comet streaks. Tints echo the starfield, weighted toward plain white.
-// Each entry is a [min, max] range fed straight to rand(), except `tints`.
+// Sparse comet streaks. Each entry is a [min, max] range fed to rand(), except `tints`.
 export const SHOOTING_STAR = {
 	tints: ['#ffffff', '#ffffff', '#ffffff', '#00ccff', '#ffbd2e'],
 	gapMs: [2800, 8000],
-	// The first comet of a visit fires on this shorter fuse, so a first impression
-	// always catches the sky moving before the scroll starts.
+	// The first comet of a visit fires on a shorter fuse, so the sky is already moving on arrival.
 	firstMs: [900, 1600],
 	y: [0, 75],
 	x: [-10, 65],

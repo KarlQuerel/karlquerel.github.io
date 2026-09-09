@@ -13,8 +13,7 @@ import {
 	RING_NORMAL,
 } from '../constants/flyby.js'
 
-// The corridor, keyed on depth. Path z is monotone, so a coarse table and a lerp invert
-// it accurately enough to hang a rock field off.
+// The corridor, keyed on depth. Path z is monotone, so a coarse table and a lerp invert it.
 const SAMPLES = 240
 const TRACK = Array.from({ length: SAMPLES + 1 }, (_, i) => camAt(i / SAMPLES))
 
@@ -28,8 +27,7 @@ function corridorAt(z) {
 	return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
 }
 
-// A smaller `count` takes a prefix of the same field, so a phone gets a thinner belt
-// made of the same rocks rather than a different one.
+// A smaller `count` takes a prefix of the same field, so a phone gets a thinner belt, not another one.
 export function buildBelt(count) {
 	const arr = new Float32Array(count * 4)
 	let seed = BELT_SEED
@@ -47,9 +45,7 @@ export function buildBelt(count) {
 		return [cx + dx * k, cy + dy * k, p[2]]
 	}
 
-	// Ring the corridor at a radius that never comes near the hull, flattened along the system plane's
-	// normal so the slab lies in the plane everything else obeys - it crosses the frame at the plane's
-	// own 13-degree tilt instead of sitting as a horizontal stripe at the camera's eye level.
+	// Ring the corridor clear of the hull, flattened along the system plane's normal so it crosses at its tilt.
 	const inPlane = norm(cross(RING_NORMAL, [0, 0, 1]))
 	const place = z => {
 		const [cx, cy] = corridorAt(z)
@@ -62,9 +58,7 @@ export function buildBelt(count) {
 		return [cx + off[0], cy + off[1], z + off[2]]
 	}
 
-	// Families. Most of a real belt belongs to one - the debris of the same break-up,
-	// still travelling together - and scattering every rock independently is what makes a
-	// field read as confetti thrown at the screen rather than as something with a history.
+	// Families: most of a real belt is one break-up travelling together, and independent scatter reads as confetti.
 	const fam = []
 	for (let k = 0; k < BELT_FAMILIES; k++) fam.push(place(-(BELT_Z_NEAR + rnd() * BELT_Z_SPAN)))
 
@@ -81,9 +75,7 @@ export function buildBelt(count) {
 		} else {
 			p = place(-(BELT_Z_NEAR + rnd() * BELT_Z_SPAN))
 		}
-		// Sizes on a cube law rather than a flat draw. A belt is almost all gravel with
-		// the occasional real body in it; a field of same-sized pebbles is the other thing
-		// that made this look manufactured.
+		// Sizes on a cube law: a belt is almost all gravel with the occasional real body in it.
 		const u = rnd()
 		const q = clearHull(p)
 		arr.set([q[0], q[1], q[2], 0.09 + u * u * u * 0.62], i * 4)

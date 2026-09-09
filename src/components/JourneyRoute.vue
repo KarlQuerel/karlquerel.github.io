@@ -2,9 +2,7 @@
 	<!-- The route: the journey's own line, drawn in the page rather than the chrome. -->
 	<svg v-if="geo" v-bind="frame" class="route" :style="frameStyle" aria-hidden="true">
 		<defs>
-			<!-- The flown stretch, revealed by dash arithmetic in real units. One mask
-			     path per subpath: Chromium restarts the dash phase at every moveto, so
-			     a single offset cannot reveal a path with gaps in it. -->
+			<!-- One mask path per subpath: Chromium restarts the dash phase at every moveto. -->
 			<mask
 				id="route-flown"
 				maskUnits="userSpaceOnUse"
@@ -37,10 +35,8 @@
 			/>
 		</g>
 	</svg>
-	<!-- The cursor rides its own layer, above the reading matter. The trace belongs behind it - a line
-	     threading the stations is scenery - but "you are here" is not scenery, and at the trace's own
-	     depth it spent most of the journey behind the station bodies: measured at 66 of 88 sampled
-	     scroll positions, on both a desktop and a phone viewport. -->
+	<!-- The cursor rides its own layer above the reading matter: at the trace's own depth it sat behind
+	     the station bodies at 66 of 88 sampled scroll positions, on desktop and phone alike. -->
 	<svg
 		v-if="geo && tip"
 		v-bind="frame"
@@ -72,12 +68,10 @@
 	const tip = ref(null)
 	// which way the tip is pointing, in degrees - the tangent of the path under it
 	const heading = ref(90)
-	// the line leaves as the orbit begins: once the planet owns the frame, the
-	// chart has done its job
+	// the line leaves as the orbit begins: once the planet owns the frame, the chart has done its job
 	const fade = ref(1)
 
-	// Both layers are the same box over the same track, so the cursor lines up with
-	// the trace it belongs to without a second measurement.
+	// Both layers are the same box over the same track, so the cursor lines up without a second measure.
 	const frame = computed(() =>
 		geo.value
 			? {
@@ -106,23 +100,20 @@
 	const reveal = sub => clamp(flownLen.value - sub.start, 0, sub.len)
 	const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
 
-	// painted segments in order, with cumulative length; gaps carry no length, so a
-	// tip inside one parks at the previous segment's end - the dock diamond
+	// painted segments in order with cumulative length; a tip inside a gap parks at the previous end
 	let segs = []
 	let total = 1
 	let span = [0, 1]
 	let orbit = [0, 1]
 	let vh = 0
 
-	// Where the planet's centre sits across the frame at the moment the tip reaches a given point on
-	// the page - the same placement PlanetStage makes, an offset from the frame's middle in vw.
+	// Where the planet's centre sits when the tip reaches a given point — the placement PlanetStage makes.
 	function planetXAt(y, w, h) {
 		const cam = props.camAt(clamp(y - vh * ROUTE.tipFrac, 0, Math.max(0, h - vh)))
 		return w / 2 + (cam.x / 100) * window.innerWidth
 	}
 
-	// The geometry is measured, not authored: x follows the timeline's own rail, y
-	// follows the real section layout, and everything is rebuilt on reshape.
+	// The geometry is measured, not authored, and rebuilt on reshape.
 	function measure() {
 		const track = document.querySelector('.journey')
 		const work = track?.querySelector('#work')
@@ -153,8 +144,7 @@
 		const xS = Math.round(ztlBox.left - track.getBoundingClientRect().left + railCenter)
 		const m = ROUTE.headMarginPx
 
-		// Where the line begins: a fixed stretch above the WORK station, entering on
-		// one 45-degree run-in sized to whatever room the heading leaves it.
+		// Where the line begins: a fixed stretch above WORK, entering on one 45 sized to the heading's room.
 		const yG = Math.round(box(work).top - vh * ROUTE.startAboveVh)
 		const headBox = box(workHead)
 		const dock1 = Math.round(headBox.top - m)
@@ -172,16 +162,13 @@
 			const glyphHalf = (chars * (size + tracking) - tracking) / 2
 			headClear = Math.abs(xS - w / 2) > glyphHalf + 24
 		}
-		// LIFE reads in a wider column than WORK, so its stretch runs in the left gutter, clear of the
-		// prose - the trace jogs out after the timeline and jogs back for the dive.
+		// LIFE reads in a wider column, so its stretch runs in the left gutter, clear of the prose.
 		const lifeSlots = [...track.querySelectorAll('#life .life-slot')]
 		let xL = Math.max(
 			20,
 			Math.round(box(lifeSlot).left - track.getBoundingClientRect().left - ROUTE.gutterPx)
 		)
-		// A lane change shorter than its own two corners is a wobble, not a jog: on
-		// a phone the LIFE gutter lands a handful of px off the WORK rail, and the
-		// tip visibly stepped sideways for nothing. The line stays in its lane.
+		// A lane change shorter than its own two corners is a wobble, not a jog, so the line stays in lane.
 		if (Math.abs(xS - xL) < ROUTE.turnPx * 2) xL = xS
 		const dxL = Math.abs(xS - xL)
 		const yJ3 = Math.round(ztlBox.bottom + 60)
@@ -190,10 +177,7 @@
 		orbit = [arrivalBox.top, runway]
 		const yEnd = Math.round(arrivalBox.top + vh * 0.5 + runway * ROUTE.endRunFrac)
 
-		// The zigzag: a flank beside each life chapter - left of the cards, then right of them,
-		// alternating - crossing the frame in the fixed gap between chapters on a hexagonal jog: a short
-		// 45 chamfer off each flank and a straight run between them, corners nearly sharp like a hexagon's
-		// vertices.
+		// The zigzag: a flank beside each life chapter, crossing in the gap on a hexagonal jog.
 		const xR = w - xL
 		const pad = ROUTE.crossPadPx
 		const weave = []
@@ -202,8 +186,7 @@
 		for (let k = 1; k < lifeSlots.length; k++) {
 			const target = k % 2 ? xR : xL
 			if (target === lane) continue
-			// the slot, not the card inside it: the card rides the reveal's translate until it has been seen
-			// once, and a measure taken before then lands the jog off the gap's true centre.
+			// the slot, not the card: the card rides the reveal's translate until it has been seen once
 			const slot = q => box(lifeSlots[q])
 			const gapTop = Math.max(slot(k - 1).bottom + pad, reach)
 			const gapBot = slot(k).top - pad
@@ -225,9 +208,7 @@
 			lane = target
 			reach = yJog + cham
 		}
-		// The dive aims at the world, not at the frame: the last leg is steered onto where the planet's
-		// centre will be when the tip lands, so the two arrive together by construction rather than by
-		// coincidence.
+		// The dive aims at the world, not the frame, so the two arrive together by construction.
 		const xAim = Math.round(
 			clamp(planetXAt(yEnd, w, h), w * ROUTE.diveAimBand, w * (1 - ROUTE.diveAimBand))
 		)
@@ -249,17 +230,13 @@
 						[xS, yG + runIn],
 					]
 				: [[xS, yG]]
-		// A heading the rail would cross is not skirted with a stub and a gap any more: on a phone the
-		// stranded run above it read as the line breaking off right beside the words, with the dart parked
-		// on the dead end.
+		// A heading the rail would cross is no longer skirted: the stranded run read as the line breaking off.
 		const subpaths = headClear ? [[...head, ...trunk]] : [[[xS, resume1], ...trunk]]
 
 		segs = []
 		total = 0
 		const subs = []
-		// Corners are flown, not cornered: every interior vertex becomes a small arc (a quadratic with the
-		// vertex as its control), entered turnPx short of the corner - or the vertex's own radius, where
-		// it carries one - and clamped so short legs stay sane.
+		// Corners are flown: each interior vertex becomes a small arc entered turnPx short of the corner.
 		const quadAt = (a, c, b, t) => {
 			const u = 1 - t
 			return [
@@ -314,10 +291,7 @@
 			}
 			subs.push({ d, start, len: total - start })
 		}
-		// The tip crosses a turn at constant path speed. Scroll maps 1:1 to y on the straight verticals,
-		// but through a turn group - diagonals, arcs, and the horizontal run between them - the group's
-		// real y-extent is dealt out by arc length instead, so a screen-wide run costs the scroll it
-		// deserves rather than teleporting past in the horizontal's zero height.
+		// The tip crosses a turn at constant path speed: a turn group's y-extent is dealt out by arc length.
 		let gi = 0
 		while (gi < segs.length) {
 			if (segs[gi].y2 - segs[gi].y1 >= segs[gi].len * 0.92) {
@@ -361,15 +335,13 @@
 		update()
 	}
 
-	// flown fraction, tip position and tip heading for the current scroll - a walk
-	// over a handful of segments, all monotone in y
+	// flown fraction, tip position and heading for this scroll — a walk over segments monotone in y
 	function update() {
 		if (!segs.length) return
 		const yT = window.scrollY + vh * ROUTE.tipFrac
 		let fr = total
 		let pos = [segs.at(-1).x2, segs.at(-1).y2]
-		// the segment under the tip, or the last one it cleared: parked in a gap, the
-		// dart keeps the heading it docked on rather than snapping to a default
+		// the segment under the tip, or the last it cleared, so a parked dart keeps its docked heading
 		let on = segs.at(-1)
 		for (const s of segs) {
 			if (yT >= s.yb) {
@@ -432,28 +404,21 @@
 		position: absolute;
 		top: 0;
 		left: 0;
-		// The trace: over the fixed stage (later in the DOM), under the station bodies at z 1 and the
-		// landscape headings at z -1... which sit below the stage anyway.
+		// The trace: over the fixed stage, under the station bodies at z 1 and the headings at z -1.
 		z-index: 0;
 		pointer-events: none;
 		shape-rendering: crispEdges;
-		// The cursor's lean, on the shared --mx/--my contract - at the station bodies' own depth, not a
-		// flavour of its own: the line threads the timeline's emblems, and any other depth shears it off
-		// them the moment the pointer moves.
+		// The lean at the station bodies' own depth: any other depth shears the line off the emblems.
 		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
 			calc(var(--my, 0) * var(--depth, 0) * 1px);
 	}
 
-	// Only the cursor is lifted, and only over the page's own content: clear of the
-	// station bodies and the arrival (z 1) and of the departure flight (z 2), still
-	// well under the rail and the chrome (z 20), which are meant to cover it.
+	// Only the cursor is lifted, clear of the bodies and the flight but under the rail and chrome.
 	.route--cursor {
 		z-index: 3;
 	}
 
-	// The pattern rules stay scoped to the visible group: a bare `.route path` would also match the
-	// mask paths, and CSS outranks the dash attributes their reveal arithmetic lives in - the first
-	// version of this line lit end to end for exactly that reason.
+	// Scoped to the visible group: a bare `.route path` would match the mask paths and outrank their dashes.
 	.route__flown path {
 		fill: none;
 		// the WORK spine's own cadence, so docking into it reads as one line
@@ -465,12 +430,9 @@
 		stroke: rgba($yellow, 0.8);
 	}
 
-	// A dark casing under the gold, the trick every chart drawn over terrain uses: the planet is the
-	// brightest thing on the page, and a bare 2px line at half alpha simply disappears into its lit
-	// limb.
+	// A dark casing under the gold: a bare 2px line at half alpha disappears into the planet's lit limb.
 	.route__flown .route__casing {
-		// exactly one pixel of halo each side of the gold, and lighter than it: a casing that outweighs
-		// its line stops reading as gold-over-terrain and starts reading as a black line with a gold core
+		// one pixel of halo each side and lighter than the gold, or it reads as black with a gold core
 		stroke-width: 4px;
 		stroke: rgba($black, 0.6);
 		stroke-dasharray: 8 4;
@@ -481,16 +443,14 @@
 		fill: rgba($yellow, 0.9);
 	}
 
-	// Mask ink: a wide solid stroke of the same path, drawn to the flown length by dash arithmetic in
-	// real user units, set as attributes in the template.
+	// Mask ink: a wide stroke of the same path, drawn to the flown length by dash arithmetic.
 	.route__draw {
 		fill: none;
 		stroke: #fff;
 		stroke-width: 12px;
 	}
 
-	// You are here. The reserved gold at full strength - the current milestone - with the one self-
-	// running motion on the line, stepped as the house rules ask.
+	// You are here: reserved gold at full strength, with the one self-running motion on the line, stepped.
 	.route__tip {
 		fill: $yellow;
 		filter: drop-shadow(0 0 4px rgba($yellow, 0.6));

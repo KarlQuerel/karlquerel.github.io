@@ -1,5 +1,4 @@
-// Dependency-free 1D value noise plus the two shaping helpers the entry scene's sprites are built
-// from.
+// Dependency-free 1D value noise plus the shaping helpers the entry scene's sprites are built from.
 
 import { smoothstep } from './math.js'
 
@@ -21,8 +20,7 @@ export function fbm1(x, seed) {
 	)
 }
 
-// Ridged multifractal: folding the noise at its midpoint turns rolling hills into sharp crests
-// with long flanks, which is what real mountains look like.
+// Ridged multifractal: folding the noise at its midpoint turns rolling hills into crests with long flanks.
 export function ridged1(x, seed, octaves = 4) {
 	let sum = 0
 	let norm = 0
@@ -41,9 +39,7 @@ export function ridged1(x, seed, octaves = 4) {
 	return sum / norm
 }
 
-// 4x4 ordered dither. Mixing two neighbouring shades on this grid buys a whole
-// extra step of gradation without adding a colour — the period technique for
-// getting depth out of a tiny palette.
+// 4x4 ordered dither: mixing two neighbouring shades buys a step of gradation without a new colour.
 const BAYER4 = [
 	[0, 8, 2, 10],
 	[12, 4, 14, 6],
@@ -51,16 +47,13 @@ const BAYER4 = [
 	[15, 7, 13, 5],
 ]
 
-// This pixel's slot on the dither grid, 0..1. Exposed because a scene that dithers more than one
-// decision per pixel — which ramp, and how far up it — has to make both against the same
-// threshold, or the two patterns beat against each other.
+// This pixel's dither slot, 0..1. Exposed so two decisions per pixel share one threshold and cannot beat.
 export function ditherThreshold(x, y, jitter = 0) {
 	const at = jitter ? 0.5 + (hash2(x, y, 9161) - 0.5) * jitter : 0.5
 	return (BAYER4[y & 3][x & 3] + at) / 16
 }
 
-// Pick an index into a `levels`-long ramp for brightness `lit` (0..1), dithering between the two
-// nearest steps by pixel position.
+// Pick an index into a `levels`-long ramp for brightness `lit`, dithering between the nearest steps.
 export function ditherIndex(lit, levels, x, y, contrast = 0) {
 	const v = lit * (levels - 1)
 	const i = Math.floor(v)
@@ -70,8 +63,7 @@ export function ditherIndex(lit, levels, x, y, contrast = 0) {
 	return Math.max(0, Math.min(levels - 1, i + step))
 }
 
-// Quantise `lit` onto a `levels`-long ramp with the dither confined to a seam of half-width `seam`
-// (in steps) either side of each boundary.
+// Quantise `lit` onto a ramp with the dither confined to a seam of half-width `seam` at each boundary.
 export function seamIndex(lit, levels, x, y, seam, jitter = 0) {
 	const v = lit * (levels - 1)
 	const i = Math.floor(v)
@@ -83,8 +75,7 @@ export function seamIndex(lit, levels, x, y, seam, jitter = 0) {
 	return Math.max(0, Math.min(levels - 1, i + step))
 }
 
-// 2D value noise. Rock texture sampled per column alone comes out as vertical
-// striping; it has to vary down the face as well as across it.
+// 2D value noise. Rock texture sampled per column alone stripes; it has to vary down the face too.
 export function hash2(ix, iy, seed) {
 	let n = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263) ^ Math.imul(seed, 951274213)
 	n = Math.imul(n ^ (n >>> 13), 1274126177)
@@ -105,8 +96,7 @@ export function fbm2(x, y, seed) {
 	return 0.65 * noise2(x, y, seed) + 0.35 * noise2(x * 2.6, y * 2.6, seed + 17)
 }
 
-// Turbulence: `octaves` of noise, each half the size and half the weight of the last, normalised
-// to 0..1.
+// Turbulence: `octaves` of noise, each half the size and weight of the last, normalised to 0..1.
 export function turbulence(x, y, seed, octaves) {
 	let sum = 0
 	let norm = 0
@@ -121,9 +111,7 @@ export function turbulence(x, y, seed, octaves) {
 	return sum / norm
 }
 
-// The 2D ridged multifractal (see ridged1): noise folded at its middle into sharp
-// crests with long flanks, detail gathering on the crests — filaments and the knots
-// where they cross, which is the shape dust takes. Roughly 0..1.
+// The 2D ridged multifractal: crests with long flanks, detail gathering where filaments cross. ~0..1.
 export function ridged2(x, y, seed, octaves) {
 	let sum = 0
 	let norm = 0

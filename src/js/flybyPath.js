@@ -1,5 +1,4 @@
-// The flight: scroll position in, camera basis out. Nothing here touches WebGL or the DOM, so the
-// whole flight can be reasoned about — and re-tuned — without going near the renderer.
+// The flight: scroll in, camera basis out. No WebGL or DOM here, so it can be re-tuned in isolation.
 
 import { clamp01, hermite, smoothstep } from './math.js'
 import { add, cross, dot, lerp, mul, norm, slerp, sub } from './vec3.js'
@@ -32,9 +31,7 @@ import {
 const RING_E1 = norm(cross(RING_NORMAL, UP))
 const RING_E2 = cross(RING_NORMAL, RING_E1)
 
-// Where a body sits at scroll `s`. All but one are fixed; the shepherd carries an
-// orbit - an arc about its primary in the ring plane - so the system has one thing
-// that visibly revolves, and it does it where ring physics puts one.
+// Where a body sits at scroll `s`. All but one are fixed; the shepherd carries an orbit in the ring plane.
 export function bodyAt(b, s) {
 	if (!b.orbit) return b.c
 	const th = (b.orbit.phase + b.orbit.sweep * s) * 2 * Math.PI
@@ -42,17 +39,14 @@ export function bodyAt(b, s) {
 	return add(BODIES[b.orbit.about].c, arm)
 }
 
-// Which keyframe interval `s` falls in. Every channel below is keyed on scroll the
-// same way, so they share the search rather than each rolling their own.
+// Which keyframe interval `s` falls in — every channel keys on scroll the same way and shares the search.
 function segment(keys, s) {
 	let i = 0
 	while (i < keys.length - 2 && s > keys[i + 1].s) i++
 	return i
 }
 
-// Velocity at each waypoint, in world units per unit of scroll. Plain Catmull-Rom
-// assumes evenly spaced knots; ours are not, so its tangents disagree across every
-// knot and the camera kinks there. A three-point difference in s does not.
+// Velocity per waypoint. Catmull-Rom assumes even knots; ours are not, so it kinks. A 3-point difference does not.
 const TAN = PATH.map((_, j) => {
 	const a = PATH[Math.max(0, j - 1)]
 	const b = PATH[Math.min(PATH.length - 1, j + 1)]
@@ -77,16 +71,12 @@ function focusAt(s) {
 	return { b0: FOCUS[i].b, b1: FOCUS[i + 1].b, w0: FOCUS[i].w, w1: FOCUS[i + 1].w, t }
 }
 
-// The chord across the heading window, and the two things read off it. Clamping the
-// ends rather than sliding the window keeps s=1 from producing a zero-length chord,
-// which would flip the horizon on the last frame of the scroll.
+// The chord across the heading window. Clamping the ends keeps s=1 from a zero-length chord.
 const chordAt = s => sub(camAt(Math.min(1, s + HEADING_SPAN)), camAt(Math.max(0, s - HEADING_SPAN)))
 const headingAt = s => norm(chordAt(s))
 const speedAt = s => Math.hypot(...chordAt(s)) / (2 * HEADING_SPAN)
 
-// The bank a coordinated turn asks for at scroll `s`. Yaw rate is how fast the heading swings
-// about the vertical; multiplied by speed that is the sideways acceleration the turn is producing,
-// and atan of it over BANK_GRAVITY is the angle that puts the lift vector where it cancels that.
+// The bank a coordinated turn asks for: atan(yaw rate x speed / BANK_GRAVITY) puts lift where it cancels.
 function bankAt(s, still) {
 	const level = norm(cross(headingAt(s), UP))
 	const dh = sub(headingAt(Math.min(1, s + BANK_SPAN)), headingAt(Math.max(0, s - BANK_SPAN)))
@@ -98,23 +88,19 @@ function bankAt(s, still) {
 // Roll velocity lives between frames, so the caller holds it. One per mounted flight.
 export const createRollState = () => ({ angle: 0, vel: 0, settled: true })
 
-// Semi-implicit Euler on a damped spring — stable at the frame rates this runs at, and
-// the velocity it carries is exactly the lag and overshoot an airframe has.
+// Semi-implicit Euler on a damped spring: stable here, and its velocity is an airframe's lag and overshoot.
 function stepRoll(state, target, dt) {
 	const step = Math.min(dt, MAX_FRAME_DT)
 	const acc =
 		ROLL_FREQ * ROLL_FREQ * (target - state.angle) - 2 * ROLL_DAMPING * ROLL_FREQ * state.vel
 	state.vel += acc * step
 	state.angle += state.vel * step
-	// the frame loop stops drawing when the scroll stops, so it has to be told that the
-	// horizon is still moving under its own momentum
+	// the frame loop stops drawing when the scroll stops, so it must be told the horizon still has momentum
 	state.settled = Math.abs(state.vel) < ROLL_REST && Math.abs(target - state.angle) < ROLL_REST
 	return state.angle
 }
 
-// Full camera state at scroll `p`. `lookX/lookY` are the eased pointer position in -1..1; `still`
-// is prefers-reduced-motion, which drops the pointer look and most of the bank but never the
-// flight itself — that is the reader's own scrolling.
+// Full camera state at scroll `p`. `still` is prefers-reduced-motion: it drops the look and most of the bank.
 export function sampleFlight(p, lookX, lookY, still, rollState, dt) {
 	// how far out of the still frame we are: drives the dust and the pointer look
 	const wake = smoothstep(clamp01((p - WAKE_START) / WAKE_SPAN))
@@ -125,13 +111,10 @@ export function sampleFlight(p, lookX, lookY, still, rollState, dt) {
 	let fwd = norm(sub(ahead, behind))
 	const travel = fwd // where we are actually going, before the camera turns to look
 
-	// turn toward the world being passed, so it sweeps the frame instead of
-	// just growing in the middle
+	// turn toward the world being passed, so it sweeps the frame instead of growing in the middle
 	const f = focusAt(p)
 	const aimAt = b => norm(sub(TARGETS[b].c, pos))
-	// Turn the flight direction toward the world being watched. While the two keyframes name the same
-	// world that is one rotation; across a handover the pulls cross-fade, which beats switching the
-	// target index and snapping the view across whatever angle separates them.
+	// One rotation while both keyframes name the same world; across a handover the pulls cross-fade.
 	if (f.b0 === f.b1) {
 		const w = lerp(f.w0, f.w1, f.t)
 		if (w > 0) fwd = slerp(fwd, aimAt(f.b0), w)
@@ -142,20 +125,17 @@ export function sampleFlight(p, lookX, lookY, still, rollState, dt) {
 		if (pull1 > 0) fwd = slerp(fwd, aimAt(f.b1), pull1)
 	}
 
-	// A few degrees of look, off the world axes so it composes with the bank rather
-	// than fighting it. Applied to the heading only - the flight path never moves.
+	// A few degrees of look, off the world axes so it composes with the bank. Heading only — the path never moves.
 	if (!still) {
 		const amt = LOOK_MAX * (0.4 + 0.6 * wake)
 		const rref = norm(cross(fwd, UP))
 		fwd = norm(add(fwd, add(mul(rref, lookX * amt), mul(cross(rref, fwd), -lookY * amt))))
 	}
 
-	// Roll, read forward: a pilot rolls into a turn before the nose comes round, so the bank is
-	// sampled a little ahead of where the flight actually is.
+	// Roll read forward: a pilot rolls into a turn before the nose comes round.
 	const roll = stepRoll(rollState, bankAt(Math.min(1, p + BANK_LEAD), still), dt)
 
-	// Roll about the axis the flight is travelling down, not the one the camera happens to be looking
-	// down.
+	// Roll about the axis the flight travels down, not the one the camera happens to look down.
 	const rt = norm(cross(travel, UP))
 	const ut = cross(rt, travel)
 	const cr = Math.cos(roll)
@@ -173,8 +153,7 @@ export function sampleFlight(p, lookX, lookY, still, rollState, dt) {
 	right = norm(add(right, [0, jit(1), 0]))
 	up = norm(add(up, [jit(2), 0, 0]))
 
-	// The eye, as opposed to the path: everything above still keys off pos, so the
-	// flight plan is untouched and only the viewpoint slides.
+	// The eye, not the path: everything above keys off pos, so only the viewpoint slides.
 	const sway = SWAY_MAX * (1 - smoothstep(clamp01(p / SWAY_FADE)))
 	const eye =
 		still || sway <= 0 ? pos : add(pos, add(mul(right, lookX * sway), mul(up, -lookY * sway)))

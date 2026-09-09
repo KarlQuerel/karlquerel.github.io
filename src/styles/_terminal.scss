@@ -1,6 +1,4 @@
-// Terminal page styles. Global rather than component-scoped because the
-// typewriter injects raw HTML (TypeIt writes innerHTML) that scoped styles
-// can't reach; every class here is only ever used on /terminal.
+// Global rather than scoped: the typewriter injects raw HTML that scoped styles cannot reach.
 @use 'variables' as *;
 
 %phosphor-glow {
@@ -283,9 +281,8 @@ $console-max-height: 47rem;
 		font-size: $type-prose-sm;
 	}
 
-	// iOS zooms the viewport when an input under 16px takes focus. This layer is
-	// transparent — the user reads .input-mirror — so it can sit off the grid at
-	// 16px purely to defeat that, while the visible text steps down to 11px.
+	// iOS zooms when an input under 16px takes focus. This layer is transparent, so it sits at 16px
+	// purely to defeat that while the visible text steps down to 11px.
 	.terminal-input {
 		font-size: 16px;
 	}

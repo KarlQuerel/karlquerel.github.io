@@ -2,9 +2,7 @@
 
 html {
 	height: 100%;
-	// Always reserve the scrollbar gutter. Routes toggle `overflow: hidden` below, which would
-	// otherwise add or remove the scrollbar on navigation and shift every centred fixed element
-	// sideways by half its width.
+	// Always reserve the scrollbar gutter, or the routes that hide overflow shift centred elements.
 	scrollbar-gutter: stable;
 }
 
@@ -74,8 +72,7 @@ html:not(.page-scrollable) #app {
 	overflow: hidden;
 }
 
-// .app-root sits between #app and .app-main; without flex-fill it collapses to content height and
-// the page can't center vertically.
+// .app-root sits between #app and .app-main; without flex-fill it collapses to content height.
 html:not(.page-scrollable) #app .app-root {
 	flex: 1 1 auto;
 	min-height: 0;
@@ -112,16 +109,14 @@ html.page-scrollable #app .app-main {
 	min-height: auto;
 }
 
-// On phones 2rem of edge padding wastes scarce width (it's what forces the
-// terminal's `help` output to wrap); trim it so centred pages get the room.
+// On phones 2rem of edge padding wastes scarce width, so trim it and give centred pages the room.
 @media (max-width: #{variables.$breakpoint-mobile}) {
 	html:not(.page-scrollable) #app .app-main {
 		padding: 0.75rem;
 	}
 }
 
-// Visually hidden but present for assistive tech (and for off-screen image
-// preloading). Shared by the hero crawl's text fallback and the header GIFs.
+// Visually hidden but present for assistive tech and off-screen image preloading.
 .sr-only {
 	position: absolute;
 	width: 1px;

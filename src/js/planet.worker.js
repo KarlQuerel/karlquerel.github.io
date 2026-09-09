@@ -1,6 +1,4 @@
-// The surface shader's own thread. At 192 cells square a sweep is a whole 60Hz frame of
-// arithmetic, so run on the main thread it *is* the frame — and the scroll it exists to decorate
-// is what stutters.
+// The surface shader's own thread: at 192 cells square a sweep is a whole 60Hz frame of arithmetic.
 
 import { createPlanetShader } from './planetShader.js'
 
@@ -12,8 +10,7 @@ self.onmessage = ({ data: msg }) => {
 		return
 	}
 	const { buffer, spin, lightYaw, cloudThin } = msg
-	// hand the buffer back whatever happens: the component treats holding it as
-	// permission to ask for the next sweep, so swallowing one would stall the globe
+	// hand the buffer back whatever happens: holding it is the component's permission to ask for the next sweep
 	if (shader) shader.draw(new Uint8ClampedArray(buffer), spin, lightYaw, cloudThin)
 	self.postMessage({ buffer }, [buffer])
 }

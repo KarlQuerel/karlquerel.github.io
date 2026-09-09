@@ -8,23 +8,19 @@ export const randIn = ([lo, hi]) => lo + Math.random() * (hi - lo)
 // Hermite ease between 0 and 1 — the one easing curve used for scrubbed motion.
 export const smoothstep = t => t * t * (3 - 2 * t)
 
-// 0 → 1 across [rise, full], holds, back to 0 by [fall] — the in-and-out window
-// the scroll-driven fields (dust, heat) ride. Ease the result where the move needs it.
+// 0 -> 1 across [rise, full], holds, back to 0 by [fall] — the window the scroll-driven fields ride.
 export function riseFall(t, rise, full, fall) {
 	const up = clamp01((t - rise) / (full - rise))
 	const down = clamp01((fall - t) / (fall - full))
 	return Math.min(up, down)
 }
 
-// Monotone cubic (Fritsch–Carlson) slopes for a keyframed channel: each knot's slope is the
-// average of its neighbouring secants, limited so the curve can never overshoot the values it
-// passes through.
+// Monotone cubic (Fritsch-Carlson) slopes, limited so the curve can never overshoot its own knots.
 export function monotoneSlopes(xs, ys) {
 	const n = xs.length
 	const m = new Array(n).fill(0)
 	if (n < 2) return m
-	// secants between consecutive knots — the spacing is uneven, so they are
-	// measured against the real gap rather than assumed uniform
+	// secants between consecutive knots, measured against the real gap since the spacing is uneven
 	const d = new Array(n - 1)
 	for (let i = 0; i < n - 1; i++) d[i] = (ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i] || 1)
 	m[0] = d[0]

@@ -67,9 +67,7 @@
 	// the cover has finished leaving and is drawing nothing — the host can unmount it
 	const emit = defineEmits(['gone'])
 
-	// The K from the favicon - the site's logo, pixel for pixel. Not an image: the loader
-	// is the first thing on screen and cannot wait for an asset to arrive before it has a
-	// logo.
+	// The K from the favicon, pixel for pixel. Not an image: the loader cannot wait for an asset.
 	const K_GRID = [
 		'##.....##',
 		'##....##.',
@@ -89,8 +87,7 @@
 	const PIXELS = K_GRID.flatMap((row, y) =>
 		[...row].flatMap((c, x) => (c === '#' ? [{ x, y, k: `${x},${y}` }] : []))
 	)
-	// the favicon's dark contour, derived rather than copied: every empty cell that
-	// touches the body, corners included
+	// the favicon's dark contour, derived rather than copied: every empty cell touching the body
 	const NEAR = [-1, 0, 1]
 	const inBody = (x, y) => K_GRID[y]?.[x] === '#'
 	const OUTLINE = []
@@ -114,16 +111,14 @@
 	let last = 0
 
 	const pct = computed(() => Math.min(100, Math.round(display.value * 100)))
-	// The fill quantises to the mark's own rows, so it climbs a pixel row at a time rather
-	// than sliding. Floor, so the top row only lands on a true 100.
+	// The fill quantises to the mark's rows, so it climbs a row at a time. Floor, so 100 is true.
 	const rows = computed(() => Math.floor(Math.min(1, display.value) * ROWS))
 
 	function tick(t) {
 		const dt = last ? Math.min(0.05, (t - last) / 1000) : 1 / 60
 		last = t
 		if (props.done) {
-			// The boot itself is usually quicker than the cover's guaranteed stay, so spend
-			// that stay sweeping the fill home rather than teleporting to 100 and parking.
+			// The boot usually beats the cover's guaranteed stay, so spend it sweeping the fill home.
 			display.value = prefersReducedMotion()
 				? 1
 				: Math.min(1, display.value + dt / BOOT_SWEEP)
@@ -142,9 +137,7 @@
 		raf = requestAnimationFrame(tick)
 	}
 
-	// The cover is spent. Its own root is gone from here, but the clock has to stop
-	// with it and the host has to be told: this is mounted for the life of the page,
-	// so a tick left running is a tick running behind every route you go on to.
+	// The cover is spent, and the clock has to stop with it: this is mounted for the life of the page.
 	function dismiss() {
 		gone.value = true
 		cancelAnimationFrame(raf)
@@ -190,8 +183,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 2.2rem;
-		// the same ground the scene under it paints over, so uncovering it is not a scene
-		// change: the flight's by default, or whatever the host names in --boot-ground
+		// the same ground the scene under it paints, so uncovering it is not a scene change
 		background: var(--boot-ground, #{$flyby-ground});
 		font-family: $font-pixel;
 		// stepped, because this one runs on its own clock rather than the reader's hand
@@ -209,8 +201,7 @@
 		place-items: center;
 	}
 
-	// Starlight behind the mark, coming up with the fill. The one soft thing on the page,
-	// and it is doing what a glow does rather than drawing a shape - so no hard edge.
+	// Starlight behind the mark. The one soft thing on the page, so it has no hard edge.
 	.boot__glow {
 		position: absolute;
 		width: 300%;

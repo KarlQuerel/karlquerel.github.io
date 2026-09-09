@@ -1,14 +1,8 @@
-// The game is being built from nothing, on /game. It ships when GAME_SHIPPED flips;
-// until then the route exists only on the dev server, and every build sends /game to
-// /under-construction (src/main.js) — the flag folds to false at build time, so the
-// game's page is not even in the bundle.
+// Ships when GAME_SHIPPED flips; until then /game is dev-only and builds redirect (src/main.js).
 export const GAME_SHIPPED = false
 export const GAME_READY = GAME_SHIPPED || import.meta.env.DEV
 
-// The holding screen (GameHolding.vue): the heading over two strips of the departure's moon — a
-// far band of low hills and the near plain, each grown to its heightVh of the frame with its
-// horizon at `horizon` of it, leaning with the cursor at its own depth — and a worksite standing
-// on the near plain at `at` of the width.
+// The holding screen (GameHolding.vue): the heading over two strips of the departure's moon.
 export const GAME_HOLDING = {
 	lead: 'Under ',
 	accent: 'construction',
@@ -17,9 +11,7 @@ export const GAME_HOLDING = {
 		near: { heightVh: 40, horizon: 0.8 },
 		at: 0.54,
 		foot: 43,
-		// painted steel in the warm rock ramp — lit `A`/`D` on the left and top, since the
-		// moon's sun is at -x, `C` mid, `B`/`R` in shadow — with a `K` outline so it stands in
-		// front of the cold ground; `E` lights and stripes; panels and crates on the pale ramp
+		// painted steel in the warm rock ramp, `K` outline so it stands off the cold ground
 		legend: {
 			A: 'amber',
 			D: 'dune',

@@ -10,8 +10,7 @@ export const PROMPT = {
 
 export const WINDOW_TITLE = `${PROMPT.user}@${PROMPT.host}`
 
-// Phosphor themes the `theme` command can switch between. The key is what the
-// user types; `color` maps to the --phosphor CSS variable on the window.
+// Phosphor themes the `theme` command switches between; `color` maps to the --phosphor variable.
 export const THEMES = {
 	green: '#33ff66',
 	amber: '#ffb000',
@@ -27,8 +26,7 @@ export const HISTORY_LIMIT = 100
 
 export const THEME_STORAGE_KEY = 'terminal.theme'
 
-// ASCII spinner cycled in place while a script "runs". Monospace, so every
-// frame fills the same cell and the glyph spins without nudging the line.
+// ASCII spinner cycled in place while a script "runs". Monospace, so the glyph spins in one cell.
 export const SPINNER_FRAMES = ['|', '/', '-', '\\']
 
 // neofetch-style readout. Pure flavour; values are static on purpose.
@@ -47,8 +45,7 @@ export const SYSTEM_INFO = [
 // Tiny ASCII mascot printed next to the neofetch info.
 export const NEOFETCH_LOGO = ['  ___ ', ' (o o)', '(  V  )', '--m-m-']
 
-// Boot MOTD shown once at the top of the terminal, like a shell login banner.
-// The component appends a live "Last login" line below these.
+// Boot MOTD shown once at the top, like a shell login banner; a live "Last login" follows.
 export const BANNER_MOTD = [
 	'Welcome aboard VoyagerOS 4.2 LTS (retro)',
 	'',
@@ -57,8 +54,7 @@ export const BANNER_MOTD = [
 	'',
 ]
 
-// A hand-picked taste of the commands `help` surfaces — not the whole catalogue
-// (see HELP_HINT). [name, colour class, one-line blurb].
+// A taste of what `help` surfaces, not the catalogue (see HELP_HINT). [name, colour, blurb].
 export const HELP_COMMANDS = [
 	['about', 'text-mint', 'Learn more about me'],
 	['ls', 'text-blue', 'List files'],
@@ -101,16 +97,13 @@ export const MAN_PAGES = {
 	exit: 'exit - leave the terminal.',
 }
 
-// A tiny in-memory tree the navigation commands (ls/cd/cat/tree/grep/wc/head)
-// walk. The root node is home (~). Directories hold `children`; files hold
-// `content`. `exec: true` marks a runnable script (see executableScripts).
+// The in-memory tree ls/cd/cat/tree/grep/wc/head walk. Root is home; `exec` marks a script.
 export const FILESYSTEM = {
 	type: 'dir',
 	children: {
 		'README.md': {
 			type: 'file',
-			// Full command reference, derived from MAN_PAGES so it can never drift
-			// out of sync. (Hidden easter-egg commands stay hidden on purpose.)
+			// Derived from MAN_PAGES so it cannot drift out of sync (easter eggs stay hidden).
 			content: [
 				'You found the shell. Most people just scroll.',
 				'',

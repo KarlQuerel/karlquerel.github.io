@@ -3,34 +3,25 @@ export const PLANET = {
 	// Logical sprite resolution; each cell becomes one chunky on-screen pixel.
 	resolution: 192,
 	resolutionMobile: 128,
-	// Disc radius as a fraction of the sprite — the margin leaves room for the
-	// atmosphere halo to bleed past the limb.
+	// Disc radius as a fraction of the sprite; the margin leaves room for the halo to bleed past.
 	discRadius: 0.36,
-	// Surface redraw rate. Kept an even divisor of a 60Hz refresh so frames pace evenly (no judder);
-	// higher = smoother spin but shader cost scales linearly with it. spinSeconds = one full turn.
+	// Surface redraw rate, an even divisor of 60Hz so frames pace evenly. spinSeconds = one turn.
 	fps: 30,
 	// phone viewports redraw slower — imperceptible at this pixel scale, cheaper on battery
 	fpsMobile: 20,
 	spinSeconds: 64,
 	// Redraw rate while the spin is scroll-driven (PixelPlanet `spin` prop).
 	orbitFps: 60,
-	// The cloud deck's thinning is the one input to a redraw that is not an angle, so
-	// it needs its own floor: below this much change the deck lands on the same steps
-	// and the sweep is spent redrawing the picture already on the canvas.
+	// The deck's thinning is the one non-angle input to a redraw, so it needs its own floor.
 	cloudThinStep: 0.02,
 	orbitFpsMobile: 30,
-	// Axial tilt of the spin (degrees), so continents drift across on a diagonal
-	// rather than straight sideways.
+	// Axial tilt of the spin (degrees), so continents drift across on a diagonal.
 	tiltDeg: 18,
 	// Light direction in view space (upper-left, toward the viewer).
 	light: [-0.55, -0.5, 0.7],
-	// How much the surface's own relief modulates the light it catches. Ordered dither over a field as
-	// slow as a sphere's Lambert term lays down wide, regular bands of checker — at station
-	// magnification one 4x4 cell is ~30 screen px, so the pattern reads as noise rather than as
-	// shading.
+	// How much relief modulates the light. Dither over a field this slow lays down bands of checker.
 	relief: 0.55,
-	// The surface, band by band, low elevation to high — each one a ramp through PALETTE from its
-	// night side to full sun.
+	// The surface band by band, low to high — each a ramp through PALETTE from night to full sun.
 	ramps: {
 		abyss: ['void', 'ink', 'slate', 'deep', 'brine', 'tide'],
 		ocean: ['void', 'ink', 'slate', 'brine', 'tide', 'shoal'],
@@ -40,8 +31,7 @@ export const PLANET = {
 		highland: ['ink', 'ash', 'stone', 'bone', 'chalk', 'cream'],
 		peak: ['ash', 'stone', 'bone', 'chalk', 'cream', 'linen'],
 	},
-	// Band order and where each one ends, as an offset from `seaLevel` — so the waterline is the
-	// shallow → coast edge at exactly 0.
+	// Band order and where each ends, offset from `seaLevel`, so the waterline sits at exactly 0.
 	bands: [
 		['abyss', -0.14],
 		['ocean', -0.06],
@@ -51,12 +41,9 @@ export const PLANET = {
 		['highland', 0.26],
 		['peak', Infinity],
 	],
-	// The cloud shell rides the same sun on its own ramp, so a deck is lit by the light the ground
-	// under it is lit by.
+	// The cloud shell rides the same sun on its own ramp, so a deck is lit like the ground under it.
 	cloudRamp: ['ink', 'ash', 'stone', 'bone', 'chalk', 'linen'],
-	// Impact basins: a few circular dents pressed into the elevation field, so the continents carry
-	// history instead of pure noise — where a floor drops below sea level it floods and reads as a
-	// round sea.
+	// Impact basins: circular dents in the elevation field; a floor below sea level floods.
 	basins: {
 		count: 3,
 		radMin: 0.22,
@@ -68,9 +55,7 @@ export const PLANET = {
 	noiseScale: 1.35,
 	// Noise value below which a cell is ocean (≈ land/sea ratio). Lower = more land.
 	seaLevel: 0.46,
-	// Half-width of the dither zone around each band edge. A coastline is dithered between the two
-	// bands rather than cross-faded: a blended colour is one the palette does not contain, and the
-	// palette being exact is the point.
+	// Half-width of the dither zone at each band edge: a blend would be a colour the palette lacks.
 	bandBlend: 0.02,
 	// Cloud shell: a second, cheaper noise field drifting ahead of the ground.
 	clouds: {
@@ -79,12 +64,9 @@ export const PLANET = {
 		blend: 0.03,
 		spinFactor: 1.25,
 		octaves: 2,
-		// Coverage is a dithered choice between the surface ramp and the cloud ramp, not an alpha blend —
-		// so short of 1 it thins the deck by letting ground show through in a dither rather than by
-		// washing the two colours together.
+		// Coverage is a dithered choice between the two ramps, not an alpha blend.
 		opacity: 0.72,
-		// The deck's shadow: ground pixels sample the field a second time this far toward the sun (sphere-
-		// radius units), and a hit demotes the ramp step by `shadowDrop`.
+		// The deck's shadow: ground samples the field again toward the sun; a hit drops `shadowDrop`.
 		shadowOffset: 0.1,
 		shadowDrop: 1,
 	},
@@ -96,33 +78,24 @@ export const PLANET = {
 		eyeDrop: 1.2,
 		latMin: 0.3,
 		latMax: 0.65,
-		// The rainbands that break the wall out of a solid disc: `arms` spiral arms,
-		// wound tighter by `armTwist` (radians of phase across the cap), never cut
-		// below `bandMin` of the full boost so the wall stays closed around the eye.
+		// Rainbands that break the wall out of a solid disc, never cut below `bandMin` of full boost.
 		arms: 2,
 		bandMin: 0.25,
 		armTwist: 3.2,
-		// How fast the wall goes solid as its density climbs — at fixed deck opacity the interior is one
-		// uniform checker (wallpaper); solid, the interior is textured by the shading instead.
+		// How fast the wall goes solid as density climbs — at fixed opacity the interior is wallpaper.
 		solidify: 2.5,
 		texGain: 2,
-		// Cloud-space longitude the centre is seeded around (± lonJitter), in the same angle convention as
-		// the cloud spin (spin × spinFactor).
+		// Cloud-space longitude the centre is seeded around (± lonJitter), in the cloud spin's convention.
 		faceLon: 3.7,
 		lonJitter: 0.3,
-		// The wall is promoted up the cloud ramp toward its white top — this many
-		// dither levels at the storm's centre, scaled by daylight — so the spiral
-		// stays legible even over pale highland that shares the deck's colours.
+		// The wall is promoted up the cloud ramp, so the spiral stays legible over pale highland.
 		whitenLevels: 3,
 	},
 	// Atmosphere halo colour, taken from the shared palette like everything else.
 	atmosphere: 'haze',
 	// How far past the limb the atmosphere reaches, as a fraction of the radius.
 	haloWidth: 0.22,
-	// The atmosphere itself, inner layer out. Alpha is per layer and stepped rather than a falloff: a
-	// smooth glow reads as a light source wrapped round a ball, where discrete layers read as air that
-	// has a *thickness* — and a thickness is the one cue in the whole frame that states the planet's
-	// radius.
+	// The atmosphere, inner layer out. Stepped alpha, not a falloff: thickness is what states radius.
 	shell: [
 		['sand', 132],
 		['haze', 106],
@@ -132,19 +105,15 @@ export const PLANET = {
 	],
 	// The shell is lit like the ground is, so it comes out as a bright crescent on the sun side.
 	shellNight: 0.12,
-	// How far the shell's lit arc overshoots the terminator, as a shift of its zero crossing past the
-	// day/night line.
+	// How far the shell's lit arc overshoots the terminator, as a shift of its zero crossing.
 	shellTwilight: 0.25,
 	// The lit-limb glow, as how many steps up its own ramp the limb is promoted.
 	rimLevels: 3,
-	// Sun glint on open water: specular strength where the key light mirrors off the seas (masked by
-	// cloud cover).
+	// Sun glint on open water, masked by cloud cover.
 	oceanGloss: 0.6,
 }
 
-// Palette override for the launch beat's dying Earth (PixelPlanet `palette` prop): the same ramps
-// walked through different colours — steel seas and sickly olive land under a pale fading
-// atmosphere.
+// Palette override for the launch beat's dying Earth: the same ramps in different colours.
 export const EARTH_PALETTE = {
 	deep: [10, 22, 46],
 	brine: [18, 38, 68],

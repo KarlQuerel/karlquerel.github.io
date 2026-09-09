@@ -1,10 +1,8 @@
 import { ref } from 'vue'
 import { FILESYSTEM } from '@/constants/terminal'
 
-// In-memory navigation over the fake filesystem (see FILESYSTEM). Tracks the
-// current working directory as path segments below home (~) and exposes the
-// helpers the shell commands (ls/cd/cat/tree/grep/wc/head/pwd) and tab
-// completion use. Pure path logic — no DOM, no side effects beyond `cwd`.
+// In-memory navigation over FILESYSTEM: tracks the cwd below home and backs the shell's path
+// commands and tab completion. Pure path logic, no side effects beyond `cwd`.
 export function useTerminalFs() {
 	// [] is home (~); ['dog'] is ~/dog, etc.
 	const cwd = ref([])
@@ -23,8 +21,7 @@ export function useTerminalFs() {
 	const pathString = (segments = cwd.value) =>
 		'~' + (segments.length ? '/' + segments.join('/') : '')
 
-	// Normalise a path string into absolute segments below home. Returns null
-	// for an impossible path (e.g. `..` above home).
+	// Normalise a path into absolute segments below home; null for an impossible path.
 	const resolve = path => {
 		const trimmed = (path || '').trim()
 		let segs
@@ -101,9 +98,7 @@ export function useTerminalFs() {
 		return { lines }
 	}
 
-	// Tab-completion candidates for a partial path argument, cwd-relative.
-	// Matching is case-insensitive so `cat readme` completes to README.md; the
-	// canonical (real) casing is what gets returned and inserted.
+	// Tab-completion candidates for a partial path, cwd-relative. Case-insensitive, returns real casing.
 	const completions = arg => {
 		const slash = arg.lastIndexOf('/')
 		const dirPart = slash >= 0 ? arg.slice(0, slash + 1) : ''

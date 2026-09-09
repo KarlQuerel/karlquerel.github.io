@@ -1,9 +1,8 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { prefersReducedMotion } from './usePrefersReducedMotion'
 
-// Occasional short-lived decorative elements crossing a sky — a meteor, a flock.
-// Exists for two failures: a hidden tab never fires `animationend`, so spawns pile up and all
-// arrive at once on return; and a timer outliving the component pushes into a dead ref.
+// Occasional decorative elements crossing a sky. Exists for two failures: a hidden tab never fires
+// `animationend`, so spawns pile up and arrive together; and a timer outliving the component.
 export function useSkySpawner({ gapMs, make, active = () => true }) {
 	const items = ref([])
 	let nextId = 0

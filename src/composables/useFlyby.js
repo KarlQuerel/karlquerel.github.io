@@ -1,5 +1,4 @@
-// The flyby renderer: owns the GL context, the three programs, the art-grid sizing and the frame
-// loop.
+// The flyby renderer: owns the GL context, the three programs, the art-grid sizing and the frame loop.
 
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { clamp01, smoothstep } from '../js/math.js'
@@ -82,11 +81,9 @@ const DUST_UNIFORMS = [
 const TURN = Math.PI * 2
 
 export function useFlyby(canvasRef) {
-	// A browser with no WebGL still gets the copy: the page degrades to its own text
-	// rather than throwing on a null context.
+	// A browser with no WebGL still gets the copy rather than throwing on a null context.
 	const supported = ref(true)
-	// How far the boot has genuinely got, 0..1, and the value it will reach when the step
-	// currently in flight lands. The loader shows the first and creeps toward the second.
+	// How far the boot has got, and where the step in flight will land; the loader creeps toward it.
 	const bootProgress = ref(0)
 	const bootCeiling = ref(BOOT_WEIGHTS.context)
 	const booting = ref(true)
@@ -99,8 +96,7 @@ export function useFlyby(canvasRef) {
 
 	let gl = null
 	let raf = 0
-	// setup yields to the browser between steps so the loader can paint, which means the
-	// route can unmount half way through it
+	// setup yields between steps so the loader can paint, which means the route can unmount mid-way
 	let disposed = false
 	let scene, title, dust
 	let quad, titleQuad, dustSeeds, dustTails, titleTex
@@ -114,8 +110,7 @@ export function useFlyby(canvasRef) {
 	// scroll position the camera is easing toward, and the one it last drew
 	let eased = null
 	let drawn = -1
-	// the airframe's roll carries momentum between frames; owned here so a remount
-	// starts level rather than inheriting the last visit's horizon
+	// the airframe's roll carries momentum between frames; owned here so a remount starts level
 	const rollState = createRollState()
 	let lastT = 0
 	// pointer target and its eased follower
@@ -180,8 +175,7 @@ export function useFlyby(canvasRef) {
 	function resize() {
 		const canvas = canvasRef.value
 		if (!canvas) return
-		// innerWidth rather than the element's own box: the element is about to be a hair
-		// wider than the viewport, and 100vw counts the scrollbar the same way this does.
+		// innerWidth, not the element's box: the element is about to be a hair wider than the viewport.
 		const dpr = window.devicePixelRatio || 1
 		const devW = Math.round(window.innerWidth * dpr)
 		const devH = Math.round(window.innerHeight * dpr)
@@ -191,10 +185,8 @@ export function useFlyby(canvasRef) {
 		H = Math.max(120, Math.ceil(devH / k))
 		canvas.width = W
 		canvas.height = H
-		// Rounding the buffer up to whole art pixels leaves the element a little larger
-		// than the viewport; offset by half the spill, floored to a whole device pixel, so
-		// the overflow splits instead of cropping one side - and so the element's own edges
-		// stay on the device grid, which is the whole point of the exercise.
+		// Rounding up to whole art pixels leaves the element larger than the viewport, so the spill is
+		// split by half, floored to a device pixel, keeping its edges on the grid.
 		canvas.style.width = `${(W * k) / dpr}px`
 		canvas.style.height = `${(H * k) / dpr}px`
 		canvas.style.left = `${-Math.floor((W * k - devW) / 2) / dpr}px`
@@ -209,8 +201,7 @@ export function useFlyby(canvasRef) {
 		}
 	}
 
-	// One frame. Returns false when nothing moved, so the perf ladder only ever
-	// measures frames that actually did work.
+	// One frame. Returns false when nothing moved, so the perf ladder only measures real work.
 	function draw(t) {
 		const dt = lastT ? (t - lastT) / 1000 : 1 / 60
 		lastT = t
@@ -224,8 +215,7 @@ export function useFlyby(canvasRef) {
 
 		mxs += (mx - mxs) * 0.055
 		mys += (my - mys) * 0.055
-		// the roll keeps moving after the scroll stops, so it gets a say in whether
-		// this frame can be skipped
+		// the roll keeps moving after the scroll stops, so it has a say in whether this frame can be skipped
 		const settling =
 			Math.abs(mx - mxs) > 0.0008 || Math.abs(my - mys) > 0.0008 || !rollState.settled
 		if (Math.abs(p - drawn) < 0.00002 && !settling) return false
@@ -256,8 +246,7 @@ export function useFlyby(canvasRef) {
 		gl.uniform3fv(U.uRingN, RING_NORMAL)
 		gl.uniform4fv(U.uB, bodyArr)
 		gl.uniform4fv(U.uBP, bodyP)
-		// No range gate: culling by distance made them wink in and out of existence.
-		// Two bounding spheres cost almost nothing on a ray that misses.
+		// No range gate: culling by distance made them wink in and out. Two bounding spheres cost little.
 		ROCKS.forEach((r, i) => {
 			rockArr.set(r.c, i * 4)
 			rockArr[i * 4 + 3] = r.r
@@ -303,10 +292,8 @@ export function useFlyby(canvasRef) {
 		gl.uniform1f(TU.uTW, planeW)
 		gl.uniform1f(TU.uTH, (planeW * texSize[1]) / texSize[0])
 		gl.uniform1f(TU.uFade, tfade)
-		// Snap the plane onto the art grid. The pointer look slides the title forty-odd art pixels across
-		// a full sweep, and the plane samples its texture NEAREST at one texel per pixel: move it by a
-		// fraction of a pixel and every stroke in the name gains or loses a pixel on its own, which is the
-		// letters chattering rather than gliding.
+		// Snap the plane onto the art grid: a fractional move gains or loses a pixel per stroke, which is
+		// the letters chattering rather than gliding.
 		const snap = (v, n) => (Math.round((v * n) / 2) * 2) / n - v
 		gl.uniform2f(
 			TU.uSnap,
@@ -348,16 +335,14 @@ export function useFlyby(canvasRef) {
 	function updateReadout(p, wakeAmount) {
 		progress.value = p
 		hint.value = clamp01(1 - p / 0.06)
-		// the instrument comes up with the engines, like the dust: the opening frame is
-		// still meant to look like a photograph
+		// the instrument comes up with the engines, like the dust: the opening frame is still a photograph
 		wake.value = wakeAmount
 		const cells = Math.round(p * HUD_CELLS)
 		leg.value = `${LEGS.find(l => p < l[0])[1]}  [${'='.repeat(cells)}${'-'.repeat(
 			HUD_CELLS - cells
 		)}] ${String(Math.round(p * 100)).padStart(3)}%`
 		markOn.value = p > 0.2
-		// start the reveal once the ground has settled, and give it enough scroll that
-		// every link is up well before the page runs out
+		// start the reveal once the ground has settled, with enough scroll that every link is up in time
 		arrive.value = clamp01((p - 0.955) / 0.035)
 	}
 
@@ -390,21 +375,17 @@ export function useFlyby(canvasRef) {
 		drawn = -1
 	}
 
-	// Pointer look. Mouse only: a touch drag is a scroll, and reading a finger as a
-	// look would fight the flight the reader is actually driving.
+	// Pointer look, mouse only: a touch drag is a scroll, and reading it as a look would fight it.
 	function onPointerMove(e) {
 		if (e.pointerType !== 'mouse') return
 		mx = (e.clientX / window.innerWidth) * 2 - 1
 		my = (e.clientY / window.innerHeight) * 2 - 1
 	}
 
-	// Let the browser actually paint. Two frames: the first schedules the change, the
-	// second happens after it has been composited.
+	// Let the browser actually paint: the first frame schedules, the second is after compositing.
 	const paint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
 
-	// The face the title is drawn in. Waiting on this one rather than document.fonts.ready
-	// asks for exactly what is needed, and the race means a font that never arrives costs
-	// the flight FONT_WAIT_MAX and not the whole visit.
+	// The face the title is drawn in. The race means a font that never arrives costs FONT_WAIT_MAX.
 	function fontReady() {
 		if (!document.fonts) return Promise.resolve()
 		return Promise.race([
@@ -423,8 +404,7 @@ export function useFlyby(canvasRef) {
 		}
 		still = prefersReducedMotion()
 
-		// Put the loader on screen before anything that blocks — compiling the scene
-		// shader is a few hundred milliseconds of frozen main thread on a slow GPU.
+		// Put the loader up before anything that blocks: compiling the scene shader freezes a slow GPU.
 		await paint()
 		const order = Object.keys(BOOT_WEIGHTS)
 		let done = 0
@@ -498,8 +478,7 @@ export function useFlyby(canvasRef) {
 		}
 		if (!(await step('field'))) return
 
-		// before the first title upload, so the name is drawn in the real face rather
-		// than fallback monospace that pops a frame later
+		// before the first title upload, so the name is drawn in the real face rather than fallback
 		await fontReady()
 		if (!(await step('typeface'))) return
 
@@ -513,8 +492,7 @@ export function useFlyby(canvasRef) {
 		window.addEventListener('resize', onResize, { passive: true })
 		if (!still) window.addEventListener('pointermove', onPointerMove, { passive: true })
 		draw(performance.now())
-		// draw() only queues work, so the step cannot end here or the cover comes off a canvas the GPU has
-		// not filled yet.
+		// draw() only queues work, so the step cannot end here or the cover comes off an unfilled canvas.
 		gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4))
 		if (!(await step('frame'))) return
 
@@ -531,8 +509,7 @@ export function useFlyby(canvasRef) {
 		for (const b of [quad, titleQuad, dustSeeds, dustTails]) gl.deleteBuffer(b)
 		for (const p of [scene, title, dust]) gl.deleteProgram(p)
 		gl.deleteTexture(titleTex)
-		// the context outlives the canvas element otherwise, and browsers cap how many
-		// live WebGL contexts a tab may hold
+		// the context outlives the canvas otherwise, and browsers cap live WebGL contexts per tab
 		gl.getExtension('WEBGL_lose_context')?.loseContext()
 		gl = null
 	}

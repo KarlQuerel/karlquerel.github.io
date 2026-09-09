@@ -1,5 +1,4 @@
-// Firebase web config — public client identifiers, shipped to every browser in
-// the bundle anyway. Not secrets: access is gated by Firestore security rules.
+// Public client identifiers, shipped in the bundle anyway. Not secrets: Firestore rules gate access.
 const firebaseConfig = {
 	apiKey: 'AIzaSyCWhnqOzsDExtNu14s_gxUpAWeV-PPPog8',
 	authDomain: 'click-counter-4f529.firebaseapp.com',
@@ -10,8 +9,7 @@ const firebaseConfig = {
 	measurementId: 'G-7EEMWQS33Z',
 }
 
-// Lazy handle: the Firestore SDK (the bulk of the old Terminal chunk) loads via dynamic import on
-// first use, off the route's critical path.
+// Lazy handle: the Firestore SDK loads on first use, off the route's critical path.
 let handlePromise = null
 
 function getHandle() {
@@ -31,8 +29,7 @@ function getHandle() {
 	return handlePromise
 }
 
-// Writes are single merged setDoc calls with atomic increments — no read-before-write round trip,
-// no lost updates between concurrent visitors, and merge creates the doc on first write.
+// Single merged setDoc with atomic increments: no read-before-write, no lost updates, creates on first write.
 export async function trackTerminalVisit() {
 	try {
 		const { firestore, statsRef } = await getHandle()

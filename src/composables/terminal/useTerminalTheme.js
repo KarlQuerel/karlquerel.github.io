@@ -1,10 +1,7 @@
 import { ref } from 'vue'
 import { THEMES, DEFAULT_THEME, THEME_STORAGE_KEY } from '@/constants/terminal'
 
-// Drives the terminal's phosphor colour (the --phosphor CSS variable bound on
-// the window). The `theme` command calls setTheme; the component reads the
-// resulting hex to paint the prompt, cursor, base text and glow. The choice is
-// persisted to localStorage so it survives reloads (mirrors command history).
+// Drives the terminal's phosphor colour (the --phosphor variable), persisted so it survives reloads.
 export function useTerminalTheme() {
 	const loadTheme = () => {
 		try {

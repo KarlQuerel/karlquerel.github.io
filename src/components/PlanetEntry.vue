@@ -1,7 +1,5 @@
 <template>
-	<!-- Atmospheric entry: a cloud deck rushes up and closes over the camera,
-	     the dusk sky takes over behind it, and the surface ridgelines settle in —
-	     the journey ends standing on the planet. All scroll-scrubbed. -->
+	<!-- Atmospheric entry: the deck closes over the camera, the dusk sky takes over, the ridgelines settle. -->
 	<div class="entry" :style="parallaxStyle" aria-hidden="true">
 		<canvas ref="skyEl" class="entry__sky" :style="skyStyle" />
 		<!-- two coprime tiles, so the field never repeats inside a viewport -->
@@ -89,8 +87,7 @@
 	// the shared lean: see usePointerParallax for the contract these layers follow
 	const { parallaxStyle } = usePointerParallax()
 
-	// inside the deck the view goes to cloud, which is what the sky handoff hides
-	// behind. Plain triangular envelope, eased both sides.
+	// inside the deck the view goes to cloud, which is what the sky handoff hides behind
 	const deck = computed(() => {
 		const { start, peak, end, max } = ENTRY.deck
 		const p = props.progress
@@ -144,8 +141,7 @@
 		}
 	}
 
-	// The chimney's plume: where it hangs comes back from the cut, since only the cut knows where the
-	// range put the habitat.
+	// The chimney's plume: where it hangs comes back from the cut, which alone knows the habitat's place.
 	const vent = ref(null)
 	const smoke = computed(() => {
 		if (!vent.value) return null
@@ -167,9 +163,7 @@
 			'--smoke': `rgb(${PALETTE[S.shade].join(',')})`,
 		}
 	})
-	// Evenly staggered, so a handful of squares reads as one continuous column — and staggered
-	// backwards, so the column is already full on the frame it appears on rather than building itself
-	// over a whole period while you watch.
+	// Staggered backwards, so the column is already full on the frame it appears on.
 	const puffStyle = i => {
 		const S = ENTRY.smoke
 		const wander = S.driftMin + (1 - S.driftMin) * 2 * hash1(i, ENTRY.ridgeSeed)
@@ -186,16 +180,14 @@
 		depth: ENTRY.parallax[key],
 	}))
 	const ridgeEls = []
-	// the frame the sprites were last cut for — read only while cutting, so the
-	// canvases can never disagree with each other about what viewport this is
+	// the frame the sprites were last cut for, read only while cutting so the canvases cannot disagree
 	let frame = { w: 0, h: 0 }
 	// three cloud sprites drawn once per visit; each puff picks one by index
 	const cloudSprites = ref([])
 	const skyEl = ref(null)
 	const birdSheet = ref('')
 
-	// One sheet, frames side by side, walked by background-position — the way sprite
-	// animation has always worked. A silhouette needs no shading, so it is one colour.
+	// One sheet, frames side by side, walked by background-position. A silhouette needs no shading.
 	function drawBirdSheet() {
 		const b = ENTRY.bird
 		const el = document.createElement('canvas')
@@ -216,9 +208,7 @@
 	const twinklers = ref([])
 	const cloudField = ref([])
 
-	// The stream, rolled per visit like everything else here. Lanes advance by the
-	// golden ratio from a seeded phase: consecutive puffs never share a lane and any
-	// window of the stream still covers the width - a plain shuffle guarantees neither.
+	// Lanes advance by the golden ratio from a seeded phase: no two consecutive puffs share a lane.
 	function seedClouds(seed) {
 		const c = ENTRY.cloudStream
 		const phase = hash1(1, seed + 7)
@@ -231,8 +221,7 @@
 		}))
 	}
 
-	// Placed off the visit seed like everything else here, so no two visits blink in
-	// the same places. Kept inside the band of sky the star mask actually shows.
+	// Placed off the visit seed, kept inside the band of sky the star mask actually shows.
 	function seedTwinklers(seed) {
 		const { count, periodMs, spreadVh } = ENTRY.stars.twinkle
 		const hues = ENTRY.stars.colors
@@ -269,14 +258,12 @@
 		display: starFade.value > 0 ? null : 'none',
 	}))
 
-	// inclusive of both ends, and flat across them — rounding a float instead biases
-	// hard toward the middle of a short range
+	// inclusive of both ends and flat across them — rounding a float biases toward the middle
 	const randInt = ([lo, hi]) => lo + Math.floor(Math.random() * (hi - lo + 1))
 	const tint = names =>
 		`rgb(${PALETTE[names[Math.floor(Math.random() * names.length)]].join(',')})`
 
-	// Both streams roll every value per spawn, so no two crossings match. The spawner
-	// owns the gap, the hidden-tab skip and the self-removal — see useSkySpawner.
+	// Both streams roll every value per spawn. The spawner owns the gap, tab skip and self-removal.
 	const { items: meteors, remove: removeMeteor } = useSkySpawner({
 		gapMs: ENTRY.meteor.gapMs,
 		make: () => {
@@ -299,9 +286,7 @@
 	// A flock: one container crossing the frame, with its birds strung out inside it.
 	const { items: flocks, remove: removeFlock } = useSkySpawner({
 		gapMs: ENTRY.flock.gapMs,
-		// Only while the sky layer is showing (hidden, a spawn never animates and never
-		// ends, so they pile up and all take off together on arrival) and only one flock
-		// at a time, which is what caps the sky at two birds.
+		// Only while the sky layer shows (hidden, spawns never end and pile up) and one flock at a time.
 		active: () => starFade.value > 0 && flocks.value.length === 0,
 		make: () => {
 			const f = ENTRY.flock
@@ -319,8 +304,7 @@
 					'--dur': `${Math.round(randIn(f.durMs))}ms`,
 					'--peak': randIn(f.peak).toFixed(2),
 				},
-				// Positions are counted in sprite cells and scaled once, so every bird in the flock sits on the
-				// same pixel grid.
+				// Positions are counted in sprite cells and scaled once, so the flock shares one pixel grid.
 				birds: (() => {
 					let x = 0
 					return Array.from({ length: randInt(f.count) }, () => {
@@ -358,8 +342,7 @@
 		}
 	}
 
-	// Negative delays, so they are already mid-cycle on the first frame rather than all
-	// lighting together and then drifting apart.
+	// Negative delays, so they are already mid-cycle rather than all lighting together.
 	function twinkleStyle(tw) {
 		return {
 			left: `${tw.left.toFixed(2)}%`,
@@ -370,8 +353,7 @@
 		}
 	}
 
-	// A cumulus as a union of irregular lobes with a noise-warped boundary. Lobes alone scallop into
-	// clip art; noise alone drifts into an amoeba.
+	// A cumulus as lobes with a noise-warped boundary: lobes alone scallop, noise alone drifts.
 	function drawCloud(seed) {
 		const cfg = ENTRY.cloud
 		const { spriteW: w, spriteH: h } = cfg
@@ -434,8 +416,7 @@
 
 		for (let x = 0; x < w; x++) {
 			const u = x / (w - 1)
-			// distance below this column's current crown, so light dies away
-			// under each lobe separately instead of ramping the whole sprite
+			// distance below this column's crown, so light dies under each lobe separately
 			let depth = -1
 			for (let y = 0; y < h; y++) {
 				if (!cleaned[y * w + x]) {
@@ -459,8 +440,7 @@
 		return el.toDataURL()
 	}
 
-	// One tile of first-evening stars. Two of these at coprime sizes are what stop the
-	// field reading as wallpaper — see ENTRY.stars.
+	// One tile of first-evening stars; two at coprime sizes are what stop the field reading as wallpaper.
 	function drawStarTile(seed, layer) {
 		const { tile, count } = layer
 		// fillStyle wants a string; the colour still comes from the one palette
@@ -506,8 +486,7 @@
 		const reach = sun.r * sun.coronaR
 
 		for (let y = 0; y < h; y++) {
-			// gamma keeps the bright band against the horizon instead of letting it
-			// spread halfway up the frame
+			// gamma keeps the bright band against the horizon instead of spreading halfway up the frame
 			const rung = Math.pow(y / (h - 1), ENTRY.skyGamma)
 			for (let x = 0; x < w; x++) {
 				const d = Math.hypot(x - cx, y - cy)
@@ -515,8 +494,7 @@
 				if (d <= sun.r) col = disc
 				else if (d <= sun.r + 1.5) col = rim
 				else {
-					// Haze at altitude plus grain, both in ramp steps, so the bands stop being level sets of a smooth
-					// field — see ENTRY.skyField.
+					// Haze at altitude plus grain, both in ramp steps, so the bands stop being level sets.
 					const lit =
 						rung +
 						(fbm2(x / F.driftCells, y / F.driftRows, ENTRY.ridgeSeed) - 0.5) *
@@ -525,8 +503,7 @@
 						(fbm2(x / F.mottleCells, y / F.mottleCells, ENTRY.ridgeSeed + 3) - 0.5) *
 							F.mottle *
 							rung1
-					// the corona climbs the sky's own ramp rather than adding light on
-					// top, so every pixel of it is still exactly a palette entry
+					// the corona climbs the sky's own ramp rather than adding light, so every pixel is a palette entry
 					const g = clamp01(1 - (d - sun.r) / (reach - sun.r))
 					const step =
 						seamIndex(lit, ramp.length, x, y, ENTRY.skySeam, ENTRY.skyJitter) +
@@ -543,8 +520,7 @@
 		ctx.putImageData(img, 0, 0)
 	}
 
-	// One seed per visit for the weather — clouds, twinklers, star tiles — so no two visits share a
-	// sky.
+	// One seed per visit for the weather, so no two visits share a sky.
 	let visitSeed = 1
 
 	function cut() {
@@ -565,8 +541,7 @@
 		if (reshaped) cut()
 	})
 
-	// The arrival is viewports down the page, so its sprites are cut a frame after
-	// mount: the opening frame is not made to wait for ranges it cannot see yet.
+	// The arrival is viewports down, so its sprites are cut a frame after mount.
 	let deferred = 0
 	onMounted(() => {
 		visitSeed = Math.floor(Math.random() * 1e5) + 1
@@ -592,9 +567,7 @@
 </script>
 
 <style scoped lang="scss">
-	// Alien dusk, cut from the shared palette on the ranges' own grid (see drawSky) —
-	// the colours used to be three hex literals here, the last thing in the scene that
-	// was neither stepped nor on the palette.
+	// Alien dusk, cut from the shared palette on the ranges' own grid (see drawSky).
 	.entry__sky {
 		position: absolute;
 		inset: 0;
@@ -603,8 +576,7 @@
 		image-rendering: pixelated;
 	}
 
-	// Stars only over the dark upper sky — masked out well before the horizon glow, since a bright
-	// horizon washes them out.
+	// Stars only over the dark upper sky, masked out before the horizon glow washes them out.
 	.entry__stars,
 	.entry__cloud,
 	.entry__ridge,
@@ -618,8 +590,7 @@
 		inset: 0;
 	}
 
-	// Meteor: pixel head plus a fading streak, rotated onto its travel angle — the same
-	// shape the site starfield's comets use, tuned rarer and shallower for a landscape.
+	// Meteor: pixel head plus a fading streak, rotated onto its travel angle.
 	.entry__meteor {
 		position: absolute;
 		top: var(--y);
@@ -663,8 +634,7 @@
 		}
 	}
 
-	// Self-running motion, so it is stepped — the house rule for anything on its own
-	// clock. Three steps is enough to read as a blink rather than a fade.
+	// Self-running motion, so it is stepped; three steps reads as a blink rather than a fade.
 	.entry__twinkle {
 		position: absolute;
 		width: 2px;
@@ -711,15 +681,13 @@
 		}
 	}
 
-	// Wingbeats are on their own clock, so they are stepped — and stepping a sprite
-	// sheet by background-position is what the rule is describing in the first place.
+	// Wingbeats are on their own clock, so they are stepped by background-position.
 	.entry__bird {
 		position: absolute;
 		background-repeat: no-repeat;
 		image-rendering: pixelated;
 		animation-name: entry-flap;
-		// the step count is the sprite's frame count, handed down as a custom property so
-		// the sheet stays the only place that knows how many frames it has
+		// the step count is the sprite's frame count, so the sheet stays the only place that knows it
 		animation-timing-function: steps(var(--frames), end);
 		animation-iteration-count: infinite;
 	}
@@ -763,8 +731,7 @@
 		image-rendering: pixelated;
 	}
 
-	// The smoke shares the near band's box and its depth: it stands on that rock, so
-	// it has to lean with it or the plume slides off its own chimney.
+	// The smoke shares the near band's box and depth: it stands on that rock, so it leans with it.
 	.entry__ridge,
 	.entry__smoke {
 		position: absolute;
@@ -775,9 +742,7 @@
 		image-rendering: pixelated;
 	}
 
-	// A puff is one cell, climbing and spreading in whole cells: `translate` carries
-	// the climb and `scale` the spread, two animations on two properties over the same
-	// clock, so each can step on its own count and neither lands on half a cell.
+	// A puff is one cell: `translate` carries the climb and `scale` the spread, so neither lands on half.
 	.entry__puff {
 		position: absolute;
 		top: var(--vent-y);
@@ -813,8 +778,7 @@
 		}
 	}
 
-	// Inside the deck: cloud closes right over the lens. Deliberately a flat wash — any shaped
-	// gradient at full-frame size reads as a shape sitting on the screen.
+	// Inside the deck: a flat wash on purpose — any shaped gradient at full-frame size reads as a shape.
 	.entry__deck {
 		position: absolute;
 		inset: 0;

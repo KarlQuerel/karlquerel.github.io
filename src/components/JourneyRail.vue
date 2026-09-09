@@ -1,7 +1,5 @@
 <template>
-	<!-- Progress rail: one diamond per station along a track that fills as the
-	     journey passes them. Every stop is a same-page anchor, so it doubles as
-	     the landing page's navigation. -->
+	<!-- Progress rail: a diamond per station on a filling track. Every stop is an anchor, so it is also the nav. -->
 	<nav class="rail" aria-label="Journey sections">
 		<div class="rail__track" :style="trackStyle">
 			<span class="rail__fill" aria-hidden="true" />
@@ -55,8 +53,7 @@
 		z-index: 20;
 	}
 
-	// Carries the stops and the track art. Separate from .rail so the mobile
-	// scrim below can pad the outside without shifting the track off the diamonds.
+	// Separate from .rail so the mobile scrim can pad the outside without shifting the track.
 	.rail__track {
 		position: relative;
 		display: flex;
@@ -97,8 +94,7 @@
 		color: $text-interactive;
 	}
 
-	// Invisible hit area, grown past the 8px glyph. A pseudo-element rather than
-	// padding, so the diamond stays put on the track line.
+	// Invisible hit area past the 8px glyph, as a pseudo-element so the diamond stays on the line.
 	.rail__stop::after {
 		content: '';
 		position: absolute;
@@ -117,8 +113,7 @@
 			box-shadow 0.2s steps(3, end);
 	}
 
-	// Labels stay up rather than waiting on hover: the rail is the only way to
-	// reach the stations, so it has to read as navigation at a glance.
+	// Labels stay up rather than waiting on hover: the rail is the only way to reach the stations.
 	.rail__label {
 		font-family: $font-pixel;
 		font-size: px8(1);
@@ -154,9 +149,7 @@
 		color: $yellow;
 	}
 
-	// Phones keep the rail — with the nav trimmed it is the only route to the stations — but a left
-	// rail fights the reading column at this width, so it turns into a horizontal strip pinned along
-	// the bottom, out of the text and inside thumb reach.
+	// Phones keep the rail, but a left rail fights the reading column, so it pins along the bottom.
 	@media (max-width: $breakpoint-mobile) {
 		.rail {
 			@include void-panel(rgba($black, 0.55));
@@ -199,8 +192,7 @@
 			display: none;
 		}
 
-		// no label to widen the row, so the hit area carries the whole target —
-		// the gap stays wider than the expansion, so neighbours never overlap
+		// no label to widen the row, so the hit area carries the target; the gap stays wider than it
 		.rail__stop::after {
 			inset: -0.65rem -0.65rem;
 		}

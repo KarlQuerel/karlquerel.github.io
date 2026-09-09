@@ -1,8 +1,6 @@
 @use 'variables';
 
-// Unlisted personal page. Keeps the card / chip / badge system and the muscle
-// colour coding, but deliberately drops the pixel font for a plain system stack:
-// this is read mid-set, so legibility beats the site theme here.
+// Unlisted personal page: keeps the card system but drops the pixel font — it is read mid-set.
 .sport-page {
 	--muted: rgba(255, 255, 255, 0.68);
 	--faint: rgba(255, 255, 255, 0.78);

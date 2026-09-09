@@ -13,8 +13,7 @@ const routes = [
 		component: () => import('./components/HomeJourney.vue'),
 	},
 	{
-		// the WebGL landing flyby, in development. Unlisted: reachable by URL,
-		// never linked, and deliberately not prerendered.
+		// the WebGL landing flyby, in development. Unlisted: reachable by URL, never linked, not prerendered.
 		path: '/lab',
 		component: () => import('./components/lab/LabPage.vue'),
 		meta: { title: 'Lab' },
@@ -41,8 +40,7 @@ const routes = [
 		meta: { title: 'Under Construction' },
 	},
 	{
-		// the game itself, on the dev server only until GAME_SHIPPED — a build sends
-		// visitors to the holding screen and leaves the page out of the bundle
+		// the game itself, dev server only until GAME_SHIPPED — a build sends visitors to the holding screen
 		path: '/game',
 		...(GAME_READY
 			? { component: () => import('./components/game/GamePage.vue'), meta: { title: 'Game' } }

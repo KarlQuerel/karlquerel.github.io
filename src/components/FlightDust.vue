@@ -1,7 +1,5 @@
 <template>
-	<!-- The flight's depth cue: motes standing still in the world while the camera
-	     moves through them. Scroll owns the travel, so nothing here runs on a clock —
-	     stop scrolling and the field stops with you. Decorative. -->
+	<!-- The flight's depth cue: motes held in the world. Scroll owns the travel, so nothing runs on a clock. -->
 	<canvas ref="canvasEl" class="dust" :style="canvasStyle" aria-hidden="true" />
 </template>
 
@@ -49,8 +47,7 @@
 		}))
 	}
 
-	// Setting width/height reallocates the backing store and clears it, so only do it
-	// when the frame really changed size — this runs on every scrolled frame.
+	// Setting width/height reallocates and clears the backing store, so only do it on a real resize.
 	function resize() {
 		const el = canvasEl.value
 		if (!el) return
@@ -65,9 +62,7 @@
 		el.height = h
 	}
 
-	// One frame of the field. A mote's depth wraps into a box that travels with the camera: it leaves
-	// at the near plane and comes back in at the far one, which is what makes a field of a few hundred
-	// read as endless.
+	// A mote's depth wraps into a box travelling with the camera, which is what makes a few hundred endless.
 	function draw() {
 		if (!ctx || props.fade <= 0.01) return
 		const { moteBox: box, moteTail, moteNear, moteLean } = HERO_FLYBY
@@ -84,8 +79,7 @@
 		const cy = h / 2
 		// clip x is a half-width and clip y a half-height, so both project on h / 2
 		const unit = h / 2
-		// the lean as a camera pan, projected with each mote rather than slid over the
-		// frame: near motes take more of it than far ones, same relief as the CSS layers
+		// the lean as a camera pan, projected per mote: near motes take more of it than far ones
 		const lx = props.lean.x * moteLean
 		const ly = props.lean.y * moteLean
 		for (const m of motes) {

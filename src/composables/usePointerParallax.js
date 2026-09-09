@@ -2,9 +2,8 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { prefersReducedMotion } from './usePrefersReducedMotion'
 import { FINE_POINTER_QUERY, POINTER_EASE } from '@/constants/viewport'
 
-// Mouse parallax, the one contract every scene layer shares: axes normalised to -1..1 and negated,
-// published as --mx/--my on a container, and each layer inside it multiplies them by its own
-// --depth.
+// Mouse parallax, the contract every scene layer shares: --mx/--my on a container, -1..1 and
+// negated, each layer multiplying them by its own --depth.
 export function usePointerParallax() {
 	const pointer = ref({ x: 0, y: 0 })
 
@@ -13,8 +12,7 @@ export function usePointerParallax() {
 		'--my': pointer.value.y,
 	}))
 
-	// The cursor sets where the lean is headed; a frame loop closes the distance, so the layers drift
-	// into place instead of snapping.
+	// The cursor sets where the lean is headed; a frame loop closes the distance so layers drift in.
 	const target = { x: 0, y: 0 }
 	let frame = 0
 

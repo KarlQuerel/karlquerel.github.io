@@ -1,11 +1,10 @@
-// sport/terminal partials live in their route components, not here: pulled in
-// globally they'd render-block every page with CSS only two routes use
+// sport/terminal partials live in their route components: pulled in globally they would
+// render-block every page with CSS only two routes use
 @use 'fonts';
 @use 'layout';
 @use 'buttons';
 
-// Base layer NES.css used to provide before it was dropped: the site-wide
-// pixel font and normalize bits everything else inherits.
+// Base layer NES.css used to provide before it was dropped: the pixel font and normalize bits.
 *,
 *::before,
 *::after {

@@ -76,8 +76,7 @@
 	const threshold = index => ARRIVAL.contactFadeStart + index * ARRIVAL.contactStagger
 	const revealed = index => props.progress > threshold(index)
 
-	// Scrolling back up plays the same pop backwards — but only for a tile that has
-	// actually been up (the deepest progress seen), so nothing flashes at first paint.
+	// Scrolling back up plays the pop backwards, but only for a tile that has actually been up.
 	const peak = ref(0)
 	watch(
 		() => props.progress,
@@ -99,8 +98,7 @@
 		overflow: hidden;
 	}
 
-	// clear sky above the horizon carries the heading + portals; fills the pin so
-	// the report chip can anchor to its true corner
+	// clear sky above the horizon carries the heading + portals; fills the pin so the chip can anchor
 	.arrival__content {
 		position: absolute;
 		inset: 0;
@@ -125,17 +123,14 @@
 	$pop-steps: 5;
 
 	.arrival__reveal {
-		// hidden, not just transparent, before its turn: a tile still off-stage must not
-		// catch a click or a tab stop
+		// hidden, not just transparent: a tile off-stage must not catch a click or a tab stop
 		visibility: hidden;
 		opacity: 0;
 		translate: 0 $pop-rise;
 		scale: $pop-squash;
 	}
 
-	// An animation rather than a transition, the same way the LIFE cards reveal: the report chip is a
-	// pinned-chip, and that mixin's own hover transition would win the `transition` property off a
-	// rule of equal specificity declared above it.
+	// An animation, not a transition: pinned-chip's own hover transition would win the property.
 	.arrival__reveal.is-up {
 		visibility: visible;
 		animation: arrival-pop $pop-span steps($pop-steps, end) forwards;
@@ -149,8 +144,7 @@
 		}
 	}
 
-	// the pop backwards: only `from` is declared, so it settles into the base
-	// off-stage state above — visibility included, once the last step lands
+	// the pop backwards: only `from` is declared, so it settles into the base off-stage state
 	.arrival__reveal.is-down {
 		animation: arrival-drop $pop-span steps($pop-steps, end) forwards;
 	}
@@ -164,8 +158,7 @@
 		}
 	}
 
-	// keeps the fade, drops the travel: with no offset to start from, the same
-	// keyframes animate opacity alone
+	// keeps the fade, drops the travel: with no offset to start from, only opacity animates
 	@media (prefers-reduced-motion: reduce) {
 		.arrival__reveal {
 			translate: none;

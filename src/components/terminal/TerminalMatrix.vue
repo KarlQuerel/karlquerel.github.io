@@ -10,9 +10,7 @@
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 
-	// Phosphor digital-rain overlay summoned by the `matrix` command. Self
-	// contained: draws to a canvas filling the terminal window and closes on the
-	// first key press or click.
+	// Phosphor digital-rain overlay for the `matrix` command; closes on the first key press or click.
 	const props = defineProps({
 		color: { type: String, default: '#33ff66' },
 	})
@@ -63,8 +61,7 @@
 		close()
 	}
 
-	// setup reallocates the whole drops array and clears the canvas — coalesce
-	// desktop drag-resize storms into one rebuild per frame
+	// setup reallocates the drops array and clears the canvas — coalesce drag-resize into one rebuild.
 	const onResize = useRafThrottle(setup)
 
 	onMounted(() => {
