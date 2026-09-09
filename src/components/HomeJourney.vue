@@ -1,15 +1,12 @@
 <template>
 	<section id="top" ref="trackRef" class="journey" :style="[trackStyle, parallaxStyle]">
 		<PlanetStage :cam="cam" :spin="spin" :light-yaw="lightYaw" :haze="haze" />
-		<!-- the journey's own line, threading the stations - see JourneyRoute. It takes
-		     the camera sampler, not the camera: it aims its dive at where the planet
-		     will be, which is a scroll it has not reached yet. -->
+		<!-- the journey's line: takes the camera sampler, not the camera, to aim its dive where the planet will be -->
 		<JourneyRoute :cam-at="camAt" />
 		<JourneyRail :active="activeStop" />
 
-		<!-- Chrome that rides the whole flight once the hero has gone by: the name, a
-		     way to the far end of the journey, and how far along it you are. The rail
-		     counts the stations on the left; this counts the distance on the right. -->
+		<!-- Chrome that rides the whole flight once the hero has gone by: the name and a
+		     way to the far end of the journey. How far along you are is the rail's, on the left. -->
 		<div class="journey__chrome" :style="chromeStyle">
 			<RouterLink class="journey__mark" :to="JOURNEY_STOPS[0].to">
 				<span>{{ firstWords }}</span>
@@ -25,14 +22,9 @@
 			>
 				{{ GAME_LINK.label }}
 			</RouterLink>
-			<div class="journey__progress" :style="progressBoxStyle" aria-hidden="true">
-				<span class="journey__progress-run" :style="progressStyle" />
-			</div>
 		</div>
 
-		<!-- Departure: deep space, the destination a distant dot below the name. The
-		     camera's axis runs through the gap between the two words, and the first
-		     stretch of scroll flies it through. -->
+		<!-- Departure: the destination a distant dot below the name, the first stretch of scroll flying at it. -->
 		<header class="journey__hero">
 			<!-- the flight: the mote field runs past behind the name, both projected
 			     from the same camera, both vanishing at the frame's centre -->
@@ -124,8 +116,7 @@
 	import PageTitle from './PageTitle.vue'
 	import PlanetStage from './PlanetStage.vue'
 
-	// named so App.vue's <KeepAlive> keeps the built page (planet canvas, photo
-	// decks, reveal state) across navigation
+	// named so App.vue's <KeepAlive> keeps the built page across navigation
 	defineOptions({ name: 'HomeJourney' })
 
 	const trackRef = ref(null)
@@ -148,18 +139,14 @@
 		'--arrival-runway': `${ARRIVAL.runwayVh}vh`,
 	}
 
-	// A station announces itself the way the rail counts it — its number and the label
-	// the rail already carries, so the beat is named without inventing a name for it.
+	// A station is named the way the rail counts it: its number and the label the rail already carries.
 	const kicker = i => `${String(i).padStart(2, '0')} · ${JOURNEY_STOPS[i].label}`
 
-	// The two words the camera flies between: everything but the last, then the
-	// last. The corridor is the gap between them, and the lockup hangs from it.
+	// The two words the camera flies between: everything but the last, then the last.
 	const nameWords = HOME_LANDING.name.split(' ')
 	const firstWords = nameWords.slice(0, -1).join(' ')
 	const lastWord = nameWords.at(-1)
-	// Where the corridor sits relative to the lockup's centre, in px, both axes — HeroTitle measures
-	// it off its own laid-out text and hands it up, so the numbers hold whatever the breakpoints and
-	// any wrapping did.
+	// Where the corridor sits from the lockup's centre (px) — HeroTitle measures it and hands it up.
 	const portrait = ref(false)
 
 	// the headings answer the cursor too — less than the planet (see JOURNEY.parallax)
@@ -188,8 +175,7 @@
 		portrait.value = vh > track.clientWidth
 		const cameras = portrait.value ? CAMERA_PORTRAIT : CAMERA
 		dims.value = { trackH: track.offsetHeight, vh }
-		// the departure flies through the name at the planet, the camera comes around it, then stations
-		// dock as they enter; inside the pinned runway the limb blows out and hands off to the entry
+		// the departure flies through the name at the planet, then stations dock as they enter
 		const arrivalTop = topOf(arrivalRef.value)
 		const runwayPx = (ARRIVAL.runwayVh / 100) * vh
 		// the run from the top of the page to the WORK dock: the whole flight out
@@ -208,8 +194,7 @@
 			{ s: dock * beat.orbitOut, ...cameras.orbitOut },
 			{ s: dock, ...cameras.work },
 			{ s: workHold, ...cameras.workEnd },
-			// the skim bottoms out mid-way through the long WORK → LIFE leg, then holds
-			// at the deck while the ground streams past before climbing away
+			// the skim bottoms out mid-way through the WORK -> LIFE leg, then holds at the deck
 			{ s: diveAt, ...cameras.dive },
 			{ s: diveAt + (lifeDock - diveAt) * JOURNEY.skimHoldAt, ...cameras.skim },
 			{ s: lifeDock, ...cameras.life },
@@ -229,14 +214,10 @@
 
 	const scrolled = computed(() => progress.value * Math.max(0, dims.value.trackH - dims.value.vh))
 
-	// The camera: one cubic per channel through the measured keyframes. A keyframe
-	// that leaves a channel out holds at the default here rather than reading NaN,
-	// which keeps `light` to the beats that actually use it.
+	// One cubic per channel through the measured keyframes; a missing channel holds at the default.
 	const CAM_CHANNELS = { x: 0, y: 0, scale: 1, fade: 1, roll: 0, tilt: 0, light: 0 }
 
-	// Slopes for those cubics, rebuilt only when the track is re-measured. Easing each segment on its
-	// own (a smoothstep per leg) parked the camera at every one of the fifteen keyframes and pushed it
-	// off again, which is what made the middle of the flight read as fifteen separate moves.
+	// Slopes for those cubics. Easing each segment on its own parked the camera at all fifteen keyframes.
 	const camSlopes = computed(() => {
 		const pts = camTrack.value
 		if (pts.length < 2) return null
@@ -251,9 +232,7 @@
 		return slopes
 	})
 
-	// Sampled at an arbitrary scroll, not just the current one: the route needs to
-	// know where the planet will be when its tip reaches a given point on the page,
-	// which is a different scroll from the one being drawn.
+	// Sampled at an arbitrary scroll: the route needs where the planet will be, not where it is.
 	function camAt(s) {
 		const pts = camTrack.value
 		const slopes = camSlopes.value
@@ -278,8 +257,7 @@
 
 	const cam = computed(() => camAt(scrolled.value))
 
-	// the planet keeps rolling under you for the whole trip; the camera's roll
-	// channel piles ground rush on top through the skim and the entry
+	// the planet keeps rolling for the whole trip; the camera's roll piles ground rush on top
 	const spin = computed(() => (progress.value * JOURNEY.turns + cam.value.roll) * Math.PI * 2)
 
 	// The sun holds still in the world while you orbit — the terminator advances.
@@ -287,13 +265,10 @@
 		() => (progress.value * JOURNEY.sunTurns + cam.value.light) * Math.PI * 2
 	)
 
-	// how far through the pass we are; past 1 the words are gone but the flight
-	// carries on into the void
+	// how far through the pass we are; past 1 the words are gone but the flight carries on
 	const pass = computed(() => scrolled.value / ((dims.value.vh || 1) * HERO_FLYBY.runVh))
 
-	// Departure: the pass through the corridor. The name stands on a plane `titleZ` ahead, so its
-	// scale is what closing that gap does — the same travel the motes ride, which is what makes the
-	// two read as one movement instead of two effects.
+	// The name stands on a plane `titleZ` ahead, so its scale is what closing that gap does.
 	const passScale = computed(() => 1 / (1 - flown(clamp01(pass.value)) / HERO_FLYBY.titleZ))
 	// bare plate through the gate - see HERO_FLYBY.bareFromScale
 	const plateBare = computed(() => passScale.value >= HERO_FLYBY.bareFromScale)
@@ -315,8 +290,7 @@
 		}
 	})
 
-	// How far down the corridor the camera has run, in world units — the one number the whole flight
-	// comes from.
+	// How far down the corridor the camera has run, in world units — the one number the flight comes from.
 	function flown(p) {
 		const h = HERO_FLYBY.spoolUp
 		const d = p < h ? (p * p) / (2 * h) : p - h / 2
@@ -328,8 +302,7 @@
 	// the motes ride this; past the end of the pass it carries on into the void
 	const travel = computed(() => flown(Math.max(0, pass.value)))
 
-	// the camera's own drift across the corridor, carrying motes and words together —
-	// it is the camera that moves, not them
+	// the camera's own drift across the corridor, carrying motes and words together
 	const flightStyle = computed(() => {
 		const t = smoothstep(clamp01(pass.value))
 		const x = (t * HERO_FLYBY.driftVw).toFixed(2)
@@ -351,8 +324,7 @@
 			)
 	)
 
-	// once the veil is opaque the starfield is invisible — flag it so the backdrop
-	// stops paying for drift and comets behind the atmosphere
+	// once the veil is opaque the starfield is invisible — flag it so the backdrop stops paying for drift
 	const covered = useBackdropCover()
 	watch(haze, h => (covered.value = h >= 1), { immediate: true })
 
@@ -374,26 +346,7 @@
 		return { opacity: t.toFixed(3), visibility: t > 0.01 ? null : 'hidden' }
 	})
 
-	const progressStyle = computed(() => ({ height: `${(progress.value * 100).toFixed(1)}%` }))
-
-	// The distance meter leaves with the way-out chip: on the surface there is no
-	// distance left to count, and a lit meter pinned over the dusk sky was the last
-	// piece of flight chrome still up after landing.
-	const progressBoxStyle = computed(() => {
-		const there = smoothstep(
-			clamp01(
-				(arrivalProgress.value - ARRIVAL.ctaFadeStart) /
-					(ARRIVAL.ctaFadeEnd - ARRIVAL.ctaFadeStart)
-			)
-		)
-		return {
-			opacity: (1 - there).toFixed(3),
-			visibility: there < 1 ? null : 'hidden',
-		}
-	})
-
-	// The way out goes away once the descent starts rather than once it ends: it is gone by the time
-	// the first clouds are in frame, so the last stretch is the atmosphere and nothing else.
+	// The way out goes once the descent starts, so the last stretch is the atmosphere and nothing else.
 	const ctaStyle = computed(() => {
 		const there = smoothstep(
 			clamp01(
@@ -416,8 +369,7 @@
 		}
 	})
 
-	// re-shown from KeepAlive: scroll and measurements may have gone stale — and the
-	// covered flag must be re-asserted, since haze itself may not have changed
+	// re-shown from KeepAlive: scroll and measurements may be stale, and `covered` must be re-asserted
 	onActivated(() => {
 		measure()
 		sync()
@@ -438,8 +390,7 @@
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
-	// The flight's chrome: fixed to the frame, the wrapper carrying the fade so the
-	// name, the way out and the distance all arrive together.
+	// The flight's chrome: fixed to the frame, the wrapper carrying the fade so it all arrives together.
 	.journey__chrome {
 		position: fixed;
 		inset: 0;
@@ -447,8 +398,7 @@
 		pointer-events: none;
 	}
 
-	// the site's own chip chrome — backless, keyline-carried, see pinned-chip — moved
-	// from its usual bottom corner to the top ones
+	// the site's own chip chrome (backless, keyline-carried) moved to the top corners
 	.journey__mark,
 	.journey__cta {
 		@include pinned-chip;
@@ -461,8 +411,7 @@
 		}
 	}
 
-	// the hero lockup in miniature: the same two words, stacked flag-left — two
-	// lines facing the two chips in the opposite corner
+	// the hero lockup in miniature: the same two words, stacked flag-left
 	.journey__mark {
 		left: 0.6rem;
 		right: auto;
@@ -476,25 +425,6 @@
 		top: 2.9rem;
 	}
 
-	// Distance run, against the rail's count of stations — a plain column rather than
-	// a gradient, so it quantises the way everything else here does.
-	.journey__progress {
-		position: absolute;
-		top: 50%;
-		right: 1.4rem;
-		width: 3px;
-		height: 26vh;
-		transform: translateY(-50%);
-		background: rgba($white, 0.12);
-	}
-
-	.journey__progress-run {
-		display: block;
-		width: 100%;
-		background: $yellow;
-		box-shadow: 0 0 10px rgba($yellow, 0.4);
-	}
-
 	.journey {
 		position: relative;
 		width: 100%;
@@ -505,9 +435,7 @@
 		min-height: 100vh;
 	}
 
-	// The flight rides the viewport, not the page: the corridor has to hold still on the camera's axis
-	// while the world moves past it, and the frame-filling letters of the pass have to clip at the
-	// frame edges instead of widening the page.
+	// The flight rides the viewport, not the page: the corridor holds still while the world moves past.
 	.journey__flight {
 		position: fixed;
 		inset: 0;
@@ -519,8 +447,7 @@
 		pointer-events: none;
 	}
 
-	// its box is the name row alone (the cue hangs out of flow beneath), which puts
-	// the corridor on the box's own centre line
+	// its box is the name row alone, which puts the corridor on the box's own centre line
 	.journey__lockup {
 		position: relative;
 		z-index: 2;
@@ -530,8 +457,7 @@
 		text-align: center;
 	}
 
-	// A hero should dominate on a big screen; whole steps, so it stays on-pixel. The
-	// stations take the same size as the name — one display size for the whole flight.
+	// A hero should dominate on a big screen; whole steps, so it stays on-pixel.
 	@media (min-width: #{$breakpoint-desktop}) {
 		.journey__lockup,
 		.journey__station-head :deep(.page-heading) {
@@ -539,18 +465,15 @@
 		}
 	}
 
-	// the leg margins are the empty travel between stations; the head and the body
-	// take their own depths, one behind the planet stage and one in front of it
+	// the leg margins are the empty travel between stations; head and body take their own depths
 	.journey__station {
 		position: relative;
 		margin-top: var(--leg);
-		// anchored jumps (#work, #life) land the heading at the usual title height,
-		// well clear of the corner chrome
+		// anchored jumps (#work, #life) land the heading at the usual title height, clear of the chrome
 		scroll-margin-top: $page-pad-top;
 	}
 
-	// Over the stage, not behind it: a title the limb swallows is a title unread, so the words stay
-	// above the planet and the keyline holds them off it.
+	// Over the stage, not behind it: a title the limb swallows is unread, so the keyline holds it off.
 	.journey__station-head {
 		position: relative;
 		z-index: 1;
@@ -574,8 +497,7 @@
 		@include pixel-keyline;
 	}
 
-	// The accent word carries its own text-shadow, and a child's replaces what it would have inherited
-	// — so the yellow word needs the border stating again, with its glow as the halo behind it.
+	// A child's text-shadow replaces the inherited one, so the yellow word restates the border itself.
 	.journey__station-head :deep(.page-heading__accent) {
 		@include pixel-keyline($halo: 0.5em, $halo-colour: rgba($yellow, 0.5));
 	}
@@ -620,8 +542,7 @@
 	}
 
 	@media (max-width: $breakpoint-mobile) {
-		// A phone has room for one chip up there, and the way out is worth more than
-		// the name — the rail's own HOME stop already anchors the top of the journey.
+		// A phone has room for one chip, and the way out is worth more than the name.
 		.journey__mark {
 			display: none;
 		}
@@ -633,16 +554,14 @@
 			color: rgba($white, 0.62);
 		}
 
-		// the glyphs shrank, the tap target must not — grown past the chip the way the
-		// rail grows its stops
+		// the glyphs shrank, the tap target must not — grown past the chip as the rail grows its stops
 		.journey__cta::after {
 			content: '';
 			position: absolute;
 			inset: -0.55rem -0.6rem;
 		}
 
-		// the smaller mobile chip sits higher, so the rung below moves up with it —
-		// far enough that the two grown tap targets stay apart
+		// the smaller mobile chip sits higher, so the rung below moves up far enough to stay clear
 		.journey__cta--game {
 			top: 2.5rem;
 		}
