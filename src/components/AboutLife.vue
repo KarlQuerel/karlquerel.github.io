@@ -133,8 +133,10 @@
 
 	// how far a card travels on its slide-in
 	$slide: 28px;
-	// the one gap between cards, fixed so the rhythm is even; the route's crossing needs ~192px to turn
+	// the one gap between cards, fixed so the rhythm is even; the route's crossing needs ~192px to
+	// turn, or ~152px on a phone, where it turns on a tighter chamfer (ROUTE.crossChamferNarrowPx)
 	$life-gap: 14rem;
+	$life-gap-mobile: 11rem;
 	// offset between the photo-deck cards peeking out behind each dog's frame
 	$stack-step: 6px;
 	// mat between a section image and its void frame
@@ -383,6 +385,18 @@
 	}
 
 	@media (max-width: $breakpoint-mobile) {
+		// The journey's line has no gutter to run in at this width, so it shares the WORK lane —
+		// start the column clear of it, on the same left edge the timeline's rows keep.
+		.life-card {
+			padding-left: 2.6rem;
+		}
+
+		// A short chapter here is dwarfed by the desktop gap — the column is the whole frame, so
+		// there is no scenery beside it to fill the wait. Tight enough to still hold a crossing.
+		.life-slot:not(:last-child) {
+			margin-bottom: $life-gap-mobile;
+		}
+
 		// Where the pixel grid loses: 16px is off-grid but is the comfortable reading size, and prose is
 		// where softness shows least and legibility matters most.
 		.life-card__line {
