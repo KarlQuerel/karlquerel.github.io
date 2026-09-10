@@ -547,23 +547,23 @@
 			display: none;
 		}
 
-		// The stations run full-width here, so the chip rides straight over their copy.
+		// The stations run full-width here, so the chip trades padding, not glyphs, for the room:
+		// Press Start 2P is crisp at 8/16/24 only, and one step down is a label, not a control.
 		.journey__cta {
-			padding: 0.45rem 0.65rem;
-			font-size: px8(1);
+			padding: 0.4rem 0.6rem;
 			color: rgba($white, 0.62);
 		}
 
-		// the glyphs shrank, the tap target must not — grown past the chip as the rail grows its stops
+		// a thumb wants 44px; the chip's box is 31px, so the hit area grows past it on every side
 		.journey__cta::after {
 			content: '';
 			position: absolute;
-			inset: -0.55rem -0.6rem;
+			inset: -0.4rem -0.5rem;
 		}
 
-		// the smaller mobile chip sits higher, so the rung below moves up far enough to stay clear
+		// clear of the way-out chip's grown hit area, which would otherwise swallow this rung's top
 		.journey__cta--game {
-			top: 2.5rem;
+			top: 3.5rem;
 		}
 
 		.journey__station--work {
