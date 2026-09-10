@@ -160,14 +160,11 @@
 	}
 
 	.life-card {
-		// flow-root, not block: contains the floated art so it can't spill past the wash
+		// flow-root, not block: contains the floated art so it can't spill past the card's box
 		display: flow-root;
 		// wide column, but the prose below scales with it so the measure stays ~75ch
 		width: min(50rem, 92vw);
 		padding: 1rem 1.1rem 1.2rem;
-		// borderless: just the dark wash, no void frame (matches the work timeline)
-		background: rgba(0, 0, 0, 0.3);
-		border-radius: 30px;
 	}
 
 	.life-card__title {
@@ -324,7 +321,11 @@
 		box-sizing: border-box;
 		padding: 0;
 		@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.45));
-		border-radius: 30px;
+
+		// after the mixin's nested rules, so it needs the wrap to stay a plain declaration
+		& {
+			border-radius: 30px;
+		}
 	}
 
 	// square crops fill the frame edge to edge; only the active frame shows, stepped-crossfaded
