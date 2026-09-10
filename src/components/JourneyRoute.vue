@@ -55,6 +55,7 @@
 <script setup>
 	import { computed, onActivated, onBeforeUnmount, onMounted, ref } from 'vue'
 	import { JOURNEY, ROUTE } from '@/constants/journey'
+	import { MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { smoothstep } from '@/js/math'
 
@@ -178,8 +179,11 @@
 		const yEnd = Math.round(arrivalBox.top + vh * 0.5 + runway * ROUTE.endRunFrac)
 
 		// The zigzag: a flank beside each life chapter, crossing in the gap on a hexagonal jog.
-		const xR = w - xL
-		const pad = ROUTE.crossPadPx
+		// The far flank mirrors the near one, except on a phone: there the column spans the frame,
+		// so the mirror would land inside the copy and it runs off the frame's edge instead.
+		const narrow = window.matchMedia(MOBILE_VIEWPORT_QUERY).matches
+		const xR = narrow ? w - ROUTE.edgeLanePx : w - xL
+		const pad = narrow ? ROUTE.crossPadNarrowPx : ROUTE.crossPadPx
 		const weave = []
 		let reach = yJ3 + dxL + m
 		let lane = xL
@@ -191,7 +195,7 @@
 			const gapTop = Math.max(slot(k - 1).bottom + pad, reach)
 			const gapBot = slot(k).top - pad
 			const cham = Math.min(
-				ROUTE.crossChamferPx,
+				narrow ? ROUTE.crossChamferNarrowPx : ROUTE.crossChamferPx,
 				Math.floor((Math.abs(target - lane) - ROUTE.crossMinRunPx) / 2)
 			)
 			if (cham < 24 || gapBot - gapTop < cham * 2) continue
@@ -213,7 +217,13 @@
 			clamp(planetXAt(yEnd, w, h), w * ROUTE.diveAimBand, w * (1 - ROUTE.diveAimBand))
 		)
 		const dxDive = Math.abs(xAim - lane)
-		const yJ2 = Math.max(reach + m, Math.round(arrivalBox.top - vh * ROUTE.endLeadVh) - dxDive)
+		const lead = narrow ? ROUTE.endLeadNarrowVh : ROUTE.endLeadVh
+		const yJ2 = Math.max(
+			reach + m,
+			// the near flank has no margin on a phone, so the turn waits for the last chapter to clear
+			narrow ? Math.round(box(lifeSlots.at(-1)).bottom + pad) : 0,
+			Math.round(arrivalBox.top - vh * lead) - dxDive
+		)
 
 		const trunk = [
 			[xS, yJ3],
