@@ -111,8 +111,6 @@
 	}
 
 	.ztl-row {
-		@include void-scrim($at: 34% 50%);
-		border-radius: 30px;
 		position: relative;
 		min-height: 4.6rem;
 		padding: 0.4rem 0 0.4rem var(--about-gutter);
