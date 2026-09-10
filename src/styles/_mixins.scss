@@ -72,16 +72,6 @@
 		0 0 #{$halo} $halo-colour;
 }
 
-// Dark radial wash that lifts text off the starfield without drawing a panel edge.
-@mixin void-scrim($size: 85% 130%, $at: 50% 50%) {
-	background: radial-gradient(
-		$size at $at,
-		rgba(0, 0, 0, 0.72) 0%,
-		rgba(0, 0, 0, 0.42) 55%,
-		rgba(0, 0, 0, 0) 100%
-	);
-}
-
 // The interactive counterpart, used by every clickable button so they read as one system.
 @mixin void-button($lift: -4px, $bg: rgba(0, 0, 0, 0.35)) {
 	@include void-panel($bg);
