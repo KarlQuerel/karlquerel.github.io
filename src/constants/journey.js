@@ -951,17 +951,27 @@ export const ROUTE = {
 	headMarginPx: 18,
 	// how far left of the LIFE column's edge its stretch of the line runs
 	gutterPx: 36,
+	// On a phone the far flank cannot mirror the near one — that lands inside the column — so it
+	// runs this far in from the frame's own edge instead.
+	edgeLanePx: 12,
 	// LIFE zigzags: a flank beside each chapter, crossing in the gap on a hexagonal jog.
 	crossPadPx: 40,
 	// the least horizontal run a jog may keep between chamfers; one that cannot afford it is skipped
 	crossMinRunPx: 120,
 	// the chamfer's 45s, one off each flank — hexagon vertices, short enough for the chapter gaps
 	crossChamferPx: 56,
+	// A phone's chapter gaps are tighter ($life-gap-mobile), so the jog turns on less: pad and
+	// chamfer both come in, keeping 2*pad + 2*chamfer under the gap with room to spare.
+	crossPadNarrowPx: 32,
+	crossChamferNarrowPx: 44,
 	// where in the viewport the tip diamond rides
 	tipFrac: 0.55,
 	// How far into the arrival runway the line runs, and the share kept above the arrival.
 	endRunFrac: 0.17,
 	endLeadVh: 0.15,
+	// A 45 lasts as far across as it travels, and a phone has little width to cross — the descent
+	// there is a third of the desktop one, so it starts earlier to eat the straight it would leave.
+	endLeadNarrowVh: 0.5,
 	// The chart leaves as the orbit begins — fade window in arrival-runway fractions.
 	orbitOutAt: 0.02,
 	orbitOutSpan: 0.14,
