@@ -15,19 +15,29 @@
 					<span class="ztl-badge" :class="`ztl-badge--${item.type}`">
 						<PixelEmblem :emblem="item.emblem" class="ztl-emblem" />
 					</span>
+					<!-- country stamped on the node, where the eye lands first -->
+					<PixelFlag :country="item.flag" class="ztl-flag" />
 					<span v-if="item.end" class="ztl-tick ztl-tick--end">{{ item.end }}</span>
 				</div>
 				<div class="ztl-card">
-					<span class="ztl-kind" :class="`ztl-kind--${item.type}`">{{
-						CAREER_TYPE_LABELS[item.type]
-					}}</span>
+					<p class="ztl-kind" :class="`ztl-kind--${item.type}`">
+						{{ CAREER_TYPE_LABELS[item.type] }}
+						<span class="ztl-span">{{ item.from }} – {{ item.to }}</span>
+					</p>
 					<h2 class="ztl-title">{{ item.title }}</h2>
-					<span class="ztl-school" :class="`ztl-school--${item.type}`">{{
-						item.place
-					}}</span>
+					<component
+						:is="item.url ? 'a' : 'span'"
+						:href="item.url"
+						:target="item.url && '_blank'"
+						:rel="item.url && 'noopener'"
+						class="ztl-school"
+						:class="`ztl-school--${item.type}`"
+					>
+						{{ item.place }}
+					</component>
+					<!-- the flag on the badge names the country; the text only adds the city -->
 					<span class="ztl-location">
-						<PixelFlag :country="item.flag" />
-						{{ item.location }}
+						{{ item.city }}<span class="sr-only">, {{ item.country }}</span>
 					</span>
 					<p v-if="item.detail" class="ztl-detail">{{ item.detail }}</p>
 				</div>
@@ -43,10 +53,15 @@
 	import PixelEmblem from '@/components/PixelEmblem.vue'
 
 	// A closing year is dropped when the next entry opens on it, so a shared boundary is drawn once.
-	const ROWS = CAREER_TIMELINE.map((item, i) => ({
-		...item,
-		end: CAREER_TIMELINE[i + 1]?.from === item.to ? null : item.to,
-	}))
+	const ROWS = CAREER_TIMELINE.map((item, i) => {
+		const [city, country] = item.location.split(', ')
+		return {
+			...item,
+			city,
+			country,
+			end: CAREER_TIMELINE[i + 1]?.from === item.to ? null : item.to,
+		}
+	})
 </script>
 
 <style scoped lang="scss">
@@ -57,7 +72,6 @@
 	$badge: clamp(2.6rem, 6.5vw, 3.4rem);
 	$emblem-ghost: 0.88;
 	$tick-gap: 0.25rem;
-	$chevron: 2ch; // the '> ' prefix, exact in the monospace terminal face
 
 	.ztl {
 		// column + text gutter come from the shared tokens set on the WORK station
@@ -163,6 +177,17 @@
 		border-radius: 30px;
 	}
 
+	// stamped on the badge's lower-right shoulder, clear of the closing tick hanging under it
+	.ztl-flag {
+		position: absolute;
+		right: -0.3rem;
+		bottom: -0.1rem;
+		--flag-height: clamp(0.85rem, 2.1vw, 1.1rem);
+		--flag-shadow:
+			0 0 0 2px rgba(0, 0, 0, 0.9), 0 0 0 3px rgba(255, 255, 255, 0.22),
+			0 2px 4px rgba(0, 0, 0, 0.9);
+	}
+
 	// type-tinted frame doubles as the education / experience signal
 	.ztl-badge--study {
 		border: 2px solid rgba($tag-education, 0.6);
@@ -259,6 +284,10 @@
 	}
 
 	.ztl-kind {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0 1.2em;
+		margin: 0;
 		font-family: $font-pixel;
 		font-size: $type-label;
 		line-height: 1.4;
@@ -273,6 +302,11 @@
 
 	.ztl-kind--job {
 		color: $tag-experience;
+	}
+
+	// the years, dimmed next to the kind: the ticks anchor the rail, this line answers "how long"
+	.ztl-span {
+		color: rgba($light-gray, 0.7);
 	}
 
 	// prose face, not display: Press Start 2P advances a full 1em per glyph, so a degree ate three lines
@@ -303,10 +337,19 @@
 		color: color.scale($tag-experience, $lightness: 38%);
 	}
 
+	// linked institutions keep their tint; the underline only appears in hand
+	a.ztl-school {
+		text-decoration: none;
+	}
+
+	a.ztl-school:hover,
+	a.ztl-school:focus-visible {
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+
 	.ztl-location {
-		display: flex;
-		align-items: center;
-		gap: 0.5em;
+		display: block;
 		line-height: 1.2;
 		font-family: $font-terminal;
 		font-size: $type-prose-sm;
@@ -318,10 +361,10 @@
 
 	// caption closing the card: the terminal face keeps it subordinate to the pixel type above
 	.ztl-detail {
-		// 64ch of text plus the hanging chevron; the About column caps this well before it bites
-		max-width: calc(64ch + #{$chevron});
-		// Set off from the stack above: title, institution and location answer what and where; this is why.
-		margin: 0.85rem 0 0;
+		// the About column caps this well before it bites
+		max-width: 64ch;
+		// a half-step off the stack above: still the card's own last line, not a footnote under it
+		margin: 0.4rem 0 0;
 		font-family: $font-terminal;
 		// A step below the LIFE prose: at the 11px floor this was the smallest type in the station.
 		font-size: $type-prose-md;
@@ -330,16 +373,8 @@
 		text-align: left;
 		// `pretty` only trims a last-line orphan, where `balance` would leave the caption floating short
 		text-wrap: pretty;
-		// hanging indent: wrapped lines sit under the text, as a wrapped command hangs off a prompt
-		padding-left: $chevron;
-		text-indent: -$chevron;
 		color: $text-caption;
 		text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
-	}
-
-	.ztl-detail::before {
-		content: '> ';
-		color: rgba($yellow, 0.7);
 	}
 
 	.is-current .ztl-badge {
@@ -352,6 +387,12 @@
 
 	.is-current .ztl-title {
 		color: $yellow;
+	}
+
+	// the "Now" tick hangs where the stamp sits, so the stamp climbs the shoulder to clear it
+	.is-current .ztl-flag {
+		right: -0.55rem;
+		bottom: 0.3rem;
 	}
 
 	.is-current .ztl-tick {
@@ -382,6 +423,11 @@
 		.ztl-badge {
 			width: 2.6rem;
 			height: 2.6rem;
+		}
+
+		// 22px wrapped long degrees onto three lines; 16px is the only other size this face reads at
+		.ztl-title {
+			font-size: $type-prose-md;
 		}
 	}
 
