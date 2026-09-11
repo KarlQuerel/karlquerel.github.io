@@ -7,7 +7,7 @@ export const ABOUT_HEADINGS = {
 }
 
 // Career timeline, oldest first. `type` tints the badge, `current` flags the present role (gold),
-// `emblem` is the rail sprite, `detail` an optional caption kept to the milestones that carry it.
+// `emblem` is the rail sprite, `detail` the caption, `url` links the institution when it has a site.
 export const CAREER_TIMELINE = [
 	{
 		type: 'study',
@@ -17,7 +17,9 @@ export const CAREER_TIMELINE = [
 		place: 'Grand Lycée Franco-Libanais',
 		location: 'Beirut, Lebanon',
 		flag: 'lebanon',
+		url: 'https://www.glfl.edu.lb/',
 		emblem: 'mortarboard',
+		detail: 'Grew up in Beirut, in the French school system.',
 	},
 	{
 		type: 'study',
@@ -27,6 +29,7 @@ export const CAREER_TIMELINE = [
 		place: 'University of Geneva (HEC)',
 		location: 'Geneva, Switzerland',
 		flag: 'switzerland',
+		url: 'https://www.unige.ch/gsem/',
 		emblem: 'chart',
 		detail: 'Left Lebanon at 17 to start my studies in Europe.',
 	},
@@ -38,7 +41,9 @@ export const CAREER_TIMELINE = [
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
 		flag: 'france',
+		url: 'https://www.grenoble-em.com/',
 		emblem: 'globe',
+		detail: 'A second bachelor, this time in the French Alps.',
 	},
 	{
 		type: 'study',
@@ -48,6 +53,7 @@ export const CAREER_TIMELINE = [
 		place: 'Grenoble École de Management',
 		location: 'Grenoble, France',
 		flag: 'france',
+		url: 'https://www.grenoble-em.com/',
 		emblem: 'euro-coin',
 		detail: 'Corporate finance and derivatives.',
 	},
@@ -76,11 +82,12 @@ export const CAREER_TIMELINE = [
 	{
 		type: 'study',
 		from: '2022',
-		// no `to`: the opening tick carries this one on its own
+		to: '2025',
 		title: 'Software Engineering',
 		place: '42 Paris',
 		location: 'Paris, France',
 		flag: 'france',
+		url: 'https://42.fr/',
 		chapter: 'Career pivot',
 		emblem: 'terminal-42',
 		detail: 'Rebooted from scratch. Deep dive into C and Unix.',
@@ -93,6 +100,7 @@ export const CAREER_TIMELINE = [
 		place: 'Zetra',
 		location: 'Paris, France',
 		flag: 'france',
+		url: 'https://zetra.com/',
 		current: true,
 		emblem: 'charger',
 		detail: 'Building the software behind EV charging and renewable energy.',
