@@ -42,6 +42,13 @@ export const PALETTE = {
 	frost: [66, 79, 102],
 	rime: [96, 112, 140],
 
+	// Bare metal: the game's brushed steel, cold greys with a blue cast.
+	graphite: [58, 64, 78],
+	gun: [88, 96, 112],
+	pewter: [140, 148, 162],
+	brushed: [158, 166, 180],
+	silver: [200, 206, 216],
+
 	// Air and light. `ember` is the site's accent, so chrome and world share one yellow.
 	haze: [172, 120, 104],
 	ember: [255, 189, 46],
