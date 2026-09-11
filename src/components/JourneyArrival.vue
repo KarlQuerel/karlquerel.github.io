@@ -27,6 +27,26 @@
 				</li>
 			</ul>
 
+			<!-- a console's title menu, not a web button: one item today, CONTINUE joins it once the game saves -->
+			<RouterLink
+				class="arrival__menu arrival__reveal"
+				:class="revealClass(MENU_INDEX)"
+				:to="GAME_MENU.to"
+			>
+				<svg
+					class="arrival__cursor"
+					viewBox="0 0 4 7"
+					shape-rendering="crispEdges"
+					aria-hidden="true"
+				>
+					<rect x="0" y="0" width="1" height="7" />
+					<rect x="1" y="1" width="1" height="5" />
+					<rect x="2" y="2" width="1" height="3" />
+					<rect x="3" y="3" width="1" height="1" />
+				</svg>
+				{{ GAME_MENU.label }}
+			</RouterLink>
+
 			<!-- secondary action, pinned to the pin (not the page): only present at the planet -->
 			<a
 				class="arrival__report arrival__reveal"
@@ -45,8 +65,9 @@
 
 <script setup>
 	import { computed, ref, watch } from 'vue'
+	import { RouterLink } from 'vue-router'
 	import { ARRIVAL } from '@/constants/journey'
-	import { BUG_REPORT, CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
+	import { BUG_REPORT, CONTACT_CHANNELS, CONTACT_HEADING, GAME_MENU } from '@/data/contact'
 	import { riseFall, smoothstep } from '@/js/math'
 	import FlightDust from './FlightDust.vue'
 	import PageTitle from './PageTitle.vue'
@@ -69,8 +90,9 @@
 		smoothstep(riseFall(props.progress, ARRIVAL.heatFrom, ARRIVAL.heatFull, ARRIVAL.heatOut))
 	)
 
-	// The chip is the last thing out, behind the heading and every portal.
-	const REPORT_INDEX = CONTACT_CHANNELS.length + 1
+	// Behind the heading and every portal: the menu, then the chip last of all.
+	const MENU_INDEX = CONTACT_CHANNELS.length + 1
+	const REPORT_INDEX = MENU_INDEX + 1
 
 	// One item's place in the queue: it is up once the surface window reaches it.
 	const threshold = index => ARRIVAL.contactFadeStart + index * ARRIVAL.contactStagger
@@ -186,6 +208,65 @@
 		@include portal-row;
 	}
 
+	// Pixel caps behind a blinking cursor, no frame: the keyline holds it off the sky like the heading.
+	.arrival__menu {
+		pointer-events: auto;
+		display: inline-flex;
+		// baseline, not center: the caps stand on the baseline and the cursor is exactly their 7 cells tall
+		align-items: baseline;
+		gap: 1rem;
+		// a clear beat under the portals: the menu is its own thing, not a fourth label
+		margin-top: 3.5rem;
+		padding: 0.5rem 0.9rem;
+		font-family: $font-pixel;
+		font-size: px8(3);
+		letter-spacing: 1px;
+		text-transform: uppercase;
+		text-decoration: none;
+		// yellow at rest, unlike the white portal labels: the accent colour is what the eye lands on
+		color: $yellow;
+		transition: color 0.3s ease;
+		@include pixel-keyline($unit: 1px, $halo: 6px, $halo-colour: rgba($yellow, 0.5));
+	}
+
+	// the selected item goes to full white, as a console menu highlights the row in hand
+	.arrival__menu:hover,
+	.arrival__menu:focus-visible {
+		outline: none;
+		color: $white;
+	}
+
+	.arrival__cursor {
+		position: relative;
+		// the face draws its caps one cell above the baseline; the cursor climbs the same cell
+		top: -0.125em;
+		width: 0.5em;
+		height: 0.875em;
+		fill: $yellow;
+		// zero-blur shadows on every side: the keyline, for a shape text-shadow cannot reach
+		filter: drop-shadow(1px 0 0 $black) drop-shadow(-1px 0 0 $black) drop-shadow(0 1px 0 $black)
+			drop-shadow(0 -1px 0 $black);
+		animation: cursor-blink 1s steps(1, end) infinite;
+	}
+
+	// the cursor settles on the item in hand
+	.arrival__menu:hover .arrival__cursor,
+	.arrival__menu:focus-visible .arrival__cursor {
+		animation: none;
+	}
+
+	@keyframes cursor-blink {
+		50% {
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.arrival__cursor {
+			animation: none;
+		}
+	}
+
 	.arrival__report {
 		@include pinned-chip;
 
@@ -211,6 +292,13 @@
 				margin-top: 1rem;
 				gap: 1.5rem;
 			}
+		}
+
+		// the bottom row is already the rail and the chip, so the menu stays in flow, tight under the
+		// portals and one pixel step down to fit the frame
+		.arrival__menu {
+			margin-top: 0.75rem;
+			font-size: px8(2);
 		}
 	}
 </style>
