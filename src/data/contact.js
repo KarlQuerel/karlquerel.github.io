@@ -1,5 +1,7 @@
 // Drives the contact arrival at the end of the landing journey (JourneyArrival.vue).
 
+import { GAME_LINK } from '@/constants/navigation'
+
 // The page heading, rendered by PageTitle. Trailing space on `lead` separates it from the accent.
 export const CONTACT_HEADING = {
 	lead: 'Send me a ',
@@ -30,6 +32,10 @@ export const CONTACT_CHANNELS = [
 		blank: true,
 	},
 ]
+
+// The title menu under the portals: the game's door once the visitor has landed, on the same
+// route as the GAME chip so both move together when the game ships.
+export const GAME_MENU = { label: 'New game', to: GAME_LINK.to }
 
 // The bug-report chip pinned bottom-right: opens a prefilled GitHub issue.
 const ISSUE_BODY = ['### What happened?', '', '### Where?', '', '### Browser', ''].join('\n')
