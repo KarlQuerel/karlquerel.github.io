@@ -1,6 +1,5 @@
 <template>
-	<!-- Tiny pixel-art national flag — a spot of colour that anchors each timeline card's location and
-	     breaks up the white text. -->
+	<!-- Pixel-art national flag. Sized and framed by its host through --flag-height / --flag-shadow. -->
 	<span class="pixel-flag" aria-hidden="true">
 		<svg
 			v-if="country === 'france'"
@@ -60,11 +59,13 @@
 	.pixel-flag {
 		display: inline-flex;
 		flex: none;
-		height: clamp(0.6rem, 1.7vw, 0.8rem);
+		height: var(--flag-height, clamp(0.6rem, 1.7vw, 0.8rem));
 		// Crisp 1px frame + a soft drop so the flag reads as a chip on the starfield.
-		box-shadow:
+		box-shadow: var(
+			--flag-shadow,
 			0 0 0 1px rgba(255, 255, 255, 0.22),
-			0 1px 3px rgba(0, 0, 0, 0.9);
+			0 1px 3px rgba(0, 0, 0, 0.9)
+		);
 	}
 
 	.pixel-flag__svg {
