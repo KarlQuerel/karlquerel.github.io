@@ -3,7 +3,7 @@
 		<!-- no accent dot — reads as the header above the themed cards -->
 		<div class="life-slot">
 			<section v-reveal class="life-card reveal-block">
-				<h2 class="life-card__title">ABOUT ME</h2>
+				<h3 class="life-card__title">ABOUT ME</h3>
 				<p
 					v-for="(line, i) in ABOUT_ME"
 					:key="i"
@@ -17,9 +17,9 @@
 
 		<div class="life-slot">
 			<section v-reveal class="life-card reveal-block" data-section="dogs">
-				<h2 class="life-card__title">
+				<h3 class="life-card__title">
 					<span class="life-card__dot" aria-hidden="true" />DOGS
-				</h2>
+				</h3>
 				<p
 					v-for="(line, i) in DOG_LINES"
 					:key="i"
@@ -60,9 +60,9 @@
 
 		<div v-for="section in LIFE_SECTIONS" :key="section.id" class="life-slot">
 			<section v-reveal class="life-card reveal-block" :data-section="section.id">
-				<h2 class="life-card__title">
+				<h3 class="life-card__title">
 					<span class="life-card__dot" aria-hidden="true" />{{ section.title }}
-				</h2>
+				</h3>
 				<template v-for="(line, i) in section.lines" :key="i">
 					<picture v-if="section.media?.beforeLine === i" class="life-card__media">
 						<source
