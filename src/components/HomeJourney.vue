@@ -162,6 +162,10 @@
 	const dims = ref({ trackH: 0, vh: 0 })
 	const camTrack = ref([])
 	const stops = ref([])
+	// Where the way-out chips stand off: a station whose copy runs under them (a phone's full-width
+	// column) is text on text. Spans in track px, from the station reaching the chips' foot to its
+	// leaving the top of the frame; measured, so a column wide enough on a tablet stands them off too.
+	const standOff = ref([])
 	let resizeObserver = null
 
 	function measure() {
@@ -210,6 +214,36 @@
 		]
 		// rail thresholds: a stop lights once its station crosses mid-viewport
 		stops.value = [0, topOf(workRef.value), topOf(lifeRef.value), topOf(arrivalRef.value)]
+		const chips = [...track.querySelectorAll('.journey__cta')].map(el =>
+			el.getBoundingClientRect()
+		)
+		const chipLeft = Math.min(...chips.map(r => r.left))
+		const chipFoot = Math.max(...chips.map(r => r.bottom))
+		standOff.value = [workRef.value, lifeRef.value].flatMap(station => {
+			const under = STATION_PARTS.map(part => station.querySelector(part)).filter(
+				el => textRight(el) > chipLeft
+			)
+			return under.length
+				? [{ from: topOf(under[0]) - chipFoot, to: bottomOf(under.at(-1)) }]
+				: []
+		})
+	}
+
+	// A station's parts, judged apart: a title wide enough to run under the chips need not stand them
+	// off the column below it, which may well be clear.
+	const STATION_PARTS = ['.journey__station-head', '.journey__station-body']
+
+	// The right edge of a part's copy — its text runs, not its boxes: a centred title's box spans the column.
+	function textRight(part) {
+		const range = document.createRange()
+		const walker = document.createTreeWalker(part, NodeFilter.SHOW_TEXT)
+		let right = -Infinity
+		for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+			if (!node.data.trim()) continue
+			range.selectNodeContents(node)
+			right = Math.max(right, range.getBoundingClientRect().right)
+		}
+		return right
 	}
 
 	const scrolled = computed(() => progress.value * Math.max(0, dims.value.trackH - dims.value.vh))
@@ -346,6 +380,17 @@
 		return { opacity: t.toFixed(3), visibility: t > 0.01 ? null : 'hidden' }
 	})
 
+	// how clear the chips are of the stations they stand off: 1 in the open, 0 with one under them
+	const ctaClear = computed(() => {
+		const s = scrolled.value
+		const run = (JOURNEY.ctaStandOffVh / 100) * dims.value.vh || 1
+		let clearance = Infinity
+		for (const span of standOff.value) {
+			clearance = Math.min(clearance, Math.max(span.from - s, s - span.to))
+		}
+		return smoothstep(clamp01(clearance / run))
+	})
+
 	// The way out goes once the descent starts, so the last stretch is the atmosphere and nothing else.
 	const ctaStyle = computed(() => {
 		const there = smoothstep(
@@ -354,9 +399,10 @@
 					(ARRIVAL.ctaFadeEnd - ARRIVAL.ctaFadeStart)
 			)
 		)
+		const shown = (1 - there) * ctaClear.value
 		return {
-			opacity: (1 - there).toFixed(3),
-			visibility: there < 1 ? null : 'hidden',
+			opacity: shown.toFixed(3),
+			visibility: shown > 0.01 ? null : 'hidden',
 		}
 	})
 
