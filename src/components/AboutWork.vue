@@ -24,7 +24,7 @@
 						{{ CAREER_TYPE_LABELS[item.type] }}
 						<span class="ztl-span">{{ item.from }} – {{ item.to }}</span>
 					</p>
-					<h2 class="ztl-title">{{ item.title }}</h2>
+					<h3 class="ztl-title">{{ item.title }}</h3>
 					<component
 						:is="item.url ? 'a' : 'span'"
 						:href="item.url"
