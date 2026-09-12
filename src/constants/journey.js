@@ -6,7 +6,7 @@ export const JOURNEY = {
 	// The departure leg carries the whole flight out before the first station docks.
 	heroLegVh: 103,
 	// The longest leg: the low-orbit skim and the held pass where the ground streams past.
-	diveLegVh: 175,
+	diveLegVh: 120,
 	// Baseline longitude turned over the journey; the track's `roll` adds ground rush on top.
 	turns: 0.45,
 	// The sun's swing around the planet (turns): the terminator advances, so landing is at dusk.
@@ -19,6 +19,9 @@ export const JOURNEY = {
 	spark: { size: 3, shade: 'linen', fadeFrom: 0.009, fadeTo: 0.021 },
 	// Where the held stretch of the surface skim ends, as a fraction of the apex -> LIFE dock run.
 	skimHoldAt: 0.62,
+	// The way-out chips stand off a station whose copy runs under them (a phone's full-width column):
+	// the fade's run in vh, either side of the station.
+	ctaStandOffVh: 12,
 	// Where the camera finishes turning onto the approach axis (fraction of LIFE -> runway).
 	lineUpAt: 0.55,
 	// The deck thins as the camera's scale climbs: up close a checker over ground is not weather.
