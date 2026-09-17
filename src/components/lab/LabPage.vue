@@ -92,6 +92,7 @@
 
 <style scoped lang="scss">
 	@use '@/styles/flyby' as *;
+	@use '@/styles/mixins' as *;
 
 	.flyby {
 		// Sampled off the opening frame: on a slow GPU the first paint is this gradient, not a black card.
@@ -324,7 +325,7 @@
 		font: inherit;
 		color: $flyby-dim;
 		text-decoration: none;
-		cursor: pointer;
+		@include cursor-interactive;
 		text-shadow:
 			2px 2px 0 $black,
 			$flyby-outline;
