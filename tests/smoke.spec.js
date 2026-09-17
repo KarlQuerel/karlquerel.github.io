@@ -38,3 +38,24 @@ for (const route of ROUTES) {
 		expect(errors).toEqual([])
 	})
 }
+
+// The cursor is CSS-only, so nothing else here would notice it silently falling back to
+// the OS arrow — a moved sprite or a refactored mixin would pass every test above.
+test('the blade cursor resolves at rest and over a link', async ({ page }) => {
+	const missing = []
+	page.on('response', r => {
+		if (r.url().includes('/assets/cursor/') && !r.ok()) missing.push(`${r.status()} ${r.url()}`)
+	})
+
+	await page.goto('/')
+	const resting = await page.evaluate(() => getComputedStyle(document.documentElement).cursor)
+	expect(resting).toContain('blade.png')
+
+	const interactive = await page.evaluate(() => {
+		const el = document.querySelector('a')
+		return el ? getComputedStyle(el).cursor : ''
+	})
+	expect(interactive).toContain('blade-active.png')
+
+	expect(missing).toEqual([])
+})
