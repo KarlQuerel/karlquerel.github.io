@@ -84,6 +84,8 @@ $heading-pixel-size-lg: 24px;
 
 // Gap between PixelPortal tiles in the portal row (the contact portals).
 $portal-row-gap: 3.5rem;
+// Tight enough that three tiles still fit the narrowest phone on one line.
+$portal-row-gap-mobile: 0.5rem;
 
 // Z-Index
 $z-index-content: 1;
