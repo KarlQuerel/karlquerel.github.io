@@ -32,7 +32,7 @@
 	position: fixed;
 	bottom: 1rem;
 	right: 1rem;
-	z-index: 20;
+	z-index: variables.$z-index-chrome;
 	display: inline-flex;
 	align-items: center;
 	gap: 0.6rem;
