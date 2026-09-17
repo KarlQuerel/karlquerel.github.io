@@ -5,8 +5,8 @@ Pixel art
 ---------
 Files: about/ps1.gif, about/ps1-still.png,
        contact/bug.png, contact/email.png, contact/github.png,
-       contact/linkedin.png, cursor/arrow.png, cursor/arrow@2x.png,
-       cursor/arrow-active.png, cursor/arrow-active@2x.png,
+       contact/linkedin.png, cursor/blade.png, cursor/blade@2x.png,
+       cursor/blade-active.png, cursor/blade-active@2x.png,
        img/og-card.png, img/Yako_Animations/Idle.gif
 
 License: CC0 1.0 (public domain dedication) — no attribution required.
