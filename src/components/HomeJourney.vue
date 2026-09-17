@@ -440,7 +440,7 @@
 	.journey__chrome {
 		position: fixed;
 		inset: 0;
-		z-index: 20;
+		z-index: $z-index-chrome;
 		pointer-events: none;
 	}
 
