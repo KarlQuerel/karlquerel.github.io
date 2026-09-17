@@ -355,7 +355,7 @@
 		font-size: clamp(0.76rem, 0.95vw, 0.85rem);
 		font-weight: 600;
 		background: rgba(0, 0, 0, 0.62);
-		color: #ffffff;
+		color: variables.$white;
 		border-color: var(--badge-color);
 	}
 
@@ -395,7 +395,7 @@
 		order: 1;
 		padding: 5px 8px;
 		background: rgba(255, 79, 139, 0.4);
-		color: #ffffff;
+		color: variables.$white;
 		border-color: #ff8fbb;
 		font-size: clamp(0.76rem, 0.95vw, 0.85rem);
 		font-weight: 600;
