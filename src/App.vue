@@ -75,7 +75,7 @@
 	.app-boot {
 		position: fixed;
 		inset: 0;
-		z-index: 30;
+		z-index: $z-index-boot;
 		pointer-events: none;
 		--boot-ground: #{$black};
 	}
