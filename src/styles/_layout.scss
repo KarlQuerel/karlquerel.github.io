@@ -130,16 +130,17 @@ html.page-scrollable #app .app-main {
 	border: 0;
 }
 
-// The pointer, drawn in the same staircase as the title menu's cursor: white at rest and ember over
-// anything interactive, so it follows the same rule as the text it lands on. The keyline is what
-// lets one sprite survive both the night sky and the lit ground. Plain url() first for browsers
-// without image-set; the hotspot sits on the tip.
-body {
+// The pointer is a broad swept blade with a bevelled rim: a lit silver bezel, a darker inner wall
+// and a near-black core, which is what reads as thick glass rather than a flat sticker. Over
+// anything you can act on it inverts — light body, dark rim — so the state change keeps the bevel
+// instead of flattening it. The rim is lit rather than dark on purpose: a black cursor disappears
+// against the void. The hotspot is the tip.
+html {
 	cursor:
-		url('/assets/cursor/arrow.png') 0 0,
+		url('/assets/cursor/blade.png') 1 1,
 		auto;
 	cursor:
-		image-set(url('/assets/cursor/arrow.png') 1x, url('/assets/cursor/arrow@2x.png') 2x) 0 0,
+		image-set(url('/assets/cursor/blade.png') 1x, url('/assets/cursor/blade@2x.png') 2x) 1 1,
 		auto;
 }
 
