@@ -219,7 +219,8 @@
 		margin-top: 3.5rem;
 		padding: 0.5rem 0.9rem;
 		font-family: $font-pixel;
-		font-size: px8(3);
+		// tracks the page heading rather than a size of its own: the menu must never outgrow it
+		font-size: $heading-pixel-size;
 		letter-spacing: 1px;
 		text-transform: uppercase;
 		text-decoration: none;
@@ -227,6 +228,13 @@
 		color: $yellow;
 		transition: color 0.3s ease;
 		@include pixel-keyline($unit: 1px, $halo: 6px, $halo-colour: rgba($yellow, 0.5));
+	}
+
+	// up a whole 8px step with the heading, on the heading's own breakpoint
+	@media (min-width: $breakpoint-desktop) {
+		.arrival__menu {
+			font-size: $heading-pixel-size-lg;
+		}
 	}
 
 	// the selected item goes to full white, as a console menu highlights the row in hand
@@ -281,24 +289,12 @@
 		height: auto;
 	}
 
+	// The portals hold their row here (portal-row), so the menu keeps the size and the stand-off it
+	// has on desktop — at the portals' own label size it read as a fourth channel, not the way on.
 	@media (max-width: $breakpoint-mobile) {
-		// the pin can't scroll, so the stacked portals must fit a phone viewport
+		// the pin can't scroll, so the whole arrival must fit a phone viewport in one frame
 		.arrival__content {
 			padding-top: $chrome-clearance-mobile;
-		}
-
-		.arrival__channels {
-			& {
-				margin-top: 1rem;
-				gap: 1.5rem;
-			}
-		}
-
-		// the bottom row is already the rail and the chip, so the menu stays in flow, tight under the
-		// portals and one pixel step down to fit the frame
-		.arrival__menu {
-			margin-top: 0.75rem;
-			font-size: px8(2);
 		}
 	}
 </style>
