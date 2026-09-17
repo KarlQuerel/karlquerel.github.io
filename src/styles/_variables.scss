@@ -89,6 +89,10 @@ $portal-row-gap-mobile: 0.5rem;
 
 // Z-Index
 $z-index-content: 1;
+// Chrome riding over the scene: the rail, the journey chips, every pinned chip.
+$z-index-chrome: 20;
+// The boot veil, over the starfield and every route's chrome, so nothing shows through it.
+$z-index-boot: 30;
 
 // Unified "void" frame: the single source of truth for every panel, card and button border.
 $void-border-color: rgba(255, 255, 255, 0.1);
