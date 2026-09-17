@@ -34,6 +34,9 @@
 	$portal-pad-y: 0.9rem;
 	// a step below $heading-pixel-size so page headings stay dominant
 	$portal-label-size: px8(2);
+	// Phone sizes: three tiles share one line, so the icon comes down and the padding with it.
+	$portal-icon-size-mobile: 3.75rem;
+	$portal-pad-mobile: 0.5rem;
 
 	.portal {
 		display: flex;
@@ -78,6 +81,8 @@
 		width: $portal-icon-size;
 		height: auto;
 		display: block;
+		// the sprite is art pixels, not a photo: keep the grid hard the way every other surface does
+		image-rendering: pixelated;
 	}
 
 	.portal:hover .portal__icon,
@@ -123,6 +128,24 @@
 		.portal:focus-visible .portal__icon {
 			transform: none;
 			animation: none;
+		}
+	}
+
+	// In a row on a phone the label cannot fit beside its neighbours, and a fixed tile width has
+	// nothing left to line up, so both go — the icon carries it and the name stays for a reader.
+	@media (max-width: $breakpoint-mobile) {
+		.portal {
+			width: auto;
+			padding: $portal-pad-mobile;
+		}
+
+		.portal__icon,
+		.portal__img {
+			width: $portal-icon-size-mobile;
+		}
+
+		.portal__label {
+			@include visually-hidden;
 		}
 	}
 </style>
