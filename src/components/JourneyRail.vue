@@ -50,7 +50,7 @@
 		left: 0.75rem;
 		top: 50%;
 		transform: translateY(-50%);
-		z-index: 20;
+		z-index: $z-index-chrome;
 	}
 
 	// Separate from .rail so the mobile scrim can pad the outside without shifting the track.
