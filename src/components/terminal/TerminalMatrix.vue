@@ -83,12 +83,14 @@
 </script>
 
 <style lang="scss" scoped>
+	@use '@/styles/mixins' as *;
+
 	.terminal-matrix {
 		position: absolute;
 		inset: 0;
 		z-index: 10;
 		background: #000;
-		cursor: pointer;
+		@include cursor-interactive;
 		overflow: hidden;
 	}
 
