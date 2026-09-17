@@ -1,4 +1,5 @@
 @use 'variables';
+@use 'mixins';
 
 html {
 	height: 100%;
@@ -127,4 +128,31 @@ html.page-scrollable #app .app-main {
 	clip: rect(0, 0, 0, 0);
 	white-space: nowrap;
 	border: 0;
+}
+
+// The pointer, drawn in the same staircase as the title menu's cursor: white at rest and ember over
+// anything interactive, so it follows the same rule as the text it lands on. The keyline is what
+// lets one sprite survive both the night sky and the lit ground. Plain url() first for browsers
+// without image-set; the hotspot sits on the tip.
+body {
+	cursor:
+		url('/assets/cursor/arrow.png') 0 0,
+		auto;
+	cursor:
+		image-set(url('/assets/cursor/arrow.png') 1x, url('/assets/cursor/arrow@2x.png') 2x) 0 0,
+		auto;
+}
+
+a,
+button,
+summary,
+[role='button'] {
+	@include mixins.cursor-interactive;
+}
+
+// a text field still needs a caret, not an arrow
+input,
+textarea,
+[contenteditable] {
+	cursor: text;
 }
