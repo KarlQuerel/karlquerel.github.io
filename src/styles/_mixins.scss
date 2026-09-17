@@ -74,11 +74,26 @@
 		0 0 #{$halo} $halo-colour;
 }
 
+// The pointer over anything clickable: ember, so the cursor turns at the same moment the label does.
+// Plain url() first for browsers without image-set; the hotspot sits on the arrow's tip.
+@mixin cursor-interactive {
+	cursor:
+		url('/assets/cursor/arrow-active.png') 0 0,
+		pointer;
+	cursor:
+		image-set(
+				url('/assets/cursor/arrow-active.png') 1x,
+				url('/assets/cursor/arrow-active@2x.png') 2x
+			)
+			0 0,
+		pointer;
+}
+
 // The interactive counterpart, used by every clickable button so they read as one system.
 @mixin void-button($lift: -4px, $bg: rgba(0, 0, 0, 0.35)) {
 	@include void-panel($bg);
 	color: variables.$text-interactive;
-	cursor: pointer;
+	@include cursor-interactive;
 	transition:
 		color 0.3s ease,
 		border-color 0.3s ease,
