@@ -76,6 +76,7 @@
 
 // The pointer over anything clickable: ember, so the cursor turns at the same moment the label does.
 // Plain url() first for browsers without image-set; the hotspot sits on the blade's tip.
+// 3x matters on phones and high-end laptops, where a 2x sprite would be upscaled and soften.
 @mixin cursor-interactive {
 	cursor:
 		url('/assets/cursor/blade-active.png') 1 1,
@@ -83,10 +84,26 @@
 	cursor:
 		image-set(
 				url('/assets/cursor/blade-active.png') 1x,
-				url('/assets/cursor/blade-active@2x.png') 2x
+				url('/assets/cursor/blade-active@2x.png') 2x,
+				url('/assets/cursor/blade-active@3x.png') 3x
 			)
 			1 1,
 		pointer;
+
+	// the body dims while the button is held: the one bit of tactile feedback a cursor can give
+	&:active {
+		cursor:
+			url('/assets/cursor/blade-press.png') 1 1,
+			pointer;
+		cursor:
+			image-set(
+					url('/assets/cursor/blade-press.png') 1x,
+					url('/assets/cursor/blade-press@2x.png') 2x,
+					url('/assets/cursor/blade-press@3x.png') 3x
+				)
+				1 1,
+			pointer;
+	}
 }
 
 // The interactive counterpart, used by every clickable button so they read as one system.
