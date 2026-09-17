@@ -140,7 +140,12 @@ html {
 		url('/assets/cursor/blade.png') 1 1,
 		auto;
 	cursor:
-		image-set(url('/assets/cursor/blade.png') 1x, url('/assets/cursor/blade@2x.png') 2x) 1 1,
+		image-set(
+				url('/assets/cursor/blade.png') 1x,
+				url('/assets/cursor/blade@2x.png') 2x,
+				url('/assets/cursor/blade@3x.png') 3x
+			)
+			1 1,
 		auto;
 }
 
