@@ -150,13 +150,3 @@
 @mixin lean {
 	translate: calc(var(--mx, 0) * var(--depth, 0) * 1px) calc(var(--my, 0) * var(--depth, 0) * 1px);
 }
-
-// Gone from the page, still in the accessibility tree: a label its icon already carries.
-@mixin visually-hidden {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	overflow: hidden;
-	clip-path: inset(50%);
-	white-space: nowrap;
-}
