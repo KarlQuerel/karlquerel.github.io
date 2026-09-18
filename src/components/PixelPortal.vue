@@ -37,6 +37,8 @@
 	// Phone sizes: three tiles share one line, so the icon comes down and the padding with it.
 	$portal-icon-size-mobile: 3.75rem;
 	$portal-pad-mobile: 0.5rem;
+	// One 8px step. Press Start 2P is drawn at 8px, so this is its native size, not a shrunk 16.
+	$portal-label-size-mobile: px8(1);
 
 	.portal {
 		display: flex;
@@ -131,11 +133,13 @@
 		}
 	}
 
-	// In a row on a phone the label cannot fit beside its neighbours, and a fixed tile width has
-	// nothing left to line up, so both go — the icon carries it and the name stays for a reader.
+	// In a row on a phone the tile drops its fixed width, and the label drops a whole 8px step so
+	// the longest of them still fits its own tile. The icons alone were too easy to misread once
+	// they all went to the same grey.
 	@media (max-width: $breakpoint-mobile) {
 		.portal {
 			width: auto;
+			gap: 0.4rem;
 			padding: $portal-pad-mobile;
 		}
 
@@ -145,7 +149,7 @@
 		}
 
 		.portal__label {
-			@include visually-hidden;
+			font-size: $portal-label-size-mobile;
 		}
 	}
 </style>
