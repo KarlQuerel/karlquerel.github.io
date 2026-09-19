@@ -625,6 +625,11 @@ export const ENTRY = {
 		'sand',
 	],
 	skyGamma: 1.45,
+	// Where the light in the sky comes from. `pull` is how much of it gathers round the sun rather than
+	// sitting at the horizon — the authored gradient assumed a sun that never left it. `spread` is the
+	// reach of that gathering in frame heights, `wide` how much a sideways cell counts against a
+	// vertical one, since a sky stretches along the horizon far more than it climbs.
+	skyLight: { pull: 0.5, spread: 0.85, wide: 0.45 },
 	// The sky only STARTS as a ramp of y: level sets of a smooth field would read as stripes.
 	skyField: {
 		drift: 1.3,
@@ -639,15 +644,52 @@ export const ENTRY = {
 	// and scattered inside each Bayer level, since a full-width dither is where the lattice shows
 	skyJitter: 1,
 
-	// The sun, drawn into the sky's canvas so it shares the grid and the ranges occlude it.
+	// The sun, drawn into the sky's canvas so it shares the grid and the ranges occlude it. It crosses
+	// the sky (js/sun.js) on an ellipse: `span` either side of the frame's middle, `rise` above
+	// `horizon` at noon, `horizon` itself where it comes up behind the right-hand range and goes down
+	// behind the left, then `rise` under it at midnight, back the way it came. A day every `cycleMs`,
+	// with the hour of the visit setting where in it the visitor comes in. It never climbs far: the sky
+	// ramp and `skyGamma` are authored for a low sun, and the stars hang over the top 58% of the frame.
+	// Night answers to its height: nothing above `nightFrom`, where the disc's centre meets the
+	// skyline, full at `nightFull`, the bottom of the turn (`horizon` + `rise`).
 	sun: {
-		x: 0.19,
-		y: 0.66,
+		circuit: {
+			horizon: 0.74,
+			rise: 0.2,
+			span: 0.44,
+			cycleMs: 180000,
+			nightFrom: 0.7,
+			nightFull: 0.94,
+			floor: 0.25,
+		},
+		// it is repainted once it has moved this much of a cell — below that nothing on screen would change
+		nudge: 0.08,
+		// The sky is placed again once the sun has moved this many cells: the dear pass, so as fine as the
+		// frame carries — at 0.2 a place moves a quarter of the cells a notch of night does.
+		skyNotch: 0.2,
+		// the ranges are relit once the sun has moved this many cells, so their glow travels with it
+		glowNotch: 1,
+		// Night behind it: every ramp in the scene walks this many steps down as the sun goes under, a
+		// `notch` of a step at a time. Each cell goes over on its own threshold, so the finer the notch
+		// the fewer cells change at once; below a frame's worth the frame rate is the ceiling.
+		night: 4,
+		notch: 1 / 256,
+		// it only runs once the ground is under the visitor, in approach progress
+		sinkFrom: 0.6,
 		r: 13,
 		coronaR: 4,
 		coronaLift: 7,
-		disc: 'glow',
-		rim: 'sand',
+		// The disc holds its cream: in this palette every tone under it is a stripe, a dot screen or a snap
+		// across the sun, and none reads as one. The rim cools as the sun comes down, one tone per share
+		// of the drop, lower limb first across a band `blend` radii tall; the rim and the shrinking corona
+		// carry the reddening. Whatever a ramp holds stops where the sky's own top is: a sun is the
+		// brightest thing in its glare, and a disc walked under the corona read as an eclipse.
+		disc: ['glow'],
+		rim: ['sand', 'dune'],
+		blend: 2,
+		// how much of the corona goes as the sun comes down — glare falls off through more air, and the
+		// halo would otherwise reach the sky's top and swallow a disc that has cooled to the same tone
+		coronaFade: 0.7,
 	},
 
 	// First stars, masked off before the horizon glow. Two coprime tile sizes, so no repeat lines up.
@@ -823,6 +865,8 @@ export const ENTRY = {
 		// highest up the ramp and hardest compressed: distance is a shorter walk of adjacent steps
 		shades: ['ochre', 'brick', 'clay', 'flare', 'amber'],
 		crest: 'amber',
+		// darker steps to fall to at night: its own ramp stops at ochre, too light under a black sky
+		foot: ['basalt', 'shale'],
 		// `lift` is how far toward the palest step the foot goes, `depth` below the crest, eased by `power`.
 		haze: { lift: 0.55, depth: 0.55, power: 1.4 },
 		// The tallest silhouette in frame. Aerial perspective by compressing the ramp, not rotating hue.
