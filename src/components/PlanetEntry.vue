@@ -471,15 +471,13 @@
 
 	// The sun goes on crossing the sky while the surface is read, once the ground is under the visitor.
 	// The disc is repainted whenever it has slid `nudge` of a cell, where its edge starts to answer.
-	// Every `skyNotch` cells the sky is placed again, the dear pass; every `notch` of a step of night it
-	// is darkened and the ranges relit, cheap passes over kept rungs; every `glowNotch` cells the ranges
-	// are relit so their glow travels with the disc. Work runs one job a frame, and a tick that lands
-	// on a pending job folds into it — a job reads the sun as it stands when it runs, so the frame rate
-	// is the ceiling on how fine any of it gets, never a backlog.
+	// Every `travel` cells the sky is placed again and the ranges relit, so their light, shadows and
+	// glow follow the disc; between those, every `notch` of a step of night the sky is darkened and
+	// the ranges relit, for a sun that sinks faster than it travels. Work runs one job a frame, and a
+	// tick that lands on pending jobs folds into them — a job reads the sun as it stands when it runs,
+	// so the frame rate is the ceiling on how fine any of it gets, never a backlog.
 	const tick = night => Math.floor(night / ENTRY.sun.notch)
 	const jobs = []
-	// where the sun stood when the ranges were last relit, in frame fractions
-	let glowAt = { x: 0, y: 0 }
 	let sinking = 0
 	let last = 0
 	function sink(now) {
@@ -490,15 +488,10 @@
 		const set = sunAt(sunk)
 		const [cx, cy] = [set.x * sky.w, set.y * sky.h]
 		if (!jobs.length) {
-			if (Math.hypot(cx - sky.litX, cy - sky.litY) >= ENTRY.sun.skyNotch) {
-				jobs.push(s => rebuildSky(sky, s))
+			if (Math.hypot(cx - sky.litX, cy - sky.litY) >= ENTRY.sun.travel) {
+				jobs.push(s => rebuildSky(sky, s), lightRanges)
 			} else if (tick(set.night) !== tick(sky.night)) {
 				jobs.push(fall)
-			} else if (
-				Math.hypot((set.x - glowAt.x) * sky.w, (set.y - glowAt.y) * sky.h) >=
-				ENTRY.sun.glowNotch
-			) {
-				jobs.push(lightRanges)
 			}
 		}
 		const job = jobs.shift()
@@ -532,7 +525,6 @@
 		})
 	}
 	function lightRanges(now) {
-		glowAt = { x: now.x, y: now.y }
 		ranges.forEach(sprite => sprite && lightRidge(sprite, now))
 	}
 	// one notch of night over everything that keeps its rungs
