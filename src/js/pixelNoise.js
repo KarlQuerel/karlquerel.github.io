@@ -63,6 +63,14 @@ export function ditherIndex(lit, levels, x, y, contrast = 0) {
 	return Math.max(0, Math.min(levels - 1, i + step))
 }
 
+// A cell's own threshold for a walk down a ramp: spread across the whole of its Bayer level rather
+// than sat on it, so a fade is cells going over one by one in Bayer order and never a sixteenth of
+// the frame snapping at once. Kept per cell by whoever walks, so a step is a compare.
+const WHOLE_LEVEL = 1
+export function fallThreshold(x, y) {
+	return ditherThreshold(x, y, WHOLE_LEVEL)
+}
+
 // Quantise `lit` onto a ramp with the dither confined to a seam of half-width `seam` at each boundary.
 export function seamIndex(lit, levels, x, y, seam, jitter = 0) {
 	const v = lit * (levels - 1)
