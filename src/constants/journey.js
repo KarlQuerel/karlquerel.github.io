@@ -645,30 +645,28 @@ export const ENTRY = {
 	skyJitter: 1,
 
 	// The sun, drawn into the sky's canvas so it shares the grid and the ranges occlude it. It crosses
-	// the sky (js/sun.js) on an ellipse: `span` either side of the frame's middle, `rise` above
-	// `horizon` at noon, `horizon` itself where it comes up behind the right-hand range and goes down
-	// behind the left, then `rise` under it at midnight, back the way it came. A day every `cycleMs`,
-	// with the hour of the visit setting where in it the visitor comes in. It never climbs far: the sky
-	// ramp and `skyGamma` are authored for a low sun, and the stars hang over the top 58% of the frame.
-	// Night answers to its height: nothing above `nightFrom`, where the disc's centre meets the
-	// skyline, full at `nightFull`, the bottom of the turn (`horizon` + `rise`).
+	// the sky (js/sun.js) on a parabola: `span` either side of the frame's middle, `rise` above
+	// `horizon` at noon, `horizon` itself at the ends of the day, then `rise` under it at midnight, back
+	// the way it came. `horizon` sits under the lowest notch of the skyline by the disc's radius, so the
+	// disc is wholly behind the ranges before it turns back. A day every `cycleMs`, with the hour of the
+	// visit setting where in it the visitor comes in. It never climbs far: the sky ramp and `skyGamma`
+	// are authored for a low sun, and the stars hang over the top 58% of the frame. Night answers to
+	// its height: nothing above `nightFrom`, where the peaks have half the disc, full at midnight.
 	sun: {
 		circuit: {
-			horizon: 0.74,
-			rise: 0.2,
+			horizon: 0.9,
+			rise: 0.36,
 			span: 0.44,
 			cycleMs: 180000,
-			nightFrom: 0.7,
-			nightFull: 0.94,
+			nightFrom: 0.8,
 			floor: 0.25,
 		},
 		// it is repainted once it has moved this much of a cell — below that nothing on screen would change
 		nudge: 0.08,
-		// The sky is placed again once the sun has moved this many cells: the dear pass, so as fine as the
-		// frame carries — at 0.2 a place moves a quarter of the cells a notch of night does.
-		skyNotch: 0.2,
-		// the ranges are relit once the sun has moved this many cells, so their glow travels with it
-		glowNotch: 1,
+		// The sky is placed again and the ranges relit once the sun has moved this many cells: the dear
+		// passes, so as fine as the frame carries — at 0.2 a step moves a quarter of the cells a notch of
+		// night does, and a shadow line a hundred cells long moves under a cell.
+		travel: 0.2,
 		// Night behind it: every ramp in the scene walks this many steps down as the sun goes under, a
 		// `notch` of a step at a time. Each cell goes over on its own threshold, so the finer the notch
 		// the fewer cells change at once; below a frame's worth the frame rate is the ceiling.
@@ -810,7 +808,16 @@ export const ENTRY = {
 	ridgeMassifDepth: 0.5,
 	// headroom so the tallest massif never clips flat against the sprite ceiling
 	ridgeCeiling: 0.95,
+	// The authored light, from the left where the sun sets. The snowline and the habitat are cut under
+	// it; the faces are lit under the sun as it stands (lightRidge), and match this when it sets.
 	ridgeLight: -1,
+	// How much a high sun favours gentle ground over steep, on top of a slope's turn toward it.
+	ridgeUp: 0.35,
+	// Cast shadows along a range: `steps` down the ramp under the line a peak throws toward the side
+	// away from the sun, softened over `soft` cells at its edge. The line never drops less than `least`
+	// a cell, or a sun on the skyline would shade the whole range behind its first peak. One step: two
+	// turned the ranges into flat purple at either end of the day and lost the authored relief.
+	ridgeShadow: { steps: 1, soft: 2.5, least: 0.2 },
 	ridgeSlopeSpan: 2,
 	// Cells either side that shading terrain is averaged over; the silhouette keeps the raw profile.
 	ridgeReliefBlur: 4,
