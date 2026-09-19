@@ -7,6 +7,7 @@ import { norm } from './vec3.js'
 import {
 	ditherIndex,
 	ditherThreshold,
+	fallThreshold,
 	fbm1,
 	fbm2,
 	hash1,
@@ -70,27 +71,34 @@ export function tidySprite(img, w, h, passes) {
 	}
 }
 
-// Each column is lit by its facing, darkened with depth, then dithered onto the band's ramp.
-export function drawRidge(el, band, visitSeed, frame) {
+// What a cut cell is, so a relight knows which ramp it walks — or that it is the habitat's own colour.
+const ROCK = 0
+const SNOW = 1
+const FIXED = 2
+
+// The range cut: profile, relief, snow, strata and the habitat — everything that owes nothing to the
+// sun. Each face cell keeps the step it reached on its ramp and lightRidge paints the sprite from those.
+export function cutRidge(el, band, visitSeed, frame) {
 	const { w, h, cell } = gridFor(band, frame)
-	const { ctx, img, put } = openSprite(el, w, h)
+	const { ctx, img, put: fix } = openSprite(el, w, h)
+	// what each cell is, the step it reached, its own threshold for the night walk, and per column
+	// where the crest sits and how it faces
+	const kind = new Uint8Array(w * h)
+	const step = new Uint8Array(w * h)
+	const thr = new Float32Array(w * h)
+	const tops = new Uint16Array(w)
+	const facing = new Float32Array(w)
+	// what the habitat lays down stands in its own light, so it is painted here and never relit
+	const put = (x, y, col) => {
+		fix(x, y, col)
+		if (x >= 0 && y >= 0 && x < w && y < h) kind[y * w + x] = FIXED
+	}
 	// a band names its ramp; the colours themselves live in one place
 	const shades = band.shades.map(name => PALETTE[name])
-	const crest = PALETTE[band.crest]
 	const levels = shades.length
 	// optional snowcaps: a second ramp above the band's snowline (see band.snow)
 	const snow = band.snow
 	const snowShades = snow ? snow.shades.map(name => PALETTE[name]) : null
-	const snowCrest = snow ? PALETTE[snow.crest] : null
-	// The crest walks a short ramp by facing rather than wearing one colour the whole way.
-	const crestShades = [shades[levels - 2], shades[levels - 1], crest]
-	const snowCrestShades = snow
-		? [snowShades[snowShades.length - 2], snowShades[snowShades.length - 1], snowCrest]
-		: null
-	// The sun touches what is near it: `sunGlow` bands promote up their ramp with distance falloff.
-	const sun = band.sunGlow ? ENTRY.sun : null
-	const sunX = sun ? sun.x * w : 0
-	const sunY = sun ? (sun.y * frame.h - (frame.h - h * cell)) / cell : 0
 
 	// the whole profile first, so a column can be compared with its neighbour
 	const profile = new Array(w)
@@ -215,18 +223,14 @@ export function drawRidge(el, band, visitSeed, frame) {
 					idx = Math.max(0, idx - (r > ENTRY.strataDeepAt ? 2 : 1))
 				}
 			}
-			if (sun) {
-				const reach = clamp01(1 - Math.hypot(x - sunX, y - sunY) / ENTRY.sunGlowCells)
-				idx = Math.min(rampLen - 1, idx + ditherIndex(reach, ENTRY.sunGlowLevels, x, y))
-			}
-			put(x, y, ramp[idx])
+			kind[y * w + x] = ramp === shades ? ROCK : SNOW
+			step[y * w + x] = idx
+			thr[y * w + x] = fallThreshold(x, y)
 		}
-		// the lit rim along the top: snow-capped where a cap hangs, warmed where the crest runs near the disc
-		const crestRamp = snow && capCells > snow.minCap ? snowCrestShades : crestShades
-		const crestGlow = sun
-			? clamp01(1 - Math.hypot(x - sunX, yTop - sunY) / ENTRY.sunGlowCells)
-			: 0
-		put(x, yTop, crestRamp[ditherIndex(clamp01(face + crestGlow), crestRamp.length, x, yTop)])
+		// the crest is lit at paint time; the cut only says where it runs and whether a cap hangs on it
+		tops[x] = yTop
+		facing[x] = face
+		kind[yTop * w + x] = snow && capCells > snow.minCap ? SNOW : ROCK
 	}
 
 	// The habitat (band.habitat): one dome in the middle stretch — the journey was TO somewhere.
@@ -341,7 +345,7 @@ export function drawRidge(el, band, visitSeed, frame) {
 				const x = hx + sx
 				const y = base + hab.spillDrop + sy
 				if (x < 0 || x >= w || y < 0 || y >= h) continue
-				if (img.data[(y * w + x) * 4 + 3] === 0) continue
+				if (y < tops[x] && kind[y * w + x] !== FIXED) continue
 				const f = clamp01(1 - Math.hypot(sx, sy * hab.spillSquash) / R) ** hab.spillPower
 				if (f <= ditherThreshold(x, y)) continue
 				put(x, y, spillShades[seamIndex(f, spillShades.length, x, y, ENTRY.ridgeSeam)])
@@ -373,10 +377,110 @@ export function drawRidge(el, band, visitSeed, frame) {
 		vent = { x: (vx + 0.5) / w, y: lip / h }
 	}
 
+	return {
+		ctx,
+		w,
+		h,
+		cell,
+		band,
+		kind,
+		step,
+		thr,
+		tops,
+		facing,
+		vent,
+		// the sky's height in this band's cells, to place the sun on the band's grid
+		frameH: frame.h,
+		// the habitat's own pixels, and the sheet the range is painted onto over them
+		fixed: img,
+		img: ctx.createImageData(w, h),
+	}
+}
+
+// The range in the light it stands in now. Every kept cell walks down its ramp for the night, the sun's
+// warmth lies over the cells near the disc, the crest is lit by its facing, then the tidy pass — a table
+// walk over the grid where the cut paid for the noise, so the ranges can follow the sky at its own pace.
+export function lightRidge(sprite, sky) {
+	const { ctx, w, h, cell, band, kind, step, thr, tops, facing, frameH, fixed, img } = sprite
+	const shades = band.shades.map(name => PALETTE[name])
+	const snow = band.snow
+	const snowShades = snow ? snow.shades.map(name => PALETTE[name]) : null
+	// The crest walks a short ramp by facing rather than wearing one colour the whole way.
+	const CREST_STEPS = 3
+	// Night walks every cell down its ramp as the sun goes. `band.foot` hangs darker steps under a
+	// range whose own shades stop short, so the far one cannot sit brown under a black sky; the day
+	// ramp above it is untouched, so night 0 paints exactly what was authored.
+	const foot = (band.foot ?? []).map(name => PALETTE[name])
+	// the part step goes cell by cell on each one's own threshold: a range darkens as a grain thickening
+	const whole = Math.floor(sky.night)
+	const part = sky.night - whole
+	const at = (ramp, i, t) => {
+		const j = i + foot.length - whole - (part > t ? 1 : 0)
+		return j < foot.length ? (foot[Math.max(0, j)] ?? ramp[0]) : ramp[j - foot.length]
+	}
+	// A crest is the top of its band's own ramp, not a ramp of its own. Built that way, night walks it
+	// down at the same rate as the rock under it; on a ramp of three it dropped three times as fast and
+	// the rim read as a stripe of the wrong colour all the way along the range.
+	const crestOf = (ramp, tip) => {
+		const full = [...foot, ...ramp, tip]
+		const base = foot.length + ramp.length - 2
+		return (i, t) => full[Math.max(0, base + i - whole - (part > t ? 1 : 0))] ?? full[0]
+	}
+	const rockCrest = crestOf(shades, PALETTE[band.crest])
+	const snowyCrest = snow ? crestOf(snowShades, PALETTE[snow.crest]) : null
+	// The sun touches what is near it: `sunGlow` bands promote up their ramp with distance falloff. Once
+	// it is below the skyline the light comes from behind the rock, not out of it, so the centre holds
+	// at the top of the band and the whole glow goes out with `light` rather than sinking into the face.
+	const sun = band.sunGlow
+	const sunX = sun ? sky.x * w : 0
+	const sunY = sun ? Math.max(0, (sky.y * frameH - (frameH - h * cell)) / cell) : 0
+	// outside the glow's reach it promotes nothing, so the distance is only taken inside its box
+	const G = ENTRY.sunGlowCells
+	const px = img.data
+	px.set(fixed.data)
+	const write = (x, y, [r, g, b]) => {
+		const i = (y * w + x) * 4
+		px[i] = r
+		px[i + 1] = g
+		px[i + 2] = b
+		px[i + 3] = 255
+	}
+	for (let x = 0; x < w; x++) {
+		const yTop = tops[x]
+		const glowCol = sun && Math.abs(x - sunX) < G
+		for (let y = yTop; y < h; y++) {
+			const i = y * w + x
+			if (kind[i] === FIXED) continue
+			const ramp = kind[i] === SNOW ? snowShades : shades
+			let idx = step[i]
+			if (glowCol && Math.abs(y - sunY) < G) {
+				const reach = clamp01(1 - Math.sqrt((x - sunX) ** 2 + (y - sunY) ** 2) / G)
+				idx = Math.min(
+					ramp.length - 1,
+					idx + ditherIndex(reach * sky.light, ENTRY.sunGlowLevels, x, y)
+				)
+			}
+			write(x, y, at(ramp, idx, thr[i]))
+		}
+		// the lit rim along the top: snow-capped where a cap hangs, warmed where the crest runs near the disc
+		const top = kind[yTop * w + x]
+		if (top === FIXED) continue
+		const crestRamp = top === SNOW ? snowyCrest : rockCrest
+		const crestGlow = sun
+			? clamp01(1 - Math.sqrt((x - sunX) ** 2 + (yTop - sunY) ** 2) / G) * sky.light
+			: 0
+		write(
+			x,
+			yTop,
+			crestRamp(
+				ditherIndex(clamp01(facing[x] + crestGlow), CREST_STEPS, x, yTop),
+				thr[yTop * w + x]
+			)
+		)
+	}
 	// No pixel stands alone: a lone cell inside another is the tell of a generated sprite.
 	tidySprite(img, w, h, ENTRY.tidyPasses)
 	ctx.putImageData(img, 0, 0)
-	return { cols: w, rows: h, cell, vent }
 }
 
 // Hills standing on the horizon row, built as the plain is: a height field of massifs seen edge-on.

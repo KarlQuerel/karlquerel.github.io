@@ -69,15 +69,17 @@
 </template>
 
 <script setup>
-	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+	import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 	import { usePointerParallax } from '@/composables/usePointerParallax'
 	import { useSkySpawner } from '@/composables/useSkySpawner'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { ENTRY } from '@/constants/journey'
 	import { PALETTE } from '@/constants/palette'
 	import { clamp01, randIn, smoothstep } from '@/js/math'
-	import { ditherIndex, fbm1, fbm2, hash1, seamIndex } from '@/js/pixelNoise'
-	import { drawRidge } from '@/js/ridge'
+	import { ditherIndex, fbm1, fbm2, hash1 } from '@/js/pixelNoise'
+	import { cutRidge, lightRidge } from '@/js/ridge'
+	import { darkenSky, drawSky, paintSun, rebuildSky } from '@/js/arrivalSky'
+	import { sunAt } from '@/js/sun'
 
 	const props = defineProps({
 		// approach progress: 0 → still in space, 1 → landed
@@ -463,74 +465,88 @@
 		return el.toDataURL()
 	}
 
-	// The dusk sky, cut on the same grid the ranges are, with the sun and its corona drawn into it.
-	function drawSky(el, box) {
-		const cell = ENTRY.ridgeCellPx
-		const w = Math.max(8, Math.round(box.w / cell))
-		const h = Math.max(8, Math.round(box.h / cell))
-		el.width = w
-		el.height = h
-		const ctx = el.getContext('2d')
-		const img = ctx.createImageData(w, h)
-		const px = img.data
-		const ramp = ENTRY.sky.map(name => PALETTE[name])
-		const top = ramp.length - 1
-		// one rung of the ramp, the unit the sky's two fields are sized in
-		const F = ENTRY.skyField
-		const rung1 = 1 / top
-		const sun = ENTRY.sun
-		const disc = PALETTE[sun.disc]
-		const rim = PALETTE[sun.rim]
-		const cx = sun.x * w
-		const cy = sun.y * h
-		const reach = sun.r * sun.coronaR
+	// the kept sky (js/arrivalSky.js) and how far the sun has fallen, in ms on the surface
+	let sky = null
+	let sunk = 0
 
-		for (let y = 0; y < h; y++) {
-			// gamma keeps the bright band against the horizon instead of spreading halfway up the frame
-			const rung = Math.pow(y / (h - 1), ENTRY.skyGamma)
-			for (let x = 0; x < w; x++) {
-				const d = Math.hypot(x - cx, y - cy)
-				let col
-				if (d <= sun.r) col = disc
-				else if (d <= sun.r + 1.5) col = rim
-				else {
-					// Haze at altitude plus grain, both in ramp steps, so the bands stop being level sets.
-					const lit =
-						rung +
-						(fbm2(x / F.driftCells, y / F.driftRows, ENTRY.ridgeSeed) - 0.5) *
-							F.drift *
-							rung1 +
-						(fbm2(x / F.mottleCells, y / F.mottleCells, ENTRY.ridgeSeed + 3) - 0.5) *
-							F.mottle *
-							rung1
-					// the corona climbs the sky's own ramp rather than adding light, so every pixel is a palette entry
-					const g = clamp01(1 - (d - sun.r) / (reach - sun.r))
-					const step =
-						seamIndex(lit, ramp.length, x, y, ENTRY.skySeam, ENTRY.skyJitter) +
-						ditherIndex(g * g, sun.coronaLift, x, y)
-					col = ramp[step > top ? top : step]
-				}
-				const i = (y * w + x) * 4
-				px[i] = col[0]
-				px[i + 1] = col[1]
-				px[i + 2] = col[2]
-				px[i + 3] = 255
+	// The sun goes on crossing the sky while the surface is read, once the ground is under the visitor.
+	// The disc is repainted whenever it has slid `nudge` of a cell, where its edge starts to answer.
+	// Every `skyNotch` cells the sky is placed again, the dear pass; every `notch` of a step of night it
+	// is darkened and the ranges relit, cheap passes over kept rungs; every `glowNotch` cells the ranges
+	// are relit so their glow travels with the disc. Work runs one job a frame, and a tick that lands
+	// on a pending job folds into it — a job reads the sun as it stands when it runs, so the frame rate
+	// is the ceiling on how fine any of it gets, never a backlog.
+	const tick = night => Math.floor(night / ENTRY.sun.notch)
+	const jobs = []
+	// where the sun stood when the ranges were last relit, in frame fractions
+	let glowAt = { x: 0, y: 0 }
+	let sinking = 0
+	let last = 0
+	function sink(now) {
+		sinking = requestAnimationFrame(sink)
+		sunk += last ? now - last : 0
+		last = now
+		if (!sky) return
+		const set = sunAt(sunk)
+		const [cx, cy] = [set.x * sky.w, set.y * sky.h]
+		if (!jobs.length) {
+			if (Math.hypot(cx - sky.litX, cy - sky.litY) >= ENTRY.sun.skyNotch) {
+				jobs.push(s => rebuildSky(sky, s))
+			} else if (tick(set.night) !== tick(sky.night)) {
+				jobs.push(fall)
+			} else if (
+				Math.hypot((set.x - glowAt.x) * sky.w, (set.y - glowAt.y) * sky.h) >=
+				ENTRY.sun.glowNotch
+			) {
+				jobs.push(lightRanges)
 			}
 		}
-		ctx.putImageData(img, 0, 0)
+		const job = jobs.shift()
+		if (job) job(set)
+		if (job || Math.hypot(cx - sky.atX, cy - sky.atY) >= ENTRY.sun.nudge) paintSun(sky, set)
 	}
+
+	// `immediate`, because a reload restores the scroll: mount can already be on the ground, and a
+	// watcher that only answers a change would leave the sun stuck there for good.
+	watch(
+		() => props.progress >= ENTRY.sun.sinkFrom,
+		landed => {
+			cancelAnimationFrame(sinking)
+			last = 0
+			if (landed) sinking = requestAnimationFrame(sink)
+		},
+		{ immediate: true }
+	)
 
 	// One seed per visit for the weather, so no two visits share a sky.
 	let visitSeed = 1
 
+	// The ranges are cut once for the frame, the dear part, and relit as the sun moves and night comes.
+	let ranges = []
+	function cutRanges() {
+		ranges = bands.map(
+			(band, i) => ridgeEls[i] && cutRidge(ridgeEls[i], band, ENTRY.ridgeSeed, frame)
+		)
+		ranges.forEach((sprite, i) => {
+			if (sprite?.vent) vent.value = { ...sprite.vent, cell: sprite.cell, band: bands[i] }
+		})
+	}
+	function lightRanges(now) {
+		glowAt = { x: now.x, y: now.y }
+		ranges.forEach(sprite => sprite && lightRidge(sprite, now))
+	}
+	// one notch of night over everything that keeps its rungs
+	function fall(now) {
+		darkenSky(sky, now.night)
+		lightRanges(now)
+	}
+
 	function cut() {
 		frame = { w: window.innerWidth, h: window.innerHeight }
-		if (skyEl.value) drawSky(skyEl.value, frame)
-		bands.forEach((band, i) => {
-			if (!ridgeEls[i]) return
-			const sprite = drawRidge(ridgeEls[i], band, ENTRY.ridgeSeed, frame)
-			if (sprite.vent) vent.value = { ...sprite.vent, cell: sprite.cell, band }
-		})
+		const now = sunAt(sunk)
+		if (skyEl.value) sky = drawSky(skyEl.value, frame, now)
+		cutRanges()
+		lightRanges(now)
 	}
 
 	// only when the frame really changed shape (see ENTRY.ridgeReshape)
@@ -562,6 +578,7 @@
 
 	onBeforeUnmount(() => {
 		cancelAnimationFrame(deferred)
+		cancelAnimationFrame(sinking)
 		window.removeEventListener('resize', onResize)
 	})
 </script>
