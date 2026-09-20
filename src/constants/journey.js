@@ -648,16 +648,19 @@ export const ENTRY = {
 	// the sky (js/sun.js) on a parabola: `span` either side of the frame's middle, `rise` above
 	// `horizon` at noon, `horizon` itself at the ends of the day, then `rise` under it at midnight, back
 	// the way it came. `horizon` sits under the lowest notch of the skyline by the disc's radius, so the
-	// disc is wholly behind the ranges before it turns back. A day every `cycleMs`, with the hour of the
-	// visit setting where in it the visitor comes in. It never climbs far: the sky ramp and `skyGamma`
-	// are authored for a low sun, and the stars hang over the top 58% of the frame. Night answers to
-	// its height: nothing above `nightFrom`, where the peaks have half the disc, full at midnight.
+	// disc is wholly behind the ranges before it turns back. A day every `cycleMs`, entered at
+	// `arriveAt` of the way from sunrise (noon is 0.25, sunset 0.5): early morning, the sun just clear
+	// of the right-hand range, so the visitor sees the whole crossing before it goes down. It never
+	// climbs far: the sky ramp and `skyGamma` are authored for a low sun, and the stars hang over the
+	// top 58% of the frame. Night answers to its height: nothing above `nightFrom`, where the peaks
+	// have half the disc, full at midnight.
 	sun: {
 		circuit: {
 			horizon: 0.9,
 			rise: 0.36,
 			span: 0.44,
 			cycleMs: 180000,
+			arriveAt: 0.08,
 			nightFrom: 0.8,
 			floor: 0.25,
 		},
@@ -813,11 +816,14 @@ export const ENTRY = {
 	ridgeLight: -1,
 	// How much a high sun favours gentle ground over steep, on top of a slope's turn toward it.
 	ridgeUp: 0.35,
-	// Cast shadows along a range: `steps` down the ramp under the line a peak throws toward the side
-	// away from the sun, softened over `soft` cells at its edge. The line never drops less than `least`
-	// a cell, or a sun on the skyline would shade the whole range behind its first peak. One step: two
-	// turned the ranges into flat purple at either end of the day and lost the authored relief.
-	ridgeShadow: { steps: 1, soft: 2.5, least: 0.2 },
+	// How far the split between a summit's lit and shaded sides leans toward the shade as it goes down,
+	// in cells across per cell down at a sun on the horizon (less as it climbs, none overhead).
+	ridgeLean: 0.35,
+	// Cast shadows along a range: `steps` down the ramp under the line each summit throws toward the
+	// side away from the sun, at the sun's own angle, softened over `soft` cells at the edge. The line
+	// never drops less than `least` a cell, or a sun on the skyline would shade the whole range behind
+	// its first peak. One step: two turned the ranges into flat purple at either end of the day.
+	ridgeShadow: { steps: 1, soft: 1.5, least: 0.2 },
 	ridgeSlopeSpan: 2,
 	// Cells either side that shading terrain is averaged over; the silhouette keeps the raw profile.
 	ridgeReliefBlur: 4,
@@ -979,6 +985,10 @@ export const ENTRY = {
 			rim: 'amber',
 			light: 'ember',
 			glow: 'glow',
+			// The lamp is a switch, thrown once night is this many steps along (the sky's walk: 0 as the peaks
+			// hold half the disc, 4 at midnight) — the sun under the ranges and the sky going, the hour a
+			// light goes on in a window — and thrown back there at dawn. By day the doorway is dark.
+			lampAt: 1.5,
 			// The doorway's pool: `spillR` reach, squashed by `spillSquash`, `spillDrop` below the sill.
 			spillShades: ['basalt', 'rust', 'ochre', 'amber'],
 			spillR: 9,
