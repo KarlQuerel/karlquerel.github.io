@@ -77,12 +77,13 @@ const SNOW = 1
 const FIXED = 2
 
 // A column's facing under a light (`Lx` across, `Ly` up, a unit vector): the slope's turn toward the
-// sun's side, and under a high sun the gentle ground over the steep, weighted by `ridgeUp`. The second
-// term is nothing at the skyline, so a sun on the horizon lights the range exactly as it was authored.
-function faceOf(slope, Lx, Ly) {
-	return (
-		0.5 - slope * Lx + ENTRY.ridgeUp * Math.max(0, Ly) * (1 - 2 * Math.min(1, Math.abs(slope)))
-	)
+// sun's side, and under a high sun the gentle ground over the steep, weighted by `ridgeUp` and taken
+// against the range's own mean steepness — relief moves, the range's tone does not, or a hazy far
+// range with no steep ground lifted whole at noon. The second term is nothing at the skyline, so a sun
+// on the horizon lights the range exactly as it was authored.
+function faceOf(slope, Lx, Ly, steep = 0) {
+	const up = ENTRY.ridgeUp * Math.max(0, Ly) * 2 * (steep - Math.min(1, Math.abs(slope)))
+	return 0.5 - slope * Lx + up
 }
 
 // The range cut: profile, relief, snow, strata and the habitat — everything that owes nothing to the
@@ -227,9 +228,27 @@ export function cutRidge(el, band, visitSeed, frame) {
 		slope[x] = slopeAt(x)
 		kind[yTop * w + x] = snow && capCells > snow.minCap ? SNOW : ROCK
 	}
+	// how steep the range is on the whole, the pivot a high sun turns its relief about
+	let steep = 0
+	for (let x = 0; x < w; x++) steep += Math.min(1, Math.abs(slope[x]))
+	steep /= w
+	// The summits, off the smoothed relief so a crag is not one: the only things that throw a shadow.
+	// A slope rising toward the sun is no occluder until it peaks, or every face under it went dark.
+	const summit = new Uint8Array(w)
+	const reach = ENTRY.ridgeReliefBlur
+	for (let x = 0; x < w; x++) {
+		let top = true
+		for (let d = -reach; d <= reach && top; d++) {
+			const n = x + d
+			if (d !== 0 && n >= 0 && n < w && relief[n] >= relief[x]) top = false
+		}
+		summit[x] = top ? 1 : 0
+	}
 
-	// The habitat (band.habitat): one dome in the middle stretch — the journey was TO somewhere.
+	// The habitat (band.habitat): one dome in the middle stretch — the journey was TO somewhere. Its lamp,
+	// the doorway and the pool it throws on the ground, is kept aside for lightRidge: lit as the sun goes.
 	let vent = null
+	const lamp = []
 	const hab = band.habitat
 	if (hab) {
 		const shellShades = hab.shades.map(name => PALETTE[name])
@@ -332,7 +351,7 @@ export function cutRidge(el, band, visitSeed, frame) {
 				put(x, y, trailShades[ditherIndex(1 - t, trailShades.length, x, y)])
 			}
 		}
-		// The doorway's light, squashed along the ground and applied only where something is there to be lit.
+		// The doorway's pool, squashed along the ground and thrown only where something is there to be lit.
 		const spillShades = hab.spillShades.map(name => PALETTE[name])
 		const R = hab.spillR
 		for (let sy = -R; sy <= R; sy++) {
@@ -343,19 +362,28 @@ export function cutRidge(el, band, visitSeed, frame) {
 				if (y < tops[x] && kind[y * w + x] !== FIXED) continue
 				const f = clamp01(1 - Math.hypot(sx, sy * hab.spillSquash) / R) ** hab.spillPower
 				if (f <= ditherThreshold(x, y)) continue
-				put(x, y, spillShades[seamIndex(f, spillShades.length, x, y, ENTRY.ridgeSeam)])
+				lamp.push({
+					x,
+					y,
+					col: spillShades[seamIndex(f, spillShades.length, x, y, ENTRY.ridgeSeam)],
+				})
 			}
 		}
 
 		// The entrance is an arch, not a slab: ember walls around a hotter core read as light from inside.
+		// By day it is a dark doorway, as a doorway is; the lit cells wait on the lamp.
 		const glow = PALETTE[hab.glow]
-		put(hx - 1, base, light)
-		put(hx + 1, base, light)
-		put(hx - 1, base - 1, light)
-		put(hx + 1, base - 1, light)
-		put(hx, base - 2, light)
-		put(hx, base, glow)
-		put(hx, base - 1, glow)
+		const arch = (x, y, col) => {
+			put(x, y, shellShades[0])
+			if (x >= 0 && y >= 0 && x < w && y < h) lamp.push({ x, y, col })
+		}
+		arch(hx - 1, base, light)
+		arch(hx + 1, base, light)
+		arch(hx - 1, base - 1, light)
+		arch(hx + 1, base - 1, light)
+		arch(hx, base - 2, light)
+		arch(hx, base, glow)
+		arch(hx, base - 1, glow)
 
 		// The chimney: one column standing off the shell, its lip on the rim shade so the sun catches it.
 		const vx = hx + hab.vent.at
@@ -385,9 +413,12 @@ export function cutRidge(el, band, visitSeed, frame) {
 		bite,
 		tops,
 		slope,
+		steep,
+		summit,
 		// the shadow line across the range, kept so a relight allocates nothing
 		line: new Float32Array(w),
 		vent,
+		lamp,
 		// the frame the band was cut for, to place the sun on the band's grid and take its angle
 		frameW: frame.w,
 		frameH: frame.h,
@@ -402,8 +433,9 @@ export function cutRidge(el, band, visitSeed, frame) {
 // ramp, then the tidy pass. The cut paid for the noise; this is arithmetic over kept cells, so the
 // ranges follow the sun across the sky.
 export function lightRidge(sprite, sky) {
-	const { ctx, w, h, cell, band, kind, thr, rough, haze, bite, tops, slope, line } = sprite
-	const { frameW, frameH, fixed, img } = sprite
+	const { ctx, w, h, cell, band, kind, thr, rough, haze, bite, tops, slope, steep } = sprite
+	const { summit, line } = sprite
+	const { frameW, frameH, fixed, img, lamp } = sprite
 	const shades = band.shades.map(name => PALETTE[name])
 	const snow = band.snow
 	const snowShades = snow ? snow.shades.map(name => PALETTE[name]) : null
@@ -437,19 +469,24 @@ export function lightRidge(sprite, sky) {
 	const len = Math.sqrt(dx * dx + dy * dy) || 1
 	const Lx = dx / len
 	const Ly = dy / len
-	// Cast shadows: from the sun's side, each peak throws a line that drops `drop` a cell toward the
-	// other side, and every cell under the line is in its shade. The drop is the sun's own angle, never
-	// flatter than `least`, or a sun on the skyline would shade the whole range behind its first peak.
-	// Under the skyline the shade goes with the light, as shadows do once the light is diffuse.
+	// Cast shadows: from the sun's side, each summit throws a line that drops `drop` a cell toward the
+	// other side, and every cell under the line is in its shade — its own far flank, and the near
+	// flank of the next mountain where the line reaches it, with an edge at the light's own angle. The
+	// drop is that angle, never flatter than `least`, or a sun on the skyline would shade the whole
+	// range behind its first peak. Under the skyline the shade goes with the light, as shadows do once
+	// the light is diffuse. Only summits throw: a column's own slope is no occluder of its face.
 	const SH = ENTRY.ridgeShadow
 	const drop = Math.max(SH.least, Math.max(0, Ly) / Math.max(SH.least, Math.abs(Lx)))
+	// a sun near overhead throws no side shadow: the shade goes out as the light nears vertical, or
+	// the wedges would jump from one side of every summit to the other as it crossed
+	const cast = Math.min(1, Math.abs(Lx) / SH.least) * sky.light
 	const fromRight = Lx > 0
 	let ray = -Infinity
 	for (let k = 0; k < w; k++) {
 		const x = fromRight ? w - 1 - k : k
 		ray -= drop
 		line[x] = ray
-		ray = Math.max(ray, h - tops[x])
+		if (summit[x]) ray = Math.max(ray, h - tops[x])
 	}
 	// The sun touches what is near it: `sunGlow` bands promote up their ramp with distance falloff. Once
 	// it is below the skyline the light comes from behind the rock, not out of it, so the centre holds
@@ -457,6 +494,14 @@ export function lightRidge(sprite, sky) {
 	const sun = band.sunGlow
 	const sunX = sun ? sky.x * w : 0
 	const sunY = sun ? Math.max(0, (sky.y * frameH - (frameH - h * cell)) / cell) : 0
+	// Each column's facing under this light, then leaned: a cell `d` under its crest reads the facing of
+	// the column `lean · Lx · d` toward the sun, so the split between a summit's lit and shaded sides
+	// runs down toward the shade, the way the terminator does on a cone lit from one side and a
+	// little in front — a split straight down the summit column read as a paper fold.
+	const faceCol = new Float32Array(w)
+	for (let x = 0; x < w; x++) faceCol[x] = faceOf(slope[x], Lx, Ly, steep)
+	const lean = ENTRY.ridgeLean * Lx
+	const faceAt = (x, d) => faceCol[Math.max(0, Math.min(w - 1, Math.round(x + lean * d)))]
 	// outside the glow's reach it promotes nothing, so the distance is only taken inside its box
 	const G = ENTRY.sunGlowCells
 	// read once, not once a cell: this loop runs every step of the sun
@@ -473,14 +518,16 @@ export function lightRidge(sprite, sky) {
 	}
 	for (let x = 0; x < w; x++) {
 		const yTop = tops[x]
-		const face = faceOf(slope[x], Lx, Ly)
+		const face = faceCol[x]
 		const glowCol = sun && Math.abs(x - sunX) < G
+		// the shadow line stands `over` cells above this crest; below it, every cell is in the shade
+		const over = line[x] - (h - yTop)
 		for (let y = yTop; y < h; y++) {
 			const i = y * w + x
 			if (kind[i] === FIXED) continue
 			// the face is a band under the crest; below it the mass goes dark
 			const depth = Math.min(1, (y - yTop) / faceDepth)
-			let lit = clamp01((face + rough[i]) * (1 - depth * ridgeDepthFade))
+			let lit = clamp01((faceAt(x, y - yTop) + rough[i]) * (1 - depth * ridgeDepthFade))
 			// Dither is for boundaries, not fill: the S-curve gathers the checker where two tones meet.
 			lit += (smoothstep(lit) - lit) * ridgeContrast
 			// Skylight after the curve, not before: a slope turned from the sun still sits under an open sky.
@@ -490,12 +537,9 @@ export function lightRidge(sprite, sky) {
 			// `seam` holds the checker to a narrow window either side of a step and leaves the rest solid.
 			let idx = seamIndex(lit, ramp.length, x, y, ridgeSeam)
 			if (kind[i] === ROCK && lit > strataMinLit) idx = Math.max(0, idx - bite[i])
-			// under the shadow line, softened over `soft` cells at its edge
-			const under = line[x] - (h - y)
-			if (under > 0) {
-				const shade = Math.min(1, under / SH.soft) * sky.light
-				idx = Math.max(0, idx - ditherIndex(shade, SH.steps + 1, x, y))
-			}
+			// softened over `soft` cells either side of the line, so the edge is a seam and not a saw
+			const shade = clamp01((over + (y - yTop)) / SH.soft) * cast
+			if (shade > 0) idx = Math.max(0, idx - ditherIndex(shade, SH.steps + 1, x, y))
 			if (glowCol && Math.abs(y - sunY) < G) {
 				const reach = clamp01(1 - Math.sqrt((x - sunX) ** 2 + (y - sunY) ** 2) / G)
 				idx = Math.min(
@@ -505,21 +549,28 @@ export function lightRidge(sprite, sky) {
 			}
 			write(x, y, at(ramp, idx, thr[i]))
 		}
-		// the lit rim along the top: snow-capped where a cap hangs, warmed where the crest runs near the disc
+		// The lit rim along the top: snow-capped where a cap hangs, warmed where the crest runs near the
+		// disc, and down in the shade with its face — a bright rim over a shadowed face read as a glitch.
 		const top = kind[yTop * w + x]
 		if (top === FIXED) continue
 		const crestRamp = top === SNOW ? snowyCrest : rockCrest
 		const crestGlow = sun
 			? clamp01(1 - Math.sqrt((x - sunX) ** 2 + (yTop - sunY) ** 2) / G) * sky.light
 			: 0
+		const crestShade = ditherIndex(clamp01(over / SH.soft) * cast, SH.steps + 1, x, yTop)
 		write(
 			x,
 			yTop,
 			crestRamp(
-				ditherIndex(clamp01(face + crestGlow), CREST_STEPS, x, yTop),
+				ditherIndex(clamp01(face + crestGlow), CREST_STEPS, x, yTop) - crestShade,
 				thr[yTop * w + x]
 			)
 		)
+	}
+	// The habitat's lamp is a switch: thrown once night is `lampAt` steps along, the sun under the ranges
+	// and the sky going, thrown back there at dawn — the doorway and the pool it throws, all at once.
+	if (lamp.length && sky.night >= band.habitat.lampAt) {
+		for (const c of lamp) write(c.x, c.y, c.col)
 	}
 	// No pixel stands alone: a lone cell inside another is the tell of a generated sprite.
 	tidySprite(img, w, h, ENTRY.tidyPasses)
