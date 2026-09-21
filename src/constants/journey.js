@@ -819,11 +819,12 @@ export const ENTRY = {
 	// How far the split between a summit's lit and shaded sides leans toward the shade as it goes down,
 	// in cells across per cell down at a sun on the horizon (less as it climbs, none overhead).
 	ridgeLean: 0.35,
-	// Cast shadows along a range: `steps` down the ramp under the line each summit throws toward the
-	// side away from the sun, at the sun's own angle, softened over `soft` cells at the edge. The line
-	// never drops less than `least` a cell, or a sun on the skyline would shade the whole range behind
-	// its first peak. One step: two turned the ranges into flat purple at either end of the day.
-	ridgeShadow: { steps: 1, soft: 1.5, least: 0.2 },
+	// Cast shadows along a range: under the line each summit throws away from the disc, at the angle IT
+	// sees the disc in, a cell keeps all but `depth` of the sun and all of the sky, so a shaded
+	// flank drops about a step and still carries its crags. The seam is dithered over `soft` cells and
+	// bent by `crumb` cells of the cell's own crag, so it breaks on the rock. The line never drops less
+	// than `least` a cell, or a sun on the skyline would shade the whole range behind its first peak.
+	ridgeShadow: { depth: 0.55, soft: 1.5, crumb: 6, least: 0.2 },
 	ridgeSlopeSpan: 2,
 	// Cells either side that shading terrain is averaged over; the silhouette keeps the raw profile.
 	ridgeReliefBlur: 4,
@@ -859,6 +860,9 @@ export const ENTRY = {
 	sunGlowLevels: 3,
 	// The arrival range is authored: one fixed seed, so every visit gets the composition chosen by eye.
 	ridgeSeed: 18,
+	// Snow's own skylight, in place of `ridgeAmbient`: it throws back most of what falls on it, so a cap
+	// shades into the top of its ramp and stays snow. The dark end of a snow ramp is for the night walk.
+	snowAmbient: 0.38,
 	// The snowline's meander (cells per fbm cycle), shared by every band that carries snow.
 	snowRuffleCells: 24,
 	// How a cap answers to prominence rather than to altitude alone, shared for the same reason.
@@ -896,6 +900,9 @@ export const ENTRY = {
 			// Aerial perspective on snow lifts the shadow end, not dims the lit: a pale patch, little contrast.
 			shades: ['chalk', 'cream'],
 			crest: 'cream',
+			// two more rungs of the same snow ladder for the night walk: on the rock's foot the cap fell
+			// off a cliff of tone and crumbled away cell by cell instead of going dark as one patch
+			foot: ['stone', 'bone'],
 		},
 	},
 	far: {
@@ -928,6 +935,8 @@ export const ENTRY = {
 			// one rung of the same ladder: floor off the near band's ash, ceiling under its linen
 			shades: ['bone', 'chalk', 'cream'],
 			crest: 'cream',
+			// and one more under it for the night, so it walks as far as the rock it caps
+			foot: ['stone'],
 		},
 	},
 	near: {
