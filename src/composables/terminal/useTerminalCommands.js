@@ -624,36 +624,38 @@ export function useTerminalCommands({
 
 	// The full-line "unknown command" UX: a random quip plus a nearest-match hint.
 	const pushUnknown = (label, command) => {
+		// the quips carry the typed line into an html:true row, so it is escaped once here for all of them
+		const typed = escapeHtml(label)
 		const responses = [
 			{
 				type: 'output',
 				html: true,
-				content: `I do not know "<span class="text-red">${label}</span>", did you try asking <span class="text-blue">ChatGPT</span>?`,
+				content: `I do not know "<span class="text-red">${typed}</span>", did you try asking <span class="text-blue">ChatGPT</span>?`,
 			},
 			{
 				type: 'output',
 				html: true,
-				content: `Premium command "<span class="text-red">${label}</span>" requires a <span class="text-red">blood sacrifice</span> or valid <span class="text-yellow">credit card</span>.`,
+				content: `Premium command "<span class="text-red">${typed}</span>" requires a <span class="text-red">blood sacrifice</span> or valid <span class="text-yellow">credit card</span>.`,
 			},
 			{
 				type: 'output',
 				html: true,
-				content: `"<span class="text-red">${label}</span>" triggered my <span class="text-blue">imposter syndrome</span>.`,
+				content: `"<span class="text-red">${typed}</span>" triggered my <span class="text-blue">imposter syndrome</span>.`,
 			},
 			{
 				type: 'output',
 				html: true,
-				content: `I'm <span class="text-green">92%</span> sure "<span class="text-red">${label}</span>" was <span class="text-purple">made up</span>.`,
+				content: `I'm <span class="text-green">92%</span> sure "<span class="text-red">${typed}</span>" was <span class="text-purple">made up</span>.`,
 			},
 			{
 				type: 'output',
 				html: true,
-				content: `"<span class="text-red">${label}</span>" is above my <span class="text-yellow">pay grade</span>.`,
+				content: `"<span class="text-red">${typed}</span>" is above my <span class="text-yellow">pay grade</span>.`,
 			},
 			{
 				type: 'output',
 				html: true,
-				content: `I could try to run "<span class="text-red">${label}</span>", but then we'd both be disappointed.`,
+				content: `I could try to run "<span class="text-red">${typed}</span>", but then we'd both be disappointed.`,
 			},
 		]
 		terminalHistory.value.push(responses[Math.floor(Math.random() * responses.length)])
