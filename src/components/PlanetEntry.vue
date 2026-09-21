@@ -71,6 +71,7 @@
 <script setup>
 	import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 	import { usePointerParallax } from '@/composables/usePointerParallax'
+	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useSkySpawner } from '@/composables/useSkySpawner'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { ENTRY } from '@/constants/journey'
@@ -492,6 +493,8 @@
 				jobs.push(s => rebuildSky(sky, s), lightRanges)
 			} else if (tick(set.night) !== tick(sky.night)) {
 				jobs.push(fall)
+			} else if (tick(set.ground) !== tick(groundLit)) {
+				jobs.push(lightRanges)
 			}
 		}
 		const job = jobs.shift()
@@ -500,13 +503,15 @@
 	}
 
 	// `immediate`, because a reload restores the scroll: mount can already be on the ground, and a
-	// watcher that only answers a change would leave the sun stuck there for good.
+	// watcher that only answers a change would leave the sun stuck there for good. Reduced motion
+	// holds the sun where `cut` lit it: it is the largest moving thing on the page, and the sky-life
+	// and the puffs are already held for the same reason.
 	watch(
 		() => props.progress >= ENTRY.sun.sinkFrom,
 		landed => {
 			cancelAnimationFrame(sinking)
 			last = 0
-			if (landed) sinking = requestAnimationFrame(sink)
+			if (landed && !prefersReducedMotion()) sinking = requestAnimationFrame(sink)
 		},
 		{ immediate: true }
 	)
@@ -524,8 +529,12 @@
 			if (sprite?.vent) vent.value = { ...sprite.vent, cell: sprite.cell, band: bands[i] }
 		})
 	}
+	// the ranges' own night, kept so a notch of THEIR walk asks for a relight: it runs far faster than
+	// the sky's around the setting, and on the sky's notch alone the rock darkened in visible stairs
+	let groundLit = -1
 	function lightRanges(now) {
 		ranges.forEach(sprite => sprite && lightRidge(sprite, now))
+		groundLit = now.ground
 	}
 	// one notch of night over everything that keeps its rungs
 	function fall(now) {

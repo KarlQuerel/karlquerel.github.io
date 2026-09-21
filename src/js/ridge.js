@@ -449,8 +449,8 @@ export function lightRidge(sprite, sky) {
 	const rockFoot = footOf(band.foot)
 	const snowFoot = footOf(snow?.foot)
 	// the part step goes cell by cell on each one's own threshold: a range darkens as a grain thickening
-	const whole = Math.floor(sky.night)
-	const part = sky.night - whole
+	const whole = Math.floor(sky.ground)
+	const part = sky.ground - whole
 	const at = (ramp, foot, i, t) => {
 		const j = i + foot.length - whole - (part > t ? 1 : 0)
 		return j < foot.length ? (foot[Math.max(0, j)] ?? ramp[0]) : ramp[j - foot.length]
@@ -471,8 +471,10 @@ export function lightRidge(sprite, sky) {
 	const atCol = sky.x * w
 	const atUp = h - (sky.y * frameH - (frameH - h * cell)) / cell
 	const SH = ENTRY.ridgeShadow
-	// shadows go out with the light and with nothing else: no side of the range is special any more
-	const cast = sky.light
+	// The direct sun still on the rock, carrying both the shade it casts and the warmth it lays near
+	// the disc. Both go out as the range swallows the disc: it was throwing hard shade on rock with no
+	// sun left to be shaded from, and blooming a glow whose centre had sunk inside the mountain.
+	const cast = sky.light * sky.beam
 	// Cast shadows: every summit throws away from the disc, at the angle IT sees the disc in, and every
 	// cell under that line is in its shade — the summit's own far flank, and the near flank of the next
 	// mountain where the line reaches it. So the scan runs twice, out from the disc's own column in
@@ -574,7 +576,7 @@ export function lightRidge(sprite, sky) {
 				const reach = clamp01(1 - Math.sqrt((x - sunX) ** 2 + (y - sunY) ** 2) / G)
 				idx = Math.min(
 					ramp.length - 1,
-					idx + ditherIndex(reach * sky.light, ENTRY.sunGlowLevels, x, y)
+					idx + ditherIndex(reach * cast, ENTRY.sunGlowLevels, x, y)
 				)
 			}
 			write(x, y, at(ramp, snowy ? snowFoot : rockFoot, idx, thr[i]))
@@ -585,7 +587,7 @@ export function lightRidge(sprite, sky) {
 		if (top === FIXED) continue
 		const crestRamp = top === SNOW ? snowyCrest : rockCrest
 		const crestGlow = sun
-			? clamp01(1 - Math.sqrt((x - sunX) ** 2 + (yTop - sunY) ** 2) / G) * sky.light
+			? clamp01(1 - Math.sqrt((x - sunX) ** 2 + (yTop - sunY) ** 2) / G) * cast
 			: 0
 		// A rim is one row, so its shade is a whole step or none; `cast` decides on the cell's own
 		// jittered threshold, so the rim comes out of the shade cell by cell and never a lattice at a time.

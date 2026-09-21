@@ -662,6 +662,10 @@ export const ENTRY = {
 			cycleMs: 180000,
 			arriveAt: 0.08,
 			nightFrom: 0.8,
+			// Where the disc's lower limb meets the skyline. The ranges start losing the sun here and
+			// stand at their night floor by `horizon`, where the disc is wholly behind them; the sky
+			// walks on to midnight. Two clocks, because the rock is lit by the disc and the sky is not.
+			groundFrom: 0.72,
 			floor: 0.25,
 		},
 		// it is repainted once it has moved this much of a cell — below that nothing on screen would change
