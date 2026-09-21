@@ -123,11 +123,14 @@ export function paintSun(sky, now) {
 	// the way air reddens a low sun from the horizon: a band `blend` radii tall between the tone they
 	// wear and the next climbs through the disc as it sinks. As tall as the disc it is a shading; a
 	// narrow seam read as a stripe across the sun.
-	const heat = now.low * (S.disc.length - 1)
+	// One seam serves both, so both walk the same shares of the drop: the count comes from the longer
+	// ramp and a shorter one holds its last tone. Counted off the disc alone, a disc of one tone left
+	// the rim on its first shade all day and the sun never reddened at all.
+	const heat = now.low * (Math.max(S.disc.length, S.rim.length) - 1)
 	const warm = Math.floor(heat)
-	const up = Math.min(S.disc.length - 1, warm + 1)
-	const [discLo, discHi] = [PALETTE[S.disc[warm]], PALETTE[S.disc[up]]]
-	const [rimLo, rimHi] = [PALETTE[S.rim[warm]], PALETTE[S.rim[up]]]
+	const tone = (names, i) => PALETTE[names[Math.min(names.length - 1, i)]]
+	const [discLo, discHi] = [tone(S.disc, warm), tone(S.disc, warm + 1)]
+	const [rimLo, rimHi] = [tone(S.rim, warm), tone(S.rim, warm + 1)]
 	// both from the sun as it stands, never from the constant: the disc has to sway with its sky
 	const [cx, cy] = [now.x * w, now.y * h]
 	// the band starts wholly under the disc and ends wholly over it, so neither tone ever snaps
