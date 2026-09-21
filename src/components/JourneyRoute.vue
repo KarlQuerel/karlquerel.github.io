@@ -424,6 +424,8 @@
 	}
 
 	// Only the cursor is lifted, clear of the bodies and the flight but under the rail and chrome.
+	// WORK's body is lifted over it in turn (HomeJourney), so the dart threads behind that timeline's
+	// emblems and year ticks instead of across them.
 	.route--cursor {
 		z-index: 3;
 	}
