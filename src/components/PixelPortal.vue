@@ -1,26 +1,23 @@
 <template>
-	<!-- icon-over-label tile shared by the About hub (button) and Contact links (anchor) -->
-	<component
-		:is="href ? 'a' : 'button'"
+	<!-- icon-over-label tile for the arrival's contact channels (JourneyArrival) -->
+	<a
 		class="portal"
-		:type="href ? undefined : 'button'"
-		:href="href || undefined"
-		:target="href && blank ? '_blank' : undefined"
-		:rel="href && blank ? 'noopener noreferrer' : undefined"
+		:href="href"
+		:target="blank ? '_blank' : undefined"
+		:rel="blank ? 'noopener noreferrer' : undefined"
 	>
 		<span class="portal__icon">
 			<img :src="image" alt="" class="portal__img" />
 		</span>
 		<span class="portal__label">{{ label }}</span>
-	</component>
+	</a>
 </template>
 
 <script setup>
 	defineProps({
 		label: { type: String, required: true },
 		image: { type: String, required: true },
-		// present → renders as a link; absent → a button (parent handles @click)
-		href: { type: String, default: '' },
+		href: { type: String, required: true },
 		blank: { type: Boolean, default: false },
 	})
 </script>
@@ -39,6 +36,9 @@
 	$portal-pad-mobile: 0.5rem;
 	// One 8px step. Press Start 2P is drawn at 8px, so this is its native size, not a shrunk 16.
 	$portal-label-size-mobile: px8(1);
+	// The resting rim: one whole pixel, so it stays one on a retina screen too.
+	$rim: 1px;
+	$rim-colour: rgba($yellow, 0.85);
 
 	.portal {
 		display: flex;
@@ -68,6 +68,8 @@
 		transform: none;
 	}
 
+	// The bloom lives on the wrapper and the keyline on the sprite, so hover adds to the rest state
+	// instead of replacing it: one filter cannot do both, and swapping them made the rim blink out.
 	.portal__icon {
 		display: flex;
 		align-items: center;
@@ -85,6 +87,11 @@
 		display: block;
 		// the sprite is art pixels, not a photo: keep the grid hard the way every other surface does
 		image-rendering: pixelated;
+		// Rim-lit at rest, so the tile reads as a live control. It carries no frame, no plate and no
+		// lift, and a bare grey shape with none of those is the shape of a disabled one whatever the
+		// label says. Four hard offsets and no blur: the scene bands its colour, it does not glow.
+		filter: drop-shadow($rim 0 0 $rim-colour) drop-shadow(-$rim 0 0 $rim-colour)
+			drop-shadow(0 $rim 0 $rim-colour) drop-shadow(0 (-$rim) 0 $rim-colour);
 	}
 
 	.portal:hover .portal__icon,
@@ -124,7 +131,7 @@
 		text-shadow: 0 0 12px rgba($yellow, 0.6);
 	}
 
-	// Reduced-motion: drop the icon scale + pulse; the static glow + yellow hover label still read.
+	// Reduced-motion: drop the icon scale and the hover pulse; the resting rim and the gold label read.
 	@media (prefers-reduced-motion: reduce) {
 		.portal:hover .portal__icon,
 		.portal:focus-visible .portal__icon {
