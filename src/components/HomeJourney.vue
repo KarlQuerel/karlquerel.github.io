@@ -537,6 +537,14 @@
 		@include lean;
 	}
 
+	// WORK's timeline is the one body the route runs THROUGH rather than past, so it stands over the
+	// cursor (JourneyRoute, z 3): a dart painted across an emblem and its year read as a blemish on the
+	// art, not as a marker on the line. The rail lane either side of the nodes carries nothing, so the
+	// dart still shows between them and only ever goes behind a badge, a tick or a flag.
+	.journey__station--work .journey__station-body {
+		z-index: 4;
+	}
+
 	// crossing a lit limb, the letters need holding off it from every side
 	.journey__station-head :deep(.page-heading) {
 		font-size: px8(4);
