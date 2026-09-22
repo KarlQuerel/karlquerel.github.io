@@ -1025,10 +1025,11 @@ export const ENTRY = {
 			rim: 'amber',
 			light: 'ember',
 			glow: 'glow',
-			// The lamp is a switch, thrown once night is this many steps along (the sky's walk: 0 as the peaks
-			// hold half the disc, 4 at midnight) — the sun under the ranges and the sky going, the hour a
-			// light goes on in a window — and thrown back there at dawn. By day the doorway is dark.
-			lampAt: 1.5,
+			// The lamp is a switch, thrown once the rock's dusk is this many steps along (`ground`: 0 as the
+			// disc's lower limb meets the skyline, 4 as it is wholly behind) — the peaks holding half the
+			// disc, the hour a light goes on in a window — and thrown back there at dawn. On the sky's
+			// night it waited until the sun was long gone. By day the doorway is dark.
+			lampAt: 2,
 			// The doorway's pool: `spillR` reach, squashed by `spillSquash`, `spillDrop` below the sill.
 			spillShades: ['basalt', 'rust', 'ochre', 'amber'],
 			spillR: 9,
