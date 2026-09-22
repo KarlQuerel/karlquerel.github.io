@@ -58,6 +58,42 @@ export function drawSky(el, box, sun) {
 	return sky
 }
 
+// One spoke of the sun's fan, by how far round the disc a cell sits and how far out. `cos(count·angle)`
+// comes off the Chebyshev recurrence rather than an atan2 per cell — the same number for a fraction of
+// the cost over a frame — and cosine being even is why the halves of the frame need no sign between them.
+//
+// Two of those run, on the same vector turned by different amounts. The first is the fan itself. The
+// second is slower (`varyAt` spokes to the fan's `count`) and only ever takes strength away, so some
+// spokes stand while their neighbours fade: an even fan is what reads as a cartoon sun. Turning the two
+// at different rates is what makes the fan move like air rather than a wheel — the spokes keep pointing
+// out of the disc, as light does, while which of them carry changes.
+function rayAt(rx, ry, reach, R, spin, sway) {
+	const d2 = rx * rx + ry * ry
+	if (d2 >= reach * reach) return 0
+	const dist = Math.sqrt(d2)
+	if (dist === 0) return 0
+	const nx = rx / dist
+	const ny = ry / dist
+	let spoke = chebyshev(nx * spin[0] + ny * spin[1], R.count)
+	if (spoke <= 0) return 0
+	const cur = spoke
+	for (let k = 1; k < R.sharp; k++) spoke *= cur
+	const slow = chebyshev(nx * sway[0] + ny * sway[1], R.varyAt)
+	return spoke * (1 - R.vary + R.vary * (slow * 0.5 + 0.5)) * (1 - dist / reach)
+}
+
+// cos(n·angle) from cos(angle), by the recurrence — no trig in the per-cell path
+function chebyshev(c, n) {
+	let prev = 1
+	let cur = c
+	for (let k = 2; k <= n; k++) {
+		const next = 2 * c * cur - prev
+		prev = cur
+		cur = next
+	}
+	return cur
+}
+
 // The sky proper for where the sun stands. Brightness is part altitude and part nearness to the disc:
 // the authored gradient held the light at the horizon, which was right only while the sun lived there.
 // This is the dear pass, so it runs only when the sun has moved; night walks the rungs it leaves.
@@ -65,17 +101,34 @@ export function placeSky(sky, sun) {
 	const { w, h, ramp, grain, step } = sky
 	const top = ramp.length - 1
 	const S = ENTRY.skyLight
+	const R = ENTRY.sun.rays
 	const [sx, sy] = [sun.x * w, sun.y * h]
+	// The fan grows as the disc falls — a low sun has the air to scatter through — but keeps `floor`
+	// of itself at the top of the arc, where the visitor arrives.
+	const gain = R.floor + (1 - R.floor) * Math.sqrt(sun.low)
+	const lift = (R.amp * gain) / top
+	const reach = R.reach * h
+	const fade = R.keepTop * h
+	// Two clocks, so the fan never repeats: the spokes swing with the disc across the frame, and which
+	// of them carry drifts on the disc's fall, which runs on its own curve. One clock and the whole fan
+	// turned as a wheel.
+	const spinT = (sun.x - 0.5) * R.turn
+	const swayT = (sun.y - 0.54) * R.sway
+	const spin = [Math.cos(spinT), Math.sin(spinT)]
+	const sway = [Math.cos(swayT), Math.sin(swayT)]
 	for (let y = 0; y < h; y++) {
 		// gamma keeps a band of light against the horizon; the rest of it gathers round the sun
 		const alt = Math.pow(y / (h - 1), ENTRY.skyGamma)
+		// what a ray keeps this high up the frame, where the stars hang
+		const held = lift > 0 ? clamp01(y / fade) : 0
 		for (let x = 0; x < w; x++) {
 			const i = y * w + x
 			const dx = (x - sx) * S.wide
 			const dy = Math.max(0, sy - y)
 			const off = Math.sqrt(dx * dx + dy * dy) / (S.spread * h)
 			const near = Math.pow(clamp01(1 - off), ENTRY.skyGamma)
-			const lit = alt * (1 - S.pull) + near * S.pull + grain[i]
+			let lit = alt * (1 - S.pull) + near * S.pull + grain[i]
+			if (held > 0) lit += rayAt(x - sx, y - sy, reach, R, spin, sway) * held * lift
 			step[i] = Math.min(
 				top,
 				seamIndex(lit, ramp.length, x, y, ENTRY.skySeam, ENTRY.skyJitter)
