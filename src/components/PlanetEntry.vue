@@ -486,7 +486,7 @@
 		sunk += last ? now - last : 0
 		last = now
 		if (!sky) return
-		const set = sunAt(sunk)
+		const set = sunAt(sunk, frame)
 		const [cx, cy] = [set.x * sky.w, set.y * sky.h]
 		if (!jobs.length) {
 			if (Math.hypot(cx - sky.litX, cy - sky.litY) >= ENTRY.sun.travel) {
@@ -544,7 +544,7 @@
 
 	function cut() {
 		frame = { w: window.innerWidth, h: window.innerHeight }
-		const now = sunAt(sunk)
+		const now = sunAt(sunk, frame)
 		if (skyEl.value) sky = drawSky(skyEl.value, frame, now)
 		cutRanges()
 		lightRanges(now)
