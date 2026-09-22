@@ -649,18 +649,18 @@ export const ENTRY = {
 	// `horizon` at noon, `horizon` itself at the ends of the day, then `rise` under it at midnight, back
 	// the way it came. `horizon` sits under the lowest notch of the skyline by the disc's radius, so the
 	// disc is wholly behind the ranges before it turns back. A day every `cycleMs`, entered at
-	// `arriveAt` of the way from sunrise (noon is 0.25, sunset 0.5): early morning, the sun just clear
-	// of the right-hand range, so the visitor sees the whole crossing before it goes down. It never
-	// climbs far: the sky ramp and `skyGamma` are authored for a low sun, and the stars hang over the
-	// top 58% of the frame. Night answers to its height: nothing above `nightFrom`, where the peaks
-	// have half the disc, full at midnight.
+	// `arriveAt` of the way from sunrise (noon is 0.25, sunset 0.5): noon, the disc at the top of its
+	// arc over the middle of the frame, so it is what the visitor lands on and it goes down from there.
+	// It never climbs far: the sky ramp and `skyGamma` are authored for a low sun, and the stars hang
+	// over the top 58% of the frame. Night answers to its height: nothing above `nightFrom`, where the
+	// peaks have half the disc, full at midnight.
 	sun: {
 		circuit: {
 			horizon: 0.9,
 			rise: 0.36,
 			span: 0.44,
-			cycleMs: 180000,
-			arriveAt: 0.08,
+			cycleMs: 110000,
+			arriveAt: 0.25,
 			nightFrom: 0.8,
 			// Where the disc's lower limb meets the skyline. The ranges start losing the sun here and
 			// stand at their night floor by `horizon`, where the disc is wholly behind them; the sky
