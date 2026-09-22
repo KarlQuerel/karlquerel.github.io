@@ -7,16 +7,24 @@
 import { ENTRY } from '../constants/journey.js'
 import { clamp01 } from './math.js'
 
+// How far round the circuit the sun is, 0..1 from sunrise, entered at `arriveAt`. The two halves
+// run on their own clocks: sunrise to sunset over `dayMs`, sunset back to sunrise over `nightMs`.
+function dayAt(elapsed) {
+	const { dayMs, nightMs, arriveAt } = ENTRY.sun.circuit
+	// the entry hour as time into one turn, on whichever clock it falls in
+	const start = arriveAt < 0.5 ? arriveAt * 2 * dayMs : dayMs + (arriveAt - 0.5) * 2 * nightMs
+	const t = (start + elapsed) % (dayMs + nightMs)
+	return t < dayMs ? (0.5 * t) / dayMs : 0.5 + (0.5 * (t - dayMs)) / nightMs
+}
+
 // Where the sun is, what its light is doing, and how far night has come. All of it answers to the
 // sun's height and nothing else: the rim reddens as it comes down (`low`), and night falls by how far
 // under the skyline it is, so midnight is dark because the sun is under the world then — not because a
 // timer said so. Night walks linearly with depth: twilight loses light about evenly per degree the sun
 // sinks, and the arc already slows it into the bottom of the turn.
 export function sunAt(elapsed = 0) {
-	const { horizon, rise, span, cycleMs, nightFrom, groundFrom, floor, arriveAt } =
-		ENTRY.sun.circuit
-	// the day from sunrise, 0..1, entered at `arriveAt`
-	const day = (arriveAt + elapsed / cycleMs) % 1
+	const { horizon, rise, span, nightFrom, groundFrom, floor } = ENTRY.sun.circuit
+	const day = dayAt(elapsed)
 	// Across the frame at one pace, right to left by day and back under the world by night, on a
 	// parabola over the skyline and its mirror under it. A sun crosses the sky at a steady pace on a
 	// line near enough straight; an ellipse plunged at the horizon and curled back while still in view.

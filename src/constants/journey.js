@@ -648,19 +648,22 @@ export const ENTRY = {
 	// the sky (js/sun.js) on a parabola: `span` either side of the frame's middle, `rise` above
 	// `horizon` at noon, `horizon` itself at the ends of the day, then `rise` under it at midnight, back
 	// the way it came. `horizon` sits under the lowest notch of the skyline by the disc's radius, so the
-	// disc is wholly behind the ranges before it turns back. A day every `cycleMs`, entered at
-	// `arriveAt` of the way from sunrise (noon is 0.25, sunset 0.5): noon, the disc at the top of its
-	// arc over the middle of the frame, so it is what the visitor lands on and it goes down from there.
-	// It never climbs far: the sky ramp and `skyGamma` are authored for a low sun, and the stars hang
-	// over the top 58% of the frame. Night answers to its height: nothing above `nightFrom`, where the
-	// peaks have half the disc, full at midnight.
+	// disc is wholly behind the ranges before it turns back. Sunrise to sunset takes `dayMs` and the
+	// way back under the world `nightMs`: with the disc under the ranges nothing shows but the sky's
+	// own walk, so the night runs quicker than the day it follows. Entered at `arriveAt` of the way
+	// round (noon 0.25, sunset 0.5): mid-afternoon, the disc over the left third of the frame and
+	// already coming down, so the visitor sees it set within seconds of landing instead of watching
+	// it cross first. It never climbs far: the sky ramp and `skyGamma` are authored for a low sun,
+	// and the stars hang over the top 58% of the frame. Night answers to its height: nothing above
+	// `nightFrom`, where the peaks have half the disc, full at midnight.
 	sun: {
 		circuit: {
 			horizon: 0.9,
 			rise: 0.36,
 			span: 0.44,
-			cycleMs: 110000,
-			arriveAt: 0.25,
+			dayMs: 55000,
+			nightMs: 10000,
+			arriveAt: 0.37,
 			nightFrom: 0.8,
 			// Where the disc's lower limb meets the skyline. The ranges start losing the sun here and
 			// stand at their night floor by `horizon`, where the disc is wholly behind them; the sky
