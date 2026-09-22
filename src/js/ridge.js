@@ -638,9 +638,9 @@ export function lightRidge(sprite, sky) {
 			)
 		)
 	}
-	// The habitat's lamp is a switch: thrown once night is `lampAt` steps along, the sun under the ranges
-	// and the sky going, thrown back there at dawn — the doorway and the pool it throws, all at once.
-	if (lamp.length && sky.night >= band.habitat.lampAt) {
+	// The habitat's lamp is a switch: thrown once the rock's own dusk is `lampAt` steps along, the disc
+	// going behind the peaks, thrown back there at dawn — the doorway and the pool it throws, all at once.
+	if (lamp.length && sky.ground >= band.habitat.lampAt) {
 		for (const c of lamp) write(c.x, c.y, c.col)
 	}
 	// No pixel stands alone: a lone cell inside another is the tell of a generated sprite.
