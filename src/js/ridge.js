@@ -486,14 +486,23 @@ export function lightRidge(sprite, sky) {
 	const march = (from, stop, step) => {
 		let ray = -Infinity
 		let drop = SH.least
+		// what is drawn, as against where the geometry puts the line: the two part only where a taller
+		// summit takes the shade over, which it does in a single column
+		let shown = -Infinity
 		for (let x = from; x !== stop; x += step) {
 			ray -= drop
-			line[x] = ray
 			const up = h - tops[x]
 			if (summit[x] && up > ray) {
 				ray = up
-				drop = Math.max(SH.least, (atUp - up) / Math.max(1, Math.abs(x - atCol)))
+				const fall = (atUp - up) / Math.max(1, Math.abs(x - atCol))
+				drop = fall < SH.least ? SH.least : fall > SH.most ? SH.most : fall
 			}
+			// The drawn edge climbs to a new summit's shade at `climb` cells a column rather than all at
+			// once. Taking it whole is what ruled a straight vertical line down a mountain — the line rose
+			// forty cells between two columns and the seam has nothing to break that with. It still follows
+			// the geometry down as fast as the geometry falls; only the rise is held.
+			shown = shown > -Infinity ? Math.min(ray, shown + SH.climb) : ray
+			line[x] = shown
 		}
 	}
 	march(split, w, 1)
