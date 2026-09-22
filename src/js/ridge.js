@@ -415,8 +415,11 @@ export function cutRidge(el, band, visitSeed, frame) {
 		slope,
 		steep,
 		summit,
-		// the shadow line across the range, kept so a relight allocates nothing
+		// the shadow lines across the range, kept so a relight allocates nothing: the ray each column
+		// stands under, the upstream ray still running under it, and the owning summit's terminator
 		line: new Float32Array(w),
+		under: new Float32Array(w),
+		term: new Float32Array(w),
 		vent,
 		lamp,
 		// the frame the band was cut for, to place the sun on the band's grid
@@ -433,7 +436,7 @@ export function cutRidge(el, band, visitSeed, frame) {
 // ranges follow the sun across the sky.
 export function lightRidge(sprite, sky) {
 	const { ctx, w, h, cell, band, kind, thr, rough, haze, bite, tops, slope, steep } = sprite
-	const { summit, line } = sprite
+	const { summit, line, under, term } = sprite
 	const { frameH, fixed, img, lamp } = sprite
 	const shades = band.shades.map(name => PALETTE[name])
 	const snow = band.snow
@@ -482,37 +485,6 @@ export function lightRidge(sprite, sky) {
 	// whole range. The line never drops less than `least` a cell, or a sun on the skyline — or under it,
 	// where the light is diffuse and the angle turns — would shade everything behind the first peak.
 	// Only summits throw: a column's own slope is no occluder of its face.
-	const split = Math.max(0, Math.min(w, Math.round(atCol)))
-	const march = (from, stop, step) => {
-		let ray = -Infinity
-		let drop = SH.least
-		// what is drawn, as against where the geometry puts the line: the two part only where a taller
-		// summit takes the shade over, which it does in a single column
-		let shown = -Infinity
-		for (let x = from; x !== stop; x += step) {
-			ray -= drop
-			const up = h - tops[x]
-			if (summit[x] && up > ray) {
-				ray = up
-				const fall = (atUp - up) / Math.max(1, Math.abs(x - atCol))
-				drop = fall < SH.least ? SH.least : fall > SH.most ? SH.most : fall
-			}
-			// The drawn edge climbs to a new summit's shade at `climb` cells a column rather than all at
-			// once. Taking it whole is what ruled a straight vertical line down a mountain — the line rose
-			// forty cells between two columns and the seam has nothing to break that with. It still follows
-			// the geometry down as fast as the geometry falls; only the rise is held.
-			shown = shown > -Infinity ? Math.min(ray, shown + SH.climb) : ray
-			line[x] = shown
-		}
-	}
-	march(split, w, 1)
-	march(split - 1, -1, -1)
-	// The sun touches what is near it: `sunGlow` bands promote up their ramp with distance falloff. Once
-	// it is below the skyline the light comes from behind the rock, not out of it, so the centre holds
-	// at the top of the band and the whole glow goes out with `light` rather than sinking into the face.
-	const sun = band.sunGlow
-	const sunX = sun ? atCol : 0
-	const sunY = sun ? Math.max(0, h - atUp) : 0
 	// Each column's facing, under the light as that column sees it, then leaned: a cell `d` under its
 	// crest reads the facing of the column `lean · Lx · d` toward the sun, so the split between a
 	// summit's lit and shaded sides runs down toward the shade, the way the terminator does on a cone
@@ -526,6 +498,48 @@ export function lightRidge(sprite, sky) {
 		faceCol[x] = faceOf(slope[x], ax / len, ay / len, steep)
 		leanCol[x] = (ENTRY.ridgeLean * ax) / len
 	}
+	// The line IS the geometry: a summit under the disc sees it near overhead, its line plunges and its
+	// shade is next to nothing, which is what lets the shade swap sides without a jump as the disc
+	// crosses its column. Any bound on the line's fall or rise gives it a shade to swap, and the range flips.
+	// Where the shade begins under the line is the terminator, which leans down toward the shade at the
+	// facing's own lean; started at the summit's column it ruled a vertical line down every mountain. So
+	// the cells under the terminator and over the ray of the summit before (`under`, which keeps running
+	// and shades what it reaches) stay lit: a wedge that closes where the two meet.
+	const split = Math.max(0, Math.min(w, Math.round(atCol)))
+	const march = (from, stop, step) => {
+		let ray = -Infinity
+		let drop = SH.least
+		let ran = -Infinity
+		let ranDrop = SH.least
+		let peak = 0
+		let crest = -Infinity
+		let lean = 0
+		for (let x = from; x !== stop; x += step) {
+			ray -= drop
+			ran -= ranDrop
+			line[x] = ray
+			under[x] = ran
+			term[x] = lean ? crest - Math.abs(x - peak) / lean : -Infinity
+			const up = h - tops[x]
+			if (summit[x] && up > ray) {
+				ran = ray
+				ranDrop = drop
+				ray = up
+				drop = Math.max(SH.least, (atUp - up) / Math.max(1, Math.abs(x - atCol)))
+				peak = x
+				crest = up
+				lean = Math.abs(leanCol[x])
+			}
+		}
+	}
+	march(split, w, 1)
+	march(split - 1, -1, -1)
+	// The sun touches what is near it: `sunGlow` bands promote up their ramp with distance falloff. Once
+	// it is below the skyline the light comes from behind the rock, not out of it, so the centre holds
+	// at the top of the band and the whole glow goes out with `light` rather than sinking into the face.
+	const sun = band.sunGlow
+	const sunX = sun ? atCol : 0
+	const sunY = sun ? Math.max(0, h - atUp) : 0
 	const faceDepth = band.faceDepth
 	// the lean reaches only as far as the face does: under it the mass is dark anyway, and a cell a
 	// whole band down read the facing of a column twenty cells away, which striped it
@@ -549,8 +563,17 @@ export function lightRidge(sprite, sky) {
 		const yTop = tops[x]
 		const face = faceCol[x]
 		const glowCol = sun && Math.abs(x - sunX) < G
-		// the shadow line stands `over` cells above this crest; below it, every cell is in the shade
+		// The shadow line stands `over` cells above this crest; a cell `d` down is in the shade below it,
+		// save inside the wedge over the upstream ray (`ran`) and under the terminator (`cut`). In or
+		// out is the ordered dither's call, over a seam `soft` cells wide broken on the cell's own crag.
 		const over = line[x] - (h - yTop)
+		const ran = under[x] - (h - yTop)
+		const cut = term[x] - (h - yTop)
+		// most columns the wedge cannot reach: the terminator is under the upstream ray, or under the
+		// foot, by more than a crag could bend it (|rough| < 1)
+		const wedged = term[x] + 2 * SH.crumb > under[x] && term[x] + SH.crumb > 0
+		const wedgeAt = (d, crumb) =>
+			Math.min(clamp01((-ran - d + crumb) / SH.soft), clamp01((cut + d + crumb) / SH.soft))
 		for (let y = yTop; y < h; y++) {
 			const i = y * w + x
 			if (kind[i] === FIXED) continue
@@ -564,11 +587,12 @@ export function lightRidge(sprite, sky) {
 			// The shade takes `SH.depth` of the sun off a cell and leaves the sky's light on it, so the
 			// crags and strata inside a shadow still read — taken off the ramp index instead, every
 			// cell already low on its ramp landed on the bottom step and the flank went flat.
-			// In or out is the ordered dither's call, over a seam `soft` cells wide broken on the
-			// cell's own crag, or the edge rules a line. How DEEP is `cast`, carried whole and not
-			// through that dither: a dithered strength flips a Bayer level at a time, so a sixteenth
-			// of the range left the shade in one frame each time the light crossed a rung.
-			const seam = clamp01((over + d + rough[i] * SH.crumb) / SH.soft)
+			// How DEEP is `cast`, carried whole and not through the dither: a dithered strength flips
+			// a Bayer level at a time, so a sixteenth of the range left the shade in one frame each
+			// time the light crossed a rung.
+			const crumb = rough[i] * SH.crumb
+			let seam = clamp01((over + d + crumb) / SH.soft)
+			if (wedged) seam = Math.min(seam, 1 - wedgeAt(d, crumb))
 			if (seam > ditherThreshold(x, y)) lit *= 1 - SH.depth * cast
 			// Skylight after the curve, not before: a slope turned from the sun still sits under an open sky.
 			// Snow holds far more of it than rock does, so its shading compresses into the top of its own
@@ -601,7 +625,9 @@ export function lightRidge(sprite, sky) {
 		// A rim is one row, so its shade is a whole step or none; `cast` decides on the cell's own
 		// jittered threshold, so the rim comes out of the shade cell by cell and never a lattice at a time.
 		const iTop = yTop * w + x
-		const crestSeam = clamp01((over + rough[iTop] * SH.crumb) / SH.soft)
+		const crumbTop = rough[iTop] * SH.crumb
+		let crestSeam = clamp01((over + crumbTop) / SH.soft)
+		if (wedged) crestSeam = Math.min(crestSeam, 1 - wedgeAt(0, crumbTop))
 		const crestShade = crestSeam > ditherThreshold(x, yTop) && cast > thr[iTop] ? 1 : 0
 		write(
 			x,
