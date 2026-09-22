@@ -853,7 +853,13 @@ export const ENTRY = {
 	// flank drops about a step and still carries its crags. The seam is dithered over `soft` cells and
 	// bent by `crumb` cells of the cell's own crag, so it breaks on the rock. The line never drops less
 	// than `least` a cell, or a sun on the skyline would shade the whole range behind its first peak.
-	ridgeShadow: { depth: 0.55, soft: 1.5, crumb: 6, least: 0.2 },
+	// `least`/`most` bound how fast a summit's shadow line falls, in cells per column, and `climb` how
+	// fast the drawn edge may rise. The disc is a place in the frame, so a summit standing near its own
+	// column sees it almost overhead and threw a line that plunged 2+ cells a column — off the bottom of
+	// a 48-cell band in twenty. And where a taller peak took the shade over, the line rose forty cells
+	// between two columns, which is the straight vertical edge down a mountain: `climb` walks it out
+	// into a slope leaving the peak instead. Both are drawing bounds; the geometry itself is untouched.
+	ridgeShadow: { depth: 0.55, soft: 1.5, crumb: 6, least: 0.2, most: 0.8, climb: 1.5 },
 	ridgeSlopeSpan: 2,
 	// Cells either side that shading terrain is averaged over; the silhouette keeps the raw profile.
 	ridgeReliefBlur: 4,
