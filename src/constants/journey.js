@@ -668,6 +668,29 @@ export const ENTRY = {
 			groundFrom: 0.72,
 			floor: 0.25,
 		},
+		// Rays, and only as the disc comes down: in open midday sky a fan of spokes reads as
+		// decoration, and a low sun has the air to scatter through, so `low` carries the whole
+		// strength. They are added to the sky's light before its seam, so the wedges take the
+		// same dither every other band edge does instead of ruling a staircase across the grid.
+		// `count` spokes, each raised to `sharp` to narrow it, `amp` ramp rungs at the disc,
+		// gone by `reach` frame heights out and faded over the top `keepTop`, where the stars are.
+		// `floor` is what they keep at the top of the arc, so the visitor lands on a sun that
+		// already has them; the rest comes in on the root of the fall, which reads sooner than
+		// the fall itself — on a straight line the fan was invisible for the first twenty seconds.
+		rays: {
+			count: 12,
+			sharp: 9,
+			amp: 1.3,
+			reach: 0.3,
+			keepTop: 0.3,
+			floor: 0.55,
+			vary: 0.7,
+			varyAt: 5,
+			// radians the fan swings over a full crossing, and how far the slow harmonic drifts over
+			// the disc's fall — different clocks, or the whole fan turns as one wheel
+			turn: 1.1,
+			sway: 5.5,
+		},
 		// it is repainted once it has moved this much of a cell — below that nothing on screen would change
 		nudge: 0.08,
 		// The sky is placed again and the ranges relit once the sun has moved this many cells: the dear
