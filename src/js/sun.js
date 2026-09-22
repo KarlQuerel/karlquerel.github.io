@@ -1,7 +1,7 @@
 // Where the arrival's sun stands. It crosses the whole sky rather than setting where it rose: up from
 // behind the right-hand range, over in a low arc, down behind the left, then back under the world the
 // way it came, so the glow before dawn gathers on the right where it will come up. None of it answers
-// to the scroll: the visitor lands in the same late afternoon every time, and the surface's own clock
+// to the scroll: the visitor lands at the same noon every time, and the surface's own clock
 // runs from there.
 
 import { ENTRY } from '../constants/journey.js'
