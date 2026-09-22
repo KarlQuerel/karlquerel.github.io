@@ -49,6 +49,13 @@ export const PALETTE = {
 	brushed: [158, 166, 180],
 	silver: [200, 206, 216],
 
+	// The contact portals: a pale ember, gold in its shadows, so the arrival's icons read as live
+	// controls where the steel above read as disabled. Shadow to highlight, as the sprites use them.
+	brass: [160, 118, 46],
+	honey: [222, 186, 110],
+	straw: [238, 208, 140],
+	butter: [255, 236, 186],
+
 	// Air and light. `ember` is the site's accent, so chrome and world share one yellow.
 	haze: [172, 120, 104],
 	ember: [255, 189, 46],
