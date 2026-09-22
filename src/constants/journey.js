@@ -671,9 +671,11 @@ export const ENTRY = {
 		// it is repainted once it has moved this much of a cell — below that nothing on screen would change
 		nudge: 0.08,
 		// The sky is placed again and the ranges relit once the sun has moved this many cells: the dear
-		// passes, so as fine as the frame carries — at 0.2 a step moves a quarter of the cells a notch of
-		// night does, and a shadow line a hundred cells long moves under a cell.
-		travel: 0.2,
+		// passes, so as fine as the frame carries. At 2560x1440 a step turns about half a percent of the
+		// sky's cells one rung, the same order as a notch of night, and a shadow line a hundred cells long
+		// still moves under a cell. Finer than this and the circuit asks for more jobs than a frame can
+		// serve at that size, where the one-job-a-frame ceiling coarsens the step anyway.
+		travel: 0.3,
 		// Night behind it: every ramp in the scene walks this many steps down as the sun goes under, a
 		// `notch` of a step at a time. Each cell goes over on its own threshold, so the finer the notch
 		// the fewer cells change at once; below a frame's worth the frame rate is the ceiling.
