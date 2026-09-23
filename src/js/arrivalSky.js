@@ -97,7 +97,7 @@ function chebyshev(c, n) {
 // The sky proper for where the sun stands. Brightness is part altitude and part nearness to the disc:
 // the authored gradient held the light at the horizon, which was right only while the sun lived there.
 // This is the dear pass, so it runs only when the sun has moved; night walks the rungs it leaves.
-export function placeSky(sky, sun) {
+function placeSky(sky, sun) {
 	const { w, h, ramp, grain, step } = sky
 	const top = ramp.length - 1
 	const S = ENTRY.skyLight

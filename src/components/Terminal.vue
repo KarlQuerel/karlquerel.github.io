@@ -120,13 +120,8 @@
 		},
 	})
 
-	const {
-		welcomeTextRef,
-		showInputPrompt,
-		initTypewriter,
-		createCommandTypewriter,
-		typewriterSpeed,
-	} = useTerminalTypewriter()
+	const { welcomeTextRef, showInputPrompt, initTypewriter, createCommandTypewriter } =
+		useTerminalTypewriter()
 
 	// Count command usage (real vs. invalid) before running it.
 	const enhancedExecuteCommand = input => {
@@ -241,12 +236,12 @@
 
 		if (next.line.link) {
 			const fullContent = (next.line.prefix || '') + next.line.linkText
-			await createCommandTypewriter(next.el, fullContent, typewriterSpeed)
+			await createCommandTypewriter(next.el, fullContent)
 			next.el.innerHTML =
 				(next.line.prefix || '') +
 				`<a href="${next.line.link}" target="_blank" class="terminal-link">${next.line.linkText}</a>`
 		} else {
-			await createCommandTypewriter(next.el, next.line.content, typewriterSpeed)
+			await createCommandTypewriter(next.el, next.line.content)
 		}
 
 		isProcessingTypewriter.value = false

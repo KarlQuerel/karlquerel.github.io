@@ -82,6 +82,5 @@ export function useTerminalTypewriter() {
 		showInputPrompt,
 		initTypewriter,
 		createCommandTypewriter,
-		typewriterSpeed,
 	}
 }

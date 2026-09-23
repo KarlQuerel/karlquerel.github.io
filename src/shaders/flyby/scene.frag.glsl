@@ -120,11 +120,6 @@ vec3 rockLocal(vec3 q, vec4 rot){
   vec3 a = vec3(q.x*rot.x + q.z*rot.y, q.y, -q.x*rot.y + q.z*rot.x);
   return vec3(a.x, a.y*rot.z + a.z*rot.w, -a.y*rot.w + a.z*rot.z);
 }
-// and back out of it again - rockLocal is a rotation, so its inverse is its transpose
-vec3 rockWorld(vec3 v, vec4 rot){
-  vec3 a = vec3(v.x, v.y*rot.z - v.z*rot.w, v.y*rot.w + v.z*rot.z);
-  return vec3(a.x*rot.x - a.z*rot.y, a.y, a.x*rot.y + a.z*rot.x);
-}
 float rockDist(vec3 wp, vec4 rk, vec4 rot){
   vec3 q = wp - rk.xyz;
   vec3 dir = normalize(rockLocal(q, rot));
