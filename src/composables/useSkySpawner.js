@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
 import { prefersReducedMotion } from './usePrefersReducedMotion'
 
 // Occasional decorative elements crossing a sky. Exists for two failures: a hidden tab never fires
@@ -25,12 +25,18 @@ export function useSkySpawner({ gapMs, make, active = () => true }) {
 		items.value = items.value.filter(item => item.id !== id)
 	}
 
-	onMounted(() => {
-		if (prefersReducedMotion()) return
-		schedule()
-	})
+	function start() {
+		window.clearTimeout(timer)
+		if (!prefersReducedMotion()) schedule()
+	}
 
-	onBeforeUnmount(() => window.clearTimeout(timer))
+	const stop = () => window.clearTimeout(timer)
+
+	onMounted(start)
+	// a parked sky is detached, so its spawns would never end either
+	onActivated(start)
+	onDeactivated(stop)
+	onBeforeUnmount(stop)
 
 	return { items, remove }
 }

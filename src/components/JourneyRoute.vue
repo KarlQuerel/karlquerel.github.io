@@ -53,7 +53,7 @@
 </template>
 
 <script setup>
-	import { computed, onActivated, onBeforeUnmount, onMounted, ref } from 'vue'
+	import { computed, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
 	import { JOURNEY, ROUTE } from '@/constants/journey'
 	import { MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
@@ -387,10 +387,19 @@
 	const onResize = useRafThrottle(measure)
 	let watcher = null
 
-	onMounted(() => {
-		measure()
+	function listen() {
 		window.addEventListener('scroll', onScroll, { passive: true })
 		window.addEventListener('resize', onResize, { passive: true })
+	}
+
+	function unlisten() {
+		window.removeEventListener('scroll', onScroll)
+		window.removeEventListener('resize', onResize)
+	}
+
+	onMounted(() => {
+		measure()
+		listen()
 		// content shifting under us (fonts, images, reveals) re-cuts the line
 		if (typeof ResizeObserver !== 'undefined') {
 			watcher = new ResizeObserver(onResize)
@@ -400,11 +409,14 @@
 	})
 
 	// the page is kept alive across navigation; coming back, the layout may differ
-	onActivated(measure)
+	onActivated(() => {
+		listen()
+		measure()
+	})
+	onDeactivated(unlisten)
 
 	onBeforeUnmount(() => {
-		window.removeEventListener('scroll', onScroll)
-		window.removeEventListener('resize', onResize)
+		unlisten()
 		watcher?.disconnect()
 	})
 </script>

@@ -1,4 +1,4 @@
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
 import { prefersReducedMotion } from './usePrefersReducedMotion'
 import { FINE_POINTER_QUERY, POINTER_EASE } from '@/constants/viewport'
 
@@ -37,15 +37,22 @@ export function usePointerParallax() {
 		if (!frame) frame = requestAnimationFrame(settle)
 	}
 
-	onMounted(() => {
+	function listen() {
 		if (prefersReducedMotion() || !window.matchMedia(FINE_POINTER_QUERY).matches) return
 		window.addEventListener('pointermove', onPointerMove, { passive: true })
-	})
+	}
 
-	onBeforeUnmount(() => {
+	function stop() {
 		window.removeEventListener('pointermove', onPointerMove)
-		if (frame) cancelAnimationFrame(frame)
-	})
+		cancelAnimationFrame(frame)
+		frame = 0
+	}
+
+	onMounted(listen)
+	// a kept-alive page parked off-route must not chase the cursor
+	onActivated(listen)
+	onDeactivated(stop)
+	onBeforeUnmount(stop)
 
 	return { parallaxStyle, pointer }
 }

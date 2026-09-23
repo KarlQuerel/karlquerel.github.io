@@ -1,6 +1,6 @@
 <template>
 	<!-- Atmospheric entry: the deck closes over the camera, the dusk sky takes over, the ridgelines settle. -->
-	<div class="entry" :style="parallaxStyle" aria-hidden="true">
+	<div class="entry" aria-hidden="true">
 		<canvas ref="skyEl" class="entry__sky" :style="skyStyle" />
 		<!-- two coprime tiles, so the field never repeats inside a viewport -->
 		<div
@@ -69,8 +69,15 @@
 </template>
 
 <script setup>
-	import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-	import { usePointerParallax } from '@/composables/usePointerParallax'
+	import {
+		computed,
+		onActivated,
+		onBeforeUnmount,
+		onDeactivated,
+		onMounted,
+		ref,
+		watch,
+	} from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useSkySpawner } from '@/composables/useSkySpawner'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
@@ -87,8 +94,7 @@
 		progress: { type: Number, default: 0 },
 	})
 
-	// the shared lean: see usePointerParallax for the contract these layers follow
-	const { parallaxStyle } = usePointerParallax()
+	// --mx/--my are inherited from HomeJourney's .journey, the one pointer loop
 
 	// inside the deck the view goes to cloud, which is what the sky handoff hides behind
 	const deck = computed(() => {
@@ -269,6 +275,7 @@
 	// Both streams roll every value per spawn. The spawner owns the gap, tab skip and self-removal.
 	const { items: meteors, remove: removeMeteor } = useSkySpawner({
 		gapMs: ENTRY.meteor.gapMs,
+		active: () => starFade.value > 0,
 		make: () => {
 			const m = ENTRY.meteor
 			return {
@@ -506,15 +513,16 @@
 	// watcher that only answers a change would leave the sun stuck there for good. Reduced motion
 	// holds the sun where `cut` lit it: it is the largest moving thing on the page, and the sky-life
 	// and the puffs are already held for the same reason.
-	watch(
-		() => props.progress >= ENTRY.sun.sinkFrom,
-		landed => {
-			cancelAnimationFrame(sinking)
-			last = 0
-			if (landed && !prefersReducedMotion()) sinking = requestAnimationFrame(sink)
-		},
-		{ immediate: true }
-	)
+	const landed = () => props.progress >= ENTRY.sun.sinkFrom
+	function setSinking(on) {
+		cancelAnimationFrame(sinking)
+		last = 0
+		if (on && !prefersReducedMotion()) sinking = requestAnimationFrame(sink)
+	}
+	watch(landed, setSinking, { immediate: true })
+	// parked by KeepAlive, the sun holds until the visitor is back
+	onActivated(() => setSinking(landed()))
+	onDeactivated(() => setSinking(false))
 
 	// One seed per visit for the weather, so no two visits share a sky.
 	let visitSeed = 1

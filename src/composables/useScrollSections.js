@@ -1,6 +1,6 @@
 // Tracks the page scroll position over a tall wrapper element as a continuous 0 -> 1 value.
 
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onActivated, onBeforeUnmount, onDeactivated, onMounted } from 'vue'
 import { useRafThrottle } from './useRafThrottle.js'
 
 export function useScrollSections(wrapperRef) {
@@ -26,9 +26,18 @@ export function useScrollSections(wrapperRef) {
 
 	const onScroll = useRafThrottle(sync)
 
-	onMounted(() => {
+	function listen() {
 		window.addEventListener('scroll', onScroll, { passive: true })
 		window.addEventListener('resize', onScroll, { passive: true })
+	}
+
+	function unlisten() {
+		window.removeEventListener('scroll', onScroll)
+		window.removeEventListener('resize', onScroll)
+	}
+
+	onMounted(() => {
+		listen()
 		const wrapper = wrapperRef.value
 		if (wrapper && typeof ResizeObserver !== 'undefined') {
 			resizeObserver = new ResizeObserver(() => onScroll())
@@ -37,9 +46,12 @@ export function useScrollSections(wrapperRef) {
 		sync()
 	})
 
+	// parked by KeepAlive, other routes' scrolling is none of its business
+	onActivated(listen)
+	onDeactivated(unlisten)
+
 	onBeforeUnmount(() => {
-		window.removeEventListener('scroll', onScroll)
-		window.removeEventListener('resize', onScroll)
+		unlisten()
 		if (resizeObserver) resizeObserver.disconnect()
 	})
 

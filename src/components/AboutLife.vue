@@ -86,7 +86,7 @@
 </template>
 
 <script setup>
-	import { onBeforeUnmount, onMounted, ref } from 'vue'
+	import { onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
 	import { DOG_DECK_INTERVAL_MS } from '@/constants/aboutLife'
 	import { ABOUT_ME, DOG_LINES, DOGS, LIFE_SECTIONS } from '@/data/aboutLife'
 	import { reveal as vReveal } from '@/directives/reveal'
@@ -125,6 +125,8 @@
 		startTimer()
 	})
 
+	onActivated(startTimer)
+	onDeactivated(stopTimer)
 	onBeforeUnmount(stopTimer)
 </script>
 
