@@ -33,7 +33,7 @@ function gridFor(band, frame) {
 }
 
 // size the canvas to the grid and hand back a pixel writer onto it
-function openSprite(el, w, h) {
+export function openSprite(el, w, h) {
 	el.width = w
 	el.height = h
 	const ctx = el.getContext('2d')
@@ -51,7 +51,7 @@ function openSprite(el, w, h) {
 }
 
 // The tidy pass every sprite takes: a cell whose four neighbours all agree becomes what they are.
-export function tidySprite(img, w, h, passes) {
+function tidySprite(img, w, h, passes) {
 	const cells = new Uint32Array(img.data.buffer)
 	for (let pass = 0; pass < passes; pass++) {
 		for (let y = 1; y < h - 1; y++) {
@@ -86,6 +86,83 @@ function faceOf(slope, Lx, Ly, steep = 0) {
 	return 0.5 - slope * Lx + up
 }
 
+// The range's height per column, a share of the band: ridged noise over a massif swell.
+function rangeProfile(band, visitSeed, w) {
+	const profile = new Array(w)
+	for (let x = 0; x < w; x++) {
+		// walked at a fixed rate per cell: the crop shows as much range as it has room for, at one size
+		const u = (x / ENTRY.ridgeRefCells) * band.freq
+		const seed = band.seed + visitSeed
+		const shape = ENTRY.ridgeBlend * ridged1(u, seed) + (1 - ENTRY.ridgeBlend) * fbm1(u, seed)
+		// The massif swell: tall clusters and low passes, spanning the frame so a narrow crop still has both.
+		const massif =
+			1 -
+			ENTRY.ridgeMassifDepth +
+			ENTRY.ridgeMassifDepth * 2 * fbm1((x / w) * ENTRY.ridgeMassifFreq, seed + 71)
+		profile[x] = Math.min(ENTRY.ridgeCeiling, band.base + shape * band.amp * massif)
+	}
+	return profile
+}
+
+// A box blur of the profile, `reach` columns either side, clamped at the ends.
+function boxBlur(profile, reach, out = new Array(profile.length)) {
+	const w = profile.length
+	for (let x = 0; x < w; x++) {
+		let sum = 0
+		for (let d = -reach; d <= reach; d++) sum += profile[Math.max(0, Math.min(w - 1, x + d))]
+		out[x] = sum / (reach * 2 + 1)
+	}
+	return out
+}
+
+// Snow is a cap, not a stratum: how far a summit pokes over the ruffled snowline sets its depth.
+function snowCaps(snow, band, visitSeed, profile, h, faceAt) {
+	const w = profile.length
+	const caps = new Float32Array(w)
+	if (!snow) return caps
+	// How far each column stands above its own neighbourhood — a summit, not merely high ground.
+	const P = ENTRY.snowProminence
+	const wide = boxBlur(profile, P.cells, new Float32Array(w))
+	for (let x = 0; x < w; x++) {
+		const line =
+			snow.line +
+			(fbm1(x / ENTRY.snowRuffleCells, band.seed + visitSeed + 9) - 0.5) * snow.ruffle
+		let cap = (profile[x] - line) * h * snow.depth
+		if (cap <= 0) continue
+		cap += (0.5 - faceAt(x)) * snow.aspect
+		cap *= P.base + (1 - P.base) * clamp01((profile[x] - wide[x]) / P.ref)
+		cap *= 1 + (fbm1(x / snow.gullyCells, band.seed + visitSeed + 71) - 0.5) * snow.gully
+		caps[x] = cap
+	}
+	for (let x = 0; x < w; ) {
+		if (caps[x] <= snow.minCap) {
+			x++
+			continue
+		}
+		let end = x
+		while (end < w && caps[end] > snow.minCap) end++
+		if (end - x < snow.minRun) caps.fill(0, x, end)
+		x = end
+	}
+	return caps
+}
+
+// The summits, off the smoothed relief so a crag is not one: the only things that throw a shadow.
+// A slope rising toward the sun is no occluder until it peaks, or every face under it went dark.
+function summitsOf(relief, reach) {
+	const w = relief.length
+	const summit = new Uint8Array(w)
+	for (let x = 0; x < w; x++) {
+		let top = true
+		for (let d = -reach; d <= reach && top; d++) {
+			const n = x + d
+			if (d !== 0 && n >= 0 && n < w && relief[n] >= relief[x]) top = false
+		}
+		summit[x] = top ? 1 : 0
+	}
+	return summit
+}
+
 // The range cut: profile, relief, snow, strata and the habitat — everything that owes nothing to the
 // sun. Each face cell keeps what its light needs that the sun cannot change; lightRidge does the rest.
 export function cutRidge(el, band, visitSeed, frame) {
@@ -108,29 +185,9 @@ export function cutRidge(el, band, visitSeed, frame) {
 	// optional snowcaps: a second ramp above the band's snowline (see band.snow)
 	const snow = band.snow
 
-	// the whole profile first, so a column can be compared with its neighbour
-	const profile = new Array(w)
-	for (let x = 0; x < w; x++) {
-		// walked at a fixed rate per cell: the crop shows as much range as it has room for, at one size
-		const u = (x / ENTRY.ridgeRefCells) * band.freq
-		const seed = band.seed + visitSeed
-		const shape = ENTRY.ridgeBlend * ridged1(u, seed) + (1 - ENTRY.ridgeBlend) * fbm1(u, seed)
-		// The massif swell: tall clusters and low passes, spanning the frame so a narrow crop still has both.
-		const massif =
-			1 -
-			ENTRY.ridgeMassifDepth +
-			ENTRY.ridgeMassifDepth * 2 * fbm1((x / w) * ENTRY.ridgeMassifFreq, seed + 71)
-		profile[x] = Math.min(ENTRY.ridgeCeiling, band.base + shape * band.amp * massif)
-	}
-
+	const profile = rangeProfile(band, visitSeed, w)
 	// Shading reads off a smoothed copy: `face` is one value per column, so raw neighbours stripe.
-	const relief = new Array(w)
-	const blur = ENTRY.ridgeReliefBlur
-	for (let x = 0; x < w; x++) {
-		let sum = 0
-		for (let d = -blur; d <= blur; d++) sum += profile[Math.max(0, Math.min(w - 1, x + d))]
-		relief[x] = sum / (blur * 2 + 1)
-	}
+	const relief = boxBlur(profile, ENTRY.ridgeReliefBlur)
 
 	// The gained slope of a column, off the smoothed relief: the rise per cell across `ridgeSlopeSpan`,
 	// times the band's `slopeGain`. The snowline and the habitat are geometry, so they read their
@@ -142,43 +199,7 @@ export function cutRidge(el, band, visitSeed, frame) {
 		return ((hi - lo) / (2 * span)) * h * band.slopeGain
 	}
 	const faceAt = x => faceOf(slopeAt(x), ENTRY.ridgeLight, 0)
-
-	// Snow is a cap, not a stratum: how far a summit pokes over the ruffled snowline sets its depth.
-
-	const caps = new Float32Array(w)
-	if (snow) {
-		// How far each column stands above its own neighbourhood — a summit, not merely high ground.
-		const P = ENTRY.snowProminence
-		const wide = new Float32Array(w)
-		for (let x = 0; x < w; x++) {
-			let sum = 0
-			for (let i = -P.cells; i <= P.cells; i++) {
-				sum += profile[Math.max(0, Math.min(w - 1, x + i))]
-			}
-			wide[x] = sum / (P.cells * 2 + 1)
-		}
-		for (let x = 0; x < w; x++) {
-			const line =
-				snow.line +
-				(fbm1(x / ENTRY.snowRuffleCells, band.seed + visitSeed + 9) - 0.5) * snow.ruffle
-			let cap = (profile[x] - line) * h * snow.depth
-			if (cap <= 0) continue
-			cap += (0.5 - faceAt(x)) * snow.aspect
-			cap *= P.base + (1 - P.base) * clamp01((profile[x] - wide[x]) / P.ref)
-			cap *= 1 + (fbm1(x / snow.gullyCells, band.seed + visitSeed + 71) - 0.5) * snow.gully
-			caps[x] = cap
-		}
-		for (let x = 0; x < w; ) {
-			if (caps[x] <= snow.minCap) {
-				x++
-				continue
-			}
-			let end = x
-			while (end < w && caps[end] > snow.minCap) end++
-			if (end - x < snow.minRun) caps.fill(0, x, end)
-			x = end
-		}
-	}
+	const caps = snowCaps(snow, band, visitSeed, profile, h, faceAt)
 
 	for (let x = 0; x < w; x++) {
 		const yTop = Math.round(h * (1 - profile[x]))
@@ -232,173 +253,18 @@ export function cutRidge(el, band, visitSeed, frame) {
 	let steep = 0
 	for (let x = 0; x < w; x++) steep += Math.min(1, Math.abs(slope[x]))
 	steep /= w
-	// The summits, off the smoothed relief so a crag is not one: the only things that throw a shadow.
-	// A slope rising toward the sun is no occluder until it peaks, or every face under it went dark.
-	const summit = new Uint8Array(w)
-	const reach = ENTRY.ridgeReliefBlur
-	for (let x = 0; x < w; x++) {
-		let top = true
-		for (let d = -reach; d <= reach && top; d++) {
-			const n = x + d
-			if (d !== 0 && n >= 0 && n < w && relief[n] >= relief[x]) top = false
-		}
-		summit[x] = top ? 1 : 0
-	}
 
-	// The habitat (band.habitat): one dome in the middle stretch — the journey was TO somewhere. Its lamp,
-	// the doorway and the pool it throws on the ground, is kept aside for lightRidge: lit as the sun goes.
-	let vent = null
-	const lamp = []
-	const hab = band.habitat
-	if (hab) {
-		const shellShades = hab.shades.map(name => PALETTE[name])
-		const rim = PALETTE[hab.rim]
-		const light = PALETTE[hab.light]
-		const half = (hab.w - 1) / 2
-		// wherever the middle stretch is lowest; the footing buries the downhill edge
-		let hx = Math.round(w * 0.5)
-		for (let x = Math.round(w * 0.25); x < w * 0.75; x++) {
-			if (profile[x] < profile[hx]) hx = x
-		}
-		// footed on the lowest ground it spans
-		let base = 0
-		for (let dx = -half; dx <= half; dx++) {
-			base = Math.max(
-				base,
-				Math.round(h * (1 - profile[Math.max(0, Math.min(w - 1, hx + dx))]))
-			)
-		}
-		// The shell is lit off a real surface normal, gathering sun and sky separately at each cell.
-		const sunDir = norm([ENTRY.ridgeLight, hab.sunUp, hab.sunFront])
-		const edgeShades = [shellShades[0], shellShades[2], shellShades[3], rim]
-		for (let dx = -half; dx <= half; dx++) {
-			const x = hx + dx
-			if (x < 0 || x >= w) continue
-			// The shell springs from `sink` cells UNDER the ground, so what stands above is the top of a bigger dome.
-			const rise = Math.round((hab.h + hab.sink) * Math.sqrt(1 - (dx / (half + 0.5)) ** 2))
-			// A dome is its own shape, but it stands in the mountain's light and not in its own.
-			const u = dx / (half + 0.5)
-			const bedded = hab.bed + (1 - hab.bed) * clamp01(faceAt(x))
-			// The hill in front buries it. `base` is the LOWEST ground the shell spans, so other columns stand above.
-			const ground = Math.round(h * (1 - profile[x]))
-			const foot = base + hab.sink
-			// what is left of the column once the hill has buried it; too little is a stray cell
-			if (rise - Math.max(0, foot - ground) < hab.minRise) continue
-			let crownLit = 0
-			let footCourse = true
-			for (let dy = 0; dy < rise; dy++) {
-				const y = foot - dy
-				const v = dy / (hab.h + hab.sink)
-				const nz = Math.sqrt(Math.max(0, 1 - u * u - v * v))
-				const lit = clamp01(
-					hab.ambient +
-						hab.sun * bedded * clamp01(u * sunDir[0] + v * sunDir[1] + nz * sunDir[2]) +
-						hab.sky * v
-				)
-				crownLit = lit
-				if (y > ground) continue
-				// Panel seams run as longitude, not screen x: across the width they came out as a cylinder's meridians.
-				const lon = Math.atan2(u, Math.max(nz, 1e-3))
-				const m = (lon / Math.PI + 0.5) * hab.panels
-				const onSeam =
-					v < hab.panelTop && Math.abs(m - Math.round(m)) * (1 / hab.panelSeam) < 1
-				// The base course: the lowest cell a column shows is where shell meets ground, and it drops a notch.
-				const shade = clamp01(
-					lit - (onSeam ? hab.panelDip : 0) - (footCourse ? hab.footDip : 0)
-				)
-				footCourse = false
-				put(x, y, shellShades[seamIndex(shade, shellShades.length, x, y, ENTRY.ridgeSeam)])
-			}
-			// The crown is lit by the sky too. `lip` is the skylight floor, so the top edge stays above the body.
-			const edgeY = foot - rise + 1
-			if (edgeY <= ground) {
-				// Seamed, not checkered: a one-cell rim alternating shades is a dotted line, and that is not an edge.
-				const lip = clamp01(crownLit + hab.rimLift)
-				put(
-					x,
-					edgeY,
-					edgeShades[seamIndex(lip, edgeShades.length, x, edgeY, ENTRY.ridgeSeam)]
-				)
-			}
-		}
-		// the shell's ground shadow, thrown along the surface away from the sun — a shape without one floats
-		const shadowDir = -Math.sign(ENTRY.ridgeLight)
-		for (let i = 1; i <= hab.shadowLen; i++) {
-			const x = hx + (half + i) * shadowDir
-			if (x < 0 || x >= w) continue
-			const y = Math.round(h * (1 - profile[x]))
-			if (i > hab.shadowLen - 2 && ditherThreshold(x, y) > 0.5) continue
-			put(x, y, shellShades[0])
-		}
-		// The worn path down the face: a solid tread with a dithered fringe, widening as it nears.
-		const trailShades = hab.pathShades.map(name => PALETTE[name])
-		for (let y = base + 1; y < h; y++) {
-			const t = (y - base) / Math.max(1, h - 1 - base)
-			const cx =
-				hx +
-				0.5 +
-				(fbm1(y / hab.pathWanderCells, band.seed + visitSeed + 13) - 0.5) *
-					hab.pathMeander *
-					t
-			const wPath = (1 + hab.pathSpread * t) / 2
-			for (let dx = -Math.ceil(wPath) - 1; dx <= Math.ceil(wPath) + 1; dx++) {
-				const x = Math.floor(cx) + dx
-				if (x < 0 || x >= w) continue
-				if (y <= Math.round(h * (1 - profile[x]))) continue
-				const d = Math.abs(x + 0.5 - cx)
-				if (d > wPath + 0.5) continue
-				if (d > wPath - 0.5 && ditherThreshold(x, y) > 0.5) continue
-				put(x, y, trailShades[ditherIndex(1 - t, trailShades.length, x, y)])
-			}
-		}
-		// The doorway's pool, squashed along the ground and thrown only where something is there to be lit.
-		const spillShades = hab.spillShades.map(name => PALETTE[name])
-		const R = hab.spillR
-		for (let sy = -R; sy <= R; sy++) {
-			for (let sx = -R; sx <= R; sx++) {
-				const x = hx + sx
-				const y = base + hab.spillDrop + sy
-				if (x < 0 || x >= w || y < 0 || y >= h) continue
-				if (y < tops[x] && kind[y * w + x] !== FIXED) continue
-				const f = clamp01(1 - Math.hypot(sx, sy * hab.spillSquash) / R) ** hab.spillPower
-				if (f <= ditherThreshold(x, y)) continue
-				lamp.push({
-					x,
-					y,
-					col: spillShades[seamIndex(f, spillShades.length, x, y, ENTRY.ridgeSeam)],
-				})
-			}
-		}
-
-		// The entrance is an arch, not a slab: ember walls around a hotter core read as light from inside.
-		// By day it is a dark doorway, as a doorway is; the lit cells wait on the lamp.
-		const glow = PALETTE[hab.glow]
-		const arch = (x, y, col) => {
-			put(x, y, shellShades[0])
-			if (x >= 0 && y >= 0 && x < w && y < h) lamp.push({ x, y, col })
-		}
-		arch(hx - 1, base, light)
-		arch(hx + 1, base, light)
-		arch(hx - 1, base - 1, light)
-		arch(hx + 1, base - 1, light)
-		arch(hx, base - 2, light)
-		arch(hx, base, glow)
-		arch(hx, base - 1, glow)
-
-		// The chimney: one column standing off the shell, its lip on the rim shade so the sun catches it.
-		const vx = hx + hab.vent.at
-		const shell = Math.max(
-			1,
-			Math.round((hab.h + hab.sink) * Math.sqrt(1 - (hab.vent.at / (half + 0.5)) ** 2)) -
-				hab.sink
-		)
-		const lip = base - shell - hab.vent.h + 1
-		const ventGround = Math.round(h * (1 - profile[Math.max(0, Math.min(w - 1, vx))]))
-		for (let y = lip; y <= base - shell; y++) {
-			if (y <= ventGround) put(vx, y, y === lip ? rim : shellShades[1])
-		}
-		vent = { x: (vx + 0.5) / w, y: lip / h }
-	}
+	const habitat = band.habitat
+		? paintHabitat(put, band.habitat, {
+				w,
+				h,
+				profile,
+				tops,
+				kind,
+				faceAt,
+				seed: band.seed + visitSeed,
+			})
+		: { vent: null, lamp: [] }
 
 	return {
 		ctx,
@@ -414,14 +280,13 @@ export function cutRidge(el, band, visitSeed, frame) {
 		tops,
 		slope,
 		steep,
-		summit,
+		summit: summitsOf(relief, ENTRY.ridgeReliefBlur),
 		// the shadow lines across the range, kept so a relight allocates nothing: the ray each column
 		// stands under, the upstream ray still running under it, and the owning summit's terminator
 		line: new Float32Array(w),
 		under: new Float32Array(w),
 		term: new Float32Array(w),
-		vent,
-		lamp,
+		...habitat,
 		// the frame the band was cut for, to place the sun on the band's grid
 		frameH: frame.h,
 		// the habitat's own pixels, and the sheet the range is painted onto over them
@@ -430,44 +295,172 @@ export function cutRidge(el, band, visitSeed, frame) {
 	}
 }
 
+// The habitat (band.habitat): one dome in the middle stretch — the journey was TO somewhere. Its lamp,
+// the doorway and the pool it throws on the ground, is kept aside for lightRidge: lit as the sun goes.
+function paintHabitat(put, hab, range) {
+	const { w, h, profile } = range
+	const lamp = []
+	const shellShades = hab.shades.map(name => PALETTE[name])
+	const half = (hab.w - 1) / 2
+	const groundAt = x => Math.round(h * (1 - profile[Math.max(0, Math.min(w - 1, x))]))
+	// wherever the middle stretch is lowest; the footing buries the downhill edge
+	let hx = Math.round(w * 0.5)
+	for (let x = Math.round(w * 0.25); x < w * 0.75; x++) {
+		if (profile[x] < profile[hx]) hx = x
+	}
+	// footed on the lowest ground it spans
+	let base = 0
+	for (let dx = -half; dx <= half; dx++) base = Math.max(base, groundAt(hx + dx))
+	const site = { hx, base, half, shellShades }
+
+	paintDome(put, hab, range, site)
+	// the shell's ground shadow, thrown along the surface away from the sun — a shape without one floats
+	const shadowDir = -Math.sign(ENTRY.ridgeLight)
+	for (let i = 1; i <= hab.shadowLen; i++) {
+		const x = hx + (half + i) * shadowDir
+		if (x < 0 || x >= w) continue
+		const y = Math.round(h * (1 - profile[x]))
+		if (i > hab.shadowLen - 2 && ditherThreshold(x, y) > 0.5) continue
+		put(x, y, shellShades[0])
+	}
+	paintTrail(put, hab, range, site)
+	spillPool(lamp, hab, range, site)
+
+	// The entrance is an arch, not a slab: ember walls around a hotter core read as light from inside.
+	// By day it is a dark doorway, as a doorway is; the lit cells wait on the lamp.
+	const light = PALETTE[hab.light]
+	const glow = PALETTE[hab.glow]
+	const arch = (x, y, col) => {
+		put(x, y, shellShades[0])
+		if (x >= 0 && y >= 0 && x < w && y < h) lamp.push({ x, y, col })
+	}
+	arch(hx - 1, base, light)
+	arch(hx + 1, base, light)
+	arch(hx - 1, base - 1, light)
+	arch(hx + 1, base - 1, light)
+	arch(hx, base - 2, light)
+	arch(hx, base, glow)
+	arch(hx, base - 1, glow)
+
+	// The chimney: one column standing off the shell, its lip on the rim shade so the sun catches it.
+	const vx = hx + hab.vent.at
+	const shell = Math.max(
+		1,
+		Math.round((hab.h + hab.sink) * Math.sqrt(1 - (hab.vent.at / (half + 0.5)) ** 2)) - hab.sink
+	)
+	const lip = base - shell - hab.vent.h + 1
+	const ventGround = groundAt(vx)
+	const rim = PALETTE[hab.rim]
+	for (let y = lip; y <= base - shell; y++) {
+		if (y <= ventGround) put(vx, y, y === lip ? rim : shellShades[1])
+	}
+	return { vent: { x: (vx + 0.5) / w, y: lip / h }, lamp }
+}
+
+// The shell, lit off a real surface normal, gathering sun and sky separately at each cell.
+function paintDome(put, hab, { h, w, profile, faceAt }, { hx, base, half, shellShades }) {
+	const sunDir = norm([ENTRY.ridgeLight, hab.sunUp, hab.sunFront])
+	const edgeShades = [shellShades[0], shellShades[2], shellShades[3], PALETTE[hab.rim]]
+	for (let dx = -half; dx <= half; dx++) {
+		const x = hx + dx
+		if (x < 0 || x >= w) continue
+		// The shell springs from `sink` cells UNDER the ground, so what stands above is the top of a bigger dome.
+		const rise = Math.round((hab.h + hab.sink) * Math.sqrt(1 - (dx / (half + 0.5)) ** 2))
+		// A dome is its own shape, but it stands in the mountain's light and not in its own.
+		const u = dx / (half + 0.5)
+		const bedded = hab.bed + (1 - hab.bed) * clamp01(faceAt(x))
+		// The hill in front buries it. `base` is the LOWEST ground the shell spans, so other columns stand above.
+		const ground = Math.round(h * (1 - profile[x]))
+		const foot = base + hab.sink
+		// what is left of the column once the hill has buried it; too little is a stray cell
+		if (rise - Math.max(0, foot - ground) < hab.minRise) continue
+		let crownLit = 0
+		let footCourse = true
+		for (let dy = 0; dy < rise; dy++) {
+			const y = foot - dy
+			const v = dy / (hab.h + hab.sink)
+			const nz = Math.sqrt(Math.max(0, 1 - u * u - v * v))
+			const lit = clamp01(
+				hab.ambient +
+					hab.sun * bedded * clamp01(u * sunDir[0] + v * sunDir[1] + nz * sunDir[2]) +
+					hab.sky * v
+			)
+			crownLit = lit
+			if (y > ground) continue
+			// Panel seams run as longitude, not screen x: across the width they came out as a cylinder's meridians.
+			const lon = Math.atan2(u, Math.max(nz, 1e-3))
+			const m = (lon / Math.PI + 0.5) * hab.panels
+			const onSeam = v < hab.panelTop && Math.abs(m - Math.round(m)) * (1 / hab.panelSeam) < 1
+			// The base course: the lowest cell a column shows is where shell meets ground, and it drops a notch.
+			const shade = clamp01(
+				lit - (onSeam ? hab.panelDip : 0) - (footCourse ? hab.footDip : 0)
+			)
+			footCourse = false
+			put(x, y, shellShades[seamIndex(shade, shellShades.length, x, y, ENTRY.ridgeSeam)])
+		}
+		// The crown is lit by the sky too. `lip` is the skylight floor, so the top edge stays above the body.
+		const edgeY = foot - rise + 1
+		if (edgeY <= ground) {
+			// Seamed, not checkered: a one-cell rim alternating shades is a dotted line, and that is not an edge.
+			const lip = clamp01(crownLit + hab.rimLift)
+			put(x, edgeY, edgeShades[seamIndex(lip, edgeShades.length, x, edgeY, ENTRY.ridgeSeam)])
+		}
+	}
+}
+
+// The worn path down the face: a solid tread with a dithered fringe, widening as it nears.
+function paintTrail(put, hab, { w, h, profile, seed }, { hx, base }) {
+	const trailShades = hab.pathShades.map(name => PALETTE[name])
+	for (let y = base + 1; y < h; y++) {
+		const t = (y - base) / Math.max(1, h - 1 - base)
+		const cx = hx + 0.5 + (fbm1(y / hab.pathWanderCells, seed + 13) - 0.5) * hab.pathMeander * t
+		const wPath = (1 + hab.pathSpread * t) / 2
+		for (let dx = -Math.ceil(wPath) - 1; dx <= Math.ceil(wPath) + 1; dx++) {
+			const x = Math.floor(cx) + dx
+			if (x < 0 || x >= w) continue
+			if (y <= Math.round(h * (1 - profile[x]))) continue
+			const d = Math.abs(x + 0.5 - cx)
+			if (d > wPath + 0.5) continue
+			if (d > wPath - 0.5 && ditherThreshold(x, y) > 0.5) continue
+			put(x, y, trailShades[ditherIndex(1 - t, trailShades.length, x, y)])
+		}
+	}
+}
+
+// The doorway's pool, squashed along the ground and thrown only where something is there to be lit.
+function spillPool(lamp, hab, { w, h, tops, kind }, { hx, base }) {
+	const spillShades = hab.spillShades.map(name => PALETTE[name])
+	const R = hab.spillR
+	for (let sy = -R; sy <= R; sy++) {
+		for (let sx = -R; sx <= R; sx++) {
+			const x = hx + sx
+			const y = base + hab.spillDrop + sy
+			if (x < 0 || x >= w || y < 0 || y >= h) continue
+			if (y < tops[x] && kind[y * w + x] !== FIXED) continue
+			const f = clamp01(1 - Math.hypot(sx, sy * hab.spillSquash) / R) ** hab.spillPower
+			if (f <= ditherThreshold(x, y)) continue
+			lamp.push({
+				x,
+				y,
+				col: spillShades[seamIndex(f, spillShades.length, x, y, ENTRY.ridgeSeam)],
+			})
+		}
+	}
+}
+
 // The range in the light it stands in now: each cell's facing under the sun as it stands, the shadow
 // the peak on the sun's side throws across it, the sun's warmth near the disc, the night walk down its
 // ramp, then the tidy pass. The cut paid for the noise; this is arithmetic over kept cells, so the
 // ranges follow the sun across the sky.
 export function lightRidge(sprite, sky) {
-	const { ctx, w, h, cell, band, kind, thr, rough, haze, bite, tops, slope, steep } = sprite
-	const { summit, line, under, term } = sprite
-	const { frameH, fixed, img, lamp } = sprite
-	const shades = band.shades.map(name => PALETTE[name])
-	const snow = band.snow
-	const snowShades = snow ? snow.shades.map(name => PALETTE[name]) : null
+	const { ctx, w, h, cell, band, kind, thr, rough, haze, bite, tops } = sprite
+	const { line, under, term, frameH, fixed, img, lamp } = sprite
+	const { shades, snowShades, rockFoot, snowFoot, at, rockCrest, snowyCrest } = nightRamps(
+		band,
+		sky.ground
+	)
 	// The crest walks a short ramp by facing rather than wearing one colour the whole way.
 	const CREST_STEPS = 3
-	// Night walks every cell down its ramp as the sun goes. A `foot` hangs darker steps under a ramp
-	// whose own shades stop short, so the far range cannot sit brown under a black sky; the day ramp
-	// above it is untouched, so night 0 paints exactly what was authored. Rock and snow each keep their
-	// own: walked onto the rock's, a cap crossed a hundred and thirty of luminance in one step and came
-	// apart cell by cell into the flank — that is snow going missing, not snow going dark.
-	const footOf = names => (names ?? []).map(name => PALETTE[name])
-	const rockFoot = footOf(band.foot)
-	const snowFoot = footOf(snow?.foot)
-	// the part step goes cell by cell on each one's own threshold: a range darkens as a grain thickening
-	const whole = Math.floor(sky.ground)
-	const part = sky.ground - whole
-	const at = (ramp, foot, i, t) => {
-		const j = i + foot.length - whole - (part > t ? 1 : 0)
-		return j < foot.length ? (foot[Math.max(0, j)] ?? ramp[0]) : ramp[j - foot.length]
-	}
-	// A crest is the top of its band's own ramp, not a ramp of its own. Built that way, night walks it
-	// down at the same rate as the rock under it; on a ramp of three it dropped three times as fast and
-	// the rim read as a stripe of the wrong colour all the way along the range.
-	const crestOf = (ramp, foot, tip) => {
-		const full = [...foot, ...ramp, tip]
-		const base = foot.length + ramp.length - 2
-		return (i, t) => full[Math.max(0, base + i - whole - (part > t ? 1 : 0))] ?? full[0]
-	}
-	const rockCrest = crestOf(shades, rockFoot, PALETTE[band.crest])
-	const snowyCrest = snow ? crestOf(snowShades, snowFoot, PALETTE[snow.crest]) : null
 	// The disc stands IN the frame, so it is a place and not a direction: a peak to its left is lit from
 	// the right and one to its right from the left. Taken on the band's own grid — `atCol` across,
 	// `atUp` its height over the band's foot, which runs off the top of the sprite and is meant to.
@@ -478,62 +471,8 @@ export function lightRidge(sprite, sky) {
 	// the disc. Both go out as the range swallows the disc: it was throwing hard shade on rock with no
 	// sun left to be shaded from, and blooming a glow whose centre had sunk inside the mountain.
 	const cast = sky.light * sky.beam
-	// Cast shadows: every summit throws away from the disc, at the angle IT sees the disc in, and every
-	// cell under that line is in its shade — the summit's own far flank, and the near flank of the next
-	// mountain where the line reaches it. So the scan runs twice, out from the disc's own column in
-	// both directions, and the shade lands on the far side of every peak instead of one side of the
-	// whole range. The line never drops less than `least` a cell, or a sun on the skyline — or under it,
-	// where the light is diffuse and the angle turns — would shade everything behind the first peak.
-	// Only summits throw: a column's own slope is no occluder of its face.
-	// Each column's facing, under the light as that column sees it, then leaned: a cell `d` under its
-	// crest reads the facing of the column `lean · Lx · d` toward the sun, so the split between a
-	// summit's lit and shaded sides runs down toward the shade, the way the terminator does on a cone
-	// lit from one side and a little in front — a split straight down the summit read as a paper fold.
-	const faceCol = new Float32Array(w)
-	const leanCol = new Float32Array(w)
-	for (let x = 0; x < w; x++) {
-		const ax = atCol - x
-		const ay = atUp - (h - tops[x])
-		const len = Math.sqrt(ax * ax + ay * ay) || 1
-		faceCol[x] = faceOf(slope[x], ax / len, ay / len, steep)
-		leanCol[x] = (ENTRY.ridgeLean * ax) / len
-	}
-	// The line IS the geometry: a summit under the disc sees it near overhead, its line plunges and its
-	// shade is next to nothing, which is what lets the shade swap sides without a jump as the disc
-	// crosses its column. Any bound on the line's fall or rise gives it a shade to swap, and the range flips.
-	// Where the shade begins under the line is the terminator, which leans down toward the shade at the
-	// facing's own lean; started at the summit's column it ruled a vertical line down every mountain. So
-	// the cells under the terminator and over the ray of the summit before (`under`, which keeps running
-	// and shades what it reaches) stay lit: a wedge that closes where the two meet.
-	const split = Math.max(0, Math.min(w, Math.round(atCol)))
-	const march = (from, stop, step) => {
-		let ray = -Infinity
-		let drop = SH.least
-		let ran = -Infinity
-		let ranDrop = SH.least
-		let peak = 0
-		let crest = -Infinity
-		let lean = 0
-		for (let x = from; x !== stop; x += step) {
-			ray -= drop
-			ran -= ranDrop
-			line[x] = ray
-			under[x] = ran
-			term[x] = lean ? crest - Math.abs(x - peak) / lean : -Infinity
-			const up = h - tops[x]
-			if (summit[x] && up > ray) {
-				ran = ray
-				ranDrop = drop
-				ray = up
-				drop = Math.max(SH.least, (atUp - up) / Math.max(1, Math.abs(x - atCol)))
-				peak = x
-				crest = up
-				lean = Math.abs(leanCol[x])
-			}
-		}
-	}
-	march(split, w, 1)
-	march(split - 1, -1, -1)
+	const { faceCol, leanCol } = facings(sprite, atCol, atUp)
+	castShadows(sprite, leanCol, atCol, atUp)
 	// The sun touches what is near it: `sunGlow` bands promote up their ramp with distance falloff. Once
 	// it is below the skyline the light comes from behind the rock, not out of it, so the centre holds
 	// at the top of the band and the whole glow goes out with `light` rather than sinking into the face.
@@ -646,6 +585,86 @@ export function lightRidge(sprite, sky) {
 	// No pixel stands alone: a lone cell inside another is the tell of a generated sprite.
 	tidySprite(img, w, h, ENTRY.tidyPasses)
 	ctx.putImageData(img, 0, 0)
+}
+
+// The band's ramps walked `ground` rungs into the night, each cell stepping on its own threshold.
+// A `foot` hangs darker steps under a ramp that stops short; rock and snow each keep their own.
+function nightRamps(band, ground) {
+	const shades = band.shades.map(name => PALETTE[name])
+	const snow = band.snow
+	const snowShades = snow ? snow.shades.map(name => PALETTE[name]) : null
+	const footOf = names => (names ?? []).map(name => PALETTE[name])
+	const rockFoot = footOf(band.foot)
+	const snowFoot = footOf(snow?.foot)
+	const whole = Math.floor(ground)
+	const part = ground - whole
+	const at = (ramp, foot, i, t) => {
+		const j = i + foot.length - whole - (part > t ? 1 : 0)
+		return j < foot.length ? (foot[Math.max(0, j)] ?? ramp[0]) : ramp[j - foot.length]
+	}
+	// a crest is the top of its band's own ramp, so night walks it down at the rock's rate
+	const crestOf = (ramp, foot, tip) => {
+		const full = [...foot, ...ramp, tip]
+		const base = foot.length + ramp.length - 2
+		return (i, t) => full[Math.max(0, base + i - whole - (part > t ? 1 : 0))] ?? full[0]
+	}
+	return {
+		shades,
+		snowShades,
+		rockFoot,
+		snowFoot,
+		at,
+		rockCrest: crestOf(shades, rockFoot, PALETTE[band.crest]),
+		snowyCrest: snow ? crestOf(snowShades, snowFoot, PALETTE[snow.crest]) : null,
+	}
+}
+
+// Each column's facing under the disc, and how far its terminator leans down toward the shade.
+function facings({ w, h, tops, slope, steep }, atCol, atUp) {
+	const faceCol = new Float32Array(w)
+	const leanCol = new Float32Array(w)
+	for (let x = 0; x < w; x++) {
+		const ax = atCol - x
+		const ay = atUp - (h - tops[x])
+		const len = Math.sqrt(ax * ax + ay * ay) || 1
+		faceCol[x] = faceOf(slope[x], ax / len, ay / len, steep)
+		leanCol[x] = (ENTRY.ridgeLean * ax) / len
+	}
+	return { faceCol, leanCol }
+}
+
+// Every summit throws a line away from the disc; `under` and `term` bound the lit wedge below it.
+function castShadows({ w, h, tops, summit, line, under, term }, leanCol, atCol, atUp) {
+	const SH = ENTRY.ridgeShadow
+	const split = Math.max(0, Math.min(w, Math.round(atCol)))
+	const march = (from, stop, step) => {
+		let ray = -Infinity
+		let drop = SH.least
+		let ran = -Infinity
+		let ranDrop = SH.least
+		let peak = 0
+		let crest = -Infinity
+		let lean = 0
+		for (let x = from; x !== stop; x += step) {
+			ray -= drop
+			ran -= ranDrop
+			line[x] = ray
+			under[x] = ran
+			term[x] = lean ? crest - Math.abs(x - peak) / lean : -Infinity
+			const up = h - tops[x]
+			if (summit[x] && up > ray) {
+				ran = ray
+				ranDrop = drop
+				ray = up
+				drop = Math.max(SH.least, (atUp - up) / Math.max(1, Math.abs(x - atCol)))
+				peak = x
+				crest = up
+				lean = Math.abs(leanCol[x])
+			}
+		}
+	}
+	march(split, w, 1)
+	march(split - 1, -1, -1)
 }
 
 // Hills standing on the horizon row, built as the plain is: a height field of massifs seen edge-on.
@@ -778,107 +797,10 @@ export function drawMoon(el, band, visitSeed, frame) {
 		const t = clamp01((y - yH[x]) / rows)
 		return { X: (x - w / 2) * (1 + P.spread * (1 - t)), Y: depthAt(rows, t) }
 	}
-	const worldW = w * (1 + P.spread)
-	const worldD = depthAt(h - 1 - Math.round(h * band.horizon), 1)
-
-	// The crater field: radius rolls as a power, and age flattens the bowl, so one age cannot read as bubble wrap.
-	const C = M.crater
-	const shape = (c, age) => ({
-		...c,
-		age,
-		depth: c.r * (C.depth[0] - C.depth[1] * age),
-		rimH: c.r * (C.rimHeight[0] - C.rimHeight[1] * age),
-	})
-	const craters = []
-	for (let i = 0; i < per(P.craters.count); i++) {
-		const roll = hash1(i * 7, seed + 1) ** P.craters.power
-		const r = P.craters.rMin + (P.craters.rMax - P.craters.rMin) * roll
-		const x = (hash1(i * 7 + 1, seed + 1) - 0.5) * worldW
-		const y = hash1(i * 7 + 2, seed + 1) * worldD
-		craters.push(shape({ x, y, r }, hash1(i * 7 + 3, seed + 1)))
-	}
-	for (const c of P.craters.big) craters.push(shape(c, C.freshAge))
-	const boulders = P.boulders.big.map(b => ({ ...b, height: b.r * M.boulder.height }))
-	for (let i = 0; i < per(P.boulders.count); i++) {
-		const r = M.boulder.rMin + (M.boulder.rMax - M.boulder.rMin) * hash1(i * 5 + 2, seed + 9)
-		const x = (hash1(i * 5, seed + 9) - 0.5) * worldW
-		const y = hash1(i * 5 + 1, seed + 9) * worldD
-		boulders.push({ x, y, r, height: r * M.boulder.height })
-	}
-
-	// the field itself: swells and regolith texture, then every crater and boulder
-	const height = (X, Y) => {
-		// the regolith's grain runs across the frame: low angles foreshorten detail into streaks
-		let hgt =
-			(fbm2(X / M.swell.cells, Y / M.swell.cells, seed) - 0.5) * M.swell.amp +
-			(fbm2(X / M.rough.cellsX, Y / M.rough.cellsY, seed + 5) - 0.5) * M.rough.amp
-		// a low rise along the band's far edge, so the near band has a lit face to stand on
-		if (P.rise) hgt += P.rise.amp * clamp01(1 - Y / P.rise.depth) ** 2
-		// Long lines across the plain: dug below it a rille (a collapsed lava tube), raised above it a wrinkle ridge.
-		if (P.lines) {
-			for (const R of P.lines) {
-				const d =
-					Math.abs(Y - R.y - (fbm1(X / R.cells, seed + 57) - 0.5) * R.wander) /
-					R.halfWidth
-				if (d < 1) {
-					const ends = clamp01((X - R.from) / R.taper) * clamp01((R.to - X) / R.taper)
-					hgt += R.height * (1 - d * d) * ends
-				}
-			}
-		}
-		for (const c of craters) {
-			const dx = X - c.x
-			const dy = Y - c.y
-			const reach = c.r * C.ejectaTo
-			if (Math.abs(dx) > reach || Math.abs(dy) > reach) continue
-			const d = Math.hypot(dx, dy) / c.r
-			if (d < 1) {
-				// the bowl: parabolic walls down to a floor, flat across the basins
-				const floor = c.r > C.basinR ? C.floor[1] : C.floor[0]
-				hgt -= c.depth * (d < floor ? 1 : 1 - ((d - floor) / (1 - floor)) ** 2)
-				if (c.r > C.peakR && d < C.peakAt) hgt += c.depth * C.peak * (1 - d / C.peakAt)
-			}
-			// the raised rim at the lip, and the ejecta blanket sloping off it
-			if (Math.abs(d - 1) < C.rimWidth) hgt += c.rimH * (1 - Math.abs(d - 1) / C.rimWidth)
-			else if (d > 1 && d < C.ejectaTo) {
-				hgt +=
-					c.rimH *
-					C.ejectaGain *
-					(1 - (d - 1 - C.rimWidth) / (C.ejectaTo - 1 - C.rimWidth))
-			}
-		}
-		for (const b of boulders) {
-			const dx = X - b.x
-			const dy = Y - b.y
-			if (Math.abs(dx) > b.r * M.boulder.reach || Math.abs(dy) > b.r * M.boulder.reach)
-				continue
-			hgt += b.height * Math.exp(-(dx * dx + dy * dy) / (b.r * b.r))
-		}
-		return hgt
-	}
-
-	// Albedo, separate from height: mare against highland, fresh-crater blankets, and the big basin's rays.
-	const big = craters.reduce((a, c) => (c.r > a.r ? c : a), craters[0])
-	const albedo = (X, Y) => {
-		let a = 1 + (fbm2(X / M.mare.cells, Y / M.mare.cells, seed + 3) - 0.5) * M.mare.amp
-		for (const c of craters) {
-			if (c.age > C.freshBelow) continue
-			const d = Math.hypot(X - c.x, Y - c.y) / c.r
-			if (d < C.freshTo) a *= 1 + C.freshGain * (1 - d / C.freshTo)
-		}
-		if (big) {
-			const dx = X - big.x
-			const dy = Y - big.y
-			const d = Math.hypot(dx, dy) / big.r
-			if (d > M.rays.from && d < M.rays.reach) {
-				const th = Math.atan2(dy, dx)
-				const wobble = fbm1(th * M.rays.wobbleFreq, seed + 11) * M.rays.wobble
-				const ray = Math.max(0, Math.cos(th * M.rays.count + wobble)) ** M.rays.sharpness
-				a *= 1 + M.rays.gain * ray * (1 - (d - M.rays.from) / (M.rays.reach - M.rays.from))
-			}
-		}
-		return a
-	}
+	const world = { w: w * (1 + P.spread), d: depthAt(h - 1 - Math.round(h * band.horizon), 1) }
+	const craters = craterField(P, seed, world, per)
+	const height = moonHeight(P, seed, craters, boulderField(P, seed, world, per))
+	const albedo = moonAlbedo(seed, craters)
 
 	const shadowed = (X, Y, h0) => {
 		let s = M.shadow.first
@@ -945,4 +867,119 @@ export function drawMoon(el, band, visitSeed, frame) {
 
 	ctx.putImageData(img, 0, 0)
 	return cut
+}
+
+// The crater field: radius rolls as a power, and age flattens the bowl, so one age cannot read as bubble wrap.
+function craterField(P, seed, world, per) {
+	const C = DEPARTURE_RIDGE.moon.crater
+	const shape = (c, age) => ({
+		...c,
+		age,
+		depth: c.r * (C.depth[0] - C.depth[1] * age),
+		rimH: c.r * (C.rimHeight[0] - C.rimHeight[1] * age),
+	})
+	const craters = []
+	for (let i = 0; i < per(P.craters.count); i++) {
+		const roll = hash1(i * 7, seed + 1) ** P.craters.power
+		const r = P.craters.rMin + (P.craters.rMax - P.craters.rMin) * roll
+		const x = (hash1(i * 7 + 1, seed + 1) - 0.5) * world.w
+		const y = hash1(i * 7 + 2, seed + 1) * world.d
+		craters.push(shape({ x, y, r }, hash1(i * 7 + 3, seed + 1)))
+	}
+	for (const c of P.craters.big) craters.push(shape(c, C.freshAge))
+	return craters
+}
+
+function boulderField(P, seed, world, per) {
+	const B = DEPARTURE_RIDGE.moon.boulder
+	const boulders = P.boulders.big.map(b => ({ ...b, height: b.r * B.height }))
+	for (let i = 0; i < per(P.boulders.count); i++) {
+		const r = B.rMin + (B.rMax - B.rMin) * hash1(i * 5 + 2, seed + 9)
+		const x = (hash1(i * 5, seed + 9) - 0.5) * world.w
+		const y = hash1(i * 5 + 1, seed + 9) * world.d
+		boulders.push({ x, y, r, height: r * B.height })
+	}
+	return boulders
+}
+
+// The plain's height field: swells and regolith texture, then every crater and boulder.
+function moonHeight(P, seed, craters, boulders) {
+	const M = DEPARTURE_RIDGE.moon
+	const C = M.crater
+	return (X, Y) => {
+		// the regolith's grain runs across the frame: low angles foreshorten detail into streaks
+		let hgt =
+			(fbm2(X / M.swell.cells, Y / M.swell.cells, seed) - 0.5) * M.swell.amp +
+			(fbm2(X / M.rough.cellsX, Y / M.rough.cellsY, seed + 5) - 0.5) * M.rough.amp
+		// a low rise along the band's far edge, so the near band has a lit face to stand on
+		if (P.rise) hgt += P.rise.amp * clamp01(1 - Y / P.rise.depth) ** 2
+		// Long lines across the plain: dug below it a rille (a collapsed lava tube), raised above it a wrinkle ridge.
+		if (P.lines) {
+			for (const R of P.lines) {
+				const d =
+					Math.abs(Y - R.y - (fbm1(X / R.cells, seed + 57) - 0.5) * R.wander) /
+					R.halfWidth
+				if (d < 1) {
+					const ends = clamp01((X - R.from) / R.taper) * clamp01((R.to - X) / R.taper)
+					hgt += R.height * (1 - d * d) * ends
+				}
+			}
+		}
+		for (const c of craters) {
+			const dx = X - c.x
+			const dy = Y - c.y
+			const reach = c.r * C.ejectaTo
+			if (Math.abs(dx) > reach || Math.abs(dy) > reach) continue
+			const d = Math.hypot(dx, dy) / c.r
+			if (d < 1) {
+				// the bowl: parabolic walls down to a floor, flat across the basins
+				const floor = c.r > C.basinR ? C.floor[1] : C.floor[0]
+				hgt -= c.depth * (d < floor ? 1 : 1 - ((d - floor) / (1 - floor)) ** 2)
+				if (c.r > C.peakR && d < C.peakAt) hgt += c.depth * C.peak * (1 - d / C.peakAt)
+			}
+			// the raised rim at the lip, and the ejecta blanket sloping off it
+			if (Math.abs(d - 1) < C.rimWidth) hgt += c.rimH * (1 - Math.abs(d - 1) / C.rimWidth)
+			else if (d > 1 && d < C.ejectaTo) {
+				hgt +=
+					c.rimH *
+					C.ejectaGain *
+					(1 - (d - 1 - C.rimWidth) / (C.ejectaTo - 1 - C.rimWidth))
+			}
+		}
+		for (const b of boulders) {
+			const dx = X - b.x
+			const dy = Y - b.y
+			if (Math.abs(dx) > b.r * M.boulder.reach || Math.abs(dy) > b.r * M.boulder.reach)
+				continue
+			hgt += b.height * Math.exp(-(dx * dx + dy * dy) / (b.r * b.r))
+		}
+		return hgt
+	}
+}
+
+// Albedo, separate from height: mare against highland, fresh-crater blankets, and the big basin's rays.
+function moonAlbedo(seed, craters) {
+	const M = DEPARTURE_RIDGE.moon
+	const C = M.crater
+	const big = craters.reduce((a, c) => (c.r > a.r ? c : a), craters[0])
+	return (X, Y) => {
+		let a = 1 + (fbm2(X / M.mare.cells, Y / M.mare.cells, seed + 3) - 0.5) * M.mare.amp
+		for (const c of craters) {
+			if (c.age > C.freshBelow) continue
+			const d = Math.hypot(X - c.x, Y - c.y) / c.r
+			if (d < C.freshTo) a *= 1 + C.freshGain * (1 - d / C.freshTo)
+		}
+		if (big) {
+			const dx = X - big.x
+			const dy = Y - big.y
+			const d = Math.hypot(dx, dy) / big.r
+			if (d > M.rays.from && d < M.rays.reach) {
+				const th = Math.atan2(dy, dx)
+				const wobble = fbm1(th * M.rays.wobbleFreq, seed + 11) * M.rays.wobble
+				const ray = Math.max(0, Math.cos(th * M.rays.count + wobble)) ** M.rays.sharpness
+				a *= 1 + M.rays.gain * ray * (1 - (d - M.rays.from) / (M.rays.reach - M.rays.from))
+			}
+		}
+		return a
+	}
 }
