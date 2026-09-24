@@ -51,6 +51,12 @@ export const HERO_FLYBY = {
 	moteNear: 0.35,
 	// Cursor lean as a camera pan (world units), per mote: the near sparks sweep hardest.
 	moteLean: 0.1,
+	// each mote's own share of the tail and of the light, so the field is not one comb of equals
+	moteTailShare: [0.45, 1.35],
+	moteGlow: [0.4, 1],
+	// near motes dim over this depth past the lens; far ones between these shares of the box
+	moteNearFade: 1.8,
+	moteFarFade: [0.18, 0.5],
 	moteColor: 'rgb(199, 217, 255)',
 	// backing-store downscale, as the warp does it: one mote is one art pixel
 	motePixelScale: 2,
@@ -553,6 +559,8 @@ export const ENTRY = {
 	deck: { start: 0.38, peak: 0.5, end: 0.68, max: 0.92 },
 	// Each cloud rushes past in its own slice of the drop, swelling and fanning off centre.
 	cloudTravel: 0.15,
+	// the last share of its slice a puff fades over, so it never pops out at the frame edge
+	cloudFadeTail: 0.15,
 	cloudFromVh: 110,
 	cloudToVh: -70,
 	cloudApproach: 3.8,
@@ -567,14 +575,24 @@ export const ENTRY = {
 		lobeRy: [0.16, 0.34],
 		lobeRise: [0.04, 0.26],
 		lobeJitter: 0.18,
+		// lobe centres run `run` of the width from `from`; `grow` scales a lobe toward the middle
+		lobeSpan: { from: 0.12, run: 0.76 },
+		lobeLift: 0.4,
+		lobeGrow: 0.6,
 		warp: 0.34,
 		warpFreq: 6,
 		baseAt: 0.8,
 		baseRuffle: 0.05,
+		baseRuffleFreq: 3,
+		// how hard the field falls off under the flat base
+		baseCut: 12,
 		feather: 0.1,
 		minNeighbours: 3,
 		shadeDepth: 9,
 		sideLight: 0.5,
+		// how a cell's light splits between its depth under the crown and the side light
+		crownShare: 0.7,
+		sideShare: 0.3,
 		shades: ['stone', 'bone', 'chalk', 'cream', 'linen'],
 	},
 
@@ -586,6 +604,8 @@ export const ENTRY = {
 		startJitter: 0.007,
 		leftMin: 6,
 		leftMax: 88,
+		// the golden ratio's fraction: consecutive puffs never share a lane
+		laneStep: 0.618034,
 		scaleFrom: 0.45,
 		scaleTo: 1.6,
 		scaleJitter: 0.4,
@@ -731,6 +751,9 @@ export const ENTRY = {
 		appearEnd: 0.76,
 		maxOpacity: 0.9,
 		colors: ['star', 'star', 'linen', 'glow', 'chalk'],
+		// a star's alpha from its brightness roll; past `doubleAbove` it is two cells across
+		alpha: { from: 0.35, run: 0.65 },
+		doubleAbove: 0.92,
 		layers: [
 			{ tile: 359, count: 14, depth: 4 },
 			{ tile: 512, count: 18, depth: 8 },
@@ -826,6 +849,8 @@ export const ENTRY = {
 		// wingbeat; each bird takes its own phase so the flock never flaps in unison
 		flapMs: [420, 700],
 		peak: [0.72, 0.92],
+		// where a crossing starts, off the left edge heading right and off the right heading left
+		enterVw: { rightward: -14, leftward: 114 },
 	},
 
 	// Procedural ridgelines: grid and world are at fixed scale, so `ridgeCellPx` sets a cell on screen.
@@ -1089,6 +1114,29 @@ export const ROUTE = {
 	// How many straight steps a corner arc is walked in; the browser draws the real curve.
 	curveSteps: 12,
 	nodePx: 7,
+	// how far the flown-mask dash's gap overruns its subpath, so no second dash starts inside it
+	dashTailPx: 10,
+	// read off the page when it can be, these when it cannot: the root size, and the WORK rail (rem)
+	remFallbackPx: 16,
+	railCenterRem: 2,
+	// clearance beyond the WORK heading's glyphs for the rail to pass it by
+	headClearPx: 24,
+	// the LIFE lane never runs nearer the frame's edge than this
+	laneMinPx: 20,
+	// how far under the WORK timeline the line leaves for LIFE
+	exitDropPx: 60,
+	// where on the frame the line ends, as a share of a viewport into the arrival
+	endAtVh: 0.5,
+	// a jog whose chamfer would come out shorter than this is no jog: the line stays in lane
+	chamferMinPx: 24,
+	// a crossing's corners round off by this share of the chamfer
+	jogRoundShare: 0.25,
+	// a corner arc starts no further back than this share of either leg
+	cornerLegShare: 0.45,
+	// one straight step per this many px of corner arc
+	arcStepPx: 6,
+	// a segment climbing at least this share of its length is a straight, not part of a turn
+	straightAt: 0.92,
 	// The tip is a dart, not a diamond, so its heading reads. Local space, nose along +x.
 	tipNosePx: 6,
 	tipShoulderPx: 1.5,
