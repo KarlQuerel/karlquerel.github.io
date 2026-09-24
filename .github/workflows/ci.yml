@@ -72,3 +72,5 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+          # one commit on gh-pages: the history of built bundles is dead weight
+          force_orphan: true
