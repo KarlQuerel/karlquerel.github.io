@@ -48,8 +48,8 @@ module.exports = {
 		}],
 
 		// General rules (non-formatting)
-		'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-		'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+		'no-console': ['error', { allow: ['warn', 'error'] }],
+		'no-debugger': 'error',
 		'no-tabs': 'off',
 
 		// Unused variables and imports detection
