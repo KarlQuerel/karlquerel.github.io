@@ -31,6 +31,8 @@ function getHandle() {
 
 // Single merged setDoc with atomic increments: no read-before-write, no lost updates, creates on first write.
 export async function trackTerminalVisit() {
+	// the dev server must not pollute the live counters
+	if (!import.meta.env.PROD) return
 	try {
 		const { firestore, statsRef } = await getHandle()
 		await firestore.setDoc(
@@ -47,6 +49,7 @@ export async function trackTerminalVisit() {
 }
 
 export async function trackTerminalCommand(command) {
+	if (!import.meta.env.PROD) return
 	try {
 		const { firestore, statsRef } = await getHandle()
 		await firestore.setDoc(
@@ -69,7 +72,6 @@ export async function loadTerminalStats() {
 		const data = docSnap.exists() ? docSnap.data() : {}
 		return {
 			totalVisits: data.totalVisits || 0,
-			totalCommands: data.totalCommands || 0,
 			commandStats: data.commandStats || {},
 			lastVisit: data.lastVisit ? new Date(data.lastVisit) : null,
 		}
@@ -77,7 +79,6 @@ export async function loadTerminalStats() {
 		console.warn('Failed to load terminal stats:', error)
 		return {
 			totalVisits: 0,
-			totalCommands: 0,
 			commandStats: {},
 			lastVisit: null,
 		}
