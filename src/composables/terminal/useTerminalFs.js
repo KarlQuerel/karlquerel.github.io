@@ -1,8 +1,7 @@
 import { ref } from 'vue'
 import { FILESYSTEM } from '@/constants/terminal'
 
-// In-memory navigation over FILESYSTEM: tracks the cwd below home and backs the shell's path
-// commands and tab completion. Pure path logic, no side effects beyond `cwd`.
+// In-memory navigation over FILESYSTEM; the only state is `cwd`.
 export function useTerminalFs() {
 	// [] is home (~); ['dog'] is ~/dog, etc.
 	const cwd = ref([])
@@ -11,7 +10,7 @@ export function useTerminalFs() {
 	const nodeAt = segments => {
 		let node = FILESYSTEM
 		for (const seg of segments) {
-			if (node.type !== 'dir' || !node.children[seg]) return null
+			if (node.type !== 'dir' || !Object.hasOwn(node.children, seg)) return null
 			node = node.children[seg]
 		}
 		return node
