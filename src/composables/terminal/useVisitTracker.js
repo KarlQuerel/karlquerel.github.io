@@ -1,57 +1,32 @@
-import { ref } from 'vue'
+import { POPULAR_COMMANDS_LIMIT } from '@/constants/terminal'
 import { trackTerminalVisit, trackTerminalCommand, loadTerminalStats } from '@/js/firebase-setup.js'
 
+// firebase-setup swallows Firestore errors and returns safe defaults, so nothing here rejects.
 export function useVisitTracker() {
-	const visitCount = ref(0)
-	const commandStats = ref({})
-	const lastVisit = ref(null)
+	let previousVisit = Promise.resolve(null)
 
-	// firebase-setup already swallows Firestore errors and returns safe defaults, so these never reject.
-	const loadVisitData = async () => {
-		const stats = await loadTerminalStats()
-		visitCount.value = stats.totalVisits
-		commandStats.value = stats.commandStats
-		lastVisit.value = stats.lastVisit
+	// read before writing, so "Last visit" is the one before this session
+	const trackVisit = () => {
+		previousVisit = loadTerminalStats().then(async ({ lastVisit }) => {
+			await trackTerminalVisit()
+			return lastVisit
+		})
 	}
 
-	const trackVisit = async () => {
-		await trackTerminalVisit()
-		visitCount.value++
-		lastVisit.value = new Date()
-	}
-
-	const trackCommand = async command => {
-		await trackTerminalCommand(command)
-
-		if (!commandStats.value[command]) {
-			commandStats.value[command] = 0
-		}
-		commandStats.value[command]++
-	}
-
-	const getPopularCommands = (limit = 5) => {
-		return Object.entries(commandStats.value)
-			.sort(([, a], [, b]) => b - a)
-			.slice(0, limit)
-			.map(([command, count]) => ({ command, count }))
-	}
-
-	const getVisitStats = () => {
+	const loadVisitStats = async () => {
+		const lastVisit = await previousVisit
+		const { totalVisits, commandStats } = await loadTerminalStats()
+		const counts = Object.entries(commandStats)
 		return {
-			totalVisits: visitCount.value,
-			lastVisit: lastVisit.value,
-			popularCommands: getPopularCommands(),
-			totalCommands: Object.values(commandStats.value).reduce((sum, count) => sum + count, 0),
+			totalVisits,
+			lastVisit,
+			totalCommands: counts.reduce((sum, [, count]) => sum + count, 0),
+			popularCommands: counts
+				.sort(([, a], [, b]) => b - a)
+				.slice(0, POPULAR_COMMANDS_LIMIT)
+				.map(([command, count]) => ({ command, count })),
 		}
 	}
 
-	// Initialize on first load
-	loadVisitData()
-
-	return {
-		trackVisit,
-		trackCommand,
-		getVisitStats,
-		loadVisitData,
-	}
+	return { trackVisit, trackCommand: trackTerminalCommand, loadVisitStats }
 }
