@@ -2,9 +2,7 @@
 	<div class="content">
 		<HomeChip />
 		<h1 ref="titleEl" class="not-found-title">
-			<span>Page</span>
-			<span>not</span>
-			<span>found</span>
+			<span v-for="word in NOT_FOUND_WORDS" :key="word">{{ word }}</span>
 		</h1>
 	</div>
 </template>
@@ -13,17 +11,10 @@
 	import { onMounted, onBeforeUnmount, ref } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
+	import { useWindowListener } from '@/composables/useWindowListener'
+	import { NOT_FOUND_FLOAT as F, NOT_FOUND_WORDS } from '@/constants/notFound'
+	import { clamp } from '@/js/math'
 	import HomeChip from './HomeChip.vue'
-
-	// zero-g float + cursor-fleeing physics, always easing back toward its layout home
-	const REPEL_RADIUS = 220 // px — how close the cursor must get to push the title
-	const REPEL_STRENGTH = 2.6 // px/frame² peak shove right at the cursor
-	const WANDER_STRENGTH = 0.12 // px/frame² idle drift force
-	const WANDER_TURN = 0.03 // rad/frame — how fast the drift direction rotates
-	const CENTER_PULL = 0.004 // spring constant easing the title home
-	const FRICTION = 0.92 // fraction of velocity retained each frame
-	const MAX_OFFSET = 0.42 // share of the half-viewport the title may roam
-	const MAX_TILT = 12 // deg — cap on the velocity-based banking
 
 	const titleEl = ref(null)
 
@@ -50,56 +41,51 @@
 		pointer.y = e.clientY
 	}
 
-	const clamp = (value, limit) => Math.max(-limit, Math.min(limit, value))
+	const within = (value, limit) => clamp(value, -limit, limit)
 
 	const step = () => {
-		wanderAngle += WANDER_TURN
-		let ax = Math.cos(wanderAngle) * WANDER_STRENGTH
-		let ay = Math.sin(wanderAngle) * WANDER_STRENGTH
+		wanderAngle += F.wanderTurn
+		let ax = Math.cos(wanderAngle) * F.wanderStrength
+		let ay = Math.sin(wanderAngle) * F.wanderStrength
 
 		// Flee the cursor: push along the vector from pointer to title centre.
 		const dx = home.x + pos.x - pointer.x
 		const dy = home.y + pos.y - pointer.y
 		const dist = Math.hypot(dx, dy) || 1
-		if (dist < REPEL_RADIUS) {
-			const force = (1 - dist / REPEL_RADIUS) * REPEL_STRENGTH
+		if (dist < F.repelRadius) {
+			const force = (1 - dist / F.repelRadius) * F.repelStrength
 			ax += (dx / dist) * force
 			ay += (dy / dist) * force
 		}
 
 		// Weak spring back to home keeps it floating around centre.
-		ax -= pos.x * CENTER_PULL
-		ay -= pos.y * CENTER_PULL
+		ax -= pos.x * F.centerPull
+		ay -= pos.y * F.centerPull
 
-		vel.x = (vel.x + ax) * FRICTION
-		vel.y = (vel.y + ay) * FRICTION
+		vel.x = (vel.x + ax) * F.friction
+		vel.y = (vel.y + ay) * F.friction
 
-		const limitX = window.innerWidth * 0.5 * MAX_OFFSET
-		const limitY = window.innerHeight * 0.5 * MAX_OFFSET
-		pos.x = clamp(pos.x + vel.x, limitX)
-		pos.y = clamp(pos.y + vel.y, limitY)
+		pos.x = within(pos.x + vel.x, window.innerWidth * 0.5 * F.maxOffset)
+		pos.y = within(pos.y + vel.y, window.innerHeight * 0.5 * F.maxOffset)
 
-		const tilt = clamp(vel.x * 1.2, MAX_TILT)
+		const tilt = within(vel.x * F.tiltPerSpeed, F.maxTilt)
 		titleEl.value.style.transform = `translate(${Math.round(pos.x)}px, ${Math.round(pos.y)}px) rotate(${tilt.toFixed(2)}deg)`
 
 		rafId = requestAnimationFrame(step)
 	}
 
-	const onResize = useRafThrottle(measureHome)
+	if (!prefersReducedMotion()) {
+		useWindowListener('pointermove', onPointerMove)
+		useWindowListener('resize', useRafThrottle(measureHome))
+	}
 
 	onMounted(() => {
 		if (prefersReducedMotion()) return
 		measureHome()
-		window.addEventListener('pointermove', onPointerMove, { passive: true })
-		window.addEventListener('resize', onResize)
 		rafId = requestAnimationFrame(step)
 	})
 
-	onBeforeUnmount(() => {
-		if (rafId) cancelAnimationFrame(rafId)
-		window.removeEventListener('pointermove', onPointerMove)
-		window.removeEventListener('resize', onResize)
-	})
+	onBeforeUnmount(() => cancelAnimationFrame(rafId))
 </script>
 
 <style lang="scss" scoped>
