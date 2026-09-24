@@ -9,15 +9,21 @@
 	import { ref, onMounted, onBeforeUnmount } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
+	import { useWindowListener } from '@/composables/useWindowListener'
+	import {
+		MATRIX_FONT_SIZE as FONT_SIZE,
+		MATRIX_GLYPHS as GLYPHS,
+		MATRIX_RESTART_HOLD,
+		MATRIX_STILL_POSITION,
+		MATRIX_STILL_TEXT,
+		MATRIX_TRAIL_FILL,
+	} from '@/constants/terminal'
 
 	// Phosphor digital-rain overlay for the `matrix` command; closes on the first key press or click.
 	const props = defineProps({
-		color: { type: String, default: '#33ff66' },
+		color: { type: String, required: true },
 	})
 	const emit = defineEmits(['close'])
-
-	const FONT_SIZE = 14
-	const GLYPHS = 'アイウエオカキクケコサシスセソ0123456789ABCDEFZ'.split('')
 
 	const canvasRef = ref(null)
 	let ctx = null
@@ -41,14 +47,14 @@
 	const draw = () => {
 		const canvas = canvasRef.value
 		if (!canvas || !ctx) return
-		// Translucent black wash leaves fading trails behind each glyph.
-		ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'
+		ctx.fillStyle = MATRIX_TRAIL_FILL
 		ctx.fillRect(0, 0, canvas.width, canvas.height)
 		ctx.fillStyle = props.color
 		for (let i = 0; i < columns; i++) {
 			const glyph = GLYPHS[Math.floor(Math.random() * GLYPHS.length)]
 			ctx.fillText(glyph, i * FONT_SIZE, drops[i] * FONT_SIZE)
-			if (drops[i] * FONT_SIZE > canvas.height && Math.random() > 0.975) drops[i] = 0
+			if (drops[i] * FONT_SIZE > canvas.height && Math.random() > MATRIX_RESTART_HOLD)
+				drops[i] = 0
 			drops[i]++
 		}
 		rafId = requestAnimationFrame(draw)
@@ -61,24 +67,19 @@
 		close()
 	}
 
-	// setup reallocates the drops array and clears the canvas — coalesce drag-resize into one rebuild.
-	const onResize = useRafThrottle(setup)
+	// setup reallocates the drops array and clears the canvas: coalesce drag-resize into one rebuild
+	useWindowListener('resize', useRafThrottle(setup))
+	// capture phase, so the terminal input never sees the exit key
+	useWindowListener('keydown', onKey, true)
 
 	onMounted(() => {
 		setup()
-		if (prefersReducedMotion()) {
-			if (ctx) ctx.fillText('wake up...', 20, 30)
-		} else {
-			draw()
-		}
-		window.addEventListener('keydown', onKey, true)
-		window.addEventListener('resize', onResize)
+		if (!prefersReducedMotion()) draw()
+		else if (ctx) ctx.fillText(MATRIX_STILL_TEXT, ...MATRIX_STILL_POSITION)
 	})
 
 	onBeforeUnmount(() => {
 		if (rafId) cancelAnimationFrame(rafId)
-		window.removeEventListener('keydown', onKey, true)
-		window.removeEventListener('resize', onResize)
 	})
 </script>
 
@@ -89,7 +90,7 @@
 		position: absolute;
 		inset: 0;
 		z-index: 10;
-		background: #000;
+		background: $black;
 		@include cursor-interactive;
 		overflow: hidden;
 	}
