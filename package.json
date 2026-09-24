@@ -8,16 +8,17 @@
     "serve": "vite preview",
     "test": "playwright test",
     "deploy": "npm run build && gh-pages -d dist",
-    "format": "prettier --write \"src/**/*.{js,vue,css,scss}\" --config .prettierrc && npm run lint:fix && npm run format:check && npm run lint:check",
+    "format": "prettier --write \"src/**/*.{js,vue,css,scss}\" --config .prettierrc && npm run lint:fix && npm run lint:check",
     "format:check": "prettier --check \"src/**/*.{js,vue,css,scss}\" --config .prettierrc",
     "lint": "eslint . --ext .js,.vue --cache",
     "lint:fix": "eslint . --ext .js,.vue --cache --fix",
     "lint:check": "eslint . --ext .js,.vue --cache --max-warnings 0",
-    "clean": "npm run lint:fix && npm run format",
+    "clean": "npm run format",
     "prepare": "simple-git-hooks"
   },
   "author": "Karl Querel",
   "license": "SEE LICENSE IN LICENSE",
+  "type": "module",
   "lint-staged": {
     "*.{js,vue}": [
       "eslint --cache --fix",
