@@ -2,7 +2,7 @@
 	<section id="top" ref="trackRef" class="journey" :style="[trackStyle, parallaxStyle]">
 		<PlanetStage :cam="cam" :spin="spin" :light-yaw="lightYaw" :haze="haze" />
 		<!-- the journey's line: takes the camera sampler, not the camera, to aim its dive where the planet will be -->
-		<JourneyRoute :cam-at="camAt" />
+		<JourneyRoute ref="routeRef" :cam-at="camAt" />
 		<JourneyRail :active="activeStop" />
 
 		<!-- Chrome that rides the whole flight once the hero has gone by: the name and a
@@ -100,11 +100,14 @@
 	import { GAME_LINK, JOURNEY_STOPS } from '@/constants/navigation'
 	import { ABOUT_HEADINGS } from '@/data/about'
 	import { HOME_LANDING } from '@/data/heroLines'
-	import { clamp01, hermite, monotoneSlopes, riseFall, smoothstep } from '@/js/math'
+	import { clamp01, riseFall, smoothstep } from '@/js/math'
+	import { cameraSampler, camKeyframes, flown, textRight } from '@/js/journeyCamera'
 	import { useBackdropCover } from '@/composables/useBackdropCover'
 	import { useBoot } from '@/composables/useBoot'
 	import { usePointerParallax } from '@/composables/usePointerParallax'
+	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { useScrollSections } from '@/composables/useScrollSections'
+	import { useWindowListener } from '@/composables/useWindowListener'
 	import AboutLife from './AboutLife.vue'
 	import AboutWork from './AboutWork.vue'
 	import DepartureRidge from './DepartureRidge.vue'
@@ -126,6 +129,7 @@
 	const workRef = ref(null)
 	const lifeRef = ref(null)
 	const arrivalRef = ref(null)
+	const routeRef = ref(null)
 
 	const { parallaxStyle, pointer } = usePointerParallax()
 	const { progress, sync } = useScrollSections(trackRef)
@@ -146,7 +150,6 @@
 	const nameWords = HOME_LANDING.name.split(' ')
 	const firstWords = nameWords.slice(0, -1).join(' ')
 	const lastWord = nameWords.at(-1)
-	// Where the corridor sits from the lockup's centre (px) — HeroTitle measures it and hands it up.
 	const portrait = ref(false)
 
 	// the headings answer the cursor too — less than the planet (see JOURNEY.parallax)
@@ -155,6 +158,7 @@
 	// the prose leans too, as the nearest layer bar the title plate
 	const bodyStyle = { '--depth': JOURNEY.parallax.body }
 
+	// Where the corridor sits from the lockup's centre (px) — HeroTitle measures it and hands it up.
 	const axis = ref({ x: 0, y: 0 })
 	const onAxis = next => (axis.value = next)
 
@@ -166,54 +170,38 @@
 	// column) is text on text. Spans in track px, from the station reaching the chips' foot to its
 	// leaving the top of the frame; measured, so a column wide enough on a tablet stands them off too.
 	const standOff = ref([])
-	let resizeObserver = null
+
+	// A station's parts, judged apart: a title wide enough to run under the chips need not stand them
+	// off the column below it, which may well be clear.
+	const STATION_PARTS = ['.journey__station-head', '.journey__station-body']
+
+	// the track size last measured at, so an observer echoing that same layout re-measures nothing
+	let measuredAt = ''
+	const trackSize = track => `${track.clientWidth}x${track.offsetHeight}`
 
 	function measure() {
 		const track = trackRef.value
 		if (!track) return
+		measuredAt = trackSize(track)
 		const vh = window.innerHeight
 		const trackTop = track.getBoundingClientRect().top
 		const topOf = el => el.getBoundingClientRect().top - trackTop
 		const bottomOf = el => topOf(el) + el.offsetHeight
 		// portrait renders the vmin-sized globe far smaller — push the camera in
 		portrait.value = vh > track.clientWidth
-		const cameras = portrait.value ? CAMERA_PORTRAIT : CAMERA
 		dims.value = { trackH: track.offsetHeight, vh }
+		const at = {
+			vh,
+			workTop: topOf(workRef.value),
+			workBottom: bottomOf(workRef.value),
+			lifeTop: topOf(lifeRef.value),
+			lifeBottom: bottomOf(lifeRef.value),
+			arrivalTop: topOf(arrivalRef.value),
+		}
 		// the departure flies through the name at the planet, then stations dock as they enter
-		const arrivalTop = topOf(arrivalRef.value)
-		const runwayPx = (ARRIVAL.runwayVh / 100) * vh
-		// the run from the top of the page to the WORK dock: the whole flight out
-		const dock = topOf(workRef.value) - vh
-		const lifeFoot = bottomOf(lifeRef.value) - vh / 2
-		const diveAt = (bottomOf(workRef.value) + topOf(lifeRef.value) - vh * 1.5) / 2
-		const lifeDock = topOf(lifeRef.value) - vh
-		const workHold = bottomOf(workRef.value) - vh / 2
-		const beat = JOURNEY.departure
-		camTrack.value = [
-			{ s: 0, ...cameras.rest },
-			{ s: dock * beat.void, ...cameras.void },
-			{ s: dock * beat.dot, ...cameras.dot },
-			{ s: dock * beat.close, ...cameras.close },
-			{ s: dock * beat.orbitIn, ...cameras.orbitIn },
-			{ s: dock * beat.orbitOut, ...cameras.orbitOut },
-			{ s: dock, ...cameras.work },
-			{ s: workHold, ...cameras.workEnd },
-			// the skim bottoms out mid-way through the WORK -> LIFE leg, then holds at the deck
-			{ s: diveAt, ...cameras.dive },
-			{ s: diveAt + (lifeDock - diveAt) * JOURNEY.skimHoldAt, ...cameras.skim },
-			{ s: lifeDock, ...cameras.life },
-			{ s: bottomOf(lifeRef.value) - vh / 2, ...cameras.lifeEnd },
-			// the turn onto the approach axis, well before the runway starts
-			{
-				s: lifeFoot + (arrivalTop - lifeFoot) * JOURNEY.lineUpAt,
-				...cameras.lineUp,
-			},
-			{ s: arrivalTop, ...cameras.approach },
-			{ s: arrivalTop + runwayPx * ARRIVAL.entryAt, ...cameras.entry },
-			{ s: arrivalTop + runwayPx * ARRIVAL.goneAt, ...cameras.gone },
-		]
+		camTrack.value = camKeyframes(portrait.value ? CAMERA_PORTRAIT : CAMERA, at)
 		// rail thresholds: a stop lights once its station crosses mid-viewport
-		stops.value = [0, topOf(workRef.value), topOf(lifeRef.value), topOf(arrivalRef.value)]
+		stops.value = [0, at.workTop, at.lifeTop, at.arrivalTop]
 		const chips = [...track.querySelectorAll('.journey__cta')].map(el =>
 			el.getBoundingClientRect()
 		)
@@ -227,70 +215,17 @@
 				? [{ from: topOf(under[0]) - chipFoot, to: bottomOf(under.at(-1)) }]
 				: []
 		})
-	}
-
-	// A station's parts, judged apart: a title wide enough to run under the chips need not stand them
-	// off the column below it, which may well be clear.
-	const STATION_PARTS = ['.journey__station-head', '.journey__station-body']
-
-	// The right edge of a part's copy — its text runs, not its boxes: a centred title's box spans the column.
-	function textRight(part) {
-		const range = document.createRange()
-		const walker = document.createTreeWalker(part, NodeFilter.SHOW_TEXT)
-		let right = -Infinity
-		for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-			if (!node.data.trim()) continue
-			range.selectNodeContents(node)
-			right = Math.max(right, range.getBoundingClientRect().right)
-		}
-		return right
+		// the route aims its dive through the camera just measured
+		routeRef.value?.measure(track)
 	}
 
 	const scrolled = computed(() => progress.value * Math.max(0, dims.value.trackH - dims.value.vh))
 
-	// One cubic per channel through the measured keyframes; a missing channel holds at the default.
-	const CAM_CHANNELS = { x: 0, y: 0, scale: 1, fade: 1, roll: 0, tilt: 0, light: 0 }
-
-	// Slopes for those cubics. Easing each segment on its own parked the camera at all fifteen keyframes.
-	const camSlopes = computed(() => {
-		const pts = camTrack.value
-		if (pts.length < 2) return null
-		const xs = pts.map(p => p.s)
-		const slopes = {}
-		for (const [key, base] of Object.entries(CAM_CHANNELS)) {
-			slopes[key] = monotoneSlopes(
-				xs,
-				pts.map(p => p[key] ?? base)
-			)
-		}
-		return slopes
-	})
-
 	// Sampled at an arbitrary scroll: the route needs where the planet will be, not where it is.
-	function camAt(s) {
-		const pts = camTrack.value
-		const slopes = camSlopes.value
-		if (!slopes) return { ...CAM_CHANNELS, ...CAMERA.rest }
-		if (s <= pts[0].s) return { ...CAM_CHANNELS, ...pts[0] }
-		for (let i = 0; i < pts.length - 1; i++) {
-			const a = pts[i]
-			const b = pts[i + 1]
-			if (s <= b.s) {
-				const h = b.s - a.s || 1
-				const t = (s - a.s) / h
-				const frame = {}
-				for (const [key, base] of Object.entries(CAM_CHANNELS)) {
-					const m = slopes[key]
-					frame[key] = hermite(a[key] ?? base, b[key] ?? base, m[i], m[i + 1], h, t)
-				}
-				return frame
-			}
-		}
-		return pts[pts.length - 1]
-	}
+	const sampler = computed(() => cameraSampler(camTrack.value))
+	const camAt = s => sampler.value(s)
 
 	const cam = computed(() => camAt(scrolled.value))
-
 	// the planet keeps rolling for the whole trip; the camera's roll piles ground rush on top
 	const spin = computed(() => (progress.value * JOURNEY.turns + cam.value.roll) * Math.PI * 2)
 
@@ -323,15 +258,6 @@
 			visibility: gone < 1 ? null : 'hidden',
 		}
 	})
-
-	// How far down the corridor the camera has run, in world units — the one number the flight comes from.
-	function flown(p) {
-		const h = HERO_FLYBY.spoolUp
-		const d = p < h ? (p * p) / (2 * h) : p - h / 2
-		const t = d / (1 - h / 2)
-		const run = HERO_FLYBY.titleZ * (1 - 1 / HERO_FLYBY.nearScale)
-		return t <= 1 ? HERO_FLYBY.titleZ * (1 - HERO_FLYBY.nearScale ** -t) : run * t
-	}
 
 	// the motes ride this; past the end of the pass it carries on into the void
 	const travel = computed(() => flown(Math.max(0, pass.value)))
@@ -406,17 +332,24 @@
 		}
 	})
 
+	// parked by KeepAlive the track is detached, and measures as a page of nothing
+	let parked = false
+	let resizeObserver = null
+	const remeasure = useRafThrottle(() => parked || measure())
+	useWindowListener('resize', remeasure)
+
 	onMounted(() => {
-		measure()
-		window.addEventListener('resize', measure, { passive: true })
-		if (typeof ResizeObserver !== 'undefined') {
-			resizeObserver = new ResizeObserver(measure)
-			resizeObserver.observe(trackRef.value)
-		}
+		if (typeof ResizeObserver === 'undefined') return
+		// content shifting under us (fonts, images, reveals) moves the stations
+		resizeObserver = new ResizeObserver(() => {
+			if (!parked && trackSize(trackRef.value) !== measuredAt) remeasure()
+		})
+		resizeObserver.observe(trackRef.value)
 	})
 
-	// re-shown from KeepAlive: scroll and measurements may be stale, and `covered` must be re-asserted
+	// shown (first mount included): scroll and measurements may be stale, and `covered` must be re-asserted
 	onActivated(() => {
+		parked = false
 		measure()
 		sync()
 		syncArrival()
@@ -424,11 +357,13 @@
 	})
 
 	// away from the journey, the sky is somebody else's frame
-	onDeactivated(() => (covered.value = false))
+	onDeactivated(() => {
+		parked = true
+		covered.value = false
+	})
 
 	onBeforeUnmount(() => {
-		window.removeEventListener('resize', measure)
-		if (resizeObserver) resizeObserver.disconnect()
+		resizeObserver?.disconnect()
 		covered.value = false
 	})
 </script>
