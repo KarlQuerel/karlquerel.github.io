@@ -13,7 +13,6 @@ import {
 	FOCUS,
 	HEADING_SPAN,
 	LOOK_MAX,
-	MAX_FRAME_DT,
 	PATH,
 	RING_NORMAL,
 	ROLL_DAMPING,
@@ -90,11 +89,10 @@ export const createRollState = () => ({ angle: 0, vel: 0, settled: true })
 
 // Semi-implicit Euler on a damped spring: stable here, and its velocity is an airframe's lag and overshoot.
 function stepRoll(state, target, dt) {
-	const step = Math.min(dt, MAX_FRAME_DT)
 	const acc =
 		ROLL_FREQ * ROLL_FREQ * (target - state.angle) - 2 * ROLL_DAMPING * ROLL_FREQ * state.vel
-	state.vel += acc * step
-	state.angle += state.vel * step
+	state.vel += acc * dt
+	state.angle += state.vel * dt
 	// the frame loop stops drawing when the scroll stops, so it must be told the horizon still has momentum
 	state.settled = Math.abs(state.vel) < ROLL_REST && Math.abs(target - state.angle) < ROLL_REST
 	return state.angle
