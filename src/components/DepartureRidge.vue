@@ -33,10 +33,10 @@
 
 <script setup>
 	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-	import { useRafThrottle } from '@/composables/useRafThrottle'
+	import { useFrameReshape } from '@/composables/useFrameReshape'
 	import { useSkySpawner } from '@/composables/useSkySpawner'
-	import { DEPARTURE_RIDGE as RIDGE, ENTRY } from '@/constants/journey'
-	import { PALETTE } from '@/constants/palette'
+	import { DEPARTURE_RIDGE as RIDGE } from '@/constants/journey'
+	import { paletteRgb as rgb } from '@/constants/palette'
 	import { clamp01, randIn, smoothstep } from '@/js/math'
 	import { createCutter } from '@/js/departureCut'
 	import { cellFor } from '@/js/ridge'
@@ -71,8 +71,6 @@
 		}
 	}
 
-	// The glints hold still while the ground drops away — a star at infinity owes the climb no motion.
-	const rgb = name => `rgb(${PALETTE[name].join(',')})`
 	// Every canvas is sized to exactly the cells it was cut on, so a cell stays whole device pixels.
 	const sizes = ref({ sky: null, bands: [] })
 	const sized = cut =>
@@ -126,10 +124,11 @@
 	})
 
 	// the destination's place comes off the cut: over the notch, clear of the crest
-	const starAt = ref({ left: 0, top: 0 })
+	const starAt = ref(null)
 	const starStyle = computed(() => ({
-		left: `${starAt.value.left}px`,
-		top: `${starAt.value.top}px`,
+		display: starAt.value ? null : 'none',
+		left: `${starAt.value?.left ?? 0}px`,
+		top: `${starAt.value?.top ?? 0}px`,
 		...glintVars(RIDGE.star, RIDGE.star.depth),
 	}))
 
@@ -144,41 +143,33 @@
 		frame = { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 }
 		rootEl.value.style.setProperty('--cell', cellFor(frame))
 		const onStep = (done, total) => emit('progress', done / total, (done + 1) / total)
-		cutter.cut(frame, RIDGE.ridgeSeed, onStep).then(cuts => {
-			sizes.value = cuts
-			emit('ready')
-			const i = RIDGE.bands.findIndex(band => band.hills?.notch)
-			const band = RIDGE.bands[i]
-			const cut = cuts.bands[i]
-			// the star hangs `aboveCells` over the highest point the notch's crest reaches under it
-			const x = Math.round(band.hills.notch.at * cut.cols)
-			const crest = Math.min(...cut.hillTop.slice(Math.max(0, x - 1), x + 2))
-			const top = frame.h + band.depth - cut.rows * cut.cell
-			starAt.value = {
-				left: x * cut.cell - band.depth,
-				top: top + (crest - RIDGE.star.aboveCells) * cut.cell,
-			}
-		})
+		cutter.cut(frame, RIDGE.ridgeSeed, onStep).then(placeStar, () => emit('ready'))
 	}
 
-	// only when the frame really changed shape (see ENTRY.ridgeReshape)
-	const onResize = useRafThrottle(() => {
-		const reshaped =
-			window.innerWidth !== frame.w ||
-			Math.abs(window.innerHeight / frame.h - 1) > ENTRY.ridgeReshape
-		if (reshaped) cut()
-	})
+	// the star hangs `aboveCells` over the highest point the notch's crest reaches under it
+	function placeStar(cuts) {
+		sizes.value = cuts
+		emit('ready')
+		const i = RIDGE.bands.findIndex(band => band.hills?.notch)
+		const band = RIDGE.bands[i]
+		const cut = cuts.bands[i]
+		const x = Math.round(band.hills.notch.at * cut.cols)
+		const crest = Math.min(...cut.hillTop.slice(Math.max(0, x - 1), x + 2))
+		const top = frame.h + band.depth - cut.rows * cut.cell
+		starAt.value = {
+			left: x * cut.cell - band.depth,
+			top: top + (crest - RIDGE.star.aboveCells) * cut.cell,
+		}
+	}
+
+	useFrameReshape(() => frame, cut)
 
 	onMounted(() => {
 		cutter = createCutter({ sky: skyEl.value, bands: bandEls })
 		cut()
-		window.addEventListener('resize', onResize, { passive: true })
 	})
 
-	onBeforeUnmount(() => {
-		cutter.dispose()
-		window.removeEventListener('resize', onResize)
-	})
+	onBeforeUnmount(() => cutter.dispose())
 </script>
 
 <style scoped lang="scss">
