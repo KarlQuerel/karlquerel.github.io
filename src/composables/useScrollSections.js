@@ -2,12 +2,15 @@
 
 import { ref, onActivated, onBeforeUnmount, onDeactivated, onMounted } from 'vue'
 import { useRafThrottle } from './useRafThrottle.js'
+import { useWindowListener } from './useWindowListener.js'
 
 export function useScrollSections(wrapperRef) {
 	// Continuous 0 -> 1 scroll position over the runway.
 	const progress = ref(0)
 
 	let resizeObserver = null
+	// parked by KeepAlive the wrapper is detached, and would measure as a runway of nothing
+	let parked = false
 
 	function computeProgress() {
 		const wrapper = wrapperRef.value
@@ -24,20 +27,14 @@ export function useScrollSections(wrapperRef) {
 		progress.value = computeProgress()
 	}
 
-	const onScroll = useRafThrottle(sync)
+	const onScroll = useRafThrottle(() => {
+		if (!parked) sync()
+	})
 
-	function listen() {
-		window.addEventListener('scroll', onScroll, { passive: true })
-		window.addEventListener('resize', onScroll, { passive: true })
-	}
-
-	function unlisten() {
-		window.removeEventListener('scroll', onScroll)
-		window.removeEventListener('resize', onScroll)
-	}
+	useWindowListener('scroll', onScroll)
+	useWindowListener('resize', onScroll)
 
 	onMounted(() => {
-		listen()
 		const wrapper = wrapperRef.value
 		if (wrapper && typeof ResizeObserver !== 'undefined') {
 			resizeObserver = new ResizeObserver(() => onScroll())
@@ -46,14 +43,10 @@ export function useScrollSections(wrapperRef) {
 		sync()
 	})
 
-	// parked by KeepAlive, other routes' scrolling is none of its business
-	onActivated(listen)
-	onDeactivated(unlisten)
+	onActivated(() => (parked = false))
+	onDeactivated(() => (parked = true))
 
-	onBeforeUnmount(() => {
-		unlisten()
-		if (resizeObserver) resizeObserver.disconnect()
-	})
+	onBeforeUnmount(() => resizeObserver?.disconnect())
 
 	// `sync` lets a kept-alive consumer force a re-measure: its scroll listener may have gone stale.
 	return { progress, sync }
