@@ -1,6 +1,7 @@
 // Ships when GAME_SHIPPED flips; until then /game is dev-only and builds redirect (src/main.js).
 export const GAME_SHIPPED = false
-export const GAME_READY = GAME_SHIPPED || import.meta.env.DEV
+// optional chain: the prerender and the smoke test import this from plain Node
+export const GAME_READY = GAME_SHIPPED || import.meta.env?.DEV
 
 // The letters: plain glyph masks, `#` = stroke, 26 rows, six-cell strokes. Light, depth, outline,
 // plating and wear are all derived in js/wordmark.js, so the letters are the only thing drawn by hand.
@@ -200,6 +201,8 @@ export const GAME_HOLDING = {
 		hotSteps: 2,
 		sparks: 4,
 		sparkSteps: 3,
+		// how many cells out from the plate's centre a spark lands
+		sparkReach: [2, 6],
 		seed: 4,
 	},
 	// a plate that has just landed, and the sparks it throws
