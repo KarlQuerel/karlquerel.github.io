@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { GAME_SHIPPED } from '../src/constants/game.js'
 
 // One check per route: right title, mounts, and logs no console/page errors.
 // Catches broken lazy chunks, runtime errors in main.js, and dead routes —
@@ -13,11 +14,29 @@ const ROUTES = [
 	// catches a GLSL error (the renderer logs compile failures to the console)
 	{ path: '/lab', title: 'Lab • Karl Querel' },
 	{ path: '/terminal', title: 'Terminal • Karl Querel' },
-	// the game is unbuilt: its URL lands on the holding screen (src/constants/game.js)
 	{ path: '/under-construction', title: 'Under Construction • Karl Querel' },
-	{ path: '/game', title: 'Under Construction • Karl Querel', lands: '/under-construction' },
+	// until it ships, the game's URL lands on the holding screen
+	GAME_SHIPPED
+		? { path: '/game', title: 'Game • Karl Querel' }
+		: {
+				path: '/game',
+				title: 'Under Construction • Karl Querel',
+				lands: '/under-construction',
+			},
 	{ path: '/definitely-not-a-page', title: '404 • Karl Querel' },
 ]
+
+// Keep the suite off the production counters: answer Firestore's REST calls with empty successes.
+test.beforeEach(async ({ page }) => {
+	await page.route('https://firestore.googleapis.com/**', route => {
+		const request = route.request()
+		const readTime = new Date().toISOString()
+		const body = request.url().endsWith(':batchGet')
+			? (request.postDataJSON()?.documents ?? []).map(missing => ({ missing, readTime }))
+			: { commitTime: readTime, writeResults: [{ updateTime: readTime }] }
+		return route.fulfill({ json: body })
+	})
+})
 
 for (const route of ROUTES) {
 	test(`route ${route.path} renders cleanly`, async ({ page }) => {
