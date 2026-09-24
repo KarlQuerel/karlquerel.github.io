@@ -23,7 +23,7 @@
 <script setup>
 	import { computed } from 'vue'
 	import { JOURNEY } from '@/constants/journey'
-	import { PALETTE } from '@/constants/palette'
+	import { PALETTE, paletteRgb } from '@/constants/palette'
 	import { PLANET } from '@/constants/planet'
 	import { clamp01 } from '@/js/math'
 	import PixelPlanet from './PixelPlanet.vue'
@@ -50,7 +50,7 @@
 		'--atmosphere': PALETTE[PLANET.atmosphere].join(', '),
 		'--depth': JOURNEY.parallax.planet,
 		'--spark': `${JOURNEY.spark.size}px`,
-		'--spark-shade': `rgb(${PALETTE[JOURNEY.spark.shade].join(',')})`,
+		'--spark-shade': paletteRgb(JOURNEY.spark.shade),
 	}
 
 	// The dot hands over to the globe across a window of scale: full while the disc is pixels.
