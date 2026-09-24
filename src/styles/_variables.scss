@@ -46,6 +46,9 @@ $font-readable:
 
 // Terminal phosphor default; the tints the `theme` command switches to live in constants/terminal.js.
 $phosphor-green: #33ff66;
+$terminal-text: #cfd2cf;
+$terminal-glass: rgba(8, 12, 8, 0.92);
+$terminal-titlebar: rgba(100, 100, 100, 0.5);
 
 // Cool phosphor hues, kept clear of the reserved gold so a category never reads as "current".
 $tag-education: $light-blue;
