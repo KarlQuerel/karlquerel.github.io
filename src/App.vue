@@ -7,7 +7,7 @@
 			     starfield and the chrome, until the departure has cut its ground. Painted
 			     the site's black, not the lab's ground. -->
 			<div v-if="active" class="app-boot">
-				<LabBoot :progress="progress" :ceiling="ceiling" :done="done" @gone="dismiss" />
+				<BootCover :progress="progress" :ceiling="ceiling" :done="done" @gone="dismiss" />
 			</div>
 		</Teleport>
 		<main class="app-main">
@@ -22,10 +22,10 @@
 </template>
 
 <script setup>
-	import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
+	import { computed, onMounted, watch } from 'vue'
 	import { useRoute, useRouter } from 'vue-router'
 	import { useBoot } from './composables/useBoot'
-	import LabBoot from './components/lab/LabBoot.vue'
+	import BootCover from './components/BootCover.vue'
 	import SpaceBackground from './components/SpaceBackground.vue'
 
 	const SCROLLABLE_PATHS = ['/', '/sport', '/lab']
@@ -64,10 +64,6 @@
 		},
 		{ immediate: true }
 	)
-
-	onBeforeUnmount(() => {
-		document.documentElement.classList.remove('page-scrollable')
-	})
 </script>
 
 <style scoped lang="scss">
