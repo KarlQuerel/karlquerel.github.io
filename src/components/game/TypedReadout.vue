@@ -1,14 +1,14 @@
 <template>
 	<!-- The line under the name, typed in one character per step. -->
 	<p class="readout">
-		<span class="sr-only">{{ lead }} {{ accent }}</span>
+		<span class="sr-only">{{ line.lead }} {{ line.accent }}</span>
 		<span aria-hidden="true">
 			<!-- the space lives between the boxes, explicit so the compiler keeps it: a wrapped line then
 			     centres on its own text -->
-			<span class="readout__part">{{ lead.slice(0, shown) }}</span
+			<span class="readout__part">{{ line.lead.slice(0, shown) }}</span
 			>{{ ' '
 			}}<span class="readout__part readout__accent">{{
-				accent.slice(0, Math.max(0, shown - lead.length))
+				line.accent.slice(0, Math.max(0, shown - line.lead.length))
 			}}</span>
 		</span>
 	</p>
@@ -17,14 +17,15 @@
 <script setup>
 	import { onBeforeUnmount, ref, watch } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
-	import { GAME_HOLDING } from '@/constants/game'
 
 	const props = defineProps({
+		// { lead, accent, delayMs, charMs }: the accent is the highlighted tail
+		line: { type: Object, required: true },
 		// typing begins when this turns true
 		start: { type: Boolean, default: false },
 	})
 
-	const { lead, accent, delayMs, charMs } = GAME_HOLDING.readout
+	const { lead, accent, delayMs, charMs } = props.line
 	const total = lead.length + accent.length
 	const shown = ref(0)
 	let started = false
