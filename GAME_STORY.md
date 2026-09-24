@@ -13,7 +13,7 @@ Yes, at /lab quality, with one honest caveat.
 whole device pixels per cell), a hard-banded palette (`PALETTE`), and procedural geometry drawn
 in GLSL or on a canvas. That pipeline is excellent at **space, planets, suns, terrain, glass,
 metal, light**. It is bad at **people and hands**. Those have to be hand-drawn as legend grids
-(the crane worksite in `GAME_HOLDING.site` is the existing example) and they are the expensive
+(the `#` masks of `GAME_WORDMARK` and the boot `K_GRID` are the existing examples) and they are the expensive
 part of this game. The storyboard below stages every human moment as **silhouettes or POV
 fragments** so the character art stays at a handful of small grids.
 
@@ -58,8 +58,8 @@ home. The game is **HERMES**, the ship is **HERMES-9**, the player calls the shi
 - Readouts in `$font-terminal` (Departure Mono), top corners. The copy already exists in git
   history as `HERO_WAKE` (`886a840^:src/data/heroLines.js`): DAY 141,209, CREW 1/1, the alarm
   list. It was right the first time.
-- Hands: two legend grids, about 40 x 48 cells, bottom-left and bottom-right, drawn like the
-  crane (palette letters, `K` outline). Three states each: grip, reach, hold. The held item is
+- Hands: two legend grids, about 40 x 48 cells, bottom-left and bottom-right, drawn as
+  legend grids (palette letters, `K` outline). Three states each: grip, reach, hold. The held item is
   its own small grid composited into the right hand. Steps between states with `steps(3, end)`.
 - The hands lean with the pointer via the existing `--mx/--my/--depth` contract, at a shallow
   depth, so the head turns and the hands lag. That alone sells the POV.
@@ -75,8 +75,7 @@ Reasons not to block:
   garnish; the frost wipe is a pointer drag, which is a finger on a phone.
 
 What portrait costs: the hands sit naturally in the bottom corners of a tall frame, readouts
-stack instead of spreading, and each scene's art is cut for a `wide` and a `narrow` layout the
-way the holding screen already does. Show a one-line hint on touch devices ("a mouse lets you
+stack instead of spreading, and each scene's art is cut for a `wide` and a `narrow` layout. Show a one-line hint on touch devices ("a mouse lets you
 look around"), never a wall.
 
 ---
@@ -134,10 +133,10 @@ Three or four art kinds cover the whole game:
 
 | `art.kind` | What it is | Already in the repo |
 |---|---|---|
-| `shader` | one GLSL fragment on the art grid | /lab's programs in `useFlyby` (needs a single-scene variant) |
+| `shader` | one GLSL fragment on the art grid | `useArtCanvas` (one GL context on the art grid, `js/gl.js` helpers); /lab's `useFlyby` is the worked example |
 | `planet` | the procedural globe | `PixelPlanet` with `palette` override (`EARTH_PALETTE` exists) |
-| `layers` | 2 to 4 canvases at different `--depth`, ridge bands + sprites | `drawMoon`, `drawRidge`, `drawSky`, `usePointerParallax` |
-| `grid` | a hand-drawn legend grid, `wide` and `narrow` cuts | the crane worksite renderer in `GameHolding` |
+| `layers` | 2 to 4 canvases at different `--depth`, ridge bands + sprites | `drawMoon`, `cutRidge` + `lightRidge`, `drawDepartureSky`, `usePointerParallax` |
+| `grid` | a hand-drawn legend grid, `wide` and `narrow` cuts | none yet: the grid renderer is new work (`BootMark` and `js/wordmark.js` read the same `#` mask format) |
 
 **Motion rules** are the site's: self-running motion steps (`steps(n, end)`), pointer-driven
 motion is continuous, the retro comes from the grid. The pointer moves the scene through the
@@ -147,7 +146,7 @@ motion is continuous, the retro comes from the grid. The pointer moves the scene
 Persist it to `localStorage` so a refresh resumes. No backend for now (decided): the game is
 static, and nothing in the intro needs one.
 
-**Terminals** reuse the /terminal component's look: a `grid` scene with a text pane you scroll,
+**Terminals** reuse the /terminal look through `TerminalWindow` (chrome only, content in its slot): a `grid` scene with a text pane you scroll,
 and READ is the choice. Cheapest scene type, so it is where most of the lore lives.
 
 ---
@@ -167,12 +166,12 @@ motion jumps straight to shot 9.
 | 1 | **YEAR 3812.** | Black, then a sparse starfield fading in behind the text. | `SpaceBackground`, text only. | none | S |
 | 2 | **EARTH IS DYING.** | The Earth, small and centred, slow spin. Blue-green ramp already sick: browner land, thinner cloud. | `PixelPlanet` with a dried-out `EARTH_PALETTE` variant, `cloudThin` high, `lightYaw` so the sun side is over-lit. | none | S |
 | 3 | **THE SUN HAS BEEN GROWING RELENTLESSLY.** | Cut to the sun. It swells over the card, ramp sliding from `glow` through `ember` to `rust`, limb boiling. | New fragment shader on the art grid: banded disc + `fbm` limb, one uniform for age drives radius and ramp offset. Same pipeline as /lab's scene program. | none | M |
-| 4 | **BURNING EVERYTHING.** | Cracked flatland to the horizon, crop rows stubbled, red sky, the swollen sun sitting on the horizon behind heat bands. | `layers`: `drawSky` in a warm ramp, two `drawRidge` bands in the rock ramp for the dry ground, one small crop-row grid repeated, stepped crumble (3 frames). | pointer parallax | M |
+| 4 | **BURNING EVERYTHING.** | Cracked flatland to the horizon, crop rows stubbled, red sky, the swollen sun sitting on the horizon behind heat bands. | `layers`: `drawDepartureSky` in a warm ramp, two `cutRidge`/`lightRidge` bands in the rock ramp for the dry ground, one small crop-row grid repeated, stepped crumble (3 frames). | pointer parallax | M |
 | 5 | **THE EARTH CONFEDERATE CHOSE TO LAUNCH THE HERMES PROJECT.** | A chamber in silhouette: tiers of seats, tall windows behind, the red sun the only light. Hands rise in stepped waves along the tiers. A tally board flips: `60 SHIPS · APPROVED`. | `layers`: window wall (sun shader or a gradient with the sun disc), seat tiers as 3 silhouette grids at increasing depth, hands as 1-cell nubs toggling on a `steps(4)` clock, board as DOM text. Silhouettes only, no faces: that is what keeps it at one weekend. | pointer parallax | M |
 | 6 | **A TEAM OF HIGHLY TRAINED SCIENTISTS, DESTINED TO SCOUT DISTANT AND HABITABLE WORLDS.** | POV begins. A corridor advancing toward a lit door. Through side bays, other envoys suit up in silence, backlit. **HUD boots here**: the visor frame fades in, the hands appear at the bottom, gripping nothing yet. | `layers` scaled toward the camera on a stepped walk bob (a Doom-style zoom, no 3D). Envoy silhouettes are 2 grids each, mirrored. The role pick happens at the door: three lockers, ENGINEER / MEDIC / PILOT. | **first choice**: pick a role (a starting item in the right hand) | L |
 | 7 | **YOU WERE CHOSEN.** | Into the tube. The hands reach forward and grip the rails (state: reach → grip). The lid closes over the lens, glass fogs from the edges in, `CRYOSTASIS ENGAGED`, the frame blinks shut like an eyelid. Black. | Tube interior as a `grid` with the lid as a layer sliding down; frost is a canvas alpha layer growing from the edges. Eyelid = two black bars closing with `steps(3)`. | none | M |
 | 8 | *(no card)* | Across the black, a board of sixty lights, one per ship. Yours is lit: `HERMES-9`. The lights go out one by one over the crossing: `HERMES-4: SIGNAL LOST` · `HERMES-31: SIGNAL LOST`. A day counter runs up to DAY 141,209. | DOM: a 6 x 10 grid of spans, stepped blink, counter text. Cheapest shot in the intro, and the one that makes the title land. You wake alone because everyone is alone. | none | S |
-| 9 | **WARNING. WARNING. CRITICAL ERROR.** | Eyes open on the inside of a frosted lid. The HUD reboots: readouts stutter in like `LabBoot`, then the `HERO_WAKE` alarms in red: HULL INTEGRITY 34%, O2 RESERVE LOW, NAV ARRAY OFFLINE, GRAVITY WELL DETECTED. The frost is everywhere; only light and a shape move behind it. | Frost is a full-frame canvas painted from `PALETTE.frost/rime` with dithered alpha over the scene behind it (the planet filling the glass: `PixelPlanet` at reveal 1, or the wreck). The alarm strip pulses with `steps(2)`. | none | M |
+| 9 | **WARNING. WARNING. CRITICAL ERROR.** | Eyes open on the inside of a frosted lid. The HUD reboots: readouts stutter in like `BootCover`, then the `HERO_WAKE` alarms in red: HULL INTEGRITY 34%, O2 RESERVE LOW, NAV ARRAY OFFLINE, GRAVITY WELL DETECTED. The frost is everywhere; only light and a shape move behind it. | Frost is a full-frame canvas painted from `PALETTE.frost/rime` with dithered alpha over the scene behind it (the planet filling the glass: `PixelPlanet`, or the wreck). The alarm strip pulses with `steps(2)`. | none | M |
 | 10 | *(no card)* | **The player wipes the glass.** Wherever the pointer drags, the frost clears in chunky cells and the hand follows in `reach` state. Behind it: the planet, too close, filling the view. When enough glass is clear, the HUD reads PROXIMITY ALERT and the first in-game choice appears. | Pointer events erase cells from the frost canvas (`destination-out` at cell size). A cleared-fraction threshold triggers the alert. Works with touch as-is. | drag to wipe (the first thing the player *does*) | S |
 | 11 | *(no card)* | Crash. The frame shakes on a stepped offset, alarms saturate, cut to black. Fade up on the wreck bay. | CSS only. | none | S |
 
@@ -228,9 +227,8 @@ partner's arc mirrors the broken transmitter. It watches everything and can do n
 - Do not name a real star: Kepler-442b is 1,200 light-years out and breaks the timeline. "A
   world the last telescopes flagged green" is stronger. Replace `DEST: KEPLER-442B` in the old
   readouts with `DEST: CANDIDATE 09`.
-- The single-scene shader shots (3, 9's backdrop) want a small `useArtCanvas` that owns one GL
-  context and one program on the art grid. `useFlyby` has all the pieces (context, resize,
-  rungs, boot); lift them rather than copying.
+- The single-scene shader shots (3, 9's backdrop) use `useArtCanvas`: one GL context on the art
+  grid (resize, rungs, boot, context loss) with a `build` + `frame` pair; `useFlyby` shows the shape.
 - Every asset stays procedural or a legend grid. No PNG sprites: the palette is the design
   system, and a bitmap cannot be re-banded.
 
