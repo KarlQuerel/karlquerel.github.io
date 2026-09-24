@@ -1,9 +1,14 @@
 // Tiny math helpers shared by the scroll-scrubbed beats (hero, planet, flight).
 
-export const clamp01 = v => Math.min(1, Math.max(0, v))
+export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
+
+export const clamp01 = v => clamp(v, 0, 1)
 
 // a roll inside a [lo, hi] range — the shape every tunable range in the constants takes
 export const randIn = ([lo, hi]) => lo + Math.random() * (hi - lo)
+
+// a whole roll inside a [lo, hi] range, both ends included
+export const randInt = ([lo, hi]) => lo + Math.floor(Math.random() * (hi - lo + 1))
 
 // Hermite ease between 0 and 1 — the one easing curve used for scrubbed motion.
 export const smoothstep = t => t * t * (3 - 2 * t)
