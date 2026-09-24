@@ -59,7 +59,7 @@ export function drawTitleCanvas([texW, texH]) {
 	x.textBaseline = 'middle'
 	// A keyline all the way round, not a drop shadow: the words cross the lit limb and a cloud deck.
 	const line = (text, px, left, cy) => {
-		x.font = `${px}px "Press Start 2P", monospace`
+		x.font = `${px}px ${TITLE.font}`
 		const d = Math.max(1, Math.round(px / 8))
 		x.fillStyle = TITLE.edge
 		for (let ox = -d; ox <= d; ox++)
