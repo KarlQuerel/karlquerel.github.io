@@ -7,7 +7,7 @@
 		<!-- the name and its line lean together with the cursor -->
 		<div class="holding__scene" :style="leanStyle">
 			<PlatingWordmark @built="built = true" />
-			<TypedReadout :start="built" />
+			<TypedReadout :line="GAME_HOLDING.readout" :start="built" />
 		</div>
 	</div>
 </template>
