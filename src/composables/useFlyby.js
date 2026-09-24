@@ -1,532 +1,142 @@
-// The flyby renderer: owns the GL context, the three programs, the art-grid sizing and the frame loop.
+// The landing flyby: the flight state and its readout, drawn by three passes on one art canvas.
 
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { clamp01, smoothstep } from '../js/math.js'
-import { dot, mul, sub } from '../js/vec3.js'
-import { bodyAt, createRollState, sampleFlight } from '../js/flybyPath.js'
-import { buildBelt } from '../js/flybyBelt.js'
-import { TITLE_PLANE, drawTitleCanvas, planeWidth, textureSize } from '../js/flybyTitle.js'
+import { ref } from 'vue'
+import { clamp01 } from '../js/math.js'
+import { createRollState, sampleFlight } from '../js/flybyPath.js'
+import { beltCountFor, createScenePass } from '../js/flybyScene.js'
+import { createDustPass } from '../js/flybyDust.js'
+import { createTitlePass } from '../js/flybyTitlePass.js'
 import { prefersReducedMotion } from './usePrefersReducedMotion.js'
-import sceneVert from '../shaders/flyby/scene.vert.glsl?raw'
-import sceneFragSrc from '../shaders/flyby/scene.frag.glsl?raw'
-import titleVert from '../shaders/flyby/title.vert.glsl?raw'
-import titleFrag from '../shaders/flyby/title.frag.glsl?raw'
-import dustVert from '../shaders/flyby/dust.vert.glsl?raw'
-import dustFrag from '../shaders/flyby/dust.frag.glsl?raw'
+import { useArtCanvas } from './useArtCanvas.js'
+import { useWindowListener } from './useWindowListener.js'
 import {
-	ART_RUNGS,
-	ART_TARGET,
-	BELT_MAX,
-	BELT_SPIN,
-	BELT_UNIFORM_BUDGET,
-	BODIES,
+	ARRIVE_FROM,
+	ARRIVE_SPAN,
 	BOOT_WEIGHTS,
-	DUST_BOX,
-	FOCAL,
 	FONT_WAIT_MAX,
+	HINT_SPAN,
 	HUD_CELLS,
 	LEGS,
-	MOTES,
-	PERF_FAST_MS,
-	PERF_SLOW_MS,
-	PERF_WINDOW,
-	RING_NORMAL,
-	ROCKS,
+	LOOK_EASE,
+	LOOK_REST,
+	MARK_AT,
+	REDRAW_REST,
 	SCROLL_EASE,
-	SUN,
+	SCROLL_REST,
 	TITLE,
 } from '../constants/flyby.js'
 
-const SCENE_UNIFORMS = [
-	'uRes',
-	'uCamPos',
-	'uRight',
-	'uUp',
-	'uFwd',
-	'uFocal',
-	'uEntry',
-	'uProg',
-	'uLook',
-	'uSun',
-	'uRingN',
-]
-const TITLE_UNIFORMS = [
-	'uCamPos',
-	'uRight',
-	'uUp',
-	'uFwd',
-	'uTPos',
-	'uTRight',
-	'uTUp',
-	'uAnchor',
-	'uSnap',
-	'uFocal',
-	'uAspect',
-	'uTW',
-	'uTH',
-	'uFade',
-]
-const DUST_UNIFORMS = [
-	'uCamPos',
-	'uRight',
-	'uUp',
-	'uFwd',
-	'uFocal',
-	'uAspect',
-	'uBox',
-	'uStreak',
-	'uFade',
-]
+// The face the title is drawn in. The race means a font that never arrives costs FONT_WAIT_MAX.
+function fontReady() {
+	if (!document.fonts) return Promise.resolve()
+	return Promise.race([
+		document.fonts.load(`${TITLE.size}px ${TITLE.font}`).catch(() => {}),
+		new Promise(r => setTimeout(r, FONT_WAIT_MAX)),
+	])
+}
 
-const TURN = Math.PI * 2
+function scrollProgress() {
+	const max = document.documentElement.scrollHeight - window.innerHeight
+	return clamp01(max > 0 ? window.scrollY / max : 0)
+}
 
 export function useFlyby(canvasRef) {
-	// A browser with no WebGL still gets the copy rather than throwing on a null context.
-	const supported = ref(true)
-	// How far the boot has got, and where the step in flight will land; the loader creeps toward it.
-	const bootProgress = ref(0)
-	const bootCeiling = ref(BOOT_WEIGHTS.context)
-	const booting = ref(true)
-	const progress = ref(0)
 	const leg = ref(LEGS[0][1])
 	const wake = ref(0)
 	const hint = ref(1)
 	const arrive = ref(0)
 	const markOn = ref(false)
 
-	let gl = null
-	let raf = 0
-	// setup yields between steps so the loader can paint, which means the route can unmount mid-way
-	let disposed = false
-	let scene, title, dust
-	let quad, titleQuad, dustSeeds, dustTails, titleTex
-	let U, TU, DU, aScene, aTitle, aDust
-	let beltCount = 0
-	let W = 0
-	let H = 0
-	let artStep = 0
-	let planeW = TITLE.w
-	let texSize = TITLE.tex
+	const still = prefersReducedMotion()
+	let passes = null
 	// scroll position the camera is easing toward, and the one it last drew
 	let eased = null
 	let drawn = -1
 	// the airframe's roll carries momentum between frames; owned here so a remount starts level
 	const rollState = createRollState()
-	let lastT = 0
 	// pointer target and its eased follower
-	let mx = 0
-	let my = 0
-	let mxs = 0
-	let mys = 0
-	let still = false
+	const look = { x: 0, y: 0, tx: 0, ty: 0 }
 
-	const bodyArr = new Float32Array(BODIES.length * 4)
-	const bodyP = new Float32Array(BODIES.length * 4)
-	const rockArr = new Float32Array(ROCKS.length * 4)
-	const rockSpin = new Float32Array(ROCKS.length * 4)
-
-	function compile(vs, fs) {
-		const p = gl.createProgram()
-		for (const [type, src] of [
-			[gl.VERTEX_SHADER, vs],
-			[gl.FRAGMENT_SHADER, fs],
-		]) {
-			const sh = gl.createShader(type)
-			gl.shaderSource(sh, src)
-			gl.compileShader(sh)
-			if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS))
-				console.error(gl.getShaderInfoLog(sh), src)
-			gl.attachShader(p, sh)
-			gl.deleteShader(sh)
-		}
-		gl.linkProgram(p)
-		if (!gl.getProgramParameter(p, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(p))
-		return p
+	async function build(gl, step) {
+		const beltCount = beltCountFor(gl)
+		await step('context')
+		const scene = createScenePass(gl, beltCount)
+		await step('scene')
+		const dust = createDustPass(gl)
+		const title = createTitlePass(gl)
+		passes = { scene, dust, title }
+		await step('programs')
+		// before the first title upload, so the name is drawn in the real face rather than fallback
+		await fontReady()
+		await step('typeface')
+		// if the face lost the race above, redraw the plane when it lands
+		document.fonts?.ready
+			.then(() => {
+				if (passes?.title !== title || gl.isContextLost()) return
+				title.upload()
+				drawn = -1
+			})
+			.catch(() => {})
 	}
 
-	const locations = (program, names) =>
-		Object.fromEntries(names.map(n => [n, gl.getUniformLocation(program, n)]))
-
-	function buffer(data) {
-		const b = gl.createBuffer()
-		gl.bindBuffer(gl.ARRAY_BUFFER, b)
-		gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW)
-		return b
-	}
-
-	function uploadTitle() {
-		gl.bindTexture(gl.TEXTURE_2D, titleTex)
-		gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
-		gl.texImage2D(
-			gl.TEXTURE_2D,
-			0,
-			gl.RGBA,
-			gl.RGBA,
-			gl.UNSIGNED_BYTE,
-			drawTitleCanvas(texSize)
-		)
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-		drawn = -1 // the plane changed, so the next frame has to redraw
-	}
-
-	function resize() {
-		const canvas = canvasRef.value
-		if (!canvas) return
-		// innerWidth, not the element's box: the element is about to be a hair wider than the viewport.
-		const dpr = window.devicePixelRatio || 1
-		const devW = Math.round(window.innerWidth * dpr)
-		const devH = Math.round(window.innerHeight * dpr)
-		// device pixels per art pixel: whole, never fewer than two, one more per rung down
-		const k = Math.max(2, Math.round(devH / ART_TARGET) + artStep)
-		W = Math.max(160, Math.ceil(devW / k))
-		H = Math.max(120, Math.ceil(devH / k))
-		canvas.width = W
-		canvas.height = H
-		// Rounding up to whole art pixels leaves the element larger than the viewport, so the spill is
-		// split by half, floored to a device pixel, keeping its edges on the grid.
-		canvas.style.width = `${(W * k) / dpr}px`
-		canvas.style.height = `${(H * k) / dpr}px`
-		canvas.style.left = `${-Math.floor((W * k - devW) / 2) / dpr}px`
-		canvas.style.top = `${-Math.floor((H * k - devH) / 2) / dpr}px`
-		gl.viewport(0, 0, W, H)
-
-		planeW = planeWidth(W / H)
-		const next = textureSize(planeW, H)
-		if (next[0] !== texSize[0]) {
-			texSize = next
-			uploadTitle()
-		}
-	}
-
-	// One frame. Returns false when nothing moved, so the perf ladder only measures real work.
-	function draw(t) {
-		const dt = lastT ? (t - lastT) / 1000 : 1 / 60
-		lastT = t
-		const doc = document.documentElement
-		const max = doc.scrollHeight - window.innerHeight
-		const target = clamp01(max > 0 ? window.scrollY / max : 0)
+	function frame(dt) {
+		const target = scrollProgress()
 		if (eased === null) eased = target
 		eased += (target - eased) * SCROLL_EASE
-		if (Math.abs(target - eased) < 0.00004) eased = target
+		if (Math.abs(target - eased) < SCROLL_REST) eased = target
 		const p = eased
 
-		mxs += (mx - mxs) * 0.055
-		mys += (my - mys) * 0.055
+		look.x += (look.tx - look.x) * LOOK_EASE
+		look.y += (look.ty - look.y) * LOOK_EASE
 		// the roll keeps moving after the scroll stops, so it has a say in whether this frame can be skipped
 		const settling =
-			Math.abs(mx - mxs) > 0.0008 || Math.abs(my - mys) > 0.0008 || !rollState.settled
-		if (Math.abs(p - drawn) < 0.00002 && !settling) return false
+			Math.abs(look.tx - look.x) > LOOK_REST ||
+			Math.abs(look.ty - look.y) > LOOK_REST ||
+			!rollState.settled
+		if (Math.abs(p - drawn) < REDRAW_REST && !settling) return false
 		drawn = p
 
-		const cam = sampleFlight(p, mxs, mys, still, rollState, dt)
-
-		// spins accumulate with scroll, never on a clock - and so does the shepherd's arc
-		BODIES.forEach((b, i) => {
-			bodyP[i * 4 + 1] = b.spin * p * TURN
-			if (b.orbit) bodyArr.set(bodyAt(b, p), i * 4)
-		})
-
-		gl.useProgram(scene)
-		gl.bindBuffer(gl.ARRAY_BUFFER, quad)
-		gl.enableVertexAttribArray(aScene)
-		gl.vertexAttribPointer(aScene, 2, gl.FLOAT, false, 0, 0)
-		gl.uniform2f(U.uRes, W, H)
-		gl.uniform3fv(U.uCamPos, cam.eye)
-		gl.uniform3fv(U.uRight, cam.right)
-		gl.uniform3fv(U.uUp, cam.up)
-		gl.uniform3fv(U.uFwd, cam.fwd)
-		gl.uniform1f(U.uFocal, FOCAL)
-		gl.uniform1f(U.uEntry, cam.entry)
-		gl.uniform1f(U.uProg, p)
-		gl.uniform2f(U.uLook, mxs, mys)
-		gl.uniform3fv(U.uSun, SUN)
-		gl.uniform3fv(U.uRingN, RING_NORMAL)
-		gl.uniform4fv(U.uB, bodyArr)
-		gl.uniform4fv(U.uBP, bodyP)
-		// No range gate: culling by distance made them wink in and out. Two bounding spheres cost little.
-		ROCKS.forEach((r, i) => {
-			rockArr.set(r.c, i * 4)
-			rockArr[i * 4 + 3] = r.r
-			const a = r.spin * p * TURN
-			const b = r.tumble * p * TURN
-			rockSpin.set([Math.cos(a), Math.sin(a), Math.cos(b), Math.sin(b)], i * 4)
-		})
-		gl.uniform4fv(U.uRock, rockArr)
-		gl.uniform4fv(U.uRockSpin, rockSpin)
-		if (beltCount) gl.uniform1f(U.uBeltSpin, p * TURN * BELT_SPIN)
-		gl.disable(gl.BLEND)
-		gl.drawArrays(gl.TRIANGLES, 0, 6)
-
-		drawTitlePlane(cam)
-		drawDust(cam)
+		const cam = sampleFlight(p, look.x, look.y, still, rollState, dt)
+		passes.scene.draw(cam, p, look.x, look.y, grid)
+		passes.title.draw(cam, grid)
+		passes.dust.draw(cam, grid)
 		updateReadout(p, cam.wake)
 		return true
 	}
 
-	// The title plane, over the scene: nothing else is ever nearer than it is.
-	function drawTitlePlane(cam) {
-		const trel = sub(TITLE_PLANE.pos, cam.eye)
-		const tz = dot(trel, cam.fwd)
-		const tfade = smoothstep(clamp01((tz - 0.34) / 0.36))
-		if (tfade <= 0.01) return
-
-		gl.useProgram(title)
-		gl.bindBuffer(gl.ARRAY_BUFFER, titleQuad)
-		gl.enableVertexAttribArray(aTitle)
-		gl.vertexAttribPointer(aTitle, 2, gl.FLOAT, false, 0, 0)
-		gl.activeTexture(gl.TEXTURE0)
-		gl.bindTexture(gl.TEXTURE_2D, titleTex)
-		gl.uniform3fv(TU.uCamPos, cam.eye)
-		gl.uniform3fv(TU.uRight, cam.right)
-		gl.uniform3fv(TU.uUp, cam.up)
-		gl.uniform3fv(TU.uFwd, cam.fwd)
-		gl.uniform3fv(TU.uTPos, TITLE_PLANE.pos)
-		gl.uniform3fv(TU.uTRight, TITLE_PLANE.right)
-		gl.uniform3fv(TU.uTUp, TITLE_PLANE.up)
-		gl.uniform2fv(TU.uAnchor, TITLE_PLANE.anchor)
-		gl.uniform1f(TU.uFocal, FOCAL)
-		gl.uniform1f(TU.uAspect, W / H)
-		gl.uniform1f(TU.uTW, planeW)
-		gl.uniform1f(TU.uTH, (planeW * texSize[1]) / texSize[0])
-		gl.uniform1f(TU.uFade, tfade)
-		// Snap the plane onto the art grid: a fractional move gains or loses a pixel per stroke, which is
-		// the letters chattering rather than gliding.
-		const snap = (v, n) => (Math.round((v * n) / 2) * 2) / n - v
-		gl.uniform2f(
-			TU.uSnap,
-			snap((2 * FOCAL * dot(trel, cam.right)) / tz / (W / H), W),
-			snap((2 * FOCAL * dot(trel, cam.up)) / tz, H)
-		)
-		gl.enable(gl.BLEND)
-		gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
-		gl.drawArrays(gl.TRIANGLES, 0, 6)
-	}
-
-	// dust streaks: strongest in open space, gone once we hit atmosphere
-	function drawDust(cam) {
-		const fade = clamp01(cam.speed / 320) * (1 - clamp01(cam.entry / 0.35)) * cam.wake
-		if (fade <= 0.01) return
-
-		gl.useProgram(dust)
-		gl.bindBuffer(gl.ARRAY_BUFFER, dustSeeds)
-		gl.enableVertexAttribArray(aDust.seed)
-		gl.vertexAttribPointer(aDust.seed, 3, gl.FLOAT, false, 0, 0)
-		gl.bindBuffer(gl.ARRAY_BUFFER, dustTails)
-		gl.enableVertexAttribArray(aDust.tail)
-		gl.vertexAttribPointer(aDust.tail, 1, gl.FLOAT, false, 0, 0)
-		gl.uniform3fv(DU.uCamPos, cam.eye)
-		gl.uniform3fv(DU.uRight, cam.right)
-		gl.uniform3fv(DU.uUp, cam.up)
-		gl.uniform3fv(DU.uFwd, cam.fwd)
-		gl.uniform1f(DU.uFocal, FOCAL)
-		gl.uniform1f(DU.uAspect, W / H)
-		gl.uniform1f(DU.uBox, DUST_BOX)
-		// streak length follows real speed, so the cue is the motion, not a constant
-		gl.uniform3fv(DU.uStreak, mul(cam.travel, clamp01(cam.speed / 900) * 4.0 + 0.25))
-		gl.uniform1f(DU.uFade, fade)
-		gl.enable(gl.BLEND)
-		gl.blendFunc(gl.SRC_ALPHA, gl.ONE)
-		gl.drawArrays(gl.LINES, 0, MOTES * 2)
-	}
-
 	function updateReadout(p, wakeAmount) {
-		progress.value = p
-		hint.value = clamp01(1 - p / 0.06)
+		hint.value = clamp01(1 - p / HINT_SPAN)
 		// the instrument comes up with the engines, like the dust: the opening frame is still a photograph
 		wake.value = wakeAmount
 		const cells = Math.round(p * HUD_CELLS)
-		leg.value = `${LEGS.find(l => p < l[0])[1]}  [${'='.repeat(cells)}${'-'.repeat(
-			HUD_CELLS - cells
-		)}] ${String(Math.round(p * 100)).padStart(3)}%`
-		markOn.value = p > 0.2
-		// start the reveal once the ground has settled, with enough scroll that every link is up in time
-		arrive.value = clamp01((p - 0.955) / 0.035)
+		const bar = `${'='.repeat(cells)}${'-'.repeat(HUD_CELLS - cells)}`
+		const pct = String(Math.round(p * 100)).padStart(3)
+		leg.value = `${LEGS.find(l => p < l[0])[1]}  [${bar}] ${pct}%`
+		markOn.value = p > MARK_AT
+		arrive.value = clamp01((p - ARRIVE_FROM) / ARRIVE_SPAN)
 	}
 
-	const perf = { start: 0, frames: 0 }
-
-	function loop(t) {
-		const drew = draw(t)
-		raf = requestAnimationFrame(loop)
-		if (!drew) {
-			perf.start = 0
-			return
-		}
-		if (!perf.start) {
-			perf.start = t
-			perf.frames = 0
-			return
-		}
-		if (++perf.frames < PERF_WINDOW) return
-		const avg = (t - perf.start) / PERF_WINDOW
-		perf.start = 0
-		if (avg > PERF_SLOW_MS && artStep < ART_RUNGS - 1) artStep++
-		else if (avg < PERF_FAST_MS && artStep > 0) artStep--
-		else return
-		resize()
-		drawn = -1
-	}
-
-	function onResize() {
-		resize()
-		drawn = -1
-	}
+	const { supported, booting, bootProgress, bootCeiling, grid } = useArtCanvas(canvasRef, {
+		bootWeights: BOOT_WEIGHTS,
+		build,
+		frame,
+		resize(size) {
+			passes.title.resize(size)
+			drawn = -1
+		},
+		release() {
+			for (const pass of Object.values(passes ?? {})) pass.release()
+			passes = null
+		},
+	})
 
 	// Pointer look, mouse only: a touch drag is a scroll, and reading it as a look would fight it.
-	function onPointerMove(e) {
-		if (e.pointerType !== 'mouse') return
-		mx = (e.clientX / window.innerWidth) * 2 - 1
-		my = (e.clientY / window.innerHeight) * 2 - 1
-	}
-
-	// Let the browser actually paint: the first frame schedules, the second is after compositing.
-	const paint = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
-
-	// The face the title is drawn in. The race means a font that never arrives costs FONT_WAIT_MAX.
-	function fontReady() {
-		if (!document.fonts) return Promise.resolve()
-		return Promise.race([
-			document.fonts.load('40px "Press Start 2P"').catch(() => {}),
-			new Promise(r => setTimeout(r, FONT_WAIT_MAX)),
-		])
-	}
-
-	async function setup() {
-		const canvas = canvasRef.value
-		gl = canvas && canvas.getContext('webgl', { antialias: false, alpha: false })
-		if (!gl) {
-			supported.value = false
-			booting.value = false
-			return
-		}
-		still = prefersReducedMotion()
-
-		// Put the loader up before anything that blocks: compiling the scene shader freezes a slow GPU.
-		await paint()
-		const order = Object.keys(BOOT_WEIGHTS)
-		let done = 0
-		const step = async key => {
-			done += BOOT_WEIGHTS[key]
-			bootProgress.value = done
-			bootCeiling.value = Math.min(
-				1,
-				done + (BOOT_WEIGHTS[order[order.indexOf(key) + 1]] ?? 0)
-			)
-			await paint()
-			return !disposed
-		}
-
-		// How many belt rocks this GPU can afford — see BELT_UNIFORM_BUDGET.
-		beltCount = Math.max(
-			0,
-			Math.min(
-				BELT_MAX,
-				gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) - BELT_UNIFORM_BUDGET
-			)
-		)
-		const sceneFrag = sceneFragSrc.replace('__BELT_COUNT__', String(beltCount))
-		if (!(await step('context'))) return
-
-		scene = compile(sceneVert, sceneFrag)
-		if (!(await step('scene'))) return
-
-		dust = compile(dustVert, dustFrag)
-		title = compile(titleVert, titleFrag)
-		quad = buffer(new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]))
-		// Two triangles carrying UVs; the plane's world corners are built in the shader.
-		titleQuad = buffer(new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]))
-		U = locations(scene, SCENE_UNIFORMS)
-		U.uRock = gl.getUniformLocation(scene, 'uRock[0]')
-		U.uRockSpin = gl.getUniformLocation(scene, 'uRockSpin[0]')
-		U.uBelt = gl.getUniformLocation(scene, 'uBelt[0]')
-		U.uBeltSpin = gl.getUniformLocation(scene, 'uBeltSpin')
-		U.uB = gl.getUniformLocation(scene, 'uB[0]')
-		U.uBP = gl.getUniformLocation(scene, 'uBP[0]')
-		TU = locations(title, TITLE_UNIFORMS)
-		DU = locations(dust, DUST_UNIFORMS)
-		aScene = gl.getAttribLocation(scene, 'aP')
-		aTitle = gl.getAttribLocation(title, 'aUV')
-		aDust = {
-			seed: gl.getAttribLocation(dust, 'aSeed'),
-			tail: gl.getAttribLocation(dust, 'aTail'),
-		}
-		if (!(await step('programs'))) return
-
-		const seeds = new Float32Array(MOTES * 6)
-		const tails = new Float32Array(MOTES * 2)
-		for (let i = 0; i < MOTES; i++) {
-			const s = [Math.random(), Math.random(), Math.random()]
-			for (let k = 0; k < 2; k++) {
-				seeds[i * 6 + k * 3] = s[0]
-				seeds[i * 6 + k * 3 + 1] = s[1]
-				seeds[i * 6 + k * 3 + 2] = s[2]
-				tails[i * 2 + k] = k * 0.38 // tail sits behind the head in travel space
-			}
-		}
-		dustSeeds = buffer(seeds)
-		dustTails = buffer(tails)
-		BODIES.forEach((b, i) => {
-			bodyArr.set([...bodyAt(b, 0), b.r], i * 4)
-			bodyP.set([b.pid, 0, b.ring[0], b.ring[1]], i * 4)
+	if (!still)
+		useWindowListener('pointermove', e => {
+			if (e.pointerType !== 'mouse') return
+			look.tx = (e.clientX / window.innerWidth) * 2 - 1
+			look.ty = (e.clientY / window.innerHeight) * 2 - 1
 		})
-		if (beltCount) {
-			gl.useProgram(scene)
-			gl.uniform4fv(U.uBelt, buildBelt(beltCount))
-		}
-		if (!(await step('field'))) return
 
-		// before the first title upload, so the name is drawn in the real face rather than fallback
-		await fontReady()
-		if (!(await step('typeface'))) return
-
-		titleTex = gl.createTexture()
-		resize()
-		uploadTitle()
-		// belt and braces: if the face lost the race above, redraw the plane when it lands
-		if (document.fonts) {
-			document.fonts.ready.then(() => !disposed && gl && uploadTitle()).catch(() => {})
-		}
-		window.addEventListener('resize', onResize, { passive: true })
-		if (!still) window.addEventListener('pointermove', onPointerMove, { passive: true })
-		draw(performance.now())
-		// draw() only queues work, so the step cannot end here or the cover comes off an unfilled canvas.
-		gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4))
-		if (!(await step('frame'))) return
-
-		booting.value = false
-		raf = requestAnimationFrame(loop)
-	}
-
-	function teardown() {
-		disposed = true
-		cancelAnimationFrame(raf)
-		window.removeEventListener('resize', onResize)
-		window.removeEventListener('pointermove', onPointerMove)
-		if (!gl) return
-		for (const b of [quad, titleQuad, dustSeeds, dustTails]) gl.deleteBuffer(b)
-		for (const p of [scene, title, dust]) gl.deleteProgram(p)
-		gl.deleteTexture(titleTex)
-		// the context outlives the canvas otherwise, and browsers cap live WebGL contexts per tab
-		gl.getExtension('WEBGL_lose_context')?.loseContext()
-		gl = null
-	}
-
-	onMounted(setup)
-	onBeforeUnmount(teardown)
-
-	return {
-		supported,
-		booting,
-		bootProgress,
-		bootCeiling,
-		progress,
-		leg,
-		wake,
-		hint,
-		arrive,
-		markOn,
-	}
+	return { supported, booting, bootProgress, bootCeiling, leg, wake, hint, arrive, markOn }
 }

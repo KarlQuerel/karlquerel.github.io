@@ -1,4 +1,4 @@
-// Every tuned number the landing flyby is made of; useFlyby.js hard-codes none.
+// Every tuned number the landing flyby is made of; useFlyby.js and the flyby passes hard-code none.
 
 import { norm } from '../js/vec3.js'
 
@@ -105,19 +105,25 @@ export const BANK_LEAD = 0.025
 // Second-order response, underdamped on purpose: critically damped is correct and reads as dead.
 export const ROLL_FREQ = 9
 export const ROLL_DAMPING = 0.7
-// A backgrounded tab hands back one enormous frame; integrating it whole would fling the spring.
-export const MAX_FRAME_DT = 0.05
 // Both an order of magnitude below one art pixel of horizon tilt, so the loop can stop redrawing.
 export const ROLL_REST = 2e-4
 // Short windows track every kink in the spline; a long one flies it like something with mass.
 export const HEADING_SPAN = 0.045
 // A few degrees of look on the pointer: enough to feel depth, far too little to steer with.
 export const LOOK_MAX = 0.055
+// share of the remaining pointer distance the look closes per frame, and where it counts as arrived
+export const LOOK_EASE = 0.055
+export const LOOK_REST = 0.0008
 // Rotation turns ridge and stars alike; sliding the eye is what makes the near ridge travel.
 export const SWAY_MAX = 0.5
 export const SWAY_FADE = 0.14
 // a wheel notch is a jump; the camera glides to it instead of snapping
 export const SCROLL_EASE = 0.085
+export const SCROLL_REST = 0.00004
+// below this much scroll the frame is not redrawn
+export const REDRAW_REST = 0.00002
+// a pass fading under this is skipped rather than drawn invisible
+export const FADE_CUT = 0.01
 
 // Drawn at its at-rest screen size, so it is crisp there and goes chunky as you close.
 export const TITLE = {
@@ -133,6 +139,7 @@ export const TITLE = {
 	nameY: 46,
 	roleY: 94,
 	tex: [512, 128],
+	font: '"Press Start 2P", monospace',
 	ink: '#f4f8ff',
 	edge: '#05070e',
 	// On the path, not above it - that is what makes the letter something you go through.
@@ -143,11 +150,22 @@ export const TITLE = {
 export const Q_COUNTER = [0.4128, -0.1081]
 // never author the name below 25px: it has to survive the pass
 export const TITLE_FLOOR = 320
+// the plane fades in over this depth band ahead of the eye, so the pass-through never clips
+export const TITLE_FADE = { near: 0.34, span: 0.36 }
 
 // dust motes: two verts per mote (head + tail) drawn as speed streaks
 export const MOTES = 900
 // Streaks run along travel, so keep the box tight or motes land where they cannot read as motion.
 export const DUST_BOX = 22
+// how far behind its head a mote's tail sits, in travel space
+export const DUST_TAIL = 0.38
+// the dust is full at this speed and gone this far into the entry
+export const DUST_FULL_SPEED = 320
+export const DUST_ENTRY_OUT = 0.35
+// streak length in travel units: BASE at rest, plus GAIN at STREAK_FULL_SPEED
+export const STREAK_FULL_SPEED = 900
+export const STREAK_GAIN = 4
+export const STREAK_BASE = 0.25
 
 // Seeded, not written out: the seed gives 5.9 units of hull clearance and keeps the field in front.
 export const BELT_Z_NEAR = 85
@@ -167,29 +185,14 @@ export const BELT_FAMILIES = 14
 // the belt turns with the scroll like everything else
 export const BELT_SPIN = 1.7
 
-// The art grid we aim for (px tall); resize() solves for WHOLE device pixels per art pixel.
-export const ART_TARGET = 560
-export const ART_RUNGS = 3
-// The gap between the thresholds is what stops it oscillating between rungs.
-export const PERF_WINDOW = 45
-export const PERF_SLOW_MS = 30
-export const PERF_FAST_MS = 20
-
-// Weighted, not equal sixths: the first frame is about half the wait.
+// Weighted, not equal fifths: the first frame (the last key, see useArtCanvas) is about half the wait.
 export const BOOT_WEIGHTS = {
 	context: 0.04,
 	scene: 0.22,
-	programs: 0.1,
-	field: 0.06,
+	programs: 0.16,
 	typeface: 0.08,
 	frame: 0.5,
 }
-// How fast the displayed figure closes the gap to the next checkpoint, in seconds.
-export const BOOT_EASE_TAU = 0.9
-// Once the boot lands the fill sweeps the rest at this pace (s per mark), so it climbs.
-export const BOOT_SWEEP = 0.5
-// Always shown briefly: the GPU wait blocks the main thread, so an "only if slow" timer cannot work.
-export const BOOT_MIN_SHOW = 600
 // Wait for the face so the first frame has real letters — but never hold the flight hostage.
 export const FONT_WAIT_MAX = 1500
 
@@ -203,3 +206,12 @@ export const LEGS = [
 	[2, 'entry'],
 ]
 export const HUD_CELLS = 10
+
+// the chevron is gone by this much scroll, the corner mark up past MARK_AT
+export const HINT_SPAN = 0.06
+export const MARK_AT = 0.2
+// Starts once the ground has settled, with enough scroll left that every link is up in time.
+export const ARRIVE_FROM = 0.955
+export const ARRIVE_SPAN = 0.035
+// share of the arrival past which the contact block takes input, and when each portal lifts in
+export const CONTACT_REVEAL = { interactive: 0.6, portalStart: 0.3, portalStagger: 0.15 }

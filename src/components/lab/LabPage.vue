@@ -4,18 +4,9 @@
 
 		<!-- covers the gap between mount and the first frame; reports what the boot
 		     actually did rather than animating a guess -->
-		<LabBoot :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
+		<BootCover :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
 
-		<!-- Fixed chrome: the name is gone from ~17% of the scroll, and contact was ten screens away. -->
-		<div class="chrome">
-			<button class="chrome__mark" :class="{ on: markOn }" type="button" @click="toTop">
-				Karl Querel
-			</button>
-			<button class="chrome__link" type="button" @click="toEnd">CONTACT</button>
-		</div>
-
-		<!-- Flight instrument, and the only thing that says the page is ten screens long -->
-		<p class="hud" :style="hudStyle" aria-hidden="true">{{ leg }}</p>
+		<LabChrome :mark-on="markOn" :leg="leg" :wake="wake" />
 
 		<div class="doc">
 			<section
@@ -38,37 +29,17 @@
 
 		<p class="hint" :style="hintStyle" aria-hidden="true">▼</p>
 
-		<div class="end" :style="endStyle">
-			<h2>
-				{{ CONTACT_HEADING.lead }}<em>{{ CONTACT_HEADING.accent }}</em>
-			</h2>
-			<div class="portals">
-				<a
-					v-for="(channel, i) in CONTACT_CHANNELS"
-					:key="channel.key"
-					class="portal"
-					:class="{ on: portalOn(i) }"
-					:href="channel.href"
-					:target="channel.blank ? '_blank' : null"
-					:rel="channel.blank ? 'noopener' : null"
-				>
-					{{ channel.label }}
-				</a>
-			</div>
-		</div>
+		<LabContact :landed="landed" />
 	</div>
 </template>
 
 <script setup>
 	import { computed, ref } from 'vue'
 	import { useFlyby } from '@/composables/useFlyby'
-	import LabBoot from '@/components/lab/LabBoot.vue'
+	import BootCover from '@/components/BootCover.vue'
+	import LabChrome from './LabChrome.vue'
+	import LabContact from './LabContact.vue'
 	import { LAB_BEATS, LAB_TITLE } from '@/data/labBeats'
-	import { CONTACT_CHANNELS, CONTACT_HEADING } from '@/data/contact'
-
-	// how far into the arrival each portal lifts in, so they land one at a time
-	const PORTAL_START = 0.3
-	const PORTAL_STAGGER = 0.15
 
 	const canvas = ref(null)
 	const { supported, booting, bootProgress, bootCeiling, leg, wake, hint, arrive, markOn } =
@@ -76,23 +47,11 @@
 
 	// With no WebGL there is no flight to arrive from, so the contact block is simply always up.
 	const landed = computed(() => (supported.value ? arrive.value : 1))
-
-	const hudStyle = computed(() => ({ opacity: wake.value }))
 	const hintStyle = computed(() => ({ opacity: supported.value ? hint.value : 0 }))
-	const endStyle = computed(() => ({
-		opacity: landed.value,
-		pointerEvents: landed.value > 0.6 ? 'auto' : 'none',
-	}))
-	const portalOn = i => landed.value > PORTAL_START + i * PORTAL_STAGGER
-
-	// Straight to the arrival: the scroll ease flies the whole path, so the shortcut is also the tour.
-	const toEnd = () => window.scrollTo(0, document.documentElement.scrollHeight)
-	const toTop = () => window.scrollTo(0, 0)
 </script>
 
 <style scoped lang="scss">
 	@use '@/styles/flyby' as *;
-	@use '@/styles/mixins' as *;
 
 	.flyby {
 		// Sampled off the opening frame: on a slow GPU the first paint is this gradient, not a black card.
@@ -109,6 +68,11 @@
 		display: block;
 		image-rendering: pixelated;
 		z-index: 0;
+	}
+
+	// a context that failed after it was created would otherwise sit there as a black box
+	.flyby--flat .flyby__canvas {
+		display: none;
 	}
 
 	.doc {
@@ -167,39 +131,18 @@
 		}
 	}
 
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
-	}
-
 	.kicker {
 		font-size: 8px;
 		letter-spacing: 2px;
 		color: $flyby-hot;
 		margin-bottom: 12px;
-		text-shadow:
-			2px 2px 0 $black,
-			$flyby-outline;
-	}
-
-	h1 {
-		font-size: clamp(16px, 4vw, 33px);
-		line-height: 1.5;
-		text-shadow:
-			3px 3px 0 $black,
-			$flyby-outline;
+		@include flyby-shadow;
 	}
 
 	h2 {
 		font-size: clamp(11px, 2.2vw, 22px);
 		line-height: 1.6;
-		text-shadow:
-			3px 3px 0 $black,
-			$flyby-outline;
+		@include flyby-shadow(3px);
 
 		em {
 			font-style: normal;
@@ -214,9 +157,7 @@
 		color: $flyby-dim;
 		margin-top: 16px;
 		text-align: left;
-		text-shadow:
-			2px 2px 0 $black,
-			$flyby-outline;
+		@include flyby-shadow;
 	}
 
 	// A lone chevron, no caption: it says "below" without writing on the photograph.
@@ -227,9 +168,7 @@
 		font-size: 16px;
 		color: $flyby-hot;
 		z-index: 3;
-		text-shadow:
-			2px 2px 0 $black,
-			$flyby-outline;
+		@include flyby-shadow;
 		// self-running, so it steps: a two-frame beckon
 		animation: hint-beckon 1.1s steps(2, end) infinite;
 	}
@@ -243,154 +182,15 @@
 		}
 	}
 
-	.end {
-		position: fixed;
-		inset: auto 0 0 0;
-		z-index: 4;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 24px;
-		padding-bottom: 14vh;
-
-		h2 {
-			font-size: clamp(11px, 2.4vw, 18px);
-		}
-	}
-
-	.portals {
-		display: flex;
-		gap: 18px;
-		flex-wrap: wrap;
-		justify-content: center;
-	}
-
-	// Hard pixel chrome, not the site's void-button: this is the look the lab is testing.
-	.portal {
-		display: block;
-		padding: 14px 18px;
-		font-size: 9px;
-		color: $flyby-ink;
-		text-decoration: none;
-		background: rgba(#111826, 0.8);
-		border: 3px solid $flyby-ink;
-		box-shadow: 5px 5px 0 $black;
-		transform: translateY(14px);
-		opacity: 0;
-		transition:
-			transform 0.18s steps(3),
-			opacity 0.18s steps(3),
-			color 0.1s steps(2),
-			border-color 0.1s steps(2);
-
-		&.on {
-			transform: none;
-			opacity: 1;
-		}
-
-		&:hover,
-		&:focus-visible {
-			color: $flyby-hot;
-			border-color: $flyby-hot;
-			outline: none;
-		}
-
-		&:focus-visible {
-			box-shadow:
-				5px 5px 0 $black,
-				0 0 0 3px $flyby-hot;
-		}
-	}
-
-	.chrome {
-		position: fixed;
-		inset: 0 0 auto 0;
-		z-index: 5;
-		display: flex;
-		align-items: flex-start;
-		justify-content: flex-end;
-		padding: 20px 6vw;
-		font-size: 8px;
-		line-height: 1.8;
-		pointer-events: none;
-	}
-
-	.chrome__mark,
-	.chrome__link {
-		pointer-events: auto;
-		margin: 0;
-		padding: 0;
-		border: 0;
-		background: none;
-		font: inherit;
-		color: $flyby-dim;
-		text-decoration: none;
-		@include cursor-interactive;
-		text-shadow:
-			2px 2px 0 $black,
-			$flyby-outline;
-		transition: color 0.1s steps(2);
-
-		&:hover,
-		&:focus-visible {
-			color: $flyby-hot;
-			outline: none;
-		}
-	}
-
-	// Bottom left, opposite the readout, and raised only once the title has gone past.
-	.chrome__mark {
-		position: fixed;
-		left: 6vw;
-		bottom: 5vh;
-		opacity: 0;
-		transition:
-			opacity 0.25s steps(3),
-			color 0.1s steps(2);
-
-		&.on {
-			opacity: 1;
-		}
-	}
-
-	.hud {
-		position: fixed;
-		right: 6vw;
-		bottom: 5vh;
-		z-index: 5;
-		margin: 0;
-		font-size: 8px;
-		color: $flyby-dim;
-		white-space: pre;
-		text-shadow:
-			2px 2px 0 $black,
-			$flyby-outline;
-		pointer-events: none;
-	}
-
-	@media (max-width: 520px) {
-		.chrome,
-		.hud {
-			font-size: 7px;
-		}
-		.chrome__mark,
-		.hud {
-			bottom: 3vh;
-		}
-	}
-
 	// the flight itself is scroll-scrubbed, so it only moves when the reader does
 	@media (prefers-reduced-motion: reduce) {
-		.portal {
-			transition: none;
-		}
 		.hint {
 			animation: none;
 			transform: translateX(-50%);
 		}
 	}
 
-	@media (max-width: 720px) {
+	@media (max-width: $flyby-compact) {
 		// The card fills a narrow frame, so the scrim has to hold further across it.
 		.card::before {
 			background: linear-gradient(
@@ -402,10 +202,6 @@
 		}
 		p {
 			font-size: 10px;
-		}
-		.portal {
-			padding: 11px 12px;
-			font-size: 8px;
 		}
 	}
 </style>
