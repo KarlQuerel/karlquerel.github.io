@@ -1,7 +1,7 @@
 // A shaded wordmark from plain glyph masks. Light, depth, outline, plating and wear are all derived
 // here, so the constants hold nothing but the letter shapes.
 
-import { PALETTE } from '@/constants/palette'
+import { paletteRgb } from '@/constants/palette'
 import { clamp01 } from './math.js'
 import { ditherThreshold, hash1, hash2 } from './pixelNoise.js'
 
@@ -9,9 +9,9 @@ const NEIGHBOURS = [-1, 0, 1]
 const LIT = new Set(['specular', 'light', 'face', 'brushed', 'shade'])
 const FACE = new Set(['face', 'shade'])
 
-// Lays `text` out on one grid and names each cell's role.
-export function layoutWordmark(mark, text = mark.text) {
-	const glyphs = [...text].map(ch => mark.glyphs[ch])
+// Lays the mark's text out on one grid and names each cell's role.
+export function layoutWordmark(mark) {
+	const glyphs = [...mark.text].map(ch => mark.glyphs[ch])
 	const height = glyphs[0].length
 	const width = glyphs.reduce((sum, g) => sum + g[0].length, 0) + mark.gap * (glyphs.length - 1)
 	// one cell of outline all round, plus the depth the letters cast down and to the right
@@ -160,7 +160,7 @@ export function paintPlating(ctx, layout, plates, mark, weld, state, ox, oy) {
 	)
 	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 	const put = (x, y, name) => {
-		ctx.fillStyle = `rgb(${PALETTE[name].join(' ')})`
+		ctx.fillStyle = paletteRgb(name)
 		ctx.fillRect(ox + x, oy + y, 1, 1)
 	}
 	tones.forEach((row, y) => row.forEach((name, x) => name && put(x, y, name)))
