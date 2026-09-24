@@ -1,7 +1,7 @@
 # CLAUDE.md — karlquerel.github.io
 
 Personal portfolio website. Vue 3 + Vite + Vue Router + Firebase + custom "void" SCSS design system (retro pixel aesthetic).
-Deployed to GitHub Pages via gh-pages.
+Deployed to GitHub Pages: CI publishes `dist/` to the `gh-pages` branch.
 
 ---
 
@@ -36,7 +36,7 @@ Non-negotiables:
 | CSS | SCSS — custom "void" system: tokens in `_variables.scss`, `void-panel`/`void-button` mixins (pixel / retro aesthetic) |
 | Linting | ESLint 8 (babel-parser, vue plugin, unused-imports) |
 | Formatting | Prettier 3 |
-| Deploy | gh-pages → GitHub Pages |
+| Deploy | CI (`peaceiris/actions-gh-pages`) → `gh-pages` branch; `npm run deploy` is the manual fallback |
 
 ---
 
@@ -72,7 +72,8 @@ src/
   constants/      # hardcoded values (labels, config keys, animation tuning)
   data/           # page content as plain JS exports (about, sport, contact)
   directives/     # custom directives (e.g. v-reveal)
-  js/             # Firebase init + Firestore helpers (firebase-setup.js)
+  js/             # framework-free code: canvas/WebGL drawing, workers, math, Firebase (firebase-setup.js)
+  shaders/        # GLSL sources, imported as strings
   styles/         # global SCSS: _variables, _mixins, partials, main.scss
   App.vue
   main.js         # app entry + the Vue Router route table (no src/router/)
@@ -84,11 +85,12 @@ src/
 
 - Always use `<script setup>` (Composition API). No Options API.
 - Props: `defineProps`, emits: `defineEmits`. Always typed.
-- Composables in `src/composables/`, prefixed with `use` (e.g. `useFirestore.js`).
+- Composables in `src/composables/`, prefixed with `use` (e.g. `useWindowListener.js`).
 - Constants in `src/constants/` — no magic strings or numbers anywhere else.
 - SCSS: scoped per component (`<style scoped lang="scss">`). Global tokens in `src/styles/_variables.scss` (auto-injected into every component style block via Vite `additionalData` — no import needed).
 - Panels and buttons use the shared `void-panel` / `void-button` mixins from `src/styles/_mixins.scss` — never hand-roll borders or button chrome.
-- No inline styles. Ever.
+- No static inline styles. Values that change per frame (scroll, pointer, progress) bind through `:style`, preferably as CSS custom properties.
+- Views are kept alive (`KEPT_ALIVE_VIEWS` in `App.vue`): window listeners go through `useWindowListener` so a parked view stops reacting.
 - File names: `PascalCase` for components, `camelCase` for composables and utilities.
 - Remove all unused imports, variables, props, and components — ESLint's unused-imports plugin enforces this.
 
