@@ -1,18 +1,10 @@
 <template>
-	<!-- procedural low-res planet, upscaled pixelated; reveal (0 → 1) grows it in. Decorative -->
-	<canvas ref="canvasEl" class="planet" :style="planetStyle" aria-hidden="true" />
+	<!-- procedural low-res planet, upscaled pixelated. Decorative -->
+	<canvas ref="canvasEl" class="planet" aria-hidden="true" />
 </template>
 
 <script setup>
-	import {
-		ref,
-		computed,
-		watch,
-		onActivated,
-		onDeactivated,
-		onMounted,
-		onBeforeUnmount,
-	} from 'vue'
+	import { ref, watch, onActivated, onDeactivated, onMounted, onBeforeUnmount } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { createPlanetShader } from '@/js/planetShader'
 	import PlanetWorker from '@/js/planet.worker.js?worker'
@@ -20,8 +12,6 @@
 	import { MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
 
 	const props = defineProps({
-		// 0 → far-off dot, 1 → arrived and full size. Drives scale and opacity.
-		reveal: { type: Number, default: 1 },
 		// False parks the shader. The globe keeps its canvas and seed, but a sweep under zero opacity is
 		// the most expensive way to draw nothing — and the entry is exactly where it would happen.
 		awake: { type: Boolean, default: true },
@@ -34,14 +24,6 @@
 		// Optional override of named PALETTE entries (e.g. EARTH_PALETTE). Fixed at mount.
 		palette: { type: Object, default: null },
 	})
-
-	// grow from a vanishing-point dot to full size, settling slightly lower as it "lands"
-	const planetStyle = computed(() => ({
-		opacity: Math.min(1, props.reveal * 4),
-		transform: `translate(-50%, calc(-50% + ${props.reveal * 6}vh)) scale(${0.05 + 0.95 * props.reveal})`,
-		// hidden until arrival — drop the promoted canvas out of the compositor during the crawl
-		display: props.reveal > 0 ? null : 'none',
-	}))
 
 	const canvasEl = ref(null)
 	let ctx = null
@@ -69,12 +51,16 @@
 	let drawnYaw = 0
 	let drawnThin = 0
 
+	// Reduced motion holds the globe's turn where it was first drawn; light and weather still follow.
+	let heldSpin = 0
+	const spinTarget = () => (prefersReducedMotion() ? heldSpin : (props.spin ?? 0))
+
 	// A redraw that cannot move an art pixel costs a full sweep to produce the picture already on screen.
 	const cellTurn = (2 * Math.PI) / res
 	function moved() {
 		return (
 			drawnSpin === null ||
-			Math.abs((props.spin ?? 0) - drawnSpin) >= cellTurn ||
+			Math.abs(spinTarget() - drawnSpin) >= cellTurn ||
 			Math.abs(props.lightYaw - drawnYaw) >= cellTurn ||
 			Math.abs(props.cloudThin - drawnThin) >= PLANET.cloudThinStep
 		)
@@ -121,10 +107,6 @@
 	}
 
 	function loop(ts) {
-		if (props.reveal <= 0) {
-			rafId = 0
-			return
-		}
 		if (pixels && (lastDraw < 0 || ts - lastDraw >= frameMs)) {
 			lastDraw = ts
 			render((ts / 1000 / PLANET.spinSeconds) * Math.PI * 2)
@@ -134,9 +116,7 @@
 
 	// Driven mode: at most one sweep in flight, always trailing to the latest angle.
 	function scheduleDraw() {
-		if (drawId || !pixels || parked || !ctx) return
-		if (!props.awake || props.reveal <= 0 || prefersReducedMotion()) return
-		if (!moved()) return
+		if (drawId || !pixels || parked || !ctx || !props.awake || !moved()) return
 		drawId = requestAnimationFrame(ts => {
 			drawId = 0
 			if (lastDraw >= 0 && ts - lastDraw < orbitFrameMs) {
@@ -144,7 +124,7 @@
 				return
 			}
 			lastDraw = ts
-			render(props.spin)
+			render(spinTarget())
 		})
 	}
 
@@ -155,7 +135,7 @@
 			scheduleDraw()
 			return
 		}
-		if (!rafId && props.awake && props.reveal > 0 && !prefersReducedMotion()) {
+		if (!rafId && props.awake && !prefersReducedMotion()) {
 			rafId = requestAnimationFrame(loop)
 		}
 	}
@@ -170,7 +150,6 @@
 	watch(() => props.spin, scheduleDraw)
 	watch(() => props.lightYaw, scheduleDraw)
 	watch(() => props.cloudThin, scheduleDraw)
-	watch(() => props.reveal, resume)
 	// coming back on has to catch the picture up: `moved` sees a stale angle and redraws
 	watch(() => props.awake, resume)
 
@@ -181,17 +160,15 @@
 		ctx = el.getContext('2d')
 		shader = createPlanetShader({ res, seed, palette: props.palette })
 		// the first frame on this thread, so the globe is ready the instant it reveals
-		render(props.spin ?? 0)
-		// reduced motion never redraws, so it never needs a second thread
-		if (!prefersReducedMotion()) {
-			try {
-				worker = new PlanetWorker()
-				worker.onmessage = onPainted
-				worker.onerror = dropWorker
-				worker.postMessage({ type: 'init', res, seed, palette: props.palette })
-			} catch {
-				worker = null
-			}
+		heldSpin = props.spin ?? 0
+		render(heldSpin)
+		try {
+			worker = new PlanetWorker()
+			worker.onmessage = onPainted
+			worker.onerror = dropWorker
+			worker.postMessage({ type: 'init', res, seed, palette: props.palette })
+		} catch {
+			worker = null
 		}
 		resume()
 	})
@@ -221,6 +198,8 @@
 		z-index: 2;
 		width: min(84vmin, 94vw);
 		height: min(84vmin, 94vw);
+		// centred, and settled a little low in its stage
+		transform: translate(-50%, calc(-50% + 6vh));
 		transform-origin: center;
 		pointer-events: none;
 		// Keep the upscaled sprite blocky rather than smoothly interpolated.
