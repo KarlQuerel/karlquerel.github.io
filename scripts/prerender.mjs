@@ -112,10 +112,12 @@ function applyMeta(html, route) {
 }
 
 function buildSitemap(lastmod) {
-	const entries = ROUTES.filter(route => !route.noindex).map(
-		route =>
-			`\t<url>\n\t\t<loc>${SITE}${route.dir ? `/${route.dir}/` : '/'}</loc>\n\t\t<lastmod>${lastmod}</lastmod>\n\t</url>`
-	).join('\n')
+	const entries = ROUTES.filter(route => !route.noindex)
+		.map(
+			route =>
+				`\t<url>\n\t\t<loc>${SITE}${route.dir ? `/${route.dir}/` : '/'}</loc>\n\t\t<lastmod>${lastmod}</lastmod>\n\t</url>`
+		)
+		.join('\n')
 	return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries}\n</urlset>\n`
 }
 
@@ -141,10 +143,9 @@ for (const route of ROUTES) {
 			if (node.id !== 'app' && node.tagName !== 'SCRIPT') node.remove()
 		}
 	})
-	pages.push([
-		route,
-		`<!DOCTYPE html>\n${await page.evaluate(() => document.documentElement.outerHTML)}`,
-	])
+	const html = await page.evaluate(() => document.documentElement.outerHTML)
+	// runtime preload links carry this server's origin; the live site needs them relative
+	pages.push([route, `<!DOCTYPE html>\n${html.replaceAll(`http://localhost:${PORT}`, '')}`])
 	console.warn(`prerendered ${route.path}`)
 }
 
