@@ -31,7 +31,7 @@ test.beforeEach(async ({ page }) => {
 	await page.route('https://firestore.googleapis.com/**', route => {
 		const request = route.request()
 		const readTime = new Date().toISOString()
-		const body = request.url().endsWith(':batchGet')
+		const body = new URL(request.url()).pathname.endsWith(':batchGet')
 			? (request.postDataJSON()?.documents ?? []).map(missing => ({ missing, readTime }))
 			: { commitTime: readTime, writeResults: [{ updateTime: readTime }] }
 		return route.fulfill({ json: body })
