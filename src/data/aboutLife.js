@@ -1,3 +1,6 @@
+// The LIFE station's two fixed card titles; the themed cards carry their own below.
+export const LIFE_TITLES = { aboutMe: 'ABOUT ME', dogs: 'DOGS' }
+
 // Drives the journey's LIFE station. One entry per paragraph; a `\n` breaks the line without a
 // paragraph gap, so keep it for beats read in one breath and give anything long its own entry.
 export const ABOUT_ME = [
@@ -15,6 +18,12 @@ export const DOG_LINES = [
 	"For almost a decade now I've dog-sat in my free time, and Yako has seen a lot of dogs come through his home.",
 	"To me, a home isn't a home without an animal. And dogs hold the values that speak to me most: loyalty, playfulness, and living in the present (alongside a bottomless stomach).",
 ]
+
+// What a screen reader hears for a deck's button and its showing photo.
+export const DOG_DECK_LABELS = {
+	next: name => `Next photo of ${name}`,
+	photo: name => `Photo of ${name}`,
+}
 
 // Photo decks (public/assets/about/) — 800×800 webp squares cropped around each dog.
 export const DOGS = [
