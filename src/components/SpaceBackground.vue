@@ -27,20 +27,22 @@
 	import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useBackdropCover } from '@/composables/useBackdropCover'
+	import { leanOf } from '@/composables/usePointerParallax'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
+	import { useSkySpawner } from '@/composables/useSkySpawner'
+	import { useWindowListener } from '@/composables/useWindowListener'
 	import {
 		STAR_COLORS,
 		STAR_LAYERS,
+		STAR_LAYER_PAD,
 		STAR_SIZE_JITTER,
+		STAR_TILE_MAX_DPR,
 		SCROLL_PARALLAX,
 		SHOOTING_STAR,
 		DRIFT_STEP_DEVICE_PX,
 	} from '@/constants/starfield'
 	import { FINE_POINTER_QUERY, MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
-
-	function rand(min, max) {
-		return min + Math.random() * (max - min)
-	}
+	import { randIn } from '@/js/math'
 
 	function pick(arr) {
 		return arr[Math.floor(Math.random() * arr.length)]
@@ -56,8 +58,7 @@
 		)
 	}
 
-	// capped: past 2x a phone gains no visible sharpness for 2.25x the texture bytes
-	const dpr = Math.min(window.devicePixelRatio || 1, 2)
+	const dpr = Math.min(window.devicePixelRatio || 1, STAR_TILE_MAX_DPR)
 
 	// paint the tile's dots once into a bitmap: eviction then costs one blit, not dozens of gradients
 	function rasterizeTile(layer) {
@@ -68,12 +69,12 @@
 		const ctx = canvas.getContext('2d')
 		ctx.scale(dpr, dpr)
 		for (let i = 0; i < layer.count; i++) {
-			ctx.fillStyle = withAlpha(pick(STAR_COLORS), rand(...layer.alpha))
+			ctx.fillStyle = withAlpha(pick(STAR_COLORS), randIn(layer.alpha))
 			ctx.beginPath()
 			ctx.arc(
-				rand(0, w),
-				rand(0, h),
-				(layer.size * rand(...STAR_SIZE_JITTER)) / 2,
+				randIn([0, w]),
+				randIn([0, h]),
+				(layer.size * randIn(STAR_SIZE_JITTER)) / 2,
 				0,
 				Math.PI * 2
 			)
@@ -90,7 +91,7 @@
 		const [w, h] = layer.tile
 		// bleed only the two trailing edges (leading never uncovers); pad covers the mouse parallax.
 		const [dirX, dirY] = layer.dir
-		const pad = layer.depth + 8
+		const pad = layer.depth + STAR_LAYER_PAD
 		return {
 			id,
 			style: {
@@ -133,16 +134,10 @@
 		})
 	})
 
-	// axes normalised to -1..1 and negated so layers drift against the cursor via --depth
 	const pointer = ref({ x: 0, y: 0 })
 	const parallaxStyle = computed(() => ({ '--mx': pointer.value.x, '--my': pointer.value.y }))
 
-	const onPointerMove = useRafThrottle(event => {
-		pointer.value = {
-			x: -((event.clientX / window.innerWidth - 0.5) * 2),
-			y: -((event.clientY / window.innerHeight - 0.5) * 2),
-		}
-	})
+	const onPointerMove = useRafThrottle(event => (pointer.value = leanOf(event)))
 
 	// halt the drift loops when the page is hidden, or the entry veil has covered the sky
 	const covered = useBackdropCover()
@@ -152,56 +147,37 @@
 		hidden.value = document.visibilityState !== 'visible'
 	}
 
-	const shootingStars = ref([])
-	let nextId = 0
-	let timer = 0
+	// covered, the comets would sit behind a paused sky and never end; the first rides a short fuse
+	const { items: shootingStars, remove: removeStar } = useSkySpawner({
+		gapMs: SHOOTING_STAR.gapMs,
+		firstGapMs: SHOOTING_STAR.firstMs,
+		active: () => !covered.value,
+		make: () => ({
+			style: {
+				'--y': `${randIn(SHOOTING_STAR.y)}%`,
+				'--x': `${randIn(SHOOTING_STAR.x)}%`,
+				'--angle': `${randIn(SHOOTING_STAR.angle)}deg`,
+				'--len': `${randIn(SHOOTING_STAR.len)}px`,
+				'--travel': `${randIn(SHOOTING_STAR.travel)}vw`,
+				'--dur': `${randIn(SHOOTING_STAR.dur)}s`,
+				'--peak': randIn(SHOOTING_STAR.peak).toFixed(2),
+				'--tint': pick(SHOOTING_STAR.tints),
+			},
+		}),
+	})
 
-	function spawnStar() {
-		// skip while hidden or covered: paused animations never fire animationend, so comets would pile up
-		if (document.visibilityState === 'visible' && !covered.value) {
-			shootingStars.value.push({
-				id: nextId++,
-				style: {
-					'--y': `${rand(...SHOOTING_STAR.y)}%`,
-					'--x': `${rand(...SHOOTING_STAR.x)}%`,
-					'--angle': `${rand(...SHOOTING_STAR.angle)}deg`,
-					'--len': `${rand(...SHOOTING_STAR.len)}px`,
-					'--travel': `${rand(...SHOOTING_STAR.travel)}vw`,
-					'--dur': `${rand(...SHOOTING_STAR.dur)}s`,
-					'--peak': rand(...SHOOTING_STAR.peak).toFixed(2),
-					'--tint': pick(SHOOTING_STAR.tints),
-				},
-			})
-		}
-		scheduleNext()
-	}
-
-	function scheduleNext(gap = SHOOTING_STAR.gapMs) {
-		timer = window.setTimeout(spawnStar, rand(...gap))
-	}
-
-	function removeStar(id) {
-		shootingStars.value = shootingStars.value.filter(star => star.id !== id)
+	const still = prefersReducedMotion()
+	// no cursor on touch, and their drag-scrolls fire pointermove, restyling every star layer mid-scroll
+	if (scrollParallax && !still) {
+		useWindowListener('pointermove', onPointerMove)
+		useWindowListener('scroll', onScrollParallax)
 	}
 
 	onMounted(() => {
-		if (prefersReducedMotion()) return
-		document.addEventListener('visibilitychange', onVisibility)
-		// no cursor on touch, and their drag-scrolls fire pointermove, restyling every star layer mid-scroll
-		if (scrollParallax) {
-			window.addEventListener('pointermove', onPointerMove, { passive: true })
-			window.addEventListener('scroll', onScrollParallax, { passive: true })
-		}
-		// the first comet rides the short fuse — see SHOOTING_STAR.firstMs
-		scheduleNext(SHOOTING_STAR.firstMs)
+		if (!still) document.addEventListener('visibilitychange', onVisibility)
 	})
 
-	onBeforeUnmount(() => {
-		window.clearTimeout(timer)
-		document.removeEventListener('visibilitychange', onVisibility)
-		window.removeEventListener('pointermove', onPointerMove)
-		window.removeEventListener('scroll', onScrollParallax)
-	})
+	onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisibility))
 </script>
 
 <style scoped lang="scss">
