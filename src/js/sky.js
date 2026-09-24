@@ -4,26 +4,16 @@ import { DEPARTURE_RIDGE } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
 import { clamp01 } from './math.js'
 import { fbm1, fbm2, hash2, ridged2, seamIndex, turbulence } from './pixelNoise.js'
-import { cellFor } from './ridge.js'
+import { cellFor, openSprite } from './ridge.js'
 
-export function drawSky(el, frame) {
+export function drawDepartureSky(el, frame) {
 	const { sunGlow: S, galaxy: G } = DEPARTURE_RIDGE.sky
 	const cell = cellFor(frame)
 	const bleed = frame.bleed ?? 0
 	const w = Math.ceil((frame.w + 2 * bleed) / cell)
 	const h = Math.ceil((frame.h + 2 * bleed) / cell)
-	el.width = w
-	el.height = h
-	const ctx = el.getContext('2d')
-	const img = ctx.createImageData(w, h)
+	const { ctx, img, put } = openSprite(el, w, h)
 	const px = img.data
-	const put = (x, y, [r, g, b]) => {
-		const i = (y * w + x) * 4
-		px[i] = r
-		px[i + 1] = g
-		px[i + 2] = b
-		px[i + 3] = 255
-	}
 	const seed = DEPARTURE_RIDGE.ridgeSeed + 5
 
 	// The galaxy: a broad soft arc of unresolved stars, brightest toward the bulge, mottled and dust-laned.
