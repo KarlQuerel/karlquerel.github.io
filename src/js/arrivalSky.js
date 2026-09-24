@@ -10,7 +10,7 @@ import { cellFor } from './ridge.js'
 // The sky's grain: the haze and mottle, the only part of it no sun can touch. Generating it is nearly
 // all the cost, so it is cut once and kept, with each cell's own threshold for the night walk; the sky
 // proper is placed back off it whenever the sun has moved enough to change where the light comes from.
-export function drawSky(el, box, sun) {
+export function drawArrivalSky(el, box, sun) {
 	const cell = cellFor(box)
 	const w = Math.max(8, Math.round(box.w / cell))
 	const h = Math.max(8, Math.round(box.h / cell))
@@ -52,6 +52,8 @@ export function drawSky(el, box, sun) {
 		litX: 0,
 		litY: 0,
 		night: -1,
+		// the cells the last disc covered, or null once `base` has changed under the whole frame
+		painted: null,
 	}
 	rebuildSky(sky, sun)
 	paintSun(sky, sun)
@@ -159,6 +161,7 @@ export function darkenSky(sky, night) {
 		base[at + 3] = 255
 	}
 	sky.night = night
+	sky.painted = null
 }
 
 export function rebuildSky(sky, sun) {
@@ -191,9 +194,17 @@ export function paintSun(sky, now) {
 	const seamY = cy + S.r + band / 2 - (heat - warm) * (2 * S.r + band)
 	const reach = S.r * S.coronaR
 	const px = img.data
-	px.set(base)
-	for (let y = Math.max(0, Math.ceil(cy - reach)); y <= Math.min(h - 1, cy + reach); y++) {
-		for (let x = Math.max(0, Math.ceil(cx - reach)); x <= Math.min(w - 1, cx + reach); x++) {
+	const disc = {
+		x0: Math.max(0, Math.ceil(cx - reach)),
+		y0: Math.max(0, Math.ceil(cy - reach)),
+		x1: Math.min(w - 1, Math.floor(cx + reach)),
+		y1: Math.min(h - 1, Math.floor(cy + reach)),
+	}
+	const last = sky.painted
+	if (last) restore(sky, last)
+	else px.set(base)
+	for (let y = disc.y0; y <= disc.y1; y++) {
+		for (let x = disc.x0; x <= disc.x1; x++) {
 			const d = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2)
 			if (d > reach) continue
 			const i = y * w + x
@@ -217,5 +228,29 @@ export function paintSun(sky, now) {
 	}
 	sky.atX = cx
 	sky.atY = cy
-	el.getContext('2d').putImageData(img, 0, 0)
+	sky.painted = disc
+	const ctx = el.getContext('2d')
+	if (!last) {
+		ctx.putImageData(img, 0, 0)
+		return
+	}
+	// only the old disc and the new one changed on the canvas
+	const x0 = Math.min(last.x0, disc.x0)
+	const y0 = Math.min(last.y0, disc.y0)
+	ctx.putImageData(
+		img,
+		0,
+		0,
+		x0,
+		y0,
+		Math.max(last.x1, disc.x1) - x0 + 1,
+		Math.max(last.y1, disc.y1) - y0 + 1
+	)
+}
+
+// Copies the kept sky back over one rect of the frame, row by row.
+function restore({ w, base, img }, { x0, y0, x1, y1 }) {
+	for (let y = y0; y <= y1; y++) {
+		img.data.set(base.subarray((y * w + x0) * 4, (y * w + x1 + 1) * 4), (y * w + x0) * 4)
+	}
 }

@@ -11,35 +11,7 @@
 		/>
 		<!-- everything alive up there: a handful of stars breathing, and the occasional
 		     thing crossing a sky that is otherwise holding perfectly still -->
-		<div class="entry__sky-life" :style="skyLifeStyle">
-			<span
-				v-for="(tw, i) in twinklers"
-				:key="i"
-				class="entry__twinkle"
-				:style="twinkleStyle(tw)"
-			/>
-			<span
-				v-for="m in meteors"
-				:key="`m${m.id}`"
-				class="entry__meteor"
-				:style="m.style"
-				@animationend="removeMeteor(m.id)"
-			/>
-			<div
-				v-for="fl in flocks"
-				:key="`f${fl.id}`"
-				class="entry__flock"
-				:style="fl.style"
-				@animationend="removeFlock(fl.id)"
-			>
-				<span
-					v-for="(b, i) in fl.birds"
-					:key="i"
-					class="entry__bird"
-					:style="birdStyle(b)"
-				/>
-			</div>
-		</div>
+		<EntrySkyLife :fade="starFade" :seed="visitSeed" />
 		<div
 			v-for="(cloud, i) in cloudField"
 			:key="i"
@@ -78,16 +50,17 @@
 		ref,
 		watch,
 	} from 'vue'
+	import { useFrameReshape } from '@/composables/useFrameReshape'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
-	import { useSkySpawner } from '@/composables/useSkySpawner'
-	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { ENTRY } from '@/constants/journey'
-	import { PALETTE } from '@/constants/palette'
-	import { clamp01, randIn, smoothstep } from '@/js/math'
-	import { ditherIndex, fbm1, fbm2, hash1 } from '@/js/pixelNoise'
+	import { paletteRgb } from '@/constants/palette'
+	import { drawCloud, drawStarTile, seedClouds } from '@/js/entrySprites'
+	import { clamp01, smoothstep } from '@/js/math'
+	import { hash1 } from '@/js/pixelNoise'
 	import { cutRidge, lightRidge } from '@/js/ridge'
-	import { darkenSky, drawSky, paintSun, rebuildSky } from '@/js/arrivalSky'
+	import { darkenSky, drawArrivalSky, paintSun, rebuildSky } from '@/js/arrivalSky'
 	import { sunAt } from '@/js/sun'
+	import EntrySkyLife from './EntrySkyLife.vue'
 
 	const props = defineProps({
 		// approach progress: 0 → still in space, 1 → landed
@@ -129,8 +102,7 @@
 			left: `${cloud.left}vw`,
 			display: t > 0 && t < 1 ? null : 'none',
 			backgroundImage: sprite ? `url(${sprite})` : undefined,
-			// fade the last stretch so a puff never pops out at the frame edge
-			opacity: Math.min(1, (1 - t) / 0.15).toFixed(3),
+			opacity: Math.min(1, (1 - t) / ENTRY.cloudFadeTail).toFixed(3),
 			'--depth': ENTRY.parallax.cloud,
 			transform:
 				`translate3d(${drift.toFixed(1)}vw, ${y.toFixed(1)}vh, 0)` +
@@ -169,7 +141,7 @@
 			// one whole cell per step on the way up, one whole cell per step wider
 			'--rise-ease': `steps(${S.riseCells}, end)`,
 			'--puff-ease': `steps(${S.grow - 1}, end)`,
-			'--smoke': `rgb(${PALETTE[S.shade].join(',')})`,
+			'--smoke': paletteRgb(S.shade),
 		}
 	})
 	// Staggered backwards, so the column is already full on the frame it appears on.
@@ -194,56 +166,8 @@
 	// three cloud sprites drawn once per visit; each puff picks one by index
 	const cloudSprites = ref([])
 	const skyEl = ref(null)
-	const birdSheet = ref('')
-
-	// One sheet, frames side by side, walked by background-position. A silhouette needs no shading.
-	function drawBirdSheet() {
-		const b = ENTRY.bird
-		const el = document.createElement('canvas')
-		el.width = b.w * b.frames.length
-		el.height = b.h
-		const ctx = el.getContext('2d')
-		ctx.fillStyle = `rgb(${PALETTE[b.colour].join(',')})`
-		b.frames.forEach((rows, f) => {
-			rows.forEach((row, y) => {
-				for (let x = 0; x < row.length; x++) {
-					if (row[x] === '#') ctx.fillRect(f * b.w + x, y, 1, 1)
-				}
-			})
-		})
-		return el.toDataURL()
-	}
 	const starTiles = ref([])
-	const twinklers = ref([])
 	const cloudField = ref([])
-
-	// Lanes advance by the golden ratio from a seeded phase: no two consecutive puffs share a lane.
-	function seedClouds(seed) {
-		const c = ENTRY.cloudStream
-		const phase = hash1(1, seed + 7)
-		return Array.from({ length: c.count }, (_, i) => ({
-			left: c.leftMin + ((phase + i * 0.618034) % 1) * (c.leftMax - c.leftMin),
-			scale:
-				(c.scaleFrom + (c.scaleTo - c.scaleFrom) * (i / (c.count - 1))) *
-				(1 + (hash1(i, seed + 19) - 0.5) * c.scaleJitter),
-			start: c.startAt + i * c.stagger + (hash1(i, seed + 31) - 0.5) * c.startJitter,
-		}))
-	}
-
-	// Placed off the visit seed, kept inside the band of sky the star mask actually shows.
-	function seedTwinklers(seed) {
-		const { count, periodMs, spreadVh } = ENTRY.stars.twinkle
-		const hues = ENTRY.stars.colors
-		return Array.from({ length: count }, (_, i) => {
-			const pick = Math.min(hues.length - 1, Math.floor(hash1(i, seed + 37) * hues.length))
-			return {
-				left: hash1(i, seed + 11) * 100,
-				top: hash1(i, seed + 23) * spreadVh,
-				colour: `rgb(${PALETTE[hues[pick]].join(',')})`,
-				delay: hash1(i, seed + 53) * periodMs,
-			}
-		})
-	}
 
 	// the first stars come out once the sky has settled, over the dark top of it
 	const starFade = computed(() => {
@@ -260,217 +184,6 @@
 			backgroundImage: `url(${starTiles.value[i]})`,
 			backgroundSize: `${layer.tile}px ${layer.tile}px`,
 		}
-	}
-
-	const skyLifeStyle = computed(() => ({
-		opacity: starFade.value.toFixed(3),
-		display: starFade.value > 0 ? null : 'none',
-	}))
-
-	// inclusive of both ends and flat across them — rounding a float biases toward the middle
-	const randInt = ([lo, hi]) => lo + Math.floor(Math.random() * (hi - lo + 1))
-	const tint = names =>
-		`rgb(${PALETTE[names[Math.floor(Math.random() * names.length)]].join(',')})`
-
-	// Both streams roll every value per spawn. The spawner owns the gap, tab skip and self-removal.
-	const { items: meteors, remove: removeMeteor } = useSkySpawner({
-		gapMs: ENTRY.meteor.gapMs,
-		active: () => starFade.value > 0,
-		make: () => {
-			const m = ENTRY.meteor
-			return {
-				style: {
-					'--y': `${randIn(m.y).toFixed(1)}%`,
-					'--x': `${randIn(m.x).toFixed(1)}%`,
-					'--angle': `${randIn(m.angle).toFixed(1)}deg`,
-					'--len': `${Math.round(randIn(m.len))}px`,
-					'--travel': `${randIn(m.travelVw).toFixed(1)}vw`,
-					'--dur': `${Math.round(randIn(m.durMs))}ms`,
-					'--peak': randIn(m.peak).toFixed(2),
-					'--tint': tint(m.tints),
-				},
-			}
-		},
-	})
-
-	// A flock: one container crossing the frame, with its birds strung out inside it.
-	const { items: flocks, remove: removeFlock } = useSkySpawner({
-		gapMs: ENTRY.flock.gapMs,
-		// Only while the sky layer shows (hidden, spawns never end and pile up) and one flock at a time.
-		active: () => starFade.value > 0 && flocks.value.length === 0,
-		make: () => {
-			const f = ENTRY.flock
-			const bird = ENTRY.bird
-			const scale = randInt(f.scale)
-			const flap = Math.round(randIn(f.flapMs))
-			const sheet = bird.frames.length * bird.w * scale
-			const rightward = Math.random() < 0.5
-			return {
-				style: {
-					'--y': `${randIn(f.y).toFixed(1)}%`,
-					'--from': rightward ? '-14vw' : '114vw',
-					'--travel': `${(randIn(f.travelVw) * (rightward ? 1 : -1)).toFixed(1)}vw`,
-					'--drift': `${randIn(f.driftVh).toFixed(1)}vh`,
-					'--dur': `${Math.round(randIn(f.durMs))}ms`,
-					'--peak': randIn(f.peak).toFixed(2),
-				},
-				// Positions are counted in sprite cells and scaled once, so the flock shares one pixel grid.
-				birds: (() => {
-					let x = 0
-					return Array.from({ length: randInt(f.count) }, () => {
-						const at = {
-							left: x * scale,
-							top: randInt(f.jitterCells) * scale,
-							w: bird.w * scale,
-							h: bird.h * scale,
-							sheet,
-							flap,
-							// its own phase, so the wingbeats never line up
-							delay: Math.round(Math.random() * flap),
-						}
-						// wingtip to wingtip: the bird's own width, then clear air
-						x += bird.w + randInt(f.gapCells)
-						return at
-					})
-				})(),
-			}
-		},
-	})
-
-	function birdStyle(b) {
-		return {
-			left: `${b.left}px`,
-			top: `${b.top}px`,
-			width: `${b.w}px`,
-			height: `${b.h}px`,
-			backgroundImage: `url(${birdSheet.value})`,
-			backgroundSize: `${b.sheet}px ${b.h}px`,
-			animationDuration: `${b.flap}ms`,
-			animationDelay: `-${b.delay}ms`,
-			'--sheet': `-${b.sheet}px`,
-			'--frames': ENTRY.bird.frames.length,
-		}
-	}
-
-	// Negative delays, so they are already mid-cycle rather than all lighting together.
-	function twinkleStyle(tw) {
-		return {
-			left: `${tw.left.toFixed(2)}%`,
-			top: `${tw.top.toFixed(2)}vh`,
-			background: tw.colour,
-			animationDuration: `${ENTRY.stars.twinkle.periodMs}ms`,
-			animationDelay: `-${Math.round(tw.delay)}ms`,
-		}
-	}
-
-	// A cumulus as lobes with a noise-warped boundary: lobes alone scallop, noise alone drifts.
-	function drawCloud(seed) {
-		const cfg = ENTRY.cloud
-		const { spriteW: w, spriteH: h } = cfg
-		const shades = cfg.shades.map(name => PALETTE[name])
-		const el = document.createElement('canvas')
-		el.width = w
-		el.height = h
-		const ctx = el.getContext('2d')
-		const img = ctx.createImageData(w, h)
-		const px = img.data
-		const levels = shades.length
-		const span = ([lo, hi], r) => lo + (hi - lo) * r
-
-		// lobes sit along the base, biggest toward the middle
-		const lobes = Array.from({ length: cfg.lobes }, (_, k) => {
-			const centre = 1 - Math.abs((k + 0.5) / cfg.lobes - 0.5) * 2
-			return {
-				cx: 0.12 + 0.76 * ((k + 0.5) / cfg.lobes) + (hash1(k, seed) - 0.5) * cfg.lobeJitter,
-				cy: cfg.baseAt - span(cfg.lobeRise, hash1(k, seed + 11)) * (0.4 + centre),
-				rx: span(cfg.lobeRx, hash1(k, seed + 23)) * (0.6 + 0.6 * centre),
-				ry: span(cfg.lobeRy, hash1(k, seed + 37)) * (0.6 + 0.6 * centre),
-			}
-		})
-
-		// signed field: > 0 inside the cloud
-		const mask = new Uint8Array(w * h)
-		for (let y = 0; y < h; y++) {
-			const t = y / (h - 1)
-			for (let x = 0; x < w; x++) {
-				const u = x / (w - 1)
-				let d = -1
-				for (const l of lobes) {
-					const dx = (u - l.cx) / l.rx
-					const dy = (t - l.cy) / l.ry
-					d = Math.max(d, 1 - Math.hypot(dx, dy))
-				}
-				d += (fbm2(u * cfg.warpFreq, t * cfg.warpFreq, seed) - 0.5) * cfg.warp
-				// flat cumulus underside, ruffled just enough to not be a ruler line
-				const base = cfg.baseAt + (fbm1(u * 3, seed + 61) - 0.5) * cfg.baseRuffle
-				if (t > base) d -= (t - base) * 12
-				const i = y * w + x
-				if (d > 0) mask[i] = 1
-				else if (d > -cfg.feather) mask[i] = ditherIndex(1 + d / cfg.feather, 2, x, y)
-			}
-		}
-
-		// despeckle: the dithered edge strands lone pixels that read as dirt
-		const solidAt = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : mask[y * w + x])
-		const cleaned = Uint8Array.from(mask)
-		for (let y = 0; y < h; y++) {
-			for (let x = 0; x < w; x++) {
-				if (!mask[y * w + x]) continue
-				let n = 0
-				for (let dy = -1; dy <= 1; dy++) {
-					for (let dx = -1; dx <= 1; dx++) if (dx || dy) n += solidAt(x + dx, y + dy)
-				}
-				if (n < cfg.minNeighbours) cleaned[y * w + x] = 0
-			}
-		}
-
-		for (let x = 0; x < w; x++) {
-			const u = x / (w - 1)
-			// distance below this column's crown, so light dies under each lobe separately
-			let depth = -1
-			for (let y = 0; y < h; y++) {
-				if (!cleaned[y * w + x]) {
-					depth = -1
-					continue
-				}
-				depth = depth < 0 ? 0 : depth + 1
-				const crown = clamp01(1 - depth / cfg.shadeDepth)
-				const side = 0.5 + (0.5 - u) * cfg.sideLight * -ENTRY.ridgeLight
-				const lit = clamp01(crown * 0.7 + side * 0.3)
-				const [r, g, b] = shades[ditherIndex(lit, levels, x, y)]
-				const i = (y * w + x) * 4
-				px[i] = r
-				px[i + 1] = g
-				px[i + 2] = b
-				px[i + 3] = 255
-			}
-		}
-
-		ctx.putImageData(img, 0, 0)
-		return el.toDataURL()
-	}
-
-	// One tile of first-evening stars; two at coprime sizes are what stop the field reading as wallpaper.
-	function drawStarTile(seed, layer) {
-		const { tile, count } = layer
-		// fillStyle wants a string; the colour still comes from the one palette
-		const colors = ENTRY.stars.colors.map(name => `rgb(${PALETTE[name].join(',')})`)
-		const el = document.createElement('canvas')
-		el.width = tile
-		el.height = tile
-		const ctx = el.getContext('2d')
-		for (let i = 0; i < count; i++) {
-			const x = Math.floor(hash1(i, seed) * tile)
-			const y = Math.floor(hash1(i, seed + 101) * tile)
-			const pick = hash1(i, seed + 202)
-			const bright = hash1(i, seed + 303)
-			ctx.globalAlpha = 0.35 + bright * 0.65
-			ctx.fillStyle = colors[Math.floor(pick * colors.length)]
-			// a couple of the brightest read as two cells; the rest are single
-			const size = bright > 0.92 ? 2 : 1
-			ctx.fillRect(x, y, size, size)
-		}
-		return el.toDataURL()
 	}
 
 	// the kept sky (js/arrivalSky.js) and how far the sun has fallen, in ms on the surface
@@ -525,7 +238,7 @@
 	onDeactivated(() => setSinking(false))
 
 	// One seed per visit for the weather, so no two visits share a sky.
-	let visitSeed = 1
+	const visitSeed = Math.floor(Math.random() * 1e5) + 1
 
 	// The ranges are cut once for the frame, the dear part, and relit as the sun moves and night comes.
 	let ranges = []
@@ -553,24 +266,16 @@
 	function cut() {
 		frame = { w: window.innerWidth, h: window.innerHeight }
 		const now = sunAt(sunk, frame)
-		if (skyEl.value) sky = drawSky(skyEl.value, frame, now)
+		if (skyEl.value) sky = drawArrivalSky(skyEl.value, frame, now)
 		cutRanges()
 		lightRanges(now)
 	}
 
-	// only when the frame really changed shape (see ENTRY.ridgeReshape)
-	const onResize = useRafThrottle(() => {
-		const reshaped =
-			window.innerWidth !== frame.w ||
-			Math.abs(window.innerHeight / frame.h - 1) > ENTRY.ridgeReshape
-		if (reshaped) cut()
-	})
+	useFrameReshape(() => frame, cut)
 
 	// The arrival is viewports down, so its sprites are cut a frame after mount.
 	let deferred = 0
 	onMounted(() => {
-		visitSeed = Math.floor(Math.random() * 1e5) + 1
-		window.addEventListener('resize', onResize, { passive: true })
 		deferred = requestAnimationFrame(() => {
 			cut()
 			cloudField.value = seedClouds(visitSeed)
@@ -580,20 +285,17 @@
 			starTiles.value = ENTRY.stars.layers.map((layer, i) =>
 				drawStarTile(visitSeed + i * 991, layer)
 			)
-			twinklers.value = seedTwinklers(visitSeed)
-			birdSheet.value = drawBirdSheet()
 		})
 	})
 
 	onBeforeUnmount(() => {
 		cancelAnimationFrame(deferred)
 		cancelAnimationFrame(sinking)
-		window.removeEventListener('resize', onResize)
 	})
 </script>
 
 <style scoped lang="scss">
-	// Alien dusk, cut from the shared palette on the ranges' own grid (see drawSky).
+	// Alien dusk, cut from the shared palette on the ranges' own grid (see drawArrivalSky).
 	.entry__sky {
 		position: absolute;
 		inset: 0;
@@ -611,127 +313,7 @@
 			calc(var(--my, 0) * var(--depth, 0) * 1px);
 	}
 
-	.entry__sky-life {
-		position: absolute;
-		inset: 0;
-	}
-
-	// Meteor: pixel head plus a fading streak, rotated onto its travel angle.
-	.entry__meteor {
-		position: absolute;
-		top: var(--y);
-		left: var(--x);
-		width: var(--len);
-		height: 2px;
-		color: var(--tint);
-		background: linear-gradient(to left, currentColor, transparent);
-		opacity: 0;
-		transform: rotate(var(--angle));
-		transform-origin: center;
-		image-rendering: pixelated;
-		animation: entry-meteor var(--dur) linear forwards;
-	}
-
-	.entry__meteor::after {
-		content: '';
-		position: absolute;
-		right: 0;
-		top: 50%;
-		width: 3px;
-		height: 3px;
-		margin-top: -1px;
-		background: currentColor;
-	}
-
-	@keyframes entry-meteor {
-		0% {
-			transform: rotate(var(--angle)) translateX(0);
-			opacity: 0;
-		}
-		14% {
-			opacity: var(--peak);
-		}
-		82% {
-			opacity: var(--peak);
-		}
-		100% {
-			transform: rotate(var(--angle)) translateX(var(--travel));
-			opacity: 0;
-		}
-	}
-
-	// Self-running motion, so it is stepped; three steps reads as a blink rather than a fade.
-	.entry__twinkle {
-		position: absolute;
-		width: 2px;
-		height: 2px;
-		animation-name: entry-twinkle;
-		animation-timing-function: steps(3, end);
-		animation-iteration-count: infinite;
-	}
-
-	@keyframes entry-twinkle {
-		0%,
-		55% {
-			opacity: 1;
-		}
-		70%,
-		100% {
-			opacity: 0.2;
-		}
-	}
-
-	// A flock crosses as one container; the birds are strung out inside it.
-	.entry__flock {
-		position: absolute;
-		top: var(--y);
-		left: var(--from);
-		opacity: 0;
-		animation: entry-flock var(--dur) linear forwards;
-	}
-
-	@keyframes entry-flock {
-		0% {
-			transform: translate3d(0, 0, 0);
-			opacity: 0;
-		}
-		10% {
-			opacity: var(--peak);
-		}
-		88% {
-			opacity: var(--peak);
-		}
-		100% {
-			transform: translate3d(var(--travel), var(--drift), 0);
-			opacity: 0;
-		}
-	}
-
-	// Wingbeats are on their own clock, so they are stepped by background-position.
-	.entry__bird {
-		position: absolute;
-		background-repeat: no-repeat;
-		image-rendering: pixelated;
-		animation-name: entry-flap;
-		// the step count is the sprite's frame count, so the sheet stays the only place that knows it
-		animation-timing-function: steps(var(--frames), end);
-		animation-iteration-count: infinite;
-	}
-
-	@keyframes entry-flap {
-		from {
-			background-position: 0 0;
-		}
-		to {
-			background-position: var(--sheet) 0;
-		}
-	}
-
 	@media (prefers-reduced-motion: reduce) {
-		.entry__twinkle,
-		.entry__meteor,
-		.entry__flock,
-		.entry__bird,
 		.entry__puff {
 			animation: none;
 		}
