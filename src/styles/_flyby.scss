@@ -17,3 +17,17 @@ $flyby-outline:
 
 // Sampled off the opening frame: on a slow GPU the first paint is this gradient, not a black card.
 $flyby-ground: $flyby-void linear-gradient(180deg, #08080f, #1a1a2c 45%, #24243d 62%, #141420) fixed;
+
+// the scrim-free text treatment every lab label wears: a hard drop plus the outline
+@mixin flyby-shadow($drop: 2px) {
+	text-shadow:
+		$drop $drop 0 variables.$black,
+		$flyby-outline;
+}
+
+// the contact portals' fill, a shade off the void so the chrome reads as a panel
+$flyby-panel: #111826;
+
+// The lab's own breakpoints: its type is sized to these, not to the site's mobile/desktop pair.
+$flyby-narrow: 520px;
+$flyby-compact: 720px;
