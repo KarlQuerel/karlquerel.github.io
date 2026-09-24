@@ -1,11 +1,11 @@
-// The lab flyby's own palette, separate from the site's void tokens: it is sampled against this
-// shader's output, and the lab is where that look is being tried out.
+// The lab flyby's own tones, sampled against its shader's output; the accent is the site's ember.
 
+@use 'palette:' as palette;
 @use 'variables';
 
 $flyby-ink: #d7e3ef;
 $flyby-dim: #7f93a8;
-$flyby-hot: #ffb454;
+$flyby-hot: palette.$ember;
 $flyby-void: #0b0d14;
 
 // a one-pixel hard outline: what 8-bit games did to keep text on a busy field
