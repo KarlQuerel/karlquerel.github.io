@@ -1,4 +1,5 @@
 // Tunables for the scroll-flight landing (HomeJourney.vue): a camera run from dot to entry.
+import { paletteRgb } from './palette.js'
 
 export const JOURNEY = {
 	// Empty flight legs between stations (vh) — the travel that sells the approach.
@@ -67,7 +68,7 @@ export const HERO_FLYBY = {
 	plateShadow: 'rgba(0, 0, 0, 0.85)',
 	plateShadowBlur: 12,
 	// the role line's warm bloom — the name takes the dark pass and the keyline only
-	plateGlow: 'rgba(255, 189, 46, 0.34)',
+	plateGlow: paletteRgb('ember', 0.34),
 	plateGlowBlur: 26,
 	// Past this scale the plate repaints bare - ink and keyline, no blurred passes.
 	bareFromScale: 5,
