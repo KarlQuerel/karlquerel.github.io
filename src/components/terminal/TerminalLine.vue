@@ -9,23 +9,13 @@
 			<img :src="line.image" :alt="line.alt || 'Terminal image'" class="terminal-image" />
 		</div>
 
-		<!-- Typed output: empty target the parent fills via TypeIt -->
-		<span v-else-if="animatable" ref="target" :class="line.type" />
-
-		<span v-else-if="line.link" :class="line.type">
-			{{ line.prefix }}
-			<a :href="line.link" target="_blank" class="terminal-link">{{ line.linkText }}</a>
-		</span>
-
-		<!-- eslint-disable-next-line vue/no-v-html -->
-		<span v-else-if="line.html" :class="line.type" v-html="line.content" />
-
-		<span v-else :class="line.type">{{ line.content }}</span>
+		<!-- empty target the typewriter fills -->
+		<span v-else ref="target" :class="line.type" />
 	</div>
 </template>
 
 <script setup>
-	import { computed, onMounted, onBeforeUnmount, useTemplateRef } from 'vue'
+	import { onMounted, onBeforeUnmount, useTemplateRef } from 'vue'
 	import TerminalPrompt from './TerminalPrompt.vue'
 
 	const props = defineProps({
@@ -35,22 +25,16 @@
 
 	const emit = defineEmits(['register', 'unregister'])
 
-	// Typed lines are animated character-by-character; images carry their own animation.
-	const animatable = computed(
-		() =>
-			(props.line.type === 'typewriter' || props.line.type === 'output') && !props.line.image
-	)
-
 	const target = useTemplateRef('target')
 
 	onMounted(() => {
-		if (animatable.value && target.value) {
+		if (target.value) {
 			emit('register', props.index, target.value)
 		}
 	})
 
 	onBeforeUnmount(() => {
-		if (animatable.value) {
+		if (target.value) {
 			emit('unregister', props.index)
 		}
 	})
@@ -66,7 +50,7 @@
 
 	.output,
 	.typewriter {
-		color: #cfd2cf;
+		color: $terminal-text;
 		white-space: pre-wrap;
 		min-width: 0;
 		overflow-wrap: anywhere;
