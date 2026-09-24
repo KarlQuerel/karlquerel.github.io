@@ -47,10 +47,16 @@ export const STAR_SIZE_JITTER = [0.75, 1.25]
 // Vertical scroll parallax: px of layer shift per px scrolled, per depth unit.
 export const SCROLL_PARALLAX = 0.004
 
+// Past 2x a phone gains no visible sharpness for 2.25x the texture bytes.
+export const STAR_TILE_MAX_DPR = 2
+
+// Layer overscan past its own depth, so the cursor's lean never uncovers an edge (px).
+export const STAR_LAYER_PAD = 8
+
 // Device px of travel per drift step. Stepped, so the compositor can skip the frames between.
 export const DRIFT_STEP_DEVICE_PX = 1
 
-// Sparse comet streaks. Each entry is a [min, max] range fed to rand(), except `tints`.
+// Sparse comet streaks. Each entry is a [min, max] range fed to randIn(), except `tints`.
 export const SHOOTING_STAR = {
 	tints: ['#ffffff', '#ffffff', '#ffffff', '#00ccff', '#ffbd2e'],
 	gapMs: [2800, 8000],
