@@ -4,12 +4,13 @@
 </template>
 
 <script setup>
-	import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+	import { computed, onActivated, onMounted, ref, watch } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
+	import { useWindowListener } from '@/composables/useWindowListener'
 	import { ARRIVAL, HERO_FLYBY } from '@/constants/journey'
-	import { PALETTE } from '@/constants/palette'
-	import { clamp01, smoothstep } from '@/js/math'
+	import { paletteRgb } from '@/constants/palette'
+	import { clamp01, randIn, smoothstep } from '@/js/math'
 
 	const props = defineProps({
 		// world units the camera has run down the corridor
@@ -34,6 +35,8 @@
 	let w = 0
 	let h = 0
 	let motes = []
+	// the store is sized off the laid-out box, read again only after the window has resized
+	let dirty = true
 
 	function seed() {
 		const box = HERO_FLYBY.moteBox
@@ -41,16 +44,16 @@
 			x: (Math.random() - 0.5) * box,
 			y: (Math.random() - 0.5) * box,
 			z: Math.random() * box,
-			// a mote's own share of the tail, so the field is not one comb of equals
-			tail: 0.45 + Math.random() * 0.9,
-			glow: 0.4 + Math.random() * 0.6,
+			tail: randIn(HERO_FLYBY.moteTailShare),
+			glow: randIn(HERO_FLYBY.moteGlow),
 		}))
 	}
 
 	// Setting width/height reallocates and clears the backing store, so only do it on a real resize.
 	function resize() {
 		const el = canvasEl.value
-		if (!el) return
+		if (!el || !dirty) return
+		dirty = false
 		const scale = HERO_FLYBY.motePixelScale
 		const next = [
 			Math.max(1, Math.floor(el.clientWidth / scale)),
@@ -65,7 +68,8 @@
 	// A mote's depth wraps into a box travelling with the camera, which is what makes a few hundred endless.
 	function draw() {
 		if (!ctx || props.fade <= 0.01) return
-		const { moteBox: box, moteTail, moteNear, moteLean } = HERO_FLYBY
+		const { moteBox: box, moteTail, moteNear, moteLean, moteNearFade, moteFarFade } = HERO_FLYBY
+		const [farFrom, farTo] = moteFarFade
 		resize()
 		ctx.clearRect(0, 0, w, h)
 		// over black, motes add up rather than paint over each other
@@ -73,7 +77,7 @@
 		// heat walks the whole field up the ember ramp, one hard band at a time
 		const ramp = ARRIVAL.heatRamp
 		const band = Math.min(ramp.length, Math.floor(props.heat * (ramp.length + 1)))
-		ctx.strokeStyle = band === 0 ? HERO_FLYBY.moteColor : `rgb(${PALETTE[ramp[band - 1]]})`
+		ctx.strokeStyle = band === 0 ? HERO_FLYBY.moteColor : paletteRgb(ramp[band - 1])
 		ctx.lineWidth = 1
 		const cx = w / 2
 		const cy = h / 2
@@ -95,8 +99,9 @@
 			const kt = (FOCAL * unit) / zTail
 			// near motes dim as they pass the lens, far ones as they reach the box edge
 			const dist = Math.hypot(m.x, m.y, z)
-			const near = smoothstep(clamp01((z - moteNear) / (1.8 - moteNear)))
-			const far = 1 - smoothstep(clamp01((dist - box * 0.18) / (box * 0.5 - box * 0.18)))
+			const near = smoothstep(clamp01((z - moteNear) / (moteNearFade - moteNear)))
+			const far =
+				1 - smoothstep(clamp01((dist - box * farFrom) / (box * farTo - box * farFrom)))
 			ctx.globalAlpha = clamp01(near * far * m.glow * props.fade)
 			ctx.beginPath()
 			ctx.moveTo(x, y)
@@ -110,16 +115,20 @@
 
 	watch(() => [props.travel, props.fade, props.lean, props.heat], redraw)
 
+	// a resize while parked by KeepAlive went unheard, so coming back re-reads the box too
+	function resized() {
+		dirty = true
+		redraw()
+	}
+	useWindowListener('resize', resized)
+	onActivated(resized)
+
 	onMounted(() => {
 		if (prefersReducedMotion()) return
 		ctx = canvasEl.value.getContext('2d')
 		seed()
-		resize()
 		draw()
-		window.addEventListener('resize', redraw, { passive: true })
 	})
-
-	onBeforeUnmount(() => window.removeEventListener('resize', redraw))
 </script>
 
 <style scoped lang="scss">
