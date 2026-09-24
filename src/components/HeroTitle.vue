@@ -20,8 +20,9 @@
 </template>
 
 <script setup>
-	import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+	import { onActivated, onMounted, ref, watch } from 'vue'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
+	import { useWindowListener } from '@/composables/useWindowListener'
 	import { HERO_FLYBY } from '@/constants/journey'
 
 	const props = defineProps({
@@ -96,7 +97,10 @@
 		[1, 1],
 	]
 
-	function paint() {
+	// the store the plate was last painted at, so a resize that leaves the type alone repaints nothing
+	let painted = ''
+
+	function paint(force = true) {
 		const el = canvasEl.value
 		if (!el || !textEl.value) return
 		const k = liveScale(textEl.value)
@@ -106,6 +110,9 @@
 		const box = { width: live.width / k, height: live.height / k }
 		// One texel per device pixel at rest: crisp where it starts, chunky only once the flight magnifies it.
 		const dpr = Math.min(window.devicePixelRatio || 1, HERO_FLYBY.plateMaxDpr)
+		const store = [Math.round(box.width * dpr), Math.round(box.height * dpr), dpr].join()
+		if (!force && store === painted) return
+		painted = store
 		el.width = Math.round(box.width * dpr)
 		el.height = Math.round(box.height * dpr)
 		el.style.width = `${box.width}px`
@@ -174,18 +181,23 @@
 	}
 
 	const repaint = useRafThrottle(paint)
+	const refit = useRafThrottle(() => paint(false))
 
 	// one repaint per threshold crossing, both directions
-	watch(() => props.bare, repaint)
+	watch(
+		() => props.bare,
+		() => repaint()
+	)
+
+	// a mobile URL bar showing or hiding resizes the window but not the type
+	useWindowListener('resize', refit)
+	onActivated(refit)
 
 	onMounted(() => {
 		paint()
 		// a sprite cut before the pixel font arrives is a sprite of the fallback face
-		if (document.fonts?.ready) document.fonts.ready.then(paint)
-		window.addEventListener('resize', repaint, { passive: true })
+		if (document.fonts?.ready) document.fonts.ready.then(() => paint())
 	})
-
-	onBeforeUnmount(() => window.removeEventListener('resize', repaint))
 </script>
 
 <style scoped lang="scss">
