@@ -55,3 +55,6 @@ export const PALETTE = {
 	glow: [255, 231, 196],
 	star: [255, 255, 255],
 }
+
+// A palette entry as a CSS colour, for canvas fills and style bindings.
+export const paletteRgb = name => `rgb(${PALETTE[name].join(',')})`
