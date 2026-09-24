@@ -1,12 +1,14 @@
 // Tunables for the decorative parallax starfield in SpaceBackground.vue.
 
-// Star palette, duplicated as hex from _variables.scss. Weighted toward white for a calm sky.
+import { paletteHex } from './palette.js'
+
+// Star colours as hex, since SpaceBackground appends the alpha byte. Weighted toward white.
 export const STAR_COLORS = [
 	'#ffffff',
 	'#ffffff',
 	'#ffffff',
 	'#ffffff',
-	'#ffbd2e', // $yellow
+	paletteHex('ember'),
 	'#d3d3d3', // $light-gray
 ]
 
@@ -58,7 +60,7 @@ export const DRIFT_STEP_DEVICE_PX = 1
 
 // Sparse comet streaks. Each entry is a [min, max] range fed to randIn(), except `tints`.
 export const SHOOTING_STAR = {
-	tints: ['#ffffff', '#ffffff', '#ffffff', '#00ccff', '#ffbd2e'],
+	tints: ['#ffffff', '#ffffff', '#ffffff', '#00ccff', paletteHex('ember')],
 	gapMs: [2800, 8000],
 	// The first comet of a visit fires on a shorter fuse, so the sky is already moving on arrival.
 	firstMs: [900, 1600],
