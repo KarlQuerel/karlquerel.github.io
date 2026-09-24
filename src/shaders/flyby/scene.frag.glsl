@@ -1,10 +1,14 @@
+#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
+#else
+precision mediump float;
+#endif
 uniform vec2  uRes;
 uniform vec3  uCamPos, uRight, uUp, uFwd;
 uniform float uFocal, uEntry, uProg;
 uniform vec2  uLook;    // pointer deflection, for the layers drawn in screen space
 uniform vec3  uSun;
-// Eight slots, of which four carry the flight and four are only ever scenery. A body
+// Twelve slots, of which four carry the flight and eight are only ever scenery. A body
 // costs one ray-sphere test on a ray that misses it - three flops - and the marching,
 // which is all the cost, still only runs for the one that ends up nearest. So the budget
 // buys spread rather than frame time.
