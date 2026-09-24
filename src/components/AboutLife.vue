@@ -3,7 +3,7 @@
 		<!-- no accent dot — reads as the header above the themed cards -->
 		<div class="life-slot">
 			<section v-reveal class="life-card reveal-block">
-				<h3 class="life-card__title">ABOUT ME</h3>
+				<h3 class="life-card__title">{{ LIFE_TITLES.aboutMe }}</h3>
 				<p
 					v-for="(line, i) in ABOUT_ME"
 					:key="i"
@@ -18,7 +18,7 @@
 		<div class="life-slot">
 			<section v-reveal class="life-card reveal-block" data-section="dogs">
 				<h3 class="life-card__title">
-					<span class="life-card__dot" aria-hidden="true" />DOGS
+					<span class="life-card__dot" aria-hidden="true" />{{ LIFE_TITLES.dogs }}
 				</h3>
 				<p
 					v-for="(line, i) in DOG_LINES"
@@ -28,33 +28,7 @@
 				>
 					{{ line }}
 				</p>
-				<div class="dogs" @mouseenter="stopTimer" @mouseleave="startTimer">
-					<!-- photo deck: offset cards peek out behind the frame to hint there's more;
-				     photos auto-cycle (paused while hovered), click / tap skips ahead -->
-					<figure v-for="dog in DOGS" :key="dog.name" class="dog">
-						<button
-							type="button"
-							class="dog__stack"
-							:aria-label="`Next photo of ${dog.name}`"
-							@click="skip(dog)"
-						>
-							<img
-								v-for="(photo, i) in dog.photos"
-								:key="photo"
-								:src="photo"
-								:alt="i === activeIndex(dog) ? `Photo of ${dog.name}` : ''"
-								:aria-hidden="i === activeIndex(dog) ? null : 'true'"
-								class="dog__photo"
-								:class="{ 'is-active': i === activeIndex(dog) }"
-								loading="lazy"
-								decoding="async"
-							/>
-						</button>
-						<figcaption class="dog__name">
-							{{ dog.name }}<span class="dog__years">{{ dog.years }}</span>
-						</figcaption>
-					</figure>
-				</div>
+				<DogDeck />
 			</section>
 		</div>
 
@@ -86,48 +60,9 @@
 </template>
 
 <script setup>
-	import { onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
-	import { DOG_DECK_INTERVAL_MS } from '@/constants/aboutLife'
-	import { ABOUT_ME, DOG_LINES, DOGS, LIFE_SECTIONS } from '@/data/aboutLife'
+	import { ABOUT_ME, DOG_LINES, LIFE_SECTIONS, LIFE_TITLES } from '@/data/aboutLife'
 	import { reveal as vReveal } from '@/directives/reveal'
-
-	// One deck per dog: photos cycle on a shared beat. Hover pauses, click skips and restarts the beat.
-	const activeIndexes = ref({})
-	let deckTimer = null
-	let autoCycles = false
-
-	const activeIndex = dog => activeIndexes.value[dog.name] ?? 0
-
-	function advance(dog) {
-		activeIndexes.value = {
-			...activeIndexes.value,
-			[dog.name]: (activeIndex(dog) + 1) % dog.photos.length,
-		}
-	}
-
-	function startTimer() {
-		stopTimer()
-		if (!autoCycles) return
-		deckTimer = setInterval(() => DOGS.forEach(advance), DOG_DECK_INTERVAL_MS)
-	}
-
-	function stopTimer() {
-		clearInterval(deckTimer)
-	}
-
-	function skip(dog) {
-		advance(dog)
-		startTimer()
-	}
-
-	onMounted(() => {
-		autoCycles = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-		startTimer()
-	})
-
-	onActivated(startTimer)
-	onDeactivated(stopTimer)
-	onBeforeUnmount(stopTimer)
+	import DogDeck from './DogDeck.vue'
 </script>
 
 <style scoped lang="scss">
@@ -139,9 +74,6 @@
 	// turn, or ~152px on a phone, where it turns on a tighter chamfer (ROUTE.crossChamferNarrowPx)
 	$life-gap: 14rem;
 	$life-gap-mobile: 11rem;
-	// offset between the photo-deck cards peeking out behind each dog's frame
-	$stack-step: 6px;
-	// mat between a section image and its void frame
 
 	.life {
 		display: flex;
@@ -279,96 +211,6 @@
 		box-shadow: 0 0 8px 1px rgba($light-blue, 0.55);
 	}
 
-	// the deck spans the text column, so photos and prose share one edge; its top margin is a break
-	.dogs {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1rem;
-		margin-top: 1.6rem;
-	}
-
-	.dog {
-		position: relative;
-		margin: 0;
-	}
-
-	// two offset cards peek out under the frame — the "there's more photos" cue
-	.dog::before,
-	.dog::after {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		aspect-ratio: 1;
-		box-sizing: border-box;
-		background: rgba(0, 0, 0, 0.45);
-		border: $void-border;
-		border-radius: 30px;
-	}
-
-	.dog::before {
-		transform: translate($stack-step, $stack-step);
-	}
-
-	.dog::after {
-		transform: translate($stack-step * 2, $stack-step * 2);
-	}
-
-	// the deck's top card: a void button, lifting off the stack on hover like every other button
-	.dog__stack {
-		position: relative;
-		z-index: 1;
-		display: block;
-		width: 100%;
-		aspect-ratio: 1;
-		box-sizing: border-box;
-		padding: 0;
-		@include void-button($lift: -2px, $bg: rgba(0, 0, 0, 0.45));
-
-		// after the mixin's nested rules, so it needs the wrap to stay a plain declaration
-		& {
-			border-radius: 30px;
-		}
-	}
-
-	// square crops fill the frame edge to edge; only the active frame shows, stepped-crossfaded
-	.dog__photo {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		box-sizing: border-box;
-		object-fit: cover;
-		padding: 0.6rem;
-		opacity: 0;
-		transition: opacity 0.35s steps(5, end);
-		border-radius: 30px;
-	}
-
-	.dog__photo.is-active {
-		opacity: 1;
-	}
-
-	.dog__name {
-		// extra top room clears the deck cards sticking out below the frame
-		margin-top: calc(0.55rem + #{$stack-step * 2});
-		font-family: $font-pixel;
-		font-size: px8(1);
-		text-align: center;
-		color: rgba(255, 255, 255, 0.85);
-		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
-	}
-
-	// the years sit a step under the name, so the closed range and the open one read as a pair
-	.dog__years {
-		display: block;
-		margin-top: 0.3rem;
-		font-family: $font-terminal;
-		font-size: $type-prose-sm;
-		color: $text-caption;
-	}
-
 	// every card rises into place on the same beat
 	.reveal-block {
 		opacity: 0;
@@ -403,11 +245,6 @@
 		// where softness shows least and legibility matters most.
 		.life-card__line {
 			font-size: $type-prose-md;
-		}
-
-		.dogs {
-			grid-template-columns: 1fr;
-			gap: 1.25rem;
 		}
 
 		// too narrow to wrap text beside it — drop the float and centre the art
@@ -446,11 +283,6 @@
 			opacity: 1;
 			transform: none;
 			animation: none;
-		}
-
-		// photo swaps become instant cuts
-		.dog__photo {
-			transition: none;
 		}
 	}
 </style>
