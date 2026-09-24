@@ -30,11 +30,11 @@ Non-negotiables:
 | Layer | Tool |
 |---|---|
 | Framework | Vue 3 (Composition API, `<script setup>`) |
-| Build | Vite 6 |
+| Build | Vite 8 (Rolldown, default minifier) |
 | Routing | Vue Router 4 |
-| Backend/DB | Firebase 11 |
+| Backend/DB | Firebase 12 (`firestore/lite`) |
 | CSS | SCSS — custom "void" system: tokens in `_variables.scss`, `void-panel`/`void-button` mixins (pixel / retro aesthetic) |
-| Linting | ESLint 8 (babel-parser, vue plugin, unused-imports) |
+| Linting | ESLint 10, flat config in `eslint.config.js` (vue plugin, unused-imports, prettier) |
 | Formatting | Prettier 3 |
 | Deploy | CI (`peaceiris/actions-gh-pages`) → `gh-pages` branch; `npm run deploy` is the manual fallback |
 
@@ -88,6 +88,7 @@ src/
 - Composables in `src/composables/`, prefixed with `use` (e.g. `useWindowListener.js`).
 - Constants in `src/constants/` — no magic strings or numbers anywhere else.
 - SCSS: scoped per component (`<style scoped lang="scss">`). Global tokens in `src/styles/_variables.scss` (auto-injected into every component style block via Vite `additionalData` — no import needed).
+- Colours the canvas art also draws come from `PALETTE` (`src/constants/palette.js`): SCSS reads it with `@use 'palette:' as palette` (a Sass importer in `vite.config.js`), JS with `paletteRgb` / `paletteHex`. Never copy a palette hex.
 - Panels and buttons use the shared `void-panel` / `void-button` mixins from `src/styles/_mixins.scss` — never hand-roll borders or button chrome.
 - No static inline styles. Values that change per frame (scroll, pointer, progress) bind through `:style`, preferably as CSS custom properties.
 - Views are kept alive (`KEPT_ALIVE_VIEWS` in `App.vue`): window listeners go through `useWindowListener` so a parked view stops reacting.
