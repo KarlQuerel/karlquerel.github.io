@@ -1,23 +1,7 @@
 <template>
-	<component
-		:is="tag"
-		class="page-heading"
-		:class="{ 'page-heading--flanked': $slots.left || $slots.right }"
-	>
-		<span v-if="$slots.left" class="page-heading__slot page-heading__slot--left">
-			<slot name="left" />
-		</span>
-		<span class="page-heading__text">
-			<!-- optional first line stacks above without a <br> -->
-			<span v-if="line1" class="page-heading__line">{{ line1 }}</span
-			><span class="page-heading__line"
-				><!-- `lead` carries its own trailing space; between-tag whitespace is stripped
-				-->{{ lead }}<span class="page-heading__accent">{{ accent }}</span></span
-			>
-		</span>
-		<span v-if="$slots.right" class="page-heading__slot page-heading__slot--right">
-			<slot name="right" />
-		</span>
+	<component :is="tag" class="page-heading">
+		<!-- `lead` carries its own trailing space; between-tag whitespace is stripped
+		-->{{ lead }}<span class="page-heading__accent">{{ accent }}</span>
 	</component>
 </template>
 
@@ -29,8 +13,6 @@
 		lead: { type: String, required: true },
 		// final word, rendered in yellow
 		accent: { type: String, required: true },
-		// optional line above the lead (the About hub greeting uses it)
-		line1: { type: String, default: '' },
 	})
 </script>
 
@@ -55,25 +37,6 @@
 		.page-heading {
 			font-size: $heading-pixel-size-lg;
 		}
-	}
-
-	// icon-flanked variant: title holds the centre column, sprites sit either side
-	.page-heading--flanked {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-		align-items: center;
-		column-gap: clamp(0.5rem, 1.5vw, 1rem);
-	}
-
-	.page-heading__slot {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		justify-self: center;
-	}
-
-	.page-heading__line {
-		display: block;
 	}
 
 	.page-heading__accent {
