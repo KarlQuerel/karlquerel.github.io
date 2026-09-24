@@ -57,4 +57,16 @@ export const PALETTE = {
 }
 
 // A palette entry as a CSS colour, for canvas fills and style bindings.
-export const paletteRgb = name => `rgb(${PALETTE[name].join(',')})`
+export const paletteRgb = (name, alpha) =>
+	alpha === undefined
+		? `rgb(${PALETTE[name].join(',')})`
+		: `rgba(${PALETTE[name].join(',')},${alpha})`
+
+export const paletteHex = name =>
+	`#${PALETTE[name].map(c => c.toString(16).padStart(2, '0')).join('')}`
+
+// The palette as Sass variables, served to the stylesheets as `@use 'palette:'`.
+export const paletteScss = () =>
+	Object.entries(PALETTE)
+		.map(([name, [r, g, b]]) => `$${name}: rgb(${r}, ${g}, ${b});`)
+		.join('\n')
