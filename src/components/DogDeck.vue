@@ -1,14 +1,7 @@
 <template>
 	<!-- photo deck: offset cards peek out behind each frame to hint there's more; photos
-	     auto-cycle while the deck is on screen and nobody is pointing or tabbed into it -->
-	<div
-		ref="deckEl"
-		class="dogs"
-		@pointerenter="onPointer($event, true)"
-		@pointerleave="onPointer($event, false)"
-		@focusin="onFocusIn"
-		@focusout="onFocusOut"
-	>
+	     auto-cycle while the deck is on screen and nobody is tabbed into it -->
+	<div ref="deckEl" class="dogs" @focusin="onFocusIn" @focusout="onFocusOut">
 		<figure v-for="dog in DOGS" :key="dog.name" class="dog">
 			<button
 				type="button"
@@ -48,7 +41,6 @@
 
 	// Every reason the beat holds; it runs only while none of them does.
 	const holds = {
-		hover: false,
 		focus: false,
 		offscreen: true,
 		hidden: document.visibilityState !== 'visible',
@@ -77,8 +69,6 @@
 		restart()
 	}
 
-	// a tap is no hover: touch pointers never leave, so they would hold the beat for good
-	const onPointer = (event, on) => event.pointerType === 'mouse' && hold('hover', on)
 	// keyboard focus only: a click also focuses the button, and must not freeze the beat
 	const onFocusIn = event => hold('focus', event.target.matches(':focus-visible'))
 	// tabbing between the two decks' buttons stays inside
