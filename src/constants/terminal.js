@@ -10,6 +10,8 @@ export const PROMPT = {
 
 export const WINDOW_TITLE = `${PROMPT.user}@${PROMPT.host}`
 
+export const PAGE_HEADING = 'Terminal'
+
 // Phosphor themes the `theme` command switches between; `color` maps to the --phosphor variable.
 export const THEMES = {
 	green: '#33ff66',
@@ -28,6 +30,82 @@ export const THEME_STORAGE_KEY = 'terminal.theme'
 
 // ASCII spinner cycled in place while a script "runs". Monospace, so the glyph spins in one cell.
 export const SPINNER_FRAMES = ['|', '/', '-', '\\']
+export const SPINNER_FRAME_MS = 80
+export const SCRIPT_SPIN_MS = 1500
+export const SECRET_GAME_SPIN_MS = 3200
+
+export const TYPEWRITER_CURSOR = '_'
+
+export const WELCOME_MESSAGE =
+	'Type <span class="text-yellow">help</span> for available commands or just type anything.'
+
+// Screen-reader transcript cap: older lines drop off once they have been announced.
+export const LIVE_REGION_LIMIT = 50
+
+export const EXIT_DELAY_MS = 600
+export const SECRET_GAME_URL = 'https://scratch.mit.edu/projects/656157225/'
+
+export const GEOLOCATION_TIMEOUT_MS = 10000
+export const REVERSE_GEOCODE_URL = 'https://api.bigdatacloud.net/data/reverse-geocode-client'
+
+// Largest edit distance still offered as "Did you mean".
+export const SUGGESTION_MAX_DISTANCE = 2
+
+export const POPULAR_COMMANDS_LIMIT = 5
+
+// Column widths for the printf-style rows (stats, history, wc).
+export const STATS_COMMAND_WIDTH = 11
+export const HISTORY_INDEX_WIDTH = 3
+export const WC_COUNT_WIDTH = 4
+export const WC_CHARS_WIDTH = 5
+export const HEAD_DEFAULT_LINES = 10
+
+// Names typed without `./` that still count as real commands in the usage stats.
+export const TRACKED_FILES = ['why_i_left_finance.txt']
+
+export const CONTACT_LINKS = [
+	{
+		prefix: '• Email       - ',
+		link: 'mailto:karlquerel@gmail.com',
+		linkText: 'karlquerel@gmail.com',
+	},
+	{
+		prefix: '• GitHub      - ',
+		link: 'https://github.com/KarlQuerel',
+		linkText: 'github.com/KarlQuerel',
+	},
+	{
+		prefix: '• LinkedIn    - ',
+		link: 'https://linkedin.com/in/karlquerel',
+		linkText: 'linkedin.com/in/karlquerel',
+	},
+]
+
+// Unknown-command quips; `typed` arrives already escaped for the html:true row.
+export const UNKNOWN_COMMAND_QUIPS = [
+	typed =>
+		`I do not know "<span class="text-red">${typed}</span>", did you try asking <span class="text-blue">ChatGPT</span>?`,
+	typed =>
+		`Premium command "<span class="text-red">${typed}</span>" requires a <span class="text-red">blood sacrifice</span> or valid <span class="text-yellow">credit card</span>.`,
+	typed =>
+		`"<span class="text-red">${typed}</span>" triggered my <span class="text-blue">imposter syndrome</span>.`,
+	typed =>
+		`I'm <span class="text-green">92%</span> sure "<span class="text-red">${typed}</span>" was <span class="text-purple">made up</span>.`,
+	typed =>
+		`"<span class="text-red">${typed}</span>" is above my <span class="text-yellow">pay grade</span>.`,
+	typed =>
+		`I could try to run "<span class="text-red">${typed}</span>", but then we'd both be disappointed.`,
+]
+
+// `matrix` digital rain.
+export const MATRIX_FONT_SIZE = 14
+export const MATRIX_GLYPHS = 'アイウエオカキクケコサシスセソ0123456789ABCDEFZ'.split('')
+// Translucent wash per frame: what leaves the fading trail behind each glyph.
+export const MATRIX_TRAIL_FILL = 'rgba(0, 0, 0, 0.08)'
+// Chance per frame that a column past the bottom stays put instead of restarting.
+export const MATRIX_RESTART_HOLD = 0.975
+export const MATRIX_STILL_TEXT = 'wake up...'
+export const MATRIX_STILL_POSITION = [20, 30]
 
 // neofetch-style readout. Pure flavour; values are static on purpose.
 export const SYSTEM_INFO = [
