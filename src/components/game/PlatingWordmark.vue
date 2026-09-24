@@ -50,7 +50,8 @@
 		const [cx, cy] = plates.centres[rank]
 		for (let i = 0; i < P.sparks; i++) {
 			const a = hash1(rank * 7 + i, P.seed) * Math.PI * 2
-			const r = 2 + hash1(rank * 7 + i + 3, P.seed) * 4
+			const [near, far] = P.sparkReach
+			const r = near + hash1(rank * 7 + i + 3, P.seed) * (far - near)
 			state.sparks.push([Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r)])
 			sparkLife.push(step + P.sparkSteps)
 		}
