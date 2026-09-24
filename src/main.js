@@ -34,7 +34,7 @@ const routes = [
 		meta: { title: 'Sport' },
 	},
 	{
-		// the game's holding screen: a moon worksite, until the game ships
+		// the game's holding screen, until the game ships
 		path: '/under-construction',
 		component: () => import('./components/game/GameHolding.vue'),
 		meta: { title: 'Under Construction' },
