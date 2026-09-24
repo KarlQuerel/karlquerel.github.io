@@ -16,7 +16,7 @@
 					:key="i"
 					class="route__draw"
 					:d="sub.d"
-					:stroke-dasharray="`${reveal(sub).toFixed(1)} ${(sub.len + 10).toFixed(1)}`"
+					:stroke-dasharray="`${reveal(sub).toFixed(1)} ${(sub.len + ROUTE.dashTailPx).toFixed(1)}`"
 				/>
 			</mask>
 		</defs>
@@ -53,11 +53,13 @@
 </template>
 
 <script setup>
-	import { computed, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
+	import { computed, ref } from 'vue'
 	import { JOURNEY, ROUTE } from '@/constants/journey'
 	import { MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
-	import { smoothstep } from '@/js/math'
+	import { useWindowListener } from '@/composables/useWindowListener'
+	import { clamp, smoothstep } from '@/js/math'
+	import { flyCorners, walkRoute } from '@/js/routeGeometry'
 
 	const props = defineProps({
 		// The camera sampled at an arbitrary scroll (HomeJourney owns the track).
@@ -99,9 +101,8 @@
 
 	// how much of one subpath the flown length reaches
 	const reveal = sub => clamp(flownLen.value - sub.start, 0, sub.len)
-	const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
 
-	// painted segments in order with cumulative length; a tip inside a gap parks at the previous end
+	// painted segments in order with cumulative length
 	let segs = []
 	let total = 1
 	let span = [0, 1]
@@ -114,18 +115,30 @@
 		return w / 2 + (cam.x / 100) * window.innerWidth
 	}
 
-	// The geometry is measured, not authored, and rebuilt on reshape.
-	function measure() {
-		const track = document.querySelector('.journey')
+	// The heading only matters when the rail would actually cross its letters.
+	function clearsHeading(workHead, xS, w) {
+		const headText = workHead.querySelector('.page-heading')
+		if (!headText) return false
+		const hs = getComputedStyle(headText)
+		const size = parseFloat(hs.fontSize) || 0
+		const tracking = parseFloat(hs.letterSpacing) || 0
+		const chars = headText.textContent.trim().length
+		const glyphHalf = (chars * (size + tracking) - tracking) / 2
+		return Math.abs(xS - w / 2) > glyphHalf + ROUTE.headClearPx
+	}
+
+	// The geometry is measured, not authored: HomeJourney calls this once its camera is measured.
+	function measure(track) {
 		const work = track?.querySelector('#work')
 		const workHead = track?.querySelector('#work .journey__station-head')
 		const ztl = track?.querySelector('#work .ztl')
-		const lifeSlot = track?.querySelector('#life .life-slot')
+		const lifeSlots = [...(track?.querySelectorAll('#life .life-slot') ?? [])]
 		const arrival = track?.querySelector('.journey__arrival')
-		if (!track || !work || !workHead || !ztl || !lifeSlot || !arrival) return
+		if (!track || !work || !workHead || !ztl || !lifeSlots.length || !arrival) return
 
 		vh = window.innerHeight
-		const trackTop = track.getBoundingClientRect().top + window.scrollY
+		const trackRect = track.getBoundingClientRect()
+		const trackTop = trackRect.top + window.scrollY
 		const box = el => {
 			const r = el.getBoundingClientRect()
 			return {
@@ -134,15 +147,17 @@
 				left: r.left,
 			}
 		}
-		const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+		const rem =
+			parseFloat(getComputedStyle(document.documentElement).fontSize) || ROUTE.remFallbackPx
 		const railCenter =
-			(parseFloat(getComputedStyle(ztl).getPropertyValue('--rail-center')) || 2) * rem
+			(parseFloat(getComputedStyle(ztl).getPropertyValue('--rail-center')) ||
+				ROUTE.railCenterRem) * rem
 
 		const w = track.clientWidth
 		const h = track.offsetHeight
 		const xMid = Math.round(w / 2)
 		const ztlBox = box(ztl)
-		const xS = Math.round(ztlBox.left - track.getBoundingClientRect().left + railCenter)
+		const xS = Math.round(ztlBox.left - trackRect.left + railCenter)
 		const m = ROUTE.headMarginPx
 
 		// Where the line begins: a fixed stretch above WORK, entering on one 45 sized to the heading's room.
@@ -152,35 +167,23 @@
 		const runIn = Math.max(0, Math.min(Math.abs(xMid - xS), dock1 - m - yG))
 		const xG = xS + runIn
 		const resume1 = Math.round(headBox.bottom + m)
-		// The heading only matters when the rail would actually cross its letters.
-		const headText = workHead.querySelector('.page-heading')
-		let headClear = false
-		if (headText) {
-			const hs = getComputedStyle(headText)
-			const size = parseFloat(hs.fontSize) || 0
-			const tracking = parseFloat(hs.letterSpacing) || 0
-			const chars = headText.textContent.trim().length
-			const glyphHalf = (chars * (size + tracking) - tracking) / 2
-			headClear = Math.abs(xS - w / 2) > glyphHalf + 24
-		}
+		const headClear = clearsHeading(workHead, xS, w)
 		// LIFE reads in a wider column, so its stretch runs in the left gutter, clear of the prose.
-		const lifeSlots = [...track.querySelectorAll('#life .life-slot')]
 		let xL = Math.max(
-			20,
-			Math.round(box(lifeSlot).left - track.getBoundingClientRect().left - ROUTE.gutterPx)
+			ROUTE.laneMinPx,
+			Math.round(box(lifeSlots[0]).left - trackRect.left - ROUTE.gutterPx)
 		)
 		// A lane change shorter than its own two corners is a wobble, not a jog, so the line stays in lane.
 		if (Math.abs(xS - xL) < ROUTE.turnPx * 2) xL = xS
 		const dxL = Math.abs(xS - xL)
-		const yJ3 = Math.round(ztlBox.bottom + 60)
+		const yJ3 = Math.round(ztlBox.bottom + ROUTE.exitDropPx)
 		const arrivalBox = box(arrival)
 		const runway = arrivalBox.bottom - arrivalBox.top - vh
 		orbit = [arrivalBox.top, runway]
-		const yEnd = Math.round(arrivalBox.top + vh * 0.5 + runway * ROUTE.endRunFrac)
+		const yEnd = Math.round(arrivalBox.top + vh * ROUTE.endAtVh + runway * ROUTE.endRunFrac)
 
 		// The zigzag: a flank beside each life chapter, crossing in the gap on a hexagonal jog.
-		// The far flank mirrors the near one, except on a phone: there the column spans the frame,
-		// so the mirror would land inside the copy and it runs off the frame's edge instead.
+		// On a phone the column spans the frame, so the far flank runs off the frame's edge instead.
 		const narrow = window.matchMedia(MOBILE_VIEWPORT_QUERY).matches
 		const xR = narrow ? w - ROUTE.edgeLanePx : w - xL
 		const pad = narrow ? ROUTE.crossPadNarrowPx : ROUTE.crossPadPx
@@ -198,11 +201,11 @@
 				narrow ? ROUTE.crossChamferNarrowPx : ROUTE.crossChamferPx,
 				Math.floor((Math.abs(target - lane) - ROUTE.crossMinRunPx) / 2)
 			)
-			if (cham < 24 || gapBot - gapTop < cham * 2) continue
+			if (cham < ROUTE.chamferMinPx || gapBot - gapTop < cham * 2) continue
 			const yJog = Math.round((gapTop + gapBot) / 2)
 			const jog = lane < target ? cham : -cham
 			// crisp like a hexagon's vertex, just eased off the raw point
-			const rc = Math.round(cham / 4)
+			const rc = Math.round(cham * ROUTE.jogRoundShare)
 			weave.push(
 				[lane, yJog - cham, rc],
 				[lane + jog, yJog, rc],
@@ -241,137 +244,32 @@
 					]
 				: [[xS, yG]]
 		// A heading the rail would cross is no longer skirted: the stranded run read as the line breaking off.
-		const subpaths = headClear ? [[...head, ...trunk]] : [[[xS, resume1], ...trunk]]
+		const start = headClear ? [xG, yG] : [xS, resume1]
+		const subpaths = headClear ? [[...head, ...trunk]] : [[start, ...trunk]]
 
-		segs = []
-		total = 0
-		const subs = []
-		// Corners are flown: each interior vertex becomes a small arc entered turnPx short of the corner.
-		const quadAt = (a, c, b, t) => {
-			const u = 1 - t
-			return [
-				u * u * a[0] + 2 * u * t * c[0] + t * t * b[0],
-				u * u * a[1] + 2 * u * t * c[1] + t * t * b[1],
-			]
-		}
-		const pushSeg = (x1, y1, x2, y2, len) => {
-			if (len < 0.5) return
-			segs.push({ x1, y1, x2, y2, len, cum: total, ya: y1, yb: y2 })
-			total += len
-		}
-		for (const pts of subpaths) {
-			const start = total
-			let d = `M${pts[0][0]} ${pts[0][1]}`
-			let cur = pts[0]
-			for (let i = 1; i < pts.length; i++) {
-				const corner = pts[i]
-				const inLen = Math.hypot(corner[0] - cur[0], corner[1] - cur[1])
-				const next = i < pts.length - 1 ? pts[i + 1] : null
-				const outLen = next ? Math.hypot(next[0] - corner[0], next[1] - corner[1]) : 0
-				// a vertex may carry its own radius; the crossings ask for a wider one
-				const turn = corner[2] ?? ROUTE.turnPx
-				const t = next ? Math.min(turn, inLen * 0.45, outLen * 0.45) : 0
-				if (!next || t < 2) {
-					d += ` L${corner[0]} ${corner[1]}`
-					pushSeg(cur[0], cur[1], corner[0], corner[1], inLen)
-					cur = corner
-					continue
-				}
-				const ax = corner[0] - ((corner[0] - cur[0]) / inLen) * t
-				const ay = corner[1] - ((corner[1] - cur[1]) / inLen) * t
-				const bx = corner[0] + ((next[0] - corner[0]) / outLen) * t
-				const by = corner[1] + ((next[1] - corner[1]) / outLen) * t
-				d += ` L${ax} ${ay} Q${corner[0]} ${corner[1]} ${bx} ${by}`
-				pushSeg(cur[0], cur[1], ax, ay, Math.hypot(ax - cur[0], ay - cur[1]))
-				// steps in proportion to the arc: a tight corner is still one chord
-				const steps = clamp(Math.round(t / 6), 1, ROUTE.curveSteps)
-				let prev = [ax, ay]
-				for (let k = 1; k <= steps; k++) {
-					const q = quadAt([ax, ay], corner, [bx, by], k / steps)
-					pushSeg(
-						prev[0],
-						prev[1],
-						q[0],
-						q[1],
-						Math.hypot(q[0] - prev[0], q[1] - prev[1])
-					)
-					prev = q
-				}
-				cur = [bx, by]
-			}
-			subs.push({ d, start, len: total - start })
-		}
-		// The tip crosses a turn at constant path speed: a turn group's y-extent is dealt out by arc length.
-		let gi = 0
-		while (gi < segs.length) {
-			if (segs[gi].y2 - segs[gi].y1 >= segs[gi].len * 0.92) {
-				gi++
-				continue
-			}
-			let gj = gi
-			let dy = 0
-			let len = 0
-			while (gj < segs.length && segs[gj].y2 - segs[gj].y1 < segs[gj].len * 0.92) {
-				dy += segs[gj].y2 - segs[gj].y1
-				len += segs[gj].len
-				gj++
-			}
-			let y = segs[gi].y1
-			for (let k = gi; k < gj; k++) {
-				segs[k].ya = y
-				y += (dy * segs[k].len) / len
-				segs[k].yb = y
-			}
-			gi = gj
-		}
-		span = [headClear ? yG : resume1, yEnd]
+		const flown = flyCorners(subpaths)
+		segs = flown.segs
+		total = flown.total
+		span = [start[1], yEnd]
 
 		geo.value = {
 			w,
 			h,
-			subs,
-			d: subs.map(sub => sub.d).join(' '),
+			subs: flown.subs,
+			d: flown.subs.map(sub => sub.d).join(' '),
 			// The gate and the entry point carry the waypoint glyph, lit when the flown stretch reaches them.
-			nodes: headClear
-				? [
-						[xG, yG],
-						[xAim, yEnd],
-					]
-				: [
-						[xS, resume1],
-						[xAim, yEnd],
-					],
+			nodes: [start, [xAim, yEnd]],
 		}
 		update()
 	}
 
-	// flown fraction, tip position and heading for this scroll — a walk over segments monotone in y
+	// flown fraction, tip position, heading and fade for this scroll
 	function update() {
 		if (!segs.length) return
 		const yT = window.scrollY + vh * ROUTE.tipFrac
-		let fr = total
-		let pos = [segs.at(-1).x2, segs.at(-1).y2]
-		// the segment under the tip, or the last it cleared, so a parked dart keeps its docked heading
-		let on = segs.at(-1)
-		for (const s of segs) {
-			if (yT >= s.yb) {
-				pos = [s.x2, s.y2]
-				on = s
-				continue
-			}
-			if (yT <= s.ya) {
-				fr = s.cum
-				break
-			}
-			const t = (yT - s.ya) / (s.yb - s.ya)
-			fr = s.cum + t * s.len
-			pos = [s.x1 + (s.x2 - s.x1) * t, s.y1 + (s.y2 - s.y1) * t]
-			on = s
-			break
-		}
+		const { flown, pos, on } = walkRoute(segs, total, yT)
 		heading.value = +((Math.atan2(on.y2 - on.y1, on.x2 - on.x1) * 180) / Math.PI).toFixed(1)
-		if (yT >= segs.at(-1).yb) fr = total
-		flownLen.value = fr
+		flownLen.value = flown
 		const orbited = smoothstep(
 			clamp(
 				(window.scrollY - orbit[0]) / orbit[1] - ROUTE.orbitOutAt,
@@ -383,42 +281,9 @@
 		tip.value = yT >= span[0] && yT <= span[1] ? [pos[0].toFixed(1), pos[1].toFixed(1)] : null
 	}
 
-	const onScroll = useRafThrottle(update)
-	const onResize = useRafThrottle(measure)
-	let watcher = null
+	useWindowListener('scroll', useRafThrottle(update))
 
-	function listen() {
-		window.addEventListener('scroll', onScroll, { passive: true })
-		window.addEventListener('resize', onResize, { passive: true })
-	}
-
-	function unlisten() {
-		window.removeEventListener('scroll', onScroll)
-		window.removeEventListener('resize', onResize)
-	}
-
-	onMounted(() => {
-		measure()
-		listen()
-		// content shifting under us (fonts, images, reveals) re-cuts the line
-		if (typeof ResizeObserver !== 'undefined') {
-			watcher = new ResizeObserver(onResize)
-			const track = document.querySelector('.journey')
-			if (track) watcher.observe(track)
-		}
-	})
-
-	// the page is kept alive across navigation; coming back, the layout may differ
-	onActivated(() => {
-		listen()
-		measure()
-	})
-	onDeactivated(unlisten)
-
-	onBeforeUnmount(() => {
-		unlisten()
-		watcher?.disconnect()
-	})
+	defineExpose({ measure })
 </script>
 
 <style scoped lang="scss">
