@@ -14,6 +14,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { preview } from 'vite'
+import { GAME_SHIPPED } from '../src/constants/game.js'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DIST = join(ROOT, 'dist')
@@ -69,8 +70,7 @@ const ROUTES = [
 const REDIRECTS = [
 	{ dir: 'about', to: '/#work' },
 	{ dir: 'contact', to: '/#contact' },
-	// the game, until it ships (src/constants/game.js)
-	{ dir: 'game', to: '/under-construction' },
+	...(GAME_SHIPPED ? [] : [{ dir: 'game', to: '/under-construction' }]),
 ]
 
 // Swap a single-tag element matched by `pattern` for `replacement`, tolerating the
