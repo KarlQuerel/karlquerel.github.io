@@ -201,6 +201,8 @@
 </script>
 
 <style scoped lang="scss">
+	@use '@/styles/mixins' as *;
+
 	.title {
 		position: relative;
 	}
@@ -251,8 +253,7 @@
 		position: absolute;
 		top: 0;
 		left: 0;
-		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
-			calc(var(--my, 0) * var(--depth, 0) * 1px);
+		@include lean;
 		image-rendering: pixelated;
 	}
 
