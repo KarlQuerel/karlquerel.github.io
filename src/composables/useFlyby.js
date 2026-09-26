@@ -75,6 +75,7 @@ export function useFlyby(canvasRef) {
 				if (passes?.title !== title || gl.isContextLost()) return
 				title.upload()
 				drawn = -1
+				wakeLoop()
 			})
 			.catch(() => {})
 	}
@@ -116,7 +117,14 @@ export function useFlyby(canvasRef) {
 		arrive.value = clamp01((p - ARRIVE_FROM) / ARRIVE_SPAN)
 	}
 
-	const { supported, booting, bootProgress, bootCeiling, grid } = useArtCanvas(canvasRef, {
+	const {
+		supported,
+		booting,
+		bootProgress,
+		bootCeiling,
+		grid,
+		wake: wakeLoop,
+	} = useArtCanvas(canvasRef, {
 		bootWeights: BOOT_WEIGHTS,
 		build,
 		frame,
@@ -130,12 +138,15 @@ export function useFlyby(canvasRef) {
 		},
 	})
 
+	// the loop parks once the flight has settled, so every input that can move the camera wakes it
+	useWindowListener('scroll', wakeLoop)
 	// Pointer look, mouse only: a touch drag is a scroll, and reading it as a look would fight it.
 	if (!still)
 		useWindowListener('pointermove', e => {
 			if (e.pointerType !== 'mouse') return
 			look.tx = (e.clientX / window.innerWidth) * 2 - 1
 			look.ty = (e.clientY / window.innerHeight) * 2 - 1
+			wakeLoop()
 		})
 
 	return { supported, booting, bootProgress, bootCeiling, leg, wake, hint, arrive, markOn }
