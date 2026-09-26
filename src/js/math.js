@@ -10,6 +10,9 @@ export const randIn = ([lo, hi]) => lo + Math.random() * (hi - lo)
 // a whole roll inside a [lo, hi] range, both ends included
 export const randInt = ([lo, hi]) => lo + Math.floor(Math.random() * (hi - lo + 1))
 
+// 0 at `from`, 1 at `to`, clamped: the window every scroll-driven beat opens and closes on.
+export const ramp = (v, from, to) => clamp01((v - from) / (to - from))
+
 // Hermite ease between 0 and 1 — the one easing curve used for scrubbed motion.
 export const smoothstep = t => t * t * (3 - 2 * t)
 
