@@ -1,0 +1,1 @@
+import{B as e,L as t,M as n,T as r,_ as i,p as a,t as o}from"./vendor-K8ZsFzOL.js";import{c as s}from"./index-DEwg1lBZ.js";import{n as c}from"./navigation-DzP3cGIa.js";var l=s({__name:`HomeChip`,setup(s){return(s,l)=>(r(),a(t(o),{class:`home-chip`,to:t(c).to},{default:n(()=>[i(e(t(c).label),1)]),_:1},8,[`to`]))}},[[`__scopeId`,`data-v-8cfccae3`]]);export{l as t};

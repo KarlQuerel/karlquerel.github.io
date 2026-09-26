@@ -1,0 +1,1 @@
+import{T as e,h as t,v as n}from"./vendor-K8ZsFzOL.js";import{t as r}from"./HomeChip-DLyT6gPm.js";var i={class:`content`},a={__name:`GamePage`,setup(a){return(a,o)=>(e(),t(`div`,i,[n(r)]))}};export{a as default};
