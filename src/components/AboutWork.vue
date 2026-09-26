@@ -5,7 +5,7 @@
 			:key="item.from + item.title"
 			v-reveal
 			class="ztl-item"
-			:class="{ 'is-current': item.current }"
+			:data-current="item.current || null"
 		>
 			<p v-if="item.chapter" class="ztl-chapter">{{ item.chapter }}</p>
 			<div class="ztl-row">
@@ -259,7 +259,7 @@
 		}
 
 		// the current post already wears the yellow; hovering it just turns it up
-		.is-current .ztl-row:hover .ztl-badge {
+		[data-current] .ztl-row:hover .ztl-badge {
 			@include node-lit($yellow);
 		}
 
@@ -278,7 +278,7 @@
 		gap: $row-gap;
 		padding: 0.75rem 1rem;
 		text-align: left;
-		// the same borderless dark wash the LIFE cards carry
+		// a borderless dark wash, so the card reads over the world without a frame
 		background: rgba(0, 0, 0, 0.3);
 		border-radius: 30px;
 	}
@@ -377,7 +377,7 @@
 		text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
 	}
 
-	.is-current .ztl-badge {
+	[data-current] .ztl-badge {
 		border: 2px solid;
 		background:
 			linear-gradient(0deg, rgba($yellow, 0.16), rgba($yellow, 0.16)), rgba(0, 0, 0, 0.6);
@@ -385,17 +385,17 @@
 		@include node-lit($yellow, 0.45);
 	}
 
-	.is-current .ztl-title {
+	[data-current] .ztl-title {
 		color: $yellow;
 	}
 
 	// the "Now" tick hangs where the stamp sits, so the stamp climbs the shoulder to clear it
-	.is-current .ztl-flag {
+	[data-current] .ztl-flag {
 		right: -0.55rem;
 		bottom: 0.3rem;
 	}
 
-	.is-current .ztl-tick {
+	[data-current] .ztl-tick {
 		color: $yellow;
 	}
 
