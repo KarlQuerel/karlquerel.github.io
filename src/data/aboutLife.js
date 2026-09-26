@@ -81,6 +81,9 @@ export const LIFE_SECTIONS = [
 			// a GIF can't be paused from CSS, so reduced motion gets the first frame
 			still: '/assets/about/ps1-still.png',
 			alt: 'Pixel-art CRT television wired to a PlayStation 1',
+			// the file's own pixels, so the box is laid out before the lazy load lands
+			width: 640,
+			height: 705,
 			beforeLine: 1,
 		},
 		lines: [
