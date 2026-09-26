@@ -8,8 +8,8 @@
     "serve": "vite preview",
     "test": "playwright test",
     "deploy": "npm run build && gh-pages -d dist",
-    "format": "prettier --write \"src/**/*.{js,vue,css,scss}\" --config .prettierrc && npm run lint:fix && npm run lint:check",
-    "format:check": "prettier --check \"src/**/*.{js,vue,css,scss}\" --config .prettierrc",
+    "format": "prettier --write \"{src,scripts,tests}/**/*.{js,mjs,vue,css,scss}\" \"*.config.js\" --config .prettierrc && npm run lint:fix && npm run lint:check",
+    "format:check": "prettier --check \"{src,scripts,tests}/**/*.{js,mjs,vue,css,scss}\" \"*.config.js\" --config .prettierrc",
     "lint": "eslint . --cache",
     "lint:fix": "eslint . --cache --fix",
     "lint:check": "eslint . --cache --max-warnings 0",
@@ -47,7 +47,6 @@
   },
   "dependencies": {
     "firebase": "^12.19.0",
-    "typeit": "^8.7.1",
     "vue": "^3.5.13",
     "vue-router": "^4.5.1"
   }
