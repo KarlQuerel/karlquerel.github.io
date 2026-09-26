@@ -2,7 +2,7 @@
 // here, so the constants hold nothing but the letter shapes.
 
 import { paletteRgb } from '@/constants/palette'
-import { clamp01 } from './math.js'
+import { ramp } from './math.js'
 import { ditherThreshold, hash1, hash2 } from './pixelNoise.js'
 
 const NEIGHBOURS = [-1, 0, 1]
@@ -70,7 +70,7 @@ export function layoutWordmark(mark) {
 			for (let cx = bx; cx < bx + w; cx++) {
 				if (roles[cy][cx] !== 'face') continue
 				const t = (cx - bx + cy - by) / (w + h)
-				const fall = clamp01((t - mark.shade.from) / (mark.shade.to - mark.shade.from))
+				const fall = ramp(t, mark.shade.from, mark.shade.to)
 				if (ditherThreshold(cx, cy) < fall) roles[cy][cx] = 'shade'
 			}
 		const i = mark.rivet.inset
