@@ -1,30 +1,64 @@
-import TypeIt from 'typeit'
 import { ref, nextTick, watch } from 'vue'
 import { prefersReducedMotion } from '../usePrefersReducedMotion.js'
-import { LIVE_REGION_LIMIT, TYPEWRITER_CURSOR, WELCOME_MESSAGE } from '@/constants/terminal'
+import {
+	LIVE_REGION_LIMIT,
+	TYPEWRITER_CPS,
+	TYPEWRITER_CURSOR,
+	WELCOME_MESSAGE,
+} from '@/constants/terminal'
 import { isTyped } from './terminalText'
 
-// Uniform (non-randomised) typing: fastest, and reads as stepped/8-bit.
-const TYPEIT_OPTIONS = { speed: 0, startDelay: 0, lifelike: false, cursorChar: TYPEWRITER_CURSOR }
+// Parsed detached so entities decode and tags keep their classes; plain text never hits the parser.
+const parseContent = (content, html) => {
+	const template = document.createElement('template')
+	if (html) template.innerHTML = content
+	else template.content.append(content)
+	return template.content
+}
 
-// Text unless the line opts into html; reduced motion prints it instantly.
+const textNodesOf = fragment => {
+	const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT)
+	const nodes = []
+	for (let node = walker.nextNode(); node; node = walker.nextNode()) nodes.push(node)
+	return nodes
+}
+
+// Mounts the markup at once with its text emptied, then refills the text nodes character by
+// character at TYPEWRITER_CPS from elapsed time, so the pace holds at any frame rate.
 const typeInto = (el, content, html) =>
 	new Promise(resolve => {
+		const fragment = parseContent(content, html)
 		if (prefersReducedMotion()) {
-			if (html) el.innerHTML = content
-			else el.textContent = content
+			el.replaceChildren(fragment)
 			resolve()
 			return
 		}
-		new TypeIt(el, {
-			...TYPEIT_OPTIONS,
-			html,
-			strings: [content],
-			afterComplete: instance => {
-				instance.destroy()
-				resolve()
-			},
-		}).go()
+		const slots = textNodesOf(fragment).map(node => ({ node, text: node.data }))
+		const total = slots.reduce((sum, slot) => sum + slot.text.length, 0)
+		for (const slot of slots) slot.node.data = ''
+		const cursor = document.createTextNode(TYPEWRITER_CURSOR)
+		el.replaceChildren(fragment, cursor)
+
+		const start = performance.now()
+		const step = now => {
+			// an unmounted target (clear mid-line) just finishes silently
+			const revealed = el.isConnected
+				? Math.min(total, Math.max(0, Math.floor(((now - start) * TYPEWRITER_CPS) / 1000)))
+				: total
+			let remaining = revealed
+			for (const { node, text } of slots) {
+				const shown = Math.min(text.length, remaining)
+				if (node.data.length !== shown) node.data = text.slice(0, shown)
+				remaining -= shown
+			}
+			if (revealed < total) {
+				requestAnimationFrame(step)
+				return
+			}
+			cursor.remove()
+			resolve()
+		}
+		requestAnimationFrame(step)
 	})
 
 const renderLink = (el, { prefix = '', link, linkText }) => {
