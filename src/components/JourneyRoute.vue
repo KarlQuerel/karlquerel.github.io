@@ -287,17 +287,18 @@
 </script>
 
 <style scoped lang="scss">
+	@use '@/styles/mixins' as *;
+
 	.route {
 		position: absolute;
 		top: 0;
 		left: 0;
-		// The trace: over the fixed stage, under the station bodies at z 1 and the headings at z -1.
+		// The trace: over the fixed stage, under the station heads and bodies at z 1.
 		z-index: 0;
 		pointer-events: none;
 		shape-rendering: crispEdges;
 		// The lean at the station bodies' own depth: any other depth shears the line off the emblems.
-		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
-			calc(var(--my, 0) * var(--depth, 0) * 1px);
+		@include lean;
 	}
 
 	// Only the cursor is lifted, clear of the bodies and the flight but under the rail and chrome.
