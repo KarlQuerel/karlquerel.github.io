@@ -5,7 +5,7 @@
 // runs from there.
 
 import { ENTRY } from '../constants/journey.js'
-import { clamp01 } from './math.js'
+import { ramp } from './math.js'
 import { cellFor } from './ridge.js'
 
 // How far round the circuit the sun is, 0..1 from sunrise, entered at `arriveAt`. The two halves
@@ -39,17 +39,17 @@ export function sunAt(elapsed = 0, frame) {
 	const y = up ? horizon - arc : horizon + arc
 	const top = horizon - rise
 	// night is full at the bottom of the turn, so the whole way down is twilight and none of it a plateau
-	const gone = clamp01((y - nightFrom) / (horizon + rise - nightFrom))
+	const gone = ramp(y, nightFrom, horizon + rise)
 	// The rock and the sky do not lose the sun together. The ranges lose it as the disc goes behind
 	// them, over `groundFrom` to `horizon`; the sky holds its light to midnight, which is what keeps a
 	// sunset worth looking at. On one clock the ranges were still two thirds lit with the disc long
 	// gone, twice as bright as the sky that was by then their only light.
-	const beam = 1 - clamp01((y - groundFrom) / (horizon - groundFrom))
+	const beam = 1 - ramp(y, groundFrom, horizon)
 	return {
 		x: 0.5 + span * u,
 		y,
 		// how far down its arc the disc has come: 0 at the top of the turn, 1 as it meets the skyline
-		low: clamp01((y - top) / (nightFrom - top)),
+		low: ramp(y, top, nightFrom),
 		light: 1 - (1 - floor) * gone,
 		// what is left of the direct sun on the rock: the ranges' own light, their shadows and the
 		// warmth near the disc all go out with it, since an occluded disc throws none of them
