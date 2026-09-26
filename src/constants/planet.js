@@ -112,19 +112,3 @@ export const PLANET = {
 	// Sun glint on open water, masked by cloud cover.
 	oceanGloss: 0.6,
 }
-
-// Palette override for the launch beat's dying Earth: the same ramps in different colours.
-export const EARTH_PALETTE = {
-	deep: [10, 22, 46],
-	brine: [18, 38, 68],
-	tide: [30, 58, 96],
-	shoal: [44, 84, 118],
-	foam: [86, 126, 152],
-	basalt: [28, 38, 34],
-	rust: [44, 58, 44],
-	ochre: [64, 80, 54],
-	clay: [88, 104, 66],
-	amber: [120, 132, 88],
-	sand: [160, 166, 120],
-	haze: [150, 176, 200],
-}
