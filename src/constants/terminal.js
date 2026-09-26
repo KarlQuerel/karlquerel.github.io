@@ -35,6 +35,8 @@ export const SCRIPT_SPIN_MS = 1500
 export const SECRET_GAME_SPIN_MS = 3200
 
 export const TYPEWRITER_CURSOR = '_'
+// Typing pace, chars per second. Matches the old TypeIt speed-0 feel: a line lands in a frame or two.
+export const TYPEWRITER_CPS = 3000
 
 export const WELCOME_MESSAGE =
 	'Type <span class="text-yellow">help</span> for available commands or just type anything.'
