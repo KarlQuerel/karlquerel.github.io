@@ -1,25 +1,52 @@
+@use 'sass:list';
+@use 'sass:map';
 @use 'variables';
+@use 'mixins';
+
+// Page-local breakpoints: the card grid and the badge rows fold where the workout copy starts to
+// wrap, and neither point is a site breakpoint (640 / 1024).
+$sport-narrow: 480px;
+$sport-wide: 900px;
+
+// One entry per muscle: its colour, `[data-muscle]` hook and `.badge` class are all generated from it.
+$muscles: (
+	chest: #3b9eff,
+	back: #ff7c38,
+	triceps: #b56bff,
+	biceps: #2fcc8b,
+	shoulders: #ff4f8b,
+	legs: #f5c842,
+	abs: #35d4ff,
+	waist: #9eff6b,
+	forearms: #ffb347,
+);
+
+$muscle-badges: ();
+@each $id in map.keys($muscles) {
+	$muscle-badges: list.append($muscle-badges, '.badge.#{$id}', comma);
+}
+
+// Cards, lifts and supersets share one frame: the site panel with a brighter hairline.
+@mixin sport-panel {
+	@include mixins.void-panel(var(--panel-bg));
+	border-color: var(--panel-border);
+}
 
 // Unlisted personal page: keeps the card system but drops the pixel font — it is read mid-set.
 .sport-page {
 	--muted: rgba(255, 255, 255, 0.68);
 	--faint: rgba(255, 255, 255, 0.78);
 	--chip-foreground: rgba(255, 255, 255, 0.9);
-	--bar-dimmed: rgba(255, 255, 255, 0.2);
-	--chest: #3b9eff;
-	--back: #ff7c38;
-	--triceps: #b56bff;
-	--biceps: #2fcc8b;
-	--shoulders: #ff4f8b;
-	--legs: #f5c842;
-	--abs: #35d4ff;
-	--waist: #9eff6b;
-	--forearms: #ffb347;
 	--hard: #ff5050;
 	--drop-tint: #ebff6b;
 	--font: #{variables.$font-readable};
 	--surface-bg: rgba(255, 255, 255, 0.04);
 	--surface-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
+	--panel-bg: rgba(255, 255, 255, 0.05);
+	--panel-border: rgba(255, 255, 255, 0.22);
+	@each $id, $colour in $muscles {
+		--#{$id}: #{$colour};
+	}
 
 	max-width: 84rem;
 	margin: 0 auto;
@@ -30,40 +57,12 @@
 	line-height: 1.5;
 	text-align: left;
 
-	[data-muscle='chest'] {
-		--muscle: var(--chest);
-	}
-	[data-muscle='back'] {
-		--muscle: var(--back);
-	}
-	[data-muscle='triceps'] {
-		--muscle: var(--triceps);
-	}
-	[data-muscle='biceps'] {
-		--muscle: var(--biceps);
-	}
-	[data-muscle='shoulders'] {
-		--muscle: var(--shoulders);
-	}
-	[data-muscle='legs'] {
-		--muscle: var(--legs);
-	}
-	[data-muscle='abs'] {
-		--muscle: var(--abs);
-	}
-	[data-muscle='waist'] {
-		--muscle: var(--waist);
-	}
-	[data-muscle='forearms'] {
-		--muscle: var(--forearms);
-	}
-
-	*,
-	*::before,
-	*::after {
-		box-sizing: border-box;
-		margin: 0;
-		padding: 0;
+	// Whatever carries a muscle takes its colour: card bar, chip, dot, rail — or a badge of its own.
+	@each $id in map.keys($muscles) {
+		[data-muscle='#{$id}'],
+		.badge.#{$id} {
+			--muscle: var(--#{$id});
+		}
 	}
 
 	.page-title {
@@ -91,9 +90,7 @@
 		gap: 10px 16px;
 		margin-bottom: 2rem;
 		padding: 1rem 0.75rem;
-		border: variables.$void-border;
-		border-radius: variables.$void-radius;
-		background: var(--surface-bg);
+		@include mixins.void-panel(var(--surface-bg));
 		box-shadow: var(--surface-shadow);
 		color: var(--faint);
 		font-size: clamp(0.85rem, 1vw, 0.95rem);
@@ -113,17 +110,13 @@
 	}
 
 	.card {
-		--accent: var(--bar-dimmed);
 		position: relative;
 		display: flex;
 		flex-direction: column;
 		gap: 20px;
 		overflow: hidden;
 		padding: 22px 20px;
-		border: variables.$void-border;
-		border-color: rgba(255, 255, 255, 0.22);
-		border-radius: variables.$void-radius;
-		background: rgba(255, 255, 255, 0.05);
+		@include sport-panel;
 		box-shadow: var(--surface-shadow);
 	}
 
@@ -132,20 +125,7 @@
 		position: absolute;
 		inset: 0 0 auto;
 		height: 3px;
-		background: var(--accent);
-	}
-
-	.card[data-accent='chest'] {
-		--accent: var(--chest);
-	}
-	.card[data-accent='back'] {
-		--accent: var(--back);
-	}
-	.card[data-accent='triceps'] {
-		--accent: var(--triceps);
-	}
-	.card[data-accent='legs'] {
-		--accent: var(--legs);
+		background: var(--muscle);
 	}
 
 	.session-head {
@@ -167,7 +147,7 @@
 
 	.session-kind {
 		margin-top: 2px;
-		color: var(--accent);
+		color: var(--muscle);
 		font-size: clamp(0.95rem, 1.35vw, 1.08rem);
 		font-weight: 500;
 	}
@@ -205,11 +185,8 @@
 		flex-direction: column;
 		gap: 6px;
 		padding: 14px;
-		border: variables.$void-border;
-		border-color: rgba(255, 255, 255, 0.22);
-		border-radius: variables.$void-radius;
+		@include sport-panel;
 		border-left: 4px solid var(--muscle);
-		background: rgba(255, 255, 255, 0.05);
 	}
 
 	.exercise-row {
@@ -302,112 +279,70 @@
 		order: 2;
 	}
 
-	.badge.chest {
-		--badge-color: var(--chest);
-	}
-	.badge.waist {
-		--badge-color: var(--waist);
-	}
-	.badge.forearm {
-		--badge-color: var(--forearms);
-	}
-	.badge.triceps {
-		--badge-color: var(--triceps);
-	}
-	.badge.shoulders {
-		--badge-color: var(--shoulders);
-	}
-	.badge.back {
-		--badge-color: var(--back);
-	}
-	.badge.biceps {
-		--badge-color: var(--biceps);
-	}
-	.badge.legs {
-		--badge-color: var(--legs);
-	}
-
-	.badge.chest,
-	.badge.waist,
-	.badge.forearm,
-	.badge.triceps,
-	.badge.shoulders,
-	.badge.back,
-	.badge.biceps,
-	.badge.legs,
+	#{$muscle-badges},
 	.badge.drop-set,
-	.badges--warmup .badge.warm-up {
+	.badge.warm-up {
 		grid-column: 1 / -1;
 		justify-self: stretch;
 		width: 100%;
 	}
 
-	.badge.chest,
-	.badge.waist,
-	.badge.forearm,
-	.badge.triceps,
-	.badge.shoulders,
-	.badge.back,
-	.badge.biceps,
-	.badge.legs {
+	// The tag a lift leads with: its muscle, or the warm-up marker in that slot.
+	#{$muscle-badges},
+	.badge.warm-up {
 		order: 1;
 		padding: 5px 8px;
+		color: variables.$white;
 		font-size: clamp(0.76rem, 0.95vw, 0.85rem);
 		font-weight: 600;
+	}
+
+	#{$muscle-badges} {
 		background: rgba(0, 0, 0, 0.62);
-		color: variables.$white;
-		border-color: var(--badge-color);
+		border-color: var(--muscle);
 	}
 
 	.badge.drop-set {
 		order: 3;
-		background: rgba(235, 255, 107, 0.3);
+		background: color-mix(in srgb, var(--drop-tint) 30%, transparent);
 		color: #f8ffd0;
 		border-color: var(--drop-tint);
 	}
 
 	.badge.easy,
 	.badge.warmup-time {
-		background: rgba(47, 204, 139, 0.34);
+		background: color-mix(in srgb, var(--biceps) 34%, transparent);
 		color: #e8fff5;
 		border-color: var(--biceps);
 	}
 
 	.badge.medium {
-		background: rgba(245, 200, 66, 0.34);
+		background: color-mix(in srgb, var(--legs) 34%, transparent);
 		color: #fff8dc;
 		border-color: var(--legs);
 	}
 
 	.badge.hard {
-		background: rgba(255, 80, 80, 0.34);
+		background: color-mix(in srgb, var(--hard) 34%, transparent);
 		color: #ffe8e8;
 		border-color: var(--hard);
 	}
 
 	.badge.rest {
-		background: rgba(255, 124, 56, 0.34);
+		background: color-mix(in srgb, var(--back) 34%, transparent);
 		color: #fff0e6;
 		border-color: var(--back);
 	}
 
 	.badge.warm-up {
-		order: 1;
-		padding: 5px 8px;
-		background: rgba(255, 79, 139, 0.4);
-		color: variables.$white;
+		background: color-mix(in srgb, var(--shoulders) 40%, transparent);
 		border-color: #ff8fbb;
-		font-size: clamp(0.76rem, 0.95vw, 0.85rem);
-		font-weight: 600;
 	}
 
 	.superset {
 		overflow: hidden;
-		border: variables.$void-border;
-		border-color: rgba(255, 255, 255, 0.22);
-		border-radius: variables.$void-radius;
+		@include sport-panel;
 		border-left: 4px solid var(--muscle);
-		background: rgba(255, 255, 255, 0.05);
 	}
 
 	.superset-head {
@@ -446,7 +381,7 @@
 }
 
 // .sport-page prefix keeps specificity level with the nested base rules above
-@media (max-width: 900px) {
+@media (max-width: $sport-wide) {
 	.sport-page .grid {
 		grid-template-columns: 1fr;
 	}
@@ -472,7 +407,7 @@
 	}
 }
 
-@media (max-width: 480px) {
+@media (max-width: $sport-narrow) {
 	/* Two chips per row reads better than three squeezed columns on phones. */
 	.sport-page .chips {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
