@@ -25,7 +25,7 @@
 	import { JOURNEY } from '@/constants/journey'
 	import { PALETTE, paletteRgb } from '@/constants/palette'
 	import { PLANET } from '@/constants/planet'
-	import { clamp01 } from '@/js/math'
+	import { ramp } from '@/js/math'
 	import PixelPlanet from './PixelPlanet.vue'
 
 	const props = defineProps({
@@ -42,7 +42,7 @@
 	// Under the deck by the dive: clouds thin as the camera's scale climbs, so terrain is never checkered.
 	const cloudThin = computed(() => {
 		const { from, to } = JOURNEY.cloudThin
-		return clamp01((props.cam.scale - from) / (to - from))
+		return ramp(props.cam.scale, from, to)
 	})
 
 	// the haze borrows the planet's atmosphere colour, so the entry matches the limb
@@ -56,7 +56,7 @@
 	// The dot hands over to the globe across a window of scale: full while the disc is pixels.
 	const sparkStyle = computed(() => {
 		const { fadeFrom, fadeTo } = JOURNEY.spark
-		const lit = 1 - clamp01((props.cam.scale - fadeFrom) / (fadeTo - fadeFrom))
+		const lit = 1 - ramp(props.cam.scale, fadeFrom, fadeTo)
 		return {
 			transform: `translate3d(${props.cam.x.toFixed(2)}vw, ${props.cam.y.toFixed(2)}vh, 0)`,
 			opacity: (lit * (props.cam.fade ?? 1)).toFixed(3),
@@ -84,6 +84,8 @@
 </script>
 
 <style scoped lang="scss">
+	@use '@/styles/mixins' as *;
+
 	// behind everything on the journey (stations sit at z 1+); over the starfield (-1)
 	.stage {
 		position: fixed;
@@ -106,8 +108,7 @@
 	.stage__planet {
 		position: absolute;
 		inset: 0;
-		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
-			calc(var(--my, 0) * var(--depth, 0) * 1px);
+		@include lean;
 		will-change: transform;
 	}
 
@@ -121,8 +122,7 @@
 		height: var(--spark);
 		margin: calc(var(--spark) / -2) 0 0 calc(var(--spark) / -2);
 		background: var(--spark-shade);
-		translate: calc(var(--mx, 0) * var(--depth, 0) * 1px)
-			calc(var(--my, 0) * var(--depth, 0) * 1px);
+		@include lean;
 	}
 
 	// Densest at the horizon over an opaque base, so altitude reads as darker air, never as holes.
