@@ -5,14 +5,14 @@
 				<span v-if="exercise.step" class="superset-step">{{ exercise.step }}</span>
 				{{ exercise.name }}
 			</div>
-			<div class="badges" :class="{ 'badges--warmup': hasWarmupBadge }">
+			<div class="badges">
 				<span
 					v-for="(badge, index) in exercise.badges"
 					:key="`${badge.class}-${index}`"
 					class="badge"
 					:class="badge.class"
 				>
-					{{ formatBadge(badge) }}
+					{{ badgeLabel(badge) }}
 				</span>
 			</div>
 		</div>
@@ -26,15 +26,12 @@
 </template>
 
 <script setup>
-	import { computed } from 'vue'
-	import { badgeLabel as formatBadge } from '@/data/sportLabels'
+	import { badgeLabel } from '@/data/sportLabels'
 
-	const props = defineProps({
+	defineProps({
 		exercise: {
 			type: Object,
 			required: true,
 		},
 	})
-
-	const hasWarmupBadge = computed(() => props.exercise.badges.some(b => b.class === 'warm-up'))
 </script>
