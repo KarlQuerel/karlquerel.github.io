@@ -1,5 +1,5 @@
 <template>
-	<section class="card" :data-accent="day.accent">
+	<section class="card" :data-muscle="day.accent">
 		<div class="session-head">
 			<div>
 				<div class="day-name">{{ day.day }}</div>
@@ -14,17 +14,13 @@
 		<div>
 			<hr />
 			<div class="exercise-list">
-				<SportExercise v-if="day.includeBaseWarmup" :exercise="BASE_WARMUP" />
+				<SportExercise :exercise="BASE_WARMUP" />
 				<template
 					v-for="(block, blockIndex) in day.blocks"
 					:key="`${day.id}-block-${blockIndex}`"
 				>
-					<div
-						v-if="block.type === 'superset'"
-						class="superset"
-						:data-muscle="block.muscle"
-					>
-						<div class="superset-head">Superset</div>
+					<div v-if="block.exercises" class="superset" :data-muscle="block.muscle">
+						<div class="superset-head">{{ SUPERSET_LABEL }}</div>
 						<SportExercise
 							v-for="(exercise, exIndex) in block.exercises"
 							:key="`${exercise.name}-${exIndex}`"
@@ -40,7 +36,7 @@
 
 <script setup>
 	import { BASE_WARMUP } from '@/data/weeklySplit'
-	import { muscleLabel } from '@/data/sportLabels'
+	import { muscleLabel, SUPERSET_LABEL } from '@/data/sportLabels'
 	import SportExercise from './SportExercise.vue'
 
 	defineProps({
