@@ -37,7 +37,7 @@
 	import { useSkySpawner } from '@/composables/useSkySpawner'
 	import { DEPARTURE_RIDGE as RIDGE } from '@/constants/journey'
 	import { paletteRgb as rgb } from '@/constants/palette'
-	import { clamp01, randIn, smoothstep } from '@/js/math'
+	import { ramp, randIn, smoothstep } from '@/js/math'
 	import { createCutter } from '@/js/departureCut'
 	import { cellFor } from '@/js/ridge'
 
@@ -56,9 +56,7 @@
 		'--fade': (1 - gone.value).toFixed(3),
 	}))
 
-	const gone = computed(() =>
-		smoothstep(clamp01((props.pass - RIDGE.goneFrom) / (RIDGE.goneTo - RIDGE.goneFrom)))
-	)
+	const gone = computed(() => smoothstep(ramp(props.pass, RIDGE.goneFrom, RIDGE.goneTo)))
 
 	// A band swells as we close and drops as we climb, both off the same travel, scaled by its share.
 	function bandStyle(band, i) {
