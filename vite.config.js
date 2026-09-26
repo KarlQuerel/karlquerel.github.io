@@ -2,11 +2,14 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { paletteScss } from './src/constants/palette.js'
+import { breakpointsScss } from './src/constants/viewport.js'
 
-// one palette for canvas and css: stylesheets `@use 'palette:'` instead of copying hexes
-const paletteImporter = {
-	canonicalize: url => (url === 'palette:' ? new URL(url) : null),
-	load: () => ({ contents: paletteScss(), syntax: 'scss' }),
+// One source for canvas, script and css: stylesheets `@use 'palette:'` / `@use 'breakpoints:'`
+// instead of copying hexes and pixel widths.
+const VIRTUAL_SCSS = { 'palette:': paletteScss, 'breakpoints:': breakpointsScss }
+const virtualImporter = {
+	canonicalize: url => (url in VIRTUAL_SCSS ? new URL(url) : null),
+	load: url => ({ contents: VIRTUAL_SCSS[url.href](), syntax: 'scss' }),
 }
 
 export default defineConfig({
@@ -32,7 +35,7 @@ export default defineConfig({
 		preprocessorOptions: {
 			scss: {
 				additionalData: '@use "@/styles/variables" as *;',
-				importers: [paletteImporter],
+				importers: [virtualImporter],
 			},
 		},
 	},
