@@ -46,6 +46,8 @@
 						<img
 							:src="section.media.src"
 							:alt="section.media.alt"
+							:width="section.media.width"
+							:height="section.media.height"
 							loading="lazy"
 							decoding="async"
 						/>
