@@ -16,6 +16,9 @@ const MUSCLE_LABELS = {
 	forearms: 'Forearms',
 }
 
+// the legend, in the labels' own order
+export const MUSCLE_IDS = Object.keys(MUSCLE_LABELS)
+
 export function muscleLabel(id) {
 	return MUSCLE_LABELS[id] ?? id
 }
@@ -23,3 +26,15 @@ export function muscleLabel(id) {
 export function badgeLabel(badge) {
 	return badge.label ?? MUSCLE_LABELS[badge.class] ?? badge.class
 }
+
+// Fixed-wording badges; rest and warm-up times carry their own label in the data.
+export const BADGE_LABELS = {
+	easy: 'Easy',
+	medium: 'Medium',
+	hard: 'Hard',
+	'drop-set': 'Drop Set',
+	'warm-up': 'Warm-up',
+}
+
+export const SUPERSET_LABEL = 'Superset'
+export const SUPERSET_STEPS = ['A', 'B']
