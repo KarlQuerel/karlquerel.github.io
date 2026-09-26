@@ -3,7 +3,7 @@
 		<PageTitle class="page-title" :lead="SPORT_HEADING.lead" :accent="SPORT_HEADING.accent" />
 
 		<div class="legend">
-			<span v-for="muscle in MUSCLE_LEGEND" :key="muscle">
+			<span v-for="muscle in MUSCLE_IDS" :key="muscle">
 				<span class="dot" :data-muscle="muscle" aria-hidden="true" />
 				{{ muscleLabel(muscle) }}
 			</span>
@@ -16,8 +16,8 @@
 </template>
 
 <script setup>
-	import { MUSCLE_LEGEND, WEEKLY_SPLIT } from '@/data/weeklySplit'
-	import { muscleLabel, SPORT_HEADING } from '@/data/sportLabels'
+	import { WEEKLY_SPLIT } from '@/data/weeklySplit'
+	import { MUSCLE_IDS, muscleLabel, SPORT_HEADING } from '@/data/sportLabels'
 	import PageTitle from '@/components/PageTitle.vue'
 	import SportDayCard from './SportDayCard.vue'
 </script>
