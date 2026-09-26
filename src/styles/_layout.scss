@@ -13,7 +13,6 @@ html:not(.page-scrollable) {
 
 html:not(.page-scrollable) body {
 	overflow: hidden;
-	height: 100%;
 }
 
 html.page-scrollable {
@@ -29,8 +28,6 @@ html.page-scrollable body {
 
 body {
 	height: 100%;
-	margin: 0;
-	padding: 0;
 	background: variables.$black;
 	color: variables.$white;
 }
@@ -42,7 +39,6 @@ body {
 	align-items: center;
 	width: 100%;
 	max-width: 100%;
-	box-sizing: border-box;
 	z-index: variables.$z-index-content;
 	text-align: center;
 	font-size: variables.px8(3);
@@ -56,14 +52,9 @@ h1 {
 	font-size: variables.px8(2);
 }
 
-p {
-	margin: 0 0 0 0;
-}
-
 #app {
 	text-align: center;
 	color: variables.$white;
-	box-sizing: border-box;
 }
 
 html:not(.page-scrollable) #app {
