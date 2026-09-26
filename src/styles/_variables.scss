@@ -1,4 +1,5 @@
 @use 'palette:' as palette;
+@use 'breakpoints:' as breakpoints;
 
 // Colors
 $retro-green: #00ff00;
@@ -111,6 +112,6 @@ $text-interactive: rgba(255, 255, 255, 0.88);
 // Secondary prose: warm off-white biased toward $yellow, so it reads as chosen rather than dimmed.
 $text-caption: #e9e1cf;
 
-// Breakpoints
-$breakpoint-mobile: 640px;
-$breakpoint-desktop: 1024px;
+// Breakpoints, from constants/viewport.js so the scripts' media queries read the same widths
+$breakpoint-mobile: breakpoints.$mobile;
+$breakpoint-desktop: breakpoints.$desktop;
