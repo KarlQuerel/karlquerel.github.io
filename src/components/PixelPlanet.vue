@@ -21,8 +21,6 @@
 		lightYaw: { type: Number, default: 0 },
 		// 0 -> full cloud deck, 1 -> clear. At landing magnification a deck reads as a checker layer.
 		cloudThin: { type: Number, default: 0 },
-		// Optional override of named PALETTE entries (e.g. EARTH_PALETTE). Fixed at mount.
-		palette: { type: Object, default: null },
 	})
 
 	const canvasEl = ref(null)
@@ -158,7 +156,7 @@
 		el.width = res
 		el.height = res
 		ctx = el.getContext('2d')
-		shader = createPlanetShader({ res, seed, palette: props.palette })
+		shader = createPlanetShader({ res, seed })
 		// the first frame on this thread, so the globe is ready the instant it reveals
 		heldSpin = props.spin ?? 0
 		render(heldSpin)
@@ -166,7 +164,7 @@
 			worker = new PlanetWorker()
 			worker.onmessage = onPainted
 			worker.onerror = dropWorker
-			worker.postMessage({ type: 'init', res, seed, palette: props.palette })
+			worker.postMessage({ type: 'init', res, seed })
 		} catch {
 			worker = null
 		}
@@ -204,6 +202,5 @@
 		pointer-events: none;
 		// Keep the upscaled sprite blocky rather than smoothly interpolated.
 		image-rendering: pixelated;
-		will-change: transform, opacity;
 	}
 </style>
