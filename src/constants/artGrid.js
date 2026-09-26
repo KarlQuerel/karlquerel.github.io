@@ -15,6 +15,9 @@ export const PERF_WINDOW = 45
 export const PERF_SLOW_MS = 30
 export const PERF_FAST_MS = 20
 
+// With nothing drawn for this many frames the loop stops, until the next scroll, pointer or resize.
+export const IDLE_FRAMES = 30
+
 // A backgrounded tab hands back one enormous frame; integrating it whole would fling a spring.
 export const MAX_FRAME_DT = 0.05
 export const FIRST_FRAME_DT = 1 / 60
