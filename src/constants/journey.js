@@ -55,6 +55,8 @@ export const HERO_FLYBY = {
 	// each mote's own share of the tail and of the light, so the field is not one comb of equals
 	moteTailShare: [0.45, 1.35],
 	moteGlow: [0.4, 1],
+	// motes stroke in batches, one per level of brightness: 1500 strokes a frame was the pass's cost
+	moteAlphaLevels: 16,
 	// near motes dim over this depth past the lens; far ones between these shares of the box
 	moteNearFade: 1.8,
 	moteFarFade: [0.18, 0.5],
@@ -627,7 +629,7 @@ export const ENTRY = {
 	},
 
 	// Mouse parallax on the surface, as the starfield does it: px of travel per layer.
-	parallax: { stars: 4, cloud: 16, distant: 5, far: 11, near: 22 },
+	parallax: { cloud: 16, distant: 5, far: 11, near: 22 },
 
 	// The dusk sky, dark top to bright horizon, dithered onto the same grid the ranges are cut on.
 	sky: [
