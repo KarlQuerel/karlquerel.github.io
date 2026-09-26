@@ -30,34 +30,16 @@
 				<span class="text-green" aria-hidden="true">{{ spinnerFrame }}</span>
 			</div>
 
-			<div
+			<TerminalInput
 				v-if="showInputPrompt && !isTyping && !isSpinning"
-				class="terminal-line current-line"
-			>
-				<TerminalPrompt />
-				<div class="input-container">
-					<!-- visible layer: typed text + inline block cursor; the textarea above only captures keys -->
-					<div class="input-mirror" aria-hidden="true">
-						<span>{{ inputBeforeCursor }}</span
-						><span class="custom-cursor">{{ cursorChar }}</span
-						><span>{{ inputAfterCursor }}</span
-						><span class="input-ghost">{{ ghostTail }}</span>
-					</div>
-					<textarea
-						ref="terminalInput"
-						v-model="currentInput"
-						@keydown="handleKeyDown"
-						@keyup="updateCursorPosition"
-						@click="updateCursorPosition"
-						@input="updateCursorPosition"
-						class="terminal-input"
-						rows="1"
-						autocomplete="off"
-						spellcheck="false"
-						aria-label="Terminal input"
-					/>
-				</div>
-			</div>
+				ref="terminalInput"
+				:history="history"
+				:completion-sources="completionSources"
+				@submit="executeCommand"
+				@clear="clear"
+				@interrupt="interrupt"
+				@input="scrollToBottom"
+			/>
 
 			<template #overlay>
 				<TerminalMatrix v-if="showMatrix" :color="phosphor" @close="onMatrixClose" />
@@ -73,15 +55,15 @@
 </template>
 
 <script setup>
-	import { ref, onMounted, watch, nextTick, useTemplateRef } from 'vue'
+	import { ref, onMounted, nextTick, useTemplateRef } from 'vue'
 	import { useTerminalCommands } from '@/composables/terminal/useTerminalCommands'
 	import { useCommandHistory } from '@/composables/terminal/useCommandHistory'
-	import { useTerminalInput } from '@/composables/terminal/useTerminalInput'
 	import { useTerminalTypewriter } from '@/composables/terminal/useTerminalTypewriter'
 	import { useTerminalTheme } from '@/composables/terminal/useTerminalTheme'
 	import { useVisitTracker } from '@/composables/terminal/useVisitTracker'
 	import HomeChip from './HomeChip.vue'
 	import TerminalWindow from './terminal/TerminalWindow.vue'
+	import TerminalInput from './terminal/TerminalInput.vue'
 	import TerminalLine from './terminal/TerminalLine.vue'
 	import TerminalPrompt from './terminal/TerminalPrompt.vue'
 	import TerminalMatrix from './terminal/TerminalMatrix.vue'
@@ -132,21 +114,7 @@
 		onCommand: trackCommand,
 	})
 
-	const {
-		currentInput,
-		inputBeforeCursor,
-		inputAfterCursor,
-		cursorChar,
-		ghostTail,
-		handleKeyDown,
-		updateCursorPosition,
-	} = useTerminalInput({
-		history,
-		executeCommand,
-		completionSources: { commandNames, scriptNames, themeNames, fsComplete },
-		onClear: clear,
-		onInterrupt: interrupt,
-	})
+	const completionSources = { commandNames, scriptNames, themeNames, fsComplete }
 
 	const {
 		welcomeTextRef,
@@ -161,8 +129,6 @@
 		onProgress: scrollToBottom,
 		onIdle: focusInput,
 	})
-
-	watch(currentInput, scrollToBottom)
 
 	const onMatrixClose = () => {
 		showMatrix.value = false
