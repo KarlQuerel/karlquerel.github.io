@@ -10,7 +10,7 @@
 	import { useWindowListener } from '@/composables/useWindowListener'
 	import { ARRIVAL, HERO_FLYBY } from '@/constants/journey'
 	import { paletteRgb } from '@/constants/palette'
-	import { clamp01, randIn, smoothstep } from '@/js/math'
+	import { clamp01, ramp, randIn, smoothstep } from '@/js/math'
 
 	const props = defineProps({
 		// world units the camera has run down the corridor
@@ -66,18 +66,29 @@
 	}
 
 	// A mote's depth wraps into a box travelling with the camera, which is what makes a few hundred endless.
+	// Brightness is quantised to a few levels and the field stroked once per level: a stroke has a fixed
+	// cost, and paying it per mote was most of the frame.
 	function draw() {
 		if (!ctx || props.fade <= 0.01) return
-		const { moteBox: box, moteTail, moteNear, moteLean, moteNearFade, moteFarFade } = HERO_FLYBY
+		const {
+			moteBox: box,
+			moteTail,
+			moteNear,
+			moteLean,
+			moteNearFade,
+			moteFarFade,
+			moteAlphaLevels: levels,
+		} = HERO_FLYBY
 		const [farFrom, farTo] = moteFarFade
+		const paths = Array.from({ length: levels }, () => new Path2D())
 		resize()
 		ctx.clearRect(0, 0, w, h)
 		// over black, motes add up rather than paint over each other
 		ctx.globalCompositeOperation = 'lighter'
 		// heat walks the whole field up the ember ramp, one hard band at a time
-		const ramp = ARRIVAL.heatRamp
-		const band = Math.min(ramp.length, Math.floor(props.heat * (ramp.length + 1)))
-		ctx.strokeStyle = band === 0 ? HERO_FLYBY.moteColor : paletteRgb(ramp[band - 1])
+		const heatRamp = ARRIVAL.heatRamp
+		const band = Math.min(heatRamp.length, Math.floor(props.heat * (heatRamp.length + 1)))
+		ctx.strokeStyle = band === 0 ? HERO_FLYBY.moteColor : paletteRgb(heatRamp[band - 1])
 		ctx.lineWidth = 1
 		const cx = w / 2
 		const cy = h / 2
@@ -99,15 +110,18 @@
 			const kt = (FOCAL * unit) / zTail
 			// near motes dim as they pass the lens, far ones as they reach the box edge
 			const dist = Math.hypot(m.x, m.y, z)
-			const near = smoothstep(clamp01((z - moteNear) / (moteNearFade - moteNear)))
-			const far =
-				1 - smoothstep(clamp01((dist - box * farFrom) / (box * farTo - box * farFrom)))
-			ctx.globalAlpha = clamp01(near * far * m.glow * props.fade)
-			ctx.beginPath()
-			ctx.moveTo(x, y)
-			ctx.lineTo(cx + (m.x + lx) * kt, cy - (m.y - ly) * kt)
-			ctx.stroke()
+			const near = smoothstep(ramp(z, moteNear, moteNearFade))
+			const far = 1 - smoothstep(ramp(dist, box * farFrom, box * farTo))
+			const level = Math.round(clamp01(near * far * m.glow * props.fade) * levels)
+			if (!level) continue
+			const path = paths[level - 1]
+			path.moveTo(x, y)
+			path.lineTo(cx + (m.x + lx) * kt, cy - (m.y - ly) * kt)
 		}
+		paths.forEach((path, i) => {
+			ctx.globalAlpha = (i + 1) / levels
+			ctx.stroke(path)
+		})
 		ctx.globalAlpha = 1
 	}
 
