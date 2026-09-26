@@ -100,7 +100,7 @@
 	import { GAME_LINK, JOURNEY_STOPS } from '@/constants/navigation'
 	import { ABOUT_HEADINGS } from '@/data/about'
 	import { HOME_LANDING } from '@/data/heroLines'
-	import { clamp01, riseFall, smoothstep } from '@/js/math'
+	import { clamp01, ramp, riseFall, smoothstep } from '@/js/math'
 	import { cameraSampler, camKeyframes, flown, textRight } from '@/js/journeyCamera'
 	import { useBackdropCover } from '@/composables/useBackdropCover'
 	import { useBoot } from '@/composables/useBoot'
@@ -133,7 +133,6 @@
 
 	const { parallaxStyle, pointer } = usePointerParallax()
 	const { progress, sync } = useScrollSections(trackRef)
-	const { progress: arrivalProgress, sync: syncArrival } = useScrollSections(arrivalRef)
 
 	// layout constants exposed to the stylesheet, so SCSS carries no hardcoded twins
 	const trackStyle = {
@@ -163,7 +162,7 @@
 	const onAxis = next => (axis.value = next)
 
 	// camera keyframes in scrolled-px space, measured from the real section layout
-	const dims = ref({ trackH: 0, vh: 0 })
+	const dims = ref({ trackH: 0, vh: 0, arrivalTop: 0, arrivalRun: 0 })
 	const camTrack = ref([])
 	const stops = ref([])
 	// Where the way-out chips stand off: a station whose copy runs under them (a phone's full-width
@@ -189,7 +188,6 @@
 		const bottomOf = el => topOf(el) + el.offsetHeight
 		// portrait renders the vmin-sized globe far smaller — push the camera in
 		portrait.value = vh > track.clientWidth
-		dims.value = { trackH: track.offsetHeight, vh }
 		const at = {
 			vh,
 			workTop: topOf(workRef.value),
@@ -197,6 +195,13 @@
 			lifeTop: topOf(lifeRef.value),
 			lifeBottom: bottomOf(lifeRef.value),
 			arrivalTop: topOf(arrivalRef.value),
+		}
+		// the arrival's runway: from its top reaching the frame's top to its foot reaching the bottom
+		dims.value = {
+			trackH: track.offsetHeight,
+			vh,
+			arrivalTop: at.arrivalTop,
+			arrivalRun: arrivalRef.value.offsetHeight - vh,
 		}
 		// the departure flies through the name at the planet, then stations dock as they enter
 		camTrack.value = camKeyframes(portrait.value ? CAMERA_PORTRAIT : CAMERA, at)
@@ -221,6 +226,11 @@
 
 	const scrolled = computed(() => progress.value * Math.max(0, dims.value.trackH - dims.value.vh))
 
+	// how far down the arrival's runway the same scroll has come, 0 -> 1
+	const arrivalProgress = computed(() =>
+		clamp01((scrolled.value - dims.value.arrivalTop) / Math.max(1, dims.value.arrivalRun))
+	)
+
 	// Sampled at an arbitrary scroll: the route needs where the planet will be, not where it is.
 	const sampler = computed(() => cameraSampler(camTrack.value))
 	const camAt = s => sampler.value(s)
@@ -244,9 +254,7 @@
 
 	const flybyStyle = computed(() => {
 		const scale = passScale.value
-		const gone = clamp01(
-			(scale - HERO_FLYBY.fadeFromScale) / (HERO_FLYBY.nearScale - HERO_FLYBY.fadeFromScale)
-		)
+		const gone = ramp(scale, HERO_FLYBY.fadeFromScale, HERO_FLYBY.nearScale)
 		return {
 			// its share of the cursor's lean, for the sprite inside
 			'--depth': HERO_FLYBY.plateDepth,
@@ -277,11 +285,7 @@
 
 	// atmosphere thickens across the entry window
 	const haze = computed(
-		() =>
-			ARRIVAL.hazeMax *
-			clamp01(
-				(arrivalProgress.value - ARRIVAL.hazeStart) / (ARRIVAL.hazeEnd - ARRIVAL.hazeStart)
-			)
+		() => ARRIVAL.hazeMax * ramp(arrivalProgress.value, ARRIVAL.hazeStart, ARRIVAL.hazeEnd)
 	)
 
 	// once the veil is opaque the starfield is invisible — flag it so the backdrop stops paying for drift
@@ -298,11 +302,7 @@
 
 	// held back through the hero, then along for the rest of the trip
 	const chromeStyle = computed(() => {
-		const t = smoothstep(
-			clamp01(
-				(pass.value - HERO_FLYBY.chromeFrom) / (HERO_FLYBY.chromeTo - HERO_FLYBY.chromeFrom)
-			)
-		)
+		const t = smoothstep(ramp(pass.value, HERO_FLYBY.chromeFrom, HERO_FLYBY.chromeTo))
 		return { opacity: t.toFixed(3), visibility: t > 0.01 ? null : 'hidden' }
 	})
 
@@ -320,10 +320,7 @@
 	// The way out goes once the descent starts, so the last stretch is the atmosphere and nothing else.
 	const ctaStyle = computed(() => {
 		const there = smoothstep(
-			clamp01(
-				(arrivalProgress.value - ARRIVAL.ctaFadeStart) /
-					(ARRIVAL.ctaFadeEnd - ARRIVAL.ctaFadeStart)
-			)
+			ramp(arrivalProgress.value, ARRIVAL.ctaFadeStart, ARRIVAL.ctaFadeEnd)
 		)
 		const shown = (1 - there) * ctaClear.value
 		return {
@@ -352,7 +349,6 @@
 		parked = false
 		measure()
 		sync()
-		syncArrival()
 		covered.value = haze.value >= 1
 	})
 
