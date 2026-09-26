@@ -1,5 +1,6 @@
 // One WebGL context on the art grid: sizing, the perf ladder, the boot, the frame loop and its losses.
 // build(gl, step) reruns after a context restore; the last bootWeights key is the first frame, reported here.
+// frame(dt) returns whether it drew: a run of empty frames parks the loop, and wake() restarts it.
 
 import { onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
 import { loseContext } from '../js/gl.js'
@@ -12,6 +13,7 @@ import {
 	ART_TARGET,
 	CONTEXT_ATTRIBUTES,
 	FIRST_FRAME_DT,
+	IDLE_FRAMES,
 	MAX_FRAME_DT,
 	PERF_FAST_MS,
 	PERF_SLOW_MS,
@@ -46,6 +48,7 @@ export function useArtCanvas(
 	let raf = 0
 	let restoreWait = 0
 	let rung = 0
+	let idle = 0
 	let lastT = 0
 	let dprQuery = null
 	const perf = { start: 0, frames: 0 }
@@ -75,14 +78,18 @@ export function useArtCanvas(
 		return frame(dt, t)
 	}
 
-	// Steps a rung down the grid when frames run slow, back up when they run fast.
+	// Steps a rung down the grid when frames run slow, back up when they run fast. A scene with nothing
+	// to draw lets the loop stop after IDLE_FRAMES; the next input starts it again through resume().
 	function loop(t) {
 		const drew = render(t)
-		raf = requestAnimationFrame(loop)
 		if (!drew) {
 			perf.start = 0
+			if (++idle < IDLE_FRAMES) raf = requestAnimationFrame(loop)
+			else pause()
 			return
 		}
+		idle = 0
+		raf = requestAnimationFrame(loop)
 		if (!perf.start) {
 			perf.start = t
 			perf.frames = 0
@@ -178,7 +185,9 @@ export function useArtCanvas(
 	}
 
 	function onResize() {
-		if (ready) fit()
+		if (!ready) return
+		fit()
+		resume()
 	}
 
 	function dispose() {
@@ -232,5 +241,5 @@ export function useArtCanvas(
 	})
 	onBeforeUnmount(dispose)
 
-	return { supported, booting, bootProgress, bootCeiling, grid }
+	return { supported, booting, bootProgress, bootCeiling, grid, wake: resume }
 }
