@@ -5,19 +5,18 @@ import { PLANET } from '../constants/planet.js'
 import { smoothstep } from './math.js'
 import { ditherIndex, ditherThreshold } from './pixelNoise.js'
 
-// `res` is the sprite's side in cells, `seed` this visit's world, `palette` an optional PALETTE override.
-export function createPlanetShader({ res, seed, palette: override = null }) {
-	// The palette, and the ramps resolved out of it once — neither changes live.
-	const palette = { ...PALETTE, ...override }
-	const RAMPS = PLANET.bands.map(([name]) => PLANET.ramps[name].map(c => palette[c]))
-	const CLOUD_RAMP = PLANET.cloudRamp.map(c => palette[c])
+// `res` is the sprite's side in cells, `seed` this visit's world.
+export function createPlanetShader({ res, seed }) {
+	// the ramps resolved out of the palette once: neither changes live
+	const RAMPS = PLANET.bands.map(([name]) => PLANET.ramps[name].map(c => PALETTE[c]))
+	const CLOUD_RAMP = PLANET.cloudRamp.map(c => PALETTE[c])
 	// every ramp is the same length; the light picks an index into it
 	const LEVELS = CLOUD_RAMP.length
 	const TOP = LEVELS - 1
 	// each band's upper elevation edge, as an absolute noise value
 	const EDGES = PLANET.bands.map(([, offset]) => PLANET.seaLevel + offset)
 	// the atmosphere's layers, resolved the same way
-	const SHELL = PLANET.shell.map(([name, alpha]) => [palette[name], alpha])
+	const SHELL = PLANET.shell.map(([name, alpha]) => [PALETTE[name], alpha])
 
 	const clampByte = v => (v < 0 ? 0 : v > 255 ? 255 : v | 0)
 	const mix = (a, b, t) => a + (b - a) * t
