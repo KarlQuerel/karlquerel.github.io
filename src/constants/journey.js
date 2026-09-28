@@ -89,6 +89,10 @@ export const HERO_FLYBY = {
 	qAxis: { x: -0.064, y: -0.194 },
 	// The porthole: that 3x3 em square, re-cut after every pass, since the plate spills inward.
 	qPort: 0.36,
+	// Past the Q the sky's zoom coasts to rest over this much pass, rather than stopping dead.
+	skyCoast: 0.6,
+	// Going through the Q the motes surge, over this pass window.
+	surge: { rise: 0.7, full: 0.99, fall: 1.3, tail: 2.5, glow: 0.6 },
 }
 
 // The ground we leave from: a moon across the foot of the frame, hiding the planet with scenery.
@@ -331,6 +335,8 @@ export const DEPARTURE_RIDGE = {
 	// The sky over the ground (js/sky.js). Black — no air — with the off-frame sun's glow low left.
 	sky: {
 		depth: 12,
+		// extra scale the sky takes by the end of the pass: the stars open out round the corridor
+		warp: 0.8,
 		glintDepth: 18,
 		// The sun's glow: centre and reach as frame shares, `power` the falloff, dithered so it cannot band.
 		sunGlow: {

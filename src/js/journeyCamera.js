@@ -2,7 +2,7 @@
 // channel through them, and the departure's run down the corridor.
 
 import { ARRIVAL, CAMERA, HERO_FLYBY, JOURNEY } from '../constants/journey.js'
-import { hermite, monotoneSlopes } from './math.js'
+import { clamp01, hermite, monotoneSlopes } from './math.js'
 
 // A missing channel holds at its default.
 const CAM_CHANNELS = { x: 0, y: 0, scale: 1, fade: 1, roll: 0, tilt: 0, light: 0 }
@@ -73,13 +73,27 @@ export function cameraSampler(pts) {
 	}
 }
 
-// How far down the corridor the camera has run, in world units — the one number the flight comes from.
-export function flown(p) {
+// The pass's clock: a spool-up, then one steady rate, reaching 1 as the camera goes through the Q.
+function passClock(p) {
 	const h = HERO_FLYBY.spoolUp
 	const d = p < h ? (p * p) / (2 * h) : p - h / 2
-	const t = d / (1 - h / 2)
+	return d / (1 - h / 2)
+}
+
+// How far down the corridor the camera has run, in world units — the one number the flight comes from.
+export function flown(p) {
+	const t = passClock(p)
 	const run = HERO_FLYBY.titleZ * (1 - 1 / HERO_FLYBY.nearScale)
 	return t <= 1 ? HERO_FLYBY.titleZ * (1 - HERO_FLYBY.nearScale ** -t) : run * t
+}
+
+// The sky's zoom exponent: the pass's clock, then a coast to rest that leaves the Q at cruise rate.
+export function skyZoom(p) {
+	if (p <= 1) return passClock(Math.max(0, p))
+	const span = HERO_FLYBY.skyCoast
+	const u = clamp01((p - 1) / span)
+	// the coast's size is what keeps its opening rate equal to the cruise's
+	return 1 + (span * (1 - (1 - u) ** 2)) / (2 - HERO_FLYBY.spoolUp)
 }
 
 // The right edge of a part's copy — its text runs, not its boxes: a centred title's box spans the column.

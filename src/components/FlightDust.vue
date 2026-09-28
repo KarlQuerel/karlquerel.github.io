@@ -21,6 +21,8 @@
 		lean: { type: Object, default: () => ({ x: 0, y: 0 }) },
 		// 0 → vacuum, 1 → full re-entry burn (walks ARRIVAL.heatRamp band by band)
 		heat: { type: Number, default: 0 },
+		// 0 -> 1 through the Q: longer, brighter streaks
+		surge: { type: Number, default: 0 },
 	})
 
 	const canvasEl = ref(null)
@@ -78,7 +80,10 @@
 			moteNearFade,
 			moteFarFade,
 			moteAlphaLevels: levels,
+			surge,
 		} = HERO_FLYBY
+		const tail = moteTail * (1 + surge.tail * props.surge)
+		const glow = props.fade * (1 + surge.glow * props.surge)
 		const [farFrom, farTo] = moteFarFade
 		const paths = Array.from({ length: levels }, () => new Path2D())
 		resize()
@@ -101,7 +106,7 @@
 			// the wrap: depth relative to a camera that has run `travel` down the box
 			const z = ((((m.z - props.travel) % box) + box) % box) - box * 0.5
 			if (z < moteNear) continue
-			const zTail = z + moteTail * m.tail
+			const zTail = z + tail * m.tail
 			const k = (FOCAL * unit) / z
 			const x = cx + (m.x + lx) * k
 			const y = cy - (m.y - ly) * k
@@ -112,7 +117,7 @@
 			const dist = Math.hypot(m.x, m.y, z)
 			const near = smoothstep(ramp(z, moteNear, moteNearFade))
 			const far = 1 - smoothstep(ramp(dist, box * farFrom, box * farTo))
-			const level = Math.round(clamp01(near * far * m.glow * props.fade) * levels)
+			const level = Math.round(clamp01(near * far * m.glow * glow) * levels)
 			if (!level) continue
 			const path = paths[level - 1]
 			path.moveTo(x, y)
@@ -127,7 +132,7 @@
 
 	const redraw = useRafThrottle(draw)
 
-	watch(() => [props.travel, props.fade, props.lean, props.heat], redraw)
+	watch(() => [props.travel, props.fade, props.lean, props.heat, props.surge], redraw)
 
 	// a resize while parked by KeepAlive went unheard, so coming back re-reads the box too
 	function resized() {

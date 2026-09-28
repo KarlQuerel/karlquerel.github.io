@@ -2,25 +2,28 @@
 	<!-- The ground the flight leaves from: a moon across the foot of the opening frame, three layers
 	     of one ground dropping away as the camera lifts over them. -->
 	<div ref="rootEl" class="ridge" :style="ridgeStyle" aria-hidden="true">
-		<!-- the sky: the sun's glow and the galaxy, on the ground's grid -->
-		<canvas ref="skyEl" class="ridge__sky" :style="skyStyle" />
-		<!-- the bright stars — behind the crests, so the world can still stand in front
-		     of them — and the destination's ember, hung over the notch by the cut -->
-		<span
-			v-for="(glint, i) in RIDGE.sky.glints"
-			:key="i"
-			class="ridge__glint"
-			:style="glintStyle(glint)"
-		/>
+		<!-- the heavens open out round the corridor as the flight goes into it -->
+		<div class="ridge__heavens" :style="heavensStyle">
+			<!-- the sky: the sun's glow and the galaxy, on the ground's grid -->
+			<canvas ref="skyEl" class="ridge__sky" :style="skyStyle" />
+			<!-- the bright stars, behind the crests so the world can still stand in front of them -->
+			<span
+				v-for="(glint, i) in RIDGE.sky.glints"
+				:key="i"
+				class="ridge__glint"
+				:style="glintStyle(glint)"
+			/>
+			<!-- meteors: a streak jumping cell by cell down and right, rare -->
+			<span
+				v-for="meteor in meteors"
+				:key="meteor.id"
+				class="ridge__meteor"
+				:style="meteor.style"
+				@animationend="removeMeteor(meteor.id)"
+			/>
+		</div>
+		<!-- the destination's ember, hung over the notch by the cut: it rides the ground, not the sky -->
 		<span class="ridge__glint" :style="starStyle" />
-		<!-- meteors: a streak jumping cell by cell down and right, rare -->
-		<span
-			v-for="meteor in meteors"
-			:key="meteor.id"
-			class="ridge__meteor"
-			:style="meteor.style"
-			@animationend="removeMeteor(meteor.id)"
-		/>
 		<canvas
 			v-for="(band, i) in RIDGE.bands"
 			:key="i"
@@ -39,6 +42,7 @@
 	import { paletteRgb as rgb } from '@/constants/palette'
 	import { ramp, randIn, smoothstep } from '@/js/math'
 	import { createCutter } from '@/js/departureCut'
+	import { skyZoom } from '@/js/journeyCamera'
 	import { cellFor } from '@/js/ridge'
 
 	const props = defineProps({
@@ -57,6 +61,10 @@
 	}))
 
 	const gone = computed(() => smoothstep(ramp(props.pass, RIDGE.goneFrom, RIDGE.goneTo)))
+
+	const heavensStyle = computed(() => ({
+		transform: `scale(${((1 + RIDGE.sky.warp) ** skyZoom(props.pass)).toFixed(3)})`,
+	}))
 
 	// A band swells as we close and drops as we climb, both off the same travel, scaled by its share.
 	function bandStyle(band, i) {
@@ -177,6 +185,14 @@
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
+	}
+
+	// scaled about the frame's centre, where the corridor runs
+	.ridge__heavens {
+		position: absolute;
+		inset: 0;
+		// its own layer, so the zoom is a composite rather than a repaint of the sky every frame
+		will-change: transform;
 	}
 
 	// Starts its bleed past the frame's corner like the bands, so the lean never uncovers an edge.

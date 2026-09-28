@@ -24,9 +24,10 @@
 </template>
 
 <script setup>
-	import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+	import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useBackdropCover } from '@/composables/useBackdropCover'
+	import { useBackdropWarp } from '@/composables/useBackdropWarp'
 	import { leanOf } from '@/composables/usePointerParallax'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { useSkySpawner } from '@/composables/useSkySpawner'
@@ -83,6 +84,8 @@
 		return canvas.toDataURL()
 	}
 
+	const still = prefersReducedMotion()
+
 	// scroll parallax is desktop-only: full-rate recomposits during scroll were the phone lag
 	const scrollParallax = window.matchMedia(FINE_POINTER_QUERY).matches
 
@@ -134,6 +137,15 @@
 		})
 	})
 
+	// Written straight to the planes like --sy: a Vue re-render per scroll frame was the cost.
+	const warp = useBackdropWarp()
+	const applyWarp = useRafThrottle(() => {
+		layerSpecs.forEach((spec, i) => {
+			// an exponent, so every plane zooms at a steady rate, the near ones fastest
+			layerEls[i]?.style.setProperty('scale', ((1 + spec.warp) ** warp.value).toFixed(3))
+		})
+	})
+
 	const pointer = ref({ x: 0, y: 0 })
 	const parallaxStyle = computed(() => ({ '--mx': pointer.value.x, '--my': pointer.value.y }))
 
@@ -166,11 +178,12 @@
 		}),
 	})
 
-	const still = prefersReducedMotion()
 	// no cursor on touch, and their drag-scrolls fire pointermove, restyling every star layer mid-scroll
 	if (scrollParallax && !still) {
 		useWindowListener('pointermove', onPointerMove)
 		useWindowListener('scroll', onScrollParallax)
+		// the warp rides scroll, so it stays off wherever scroll parallax does
+		watch(warp, applyWarp)
 	}
 
 	onMounted(() => {
@@ -198,6 +211,8 @@
 		background-repeat: repeat;
 		translate: calc(var(--mx, 0) * var(--depth) * 1px)
 			calc(var(--my, 0) * var(--depth) * 1px + var(--sy, 0px));
+		// the hero pass flies into the frame's centre, so the planes zoom about it, near ones hardest
+		transform-origin: calc(var(--bleed-left) + 50vw) calc(var(--bleed-top) + 50vh);
 		// no will-change: the animation promotes the layer while it runs; a permanent hint keeps it resident
 		animation: starDrift var(--dur) linear infinite;
 		// Default (phones): hops of one device pixel. The identical frames between cost nothing.
@@ -272,6 +287,7 @@
 		.star-layer {
 			animation: none;
 			translate: none;
+			scale: none;
 			transform: none;
 		}
 	}

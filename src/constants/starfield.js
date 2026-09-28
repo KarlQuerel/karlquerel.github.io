@@ -12,7 +12,7 @@ export const STAR_COLORS = [
 	'#d3d3d3', // $light-gray
 ]
 
-// Parallax planes, far -> near, each a repeating drifted layer inset by one tile so it loops.
+// Parallax planes, far -> near (`warp`: extra scale at the Q, on the hero pass's clock), each a repeating drifted layer inset by one tile so it loops.
 export const STAR_LAYERS = [
 	{
 		count: 18,
@@ -21,6 +21,7 @@ export const STAR_LAYERS = [
 		tile: [400, 520],
 		duration: 515,
 		depth: 4,
+		warp: 0.12,
 		dir: [-1, -1],
 	},
 	{
@@ -30,6 +31,7 @@ export const STAR_LAYERS = [
 		tile: [400, 380],
 		duration: 310,
 		depth: 16,
+		warp: 0.4,
 		dir: [1, -1],
 	},
 	{
@@ -39,6 +41,7 @@ export const STAR_LAYERS = [
 		tile: [340, 440],
 		duration: 215,
 		depth: 26,
+		warp: 0.75,
 		dir: [-1, -1],
 	},
 ]

@@ -29,7 +29,7 @@
 			<!-- the flight: the mote field runs past behind the name, both projected
 			     from the same camera, both vanishing at the frame's centre -->
 			<div class="journey__flight" :style="flightStyle">
-				<FlightDust :travel="travel" :fade="dust" :lean="pointer" />
+				<FlightDust :travel="travel" :fade="dust" :lean="pointer" :surge="surge" />
 				<!-- the ground we leave from, dropping away as the flight lifts over it -->
 				<DepartureRidge
 					:travel="travel"
@@ -101,8 +101,9 @@
 	import { ABOUT_HEADINGS } from '@/data/about'
 	import { HOME_LANDING } from '@/data/heroLines'
 	import { clamp01, ramp, riseFall, smoothstep } from '@/js/math'
-	import { cameraSampler, camKeyframes, flown, textRight } from '@/js/journeyCamera'
+	import { cameraSampler, camKeyframes, flown, skyZoom, textRight } from '@/js/journeyCamera'
 	import { useBackdropCover } from '@/composables/useBackdropCover'
+	import { useBackdropWarp } from '@/composables/useBackdropWarp'
 	import { useBoot } from '@/composables/useBoot'
 	import { usePointerParallax } from '@/composables/usePointerParallax'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
@@ -256,8 +257,8 @@
 		const scale = passScale.value
 		const gone = ramp(scale, HERO_FLYBY.fadeFromScale, HERO_FLYBY.nearScale)
 		return {
-			// its share of the cursor's lean, for the sprite inside
-			'--depth': HERO_FLYBY.plateDepth,
+			// its share of the cursor's lean, divided back out of the scale so the porthole stays on the planet
+			'--depth': (HERO_FLYBY.plateDepth / scale).toFixed(3),
 			// the origin is the corridor, and the shift puts it on the frame's centre
 			transformOrigin: `calc(50% + ${axis.value.x.toFixed(1)}px) calc(50% + ${axis.value.y.toFixed(1)}px)`,
 			transform: `translate(${(-axis.value.x).toFixed(1)}px, ${(-axis.value.y).toFixed(1)}px) scale(${scale.toFixed(3)})`,
@@ -283,6 +284,11 @@
 		smoothstep(riseFall(pass.value, HERO_FLYBY.dustIn, HERO_FLYBY.dustFull, HERO_FLYBY.dustOut))
 	)
 
+	const surge = computed(() => {
+		const { rise, full, fall } = HERO_FLYBY.surge
+		return smoothstep(riseFall(pass.value, rise, full, fall))
+	})
+
 	// atmosphere thickens across the entry window
 	const haze = computed(
 		() => ARRIVAL.hazeMax * ramp(arrivalProgress.value, ARRIVAL.hazeStart, ARRIVAL.hazeEnd)
@@ -291,6 +297,11 @@
 	// once the veil is opaque the starfield is invisible — flag it so the backdrop stops paying for drift
 	const covered = useBackdropCover()
 	watch(haze, h => (covered.value = h >= 1), { immediate: true })
+
+	// the sky zooms with the pass and holds there: easing back would read as flying backwards
+	const warp = useBackdropWarp()
+	const warpOf = () => skyZoom(pass.value)
+	watch(pass, () => (warp.value = warpOf()), { immediate: true })
 
 	const activeStop = computed(() => {
 		let active = 0
@@ -350,17 +361,20 @@
 		measure()
 		sync()
 		covered.value = haze.value >= 1
+		warp.value = warpOf()
 	})
 
 	// away from the journey, the sky is somebody else's frame
 	onDeactivated(() => {
 		parked = true
 		covered.value = false
+		warp.value = 0
 	})
 
 	onBeforeUnmount(() => {
 		resizeObserver?.disconnect()
 		covered.value = false
+		warp.value = 0
 	})
 </script>
 
