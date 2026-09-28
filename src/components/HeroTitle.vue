@@ -57,7 +57,7 @@
 	}
 
 	// Everything comes off the laid-out text, so the stylesheet stays the one place the type is described.
-	function measure(el, k, bloom = false) {
+	function measure(el, k, bloom = false, keyline = true) {
 		const box = textEl.value.getBoundingClientRect()
 		const own = el.getBoundingClientRect()
 		const style = getComputedStyle(el)
@@ -72,6 +72,7 @@
 			text: el.textContent.trim().toUpperCase(),
 			// Only the role line carries the bloom: a yellow halo behind white type reads as the glow being the point.
 			bloom,
+			keyline,
 		}
 	}
 
@@ -124,8 +125,8 @@
 		ctx.textAlign = 'left'
 
 		const runs = [
-			measure(firstEl.value, k),
-			measure(lastEl.value, k),
+			measure(firstEl.value, k, false, false),
+			measure(lastEl.value, k, false, false),
 			measure(roleEl.value, k, true),
 			measure(cueEl.value, k),
 		]
@@ -158,7 +159,7 @@
 		}
 		ctx.shadowBlur = 0
 		ctx.shadowColor = 'transparent'
-		for (const run of runs) {
+		for (const run of runs.filter(r => r.keyline)) {
 			const off = HERO_FLYBY.plateKeylineEm * run.size * dpr
 			for (const [dx, dy] of RING) {
 				drawRun(ctx, run, dpr, HERO_FLYBY.plateKeyline, dx * off, dy * off)
