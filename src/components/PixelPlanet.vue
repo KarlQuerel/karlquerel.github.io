@@ -1,10 +1,25 @@
 <template>
 	<!-- procedural low-res planet, upscaled pixelated. Decorative -->
-	<canvas ref="canvasEl" class="planet" aria-hidden="true" />
+	<canvas
+		ref="canvasEl"
+		class="planet"
+		:class="{ 'planet--smooth': smooth }"
+		:style="prefilter"
+		aria-hidden="true"
+	/>
 </template>
 
 <script setup>
-	import { ref, watch, onActivated, onDeactivated, onMounted, onBeforeUnmount } from 'vue'
+	import {
+		computed,
+		ref,
+		watch,
+		onActivated,
+		onDeactivated,
+		onMounted,
+		onBeforeUnmount,
+	} from 'vue'
+	import { useWindowListener } from '@/composables/useWindowListener'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { createPlanetShader } from '@/js/planetShader'
 	import PlanetWorker from '@/js/planet.worker.js?worker'
@@ -21,6 +36,8 @@
 		lightYaw: { type: Number, default: 0 },
 		// 0 -> full cloud deck, 1 -> clear. At landing magnification a deck reads as a checker layer.
 		cloudThin: { type: Number, default: 0 },
+		// the camera's magnification of the laid-out globe
+		scale: { type: Number, default: 1 },
 	})
 
 	const canvasEl = ref(null)
@@ -33,6 +50,20 @@
 	const res = isMobile ? PLANET.resolutionMobile : PLANET.resolution
 	const frameMs = 1000 / (isMobile ? PLANET.fpsMobile : PLANET.fps)
 	const orbitFrameMs = 1000 / (isMobile ? PLANET.orbitFpsMobile : PLANET.orbitFps)
+
+	// Device px each cell covers on screen: the dither aliases into checkers unless it is filtered to that.
+	const boxCss = ref(0)
+	const measureBox = () => (boxCss.value = canvasEl.value?.clientWidth ?? 0)
+	const cellPx = computed(() => (boxCss.value * window.devicePixelRatio * props.scale) / res)
+	const smooth = computed(() => cellPx.value < PLANET.crispFrom)
+	// Shrunk, bilinear still skips cells, so blur away what the screen cannot hold; applied before the scale.
+	const prefilter = computed(() => {
+		const q = cellPx.value
+		if (!q || q >= 1) return null
+		const blur = Math.round((boxCss.value / res) * (1 / q - 1)) / 2
+		return blur > 0 ? { filter: `blur(${blur}px)` } : null
+	})
+	useWindowListener('resize', measureBox)
 	// this visit's world, fixed here so both threads' shaders roll the same terrain
 	const seed = Math.floor(Math.random() * 1e5) + 1
 
@@ -153,6 +184,7 @@
 
 	onMounted(() => {
 		const el = canvasEl.value
+		measureBox()
 		el.width = res
 		el.height = res
 		ctx = el.getContext('2d')
@@ -178,6 +210,7 @@
 	})
 	onActivated(() => {
 		parked = false
+		measureBox()
 		resume()
 	})
 
@@ -202,5 +235,9 @@
 		pointer-events: none;
 		// Keep the upscaled sprite blocky rather than smoothly interpolated.
 		image-rendering: pixelated;
+	}
+
+	.planet--smooth {
+		image-rendering: auto;
 	}
 </style>

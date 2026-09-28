@@ -3,6 +3,8 @@ export const PLANET = {
 	// Logical sprite resolution; each cell becomes one chunky on-screen pixel.
 	resolution: 192,
 	resolutionMobile: 128,
+	// Device px per cell before the sprite goes blocky: under it, 1-cell dither renders as uneven checker.
+	crispFrom: 3,
 	// Disc radius as a fraction of the sprite; the margin leaves room for the halo to bleed past.
 	discRadius: 0.36,
 	// Surface redraw rate, an even divisor of 60Hz so frames pace evenly. spinSeconds = one turn.
@@ -64,8 +66,8 @@ export const PLANET = {
 		blend: 0.03,
 		spinFactor: 1.25,
 		octaves: 2,
-		// Coverage is a dithered choice between the two ramps, not an alpha blend.
-		opacity: 0.72,
+		// Coverage is a dithered choice between the two ramps, not an alpha blend: under 1 the interior is a checker.
+		opacity: 1,
 		// The deck's shadow: ground samples the field again toward the sun; a hit drops `shadowDrop`.
 		shadowOffset: 0.1,
 		shadowDrop: 1,

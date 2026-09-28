@@ -11,6 +11,7 @@
 				:spin="spin"
 				:light-yaw="lightYaw"
 				:cloud-thin="cloudThin"
+				:scale="cam.scale"
 			/>
 		</div>
 		<!-- The world as a point of light while it is too small to be a disc, on the camera's axis. -->
