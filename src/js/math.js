@@ -13,6 +13,9 @@ export const randInt = ([lo, hi]) => lo + Math.floor(Math.random() * (hi - lo + 
 // 0 at `from`, 1 at `to`, clamped: the window every scroll-driven beat opens and closes on.
 export const ramp = (v, from, to) => clamp01((v - from) / (to - from))
 
+// Exponential glide toward a target over `dt` seconds, `tau` its time constant: frame-rate independent.
+export const approach = (from, to, dt, tau) => to + (from - to) * Math.exp(-dt / tau)
+
 // Hermite ease between 0 and 1 — the one easing curve used for scrubbed motion.
 export const smoothstep = t => t * t * (3 - 2 * t)
 
