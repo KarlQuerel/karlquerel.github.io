@@ -70,8 +70,6 @@
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
-	// how far a card travels on its slide-in
-	$slide: 28px;
 	// the one gap between cards, fixed so the rhythm is even; the route's crossing needs ~192px to
 	// turn, or ~152px on a phone, where it turns on a tighter chamfer (ROUTE.crossChamferNarrowPx)
 	$life-gap: 14rem;
@@ -213,10 +211,9 @@
 		box-shadow: 0 0 8px 1px rgba($light-blue, 0.55);
 	}
 
-	// every card rises into place on the same beat
+	// every card fades in on the same stepped beat, in place: a slide hopping against the scroll reads as stutter
 	.reveal-block {
 		opacity: 0;
-		transform: translateY($slide);
 	}
 
 	.reveal-block.is-visible {
@@ -226,7 +223,6 @@
 	@keyframes life-in {
 		to {
 			opacity: 1;
-			transform: none;
 		}
 	}
 
@@ -283,7 +279,6 @@
 	@media (prefers-reduced-motion: reduce) {
 		.reveal-block {
 			opacity: 1;
-			transform: none;
 			animation: none;
 		}
 	}
