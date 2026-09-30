@@ -1,7 +1,7 @@
 // The landing flyby: the flight state and its readout, drawn by three passes on one art canvas.
 
 import { ref } from 'vue'
-import { clamp01 } from '../js/math.js'
+import { approach, clamp01 } from '../js/math.js'
 import { createRollState, sampleFlight } from '../js/flybyPath.js'
 import { beltCountFor, createScenePass } from '../js/flybyScene.js'
 import { createDustPass } from '../js/flybyDust.js'
@@ -21,10 +21,9 @@ import {
 	LOOK_REST,
 	MARK_AT,
 	REDRAW_REST,
-	SCROLL_EASE,
-	SCROLL_REST,
 	TITLE,
 } from '../constants/flyby.js'
+import { SCROLL_GLIDE_S, SCROLL_REST } from '../constants/viewport.js'
 
 // The face the title is drawn in. The race means a font that never arrives costs FONT_WAIT_MAX.
 function fontReady() {
@@ -83,7 +82,7 @@ export function useFlyby(canvasRef) {
 	function frame(dt) {
 		const target = scrollProgress()
 		if (eased === null) eased = target
-		eased += (target - eased) * SCROLL_EASE
+		eased = approach(eased, target, dt, SCROLL_GLIDE_S)
 		if (Math.abs(target - eased) < SCROLL_REST) eased = target
 		const p = eased
 
