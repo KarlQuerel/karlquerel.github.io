@@ -184,7 +184,6 @@
 		for (let k = 1; k < lifeSlots.length; k++) {
 			const target = k % 2 ? xR : xL
 			if (target === lane) continue
-			// the slot, not the card: the card rides the reveal's translate until it has been seen once
 			const slot = q => box(lifeSlots[q])
 			const gapTop = Math.max(slot(k - 1).bottom + pad, reach)
 			const gapBot = slot(k).top - pad
