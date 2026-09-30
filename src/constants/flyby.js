@@ -117,9 +117,6 @@ export const LOOK_REST = 0.0008
 // Rotation turns ridge and stars alike; sliding the eye is what makes the near ridge travel.
 export const SWAY_MAX = 0.5
 export const SWAY_FADE = 0.14
-// a wheel notch is a jump; the camera glides to it instead of snapping
-export const SCROLL_EASE = 0.085
-export const SCROLL_REST = 0.00004
 // below this much scroll the frame is not redrawn
 export const REDRAW_REST = 0.00002
 // a pass fading under this is skipped rather than drawn invisible
