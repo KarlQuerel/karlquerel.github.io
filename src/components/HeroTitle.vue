@@ -15,17 +15,19 @@
 			>
 		</div>
 		<h1 class="sr-only">{{ name }} — {{ role }}</h1>
+		<!-- the blurred passes on their own sprite under the ink, so going bare is a hide, not a repaint mid-flight -->
+		<canvas v-show="!bare" ref="glowEl" class="title__plate" aria-hidden="true" />
 		<canvas ref="canvasEl" class="title__plate" aria-hidden="true" />
 	</div>
 </template>
 
 <script setup>
-	import { onActivated, onMounted, ref, watch } from 'vue'
+	import { onActivated, onMounted, ref } from 'vue'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { useWindowListener } from '@/composables/useWindowListener'
 	import { HERO_FLYBY } from '@/constants/journey'
 
-	const props = defineProps({
+	defineProps({
 		// the whole name, and the two words the camera flies between
 		name: { type: String, required: true },
 		firstWords: { type: String, required: true },
@@ -33,7 +35,7 @@
 		role: { type: String, required: true },
 		// the scroll cue, on the plate with the rest so it flies with it
 		cue: { type: String, required: true },
-		// mid-transit the plate goes bare: the blurred passes magnify into frame-sized washes
+		// mid-transit the plate goes bare: the blurred passes would magnify into frame-sized washes
 		bare: { type: Boolean, default: false },
 	})
 
@@ -43,6 +45,7 @@
 	const roleEl = ref(null)
 	const cueEl = ref(null)
 	const canvasEl = ref(null)
+	const glowEl = ref(null)
 
 	// Where the corridor sits from the sprite's centre (px), measured off the real layout.
 	const emit = defineEmits(['axis'])
@@ -103,7 +106,8 @@
 
 	function paint(force = true) {
 		const el = canvasEl.value
-		if (!el || !textEl.value) return
+		const glow = glowEl.value
+		if (!el || !glow || !textEl.value) return
 		const k = liveScale(textEl.value)
 		const live = textEl.value.getBoundingClientRect()
 		if (!live.width || !live.height) return
@@ -114,15 +118,17 @@
 		const store = [Math.round(box.width * dpr), Math.round(box.height * dpr), dpr].join()
 		if (!force && store === painted) return
 		painted = store
-		el.width = Math.round(box.width * dpr)
-		el.height = Math.round(box.height * dpr)
-		el.style.width = `${box.width}px`
-		el.style.height = `${box.height}px`
-
-		const ctx = el.getContext('2d')
-		ctx.clearRect(0, 0, el.width, el.height)
-		ctx.textBaseline = 'middle'
-		ctx.textAlign = 'left'
+		const [ctx, glowCtx] = [el, glow].map(c => {
+			c.width = Math.round(box.width * dpr)
+			c.height = Math.round(box.height * dpr)
+			c.style.width = `${box.width}px`
+			c.style.height = `${box.height}px`
+			const g = c.getContext('2d')
+			g.clearRect(0, 0, c.width, c.height)
+			g.textBaseline = 'middle'
+			g.textAlign = 'left'
+			return g
+		})
 
 		const runs = [
 			measure(firstEl.value, k, false, false),
@@ -147,18 +153,14 @@
 		cue.x =
 			box.width / 2 + axis.x - (cue.text.length * (cue.size + cue.spacing) - cue.spacing) / 2
 		// Halo and bloom as their own passes; under the per-glyph loop each shadow would smear the next.
-		if (!props.bare) {
-			for (const [colour, blur, bloomOnly] of [
-				[HERO_FLYBY.plateShadow, HERO_FLYBY.plateShadowBlur, false],
-				[HERO_FLYBY.plateGlow, HERO_FLYBY.plateGlowBlur, true],
-			]) {
-				ctx.shadowColor = colour
-				ctx.shadowBlur = blur * dpr
-				for (const run of runs) if (run.bloom || !bloomOnly) drawRun(ctx, run, dpr)
-			}
+		for (const [colour, blur, bloomOnly] of [
+			[HERO_FLYBY.plateShadow, HERO_FLYBY.plateShadowBlur, false],
+			[HERO_FLYBY.plateGlow, HERO_FLYBY.plateGlowBlur, true],
+		]) {
+			glowCtx.shadowColor = colour
+			glowCtx.shadowBlur = blur * dpr
+			for (const run of runs) if (run.bloom || !bloomOnly) drawRun(glowCtx, run, dpr)
 		}
-		ctx.shadowBlur = 0
-		ctx.shadowColor = 'transparent'
 		for (const run of runs.filter(r => r.keyline)) {
 			const off = HERO_FLYBY.plateKeylineEm * run.size * dpr
 			for (const [dx, dy] of RING) {
@@ -170,25 +172,20 @@
 		// The porthole, cut last so nothing silts it up: every pass above spills into it.
 		if (!stacked) {
 			const port = HERO_FLYBY.qPort * last.size * dpr
-			ctx.clearRect(
-				(box.width / 2 + axis.x) * dpr - port / 2,
-				(box.height / 2 + axis.y) * dpr - port / 2,
-				port,
-				port
-			)
+			for (const g of [ctx, glowCtx]) {
+				g.clearRect(
+					(box.width / 2 + axis.x) * dpr - port / 2,
+					(box.height / 2 + axis.y) * dpr - port / 2,
+					port,
+					port
+				)
+			}
 		}
 
 		emit('axis', axis)
 	}
 
-	const repaint = useRafThrottle(paint)
 	const refit = useRafThrottle(() => paint(false))
-
-	// one repaint per threshold crossing, both directions
-	watch(
-		() => props.bare,
-		() => repaint()
-	)
 
 	// a mobile URL bar showing or hiding resizes the window but not the type
 	useWindowListener('resize', refit)
