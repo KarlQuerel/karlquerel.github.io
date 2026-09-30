@@ -105,6 +105,7 @@
 	import { useBackdropCover } from '@/composables/useBackdropCover'
 	import { useBackdropWarp } from '@/composables/useBackdropWarp'
 	import { useBoot } from '@/composables/useBoot'
+	import { useGlide } from '@/composables/useGlide'
 	import { usePointerParallax } from '@/composables/usePointerParallax'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { useScrollSections } from '@/composables/useScrollSections'
@@ -134,6 +135,8 @@
 
 	const { parallaxStyle, pointer } = usePointerParallax()
 	const { progress, sync } = useScrollSections(trackRef)
+	// the scene flies on a glide behind the scroll; the page's own text and rail stay on the raw one
+	const { value: glided, snap } = useGlide(progress)
 
 	// layout constants exposed to the stylesheet, so SCSS carries no hardcoded twins
 	const trackStyle = {
@@ -225,28 +228,30 @@
 		routeRef.value?.measure(track)
 	}
 
-	const scrolled = computed(() => progress.value * Math.max(0, dims.value.trackH - dims.value.vh))
+	const toTrack = p => p * Math.max(0, dims.value.trackH - dims.value.vh)
+	const scrolled = computed(() => toTrack(progress.value))
+	const flight = computed(() => toTrack(glided.value))
 
 	// how far down the arrival's runway the same scroll has come, 0 -> 1
 	const arrivalProgress = computed(() =>
-		clamp01((scrolled.value - dims.value.arrivalTop) / Math.max(1, dims.value.arrivalRun))
+		clamp01((flight.value - dims.value.arrivalTop) / Math.max(1, dims.value.arrivalRun))
 	)
 
 	// Sampled at an arbitrary scroll: the route needs where the planet will be, not where it is.
 	const sampler = computed(() => cameraSampler(camTrack.value))
 	const camAt = s => sampler.value(s)
 
-	const cam = computed(() => camAt(scrolled.value))
+	const cam = computed(() => camAt(flight.value))
 	// the planet keeps rolling for the whole trip; the camera's roll piles ground rush on top
-	const spin = computed(() => (progress.value * JOURNEY.turns + cam.value.roll) * Math.PI * 2)
+	const spin = computed(() => (glided.value * JOURNEY.turns + cam.value.roll) * Math.PI * 2)
 
 	// The sun holds still in the world while you orbit — the terminator advances.
 	const lightYaw = computed(
-		() => (progress.value * JOURNEY.sunTurns + cam.value.light) * Math.PI * 2
+		() => (glided.value * JOURNEY.sunTurns + cam.value.light) * Math.PI * 2
 	)
 
 	// how far through the pass we are; past 1 the words are gone but the flight carries on
-	const pass = computed(() => scrolled.value / ((dims.value.vh || 1) * HERO_FLYBY.runVh))
+	const pass = computed(() => flight.value / ((dims.value.vh || 1) * HERO_FLYBY.runVh))
 
 	// The name stands on a plane `titleZ` ahead, so its scale is what closing that gap does.
 	const passScale = computed(() => 1 / (1 - flown(clamp01(pass.value)) / HERO_FLYBY.titleZ))
@@ -360,6 +365,7 @@
 		parked = false
 		measure()
 		sync()
+		snap()
 		covered.value = haze.value >= 1
 		warp.value = warpOf()
 	})
