@@ -7,12 +7,7 @@ export const PLANET = {
 	crispFrom: 3,
 	// Disc radius as a fraction of the sprite; the margin leaves room for the halo to bleed past.
 	discRadius: 0.36,
-	// Surface redraw rate, an even divisor of 60Hz so frames pace evenly. spinSeconds = one turn.
-	fps: 30,
-	// phone viewports redraw slower — imperceptible at this pixel scale, cheaper on battery
-	fpsMobile: 20,
-	spinSeconds: 64,
-	// Redraw rate while the spin is scroll-driven (PixelPlanet `spin` prop).
+	// Surface redraw ceiling as the scroll turns the globe.
 	orbitFps: 60,
 	// The deck's thinning is the one non-angle input to a redraw, so it needs its own floor.
 	cloudThinStep: 0.02,
