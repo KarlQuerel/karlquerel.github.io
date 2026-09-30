@@ -5,6 +5,101 @@ import { PLANET } from '../constants/planet.js'
 import { smoothstep } from './math.js'
 import { ditherIndex, ditherThreshold } from './pixelNoise.js'
 
+// dependency-free 3D hash, seeded per visit so no two planets are alike
+export const seededHash3 = seed => (ix, iy, iz) => {
+	let n = Math.imul(ix, 374761393)
+	n = (n + Math.imul(iy, 668265263)) | 0
+	n = (n + Math.imul(iz, 1274126177)) | 0
+	n = (n + Math.imul(seed, 951274213)) | 0
+	n ^= n >>> 13
+	n = Math.imul(n, 1274126177)
+	n ^= n >>> 16
+	return (n >>> 0) / 4294967295
+}
+
+// This visit's fixed features, rolled from the seed: impact basins in planet space, the storm in cloud space.
+export function planetWorld(seed) {
+	const hash3 = seededHash3(seed)
+	const bs = PLANET.basins
+	const basins = Array.from({ length: bs.count }, (_, b) => {
+		const lon = hash3(101 + b, 7, 13) * Math.PI * 2
+		const y = (hash3(3, 51 + b, 11) - 0.5) * 2 * bs.latMax
+		const r = Math.sqrt(Math.max(0, 1 - y * y))
+		return {
+			x: r * Math.sin(lon),
+			y,
+			z: r * Math.cos(lon),
+			cos: Math.cos(bs.radMin + (bs.radMax - bs.radMin) * hash3(9, 29, 71 + b)),
+		}
+	})
+	const st = PLANET.storm
+	const lonS = st.faceLon + (hash3(11, 23, 5) - 0.5) * st.lonJitter
+	const latS = st.latMin + (st.latMax - st.latMin) * hash3(17, 3, 29)
+	const sty = hash3(7, 13, 19) < 0.5 ? -latS : latS
+	// sin/cos order matches the view transform, so a storm at lonS faces the camera at that cloud angle
+	const rS = Math.sqrt(1 - sty * sty)
+	const stx = rS * Math.sin(lonS)
+	const stz = rS * Math.cos(lonS)
+	// Tangent basis at the storm centre for the rainbands' angle (latMax keeps it off the poles).
+	const u1m = Math.hypot(stx, stz) || 1
+	const u1x = -stz / u1m
+	const u1z = stx / u1m
+	const storm = {
+		x: stx,
+		y: sty,
+		z: stz,
+		cos: Math.cos(st.radius),
+		u1x,
+		u1z,
+		u2x: sty * u1z,
+		u2y: stz * u1x - stx * u1z,
+		u2z: -sty * u1x,
+		bandPhase: hash3(29, 41, 3) * Math.PI * 2,
+	}
+	return { hash3, basins, storm }
+}
+
+function normalize(v) {
+	const m = Math.hypot(v[0], v[1], v[2]) || 1
+	return [v[0] / m, v[1] / m, v[2] / m]
+}
+
+const LIGHT = normalize(PLANET.light)
+const TILT = (PLANET.tiltDeg * Math.PI) / 180
+const COS_T = Math.cos(TILT)
+const SIN_T = Math.sin(TILT)
+
+// The angles one picture is drawn at, resolved to the rotations and light vectors every pixel reads.
+export function planetFrame(spin, lightYaw) {
+	const spinC = spin * PLANET.clouds.spinFactor
+	// the key light swung around the vertical axis — the orbiting terminator
+	const cosL = Math.cos(lightYaw)
+	const sinL = Math.sin(lightYaw)
+	const lx = LIGHT[0] * cosL + LIGHT[2] * sinL
+	const ly = LIGHT[1]
+	const lz = -LIGHT[0] * sinL + LIGHT[2] * cosL
+	return {
+		cosS: Math.cos(spin),
+		sinS: Math.sin(spin),
+		// the cloud shell drifts ahead of the ground, so weather crosses coastlines
+		cosC: Math.cos(spinC),
+		sinC: Math.sin(spinC),
+		light: [lx, ly, lz],
+		// Blinn half-vector of the yawed key light and the viewer — the sea glint
+		half: normalize([lx, ly, lz + 1]),
+		// the yawed light in the tilted frame the cloud shell samples in
+		lightT: [lx, ly * COS_T - lz * SIN_T, ly * SIN_T + lz * COS_T],
+	}
+}
+
+// the sprite's geometry in cells, shared with the GPU pass
+export const planetDisc = res => ({
+	radius: res * PLANET.discRadius,
+	center: res / 2,
+	cosT: COS_T,
+	sinT: SIN_T,
+})
+
 // `res` is the sprite's side in cells, `seed` this visit's world.
 export function createPlanetShader({ res, seed }) {
 	// the ramps resolved out of the palette once: neither changes live
@@ -21,22 +116,7 @@ export function createPlanetShader({ res, seed }) {
 	const clampByte = v => (v < 0 ? 0 : v > 255 ? 255 : v | 0)
 	const mix = (a, b, t) => a + (b - a) * t
 
-	function normalize(v) {
-		const m = Math.hypot(v[0], v[1], v[2]) || 1
-		return [v[0] / m, v[1] / m, v[2] / m]
-	}
-
-	// dependency-free 3D value noise, seeded per visit so no two planets are alike
-	function hash3(ix, iy, iz) {
-		let n = Math.imul(ix, 374761393)
-		n = (n + Math.imul(iy, 668265263)) | 0
-		n = (n + Math.imul(iz, 1274126177)) | 0
-		n = (n + Math.imul(seed, 951274213)) | 0
-		n ^= n >>> 13
-		n = Math.imul(n, 1274126177)
-		n ^= n >>> 16
-		return (n >>> 0) / 4294967295
-	}
+	const { hash3, basins, storm } = planetWorld(seed)
 
 	function noise3(x, y, z) {
 		const ix = Math.floor(x)
@@ -75,22 +155,6 @@ export function createPlanetShader({ res, seed }) {
 		return n
 	}
 
-	// rolled from the same seed as the terrain, once per visit
-	function rollBasins() {
-		const bs = PLANET.basins
-		return Array.from({ length: bs.count }, (_, b) => {
-			const lon = hash3(101 + b, 7, 13) * Math.PI * 2
-			const y = (hash3(3, 51 + b, 11) - 0.5) * 2 * bs.latMax
-			const r = Math.sqrt(Math.max(0, 1 - y * y))
-			return {
-				x: r * Math.sin(lon),
-				y,
-				z: r * Math.cos(lon),
-				cos: Math.cos(bs.radMin + (bs.radMax - bs.radMin) * hash3(9, 29, 71 + b)),
-			}
-		})
-	}
-
 	// Which band an elevation falls in. Edges are dithered, not cross-faded: a blend is a colour we lack.
 	function bandAt(n, thr) {
 		const bw = PLANET.bandBlend
@@ -102,66 +166,24 @@ export function createPlanetShader({ res, seed }) {
 		return EDGES.length - 1
 	}
 
-	const radius = res * PLANET.discRadius
-	const center = res / 2
-	const light = normalize(PLANET.light)
-	const tilt = (PLANET.tiltDeg * Math.PI) / 180
-	const cosT = Math.cos(tilt)
-	const sinT = Math.sin(tilt)
+	const { radius, center, cosT, sinT } = planetDisc(res)
 	const haloReach = 1 + PLANET.haloWidth
 	// the disc the sweep is bounded to: the halo's outer edge, in cells
 	const reach2 = haloReach * haloReach
 	const row0 = Math.max(0, Math.ceil(center - haloReach * radius - 0.5))
 	const row1 = Math.min(res - 1, Math.floor(center + haloReach * radius - 0.5))
 
-	// this visit's impact basins, fixed in planet space so they turn with the ground
-	const basins = rollBasins()
-
 	function draw(d, spin, lightYaw, cloudThin) {
-		const cosS = Math.cos(spin)
-		const sinS = Math.sin(spin)
-		// the cloud shell drifts ahead of the ground, so weather crosses coastlines
+		const { cosS, sinS, cosC, sinC, light, half, lightT } = planetFrame(spin, lightYaw)
+		const [lx, ly, lz] = light
+		const [hvx, hvy, hvz] = half
+		const [ltx, lty, ltz] = lightT
 		const cl = PLANET.clouds
-		const cosC = Math.cos(spin * cl.spinFactor)
-		const sinC = Math.sin(spin * cl.spinFactor)
-		// the key light swung around the vertical axis — the orbiting terminator
-		const cosL = Math.cos(lightYaw)
-		const sinL = Math.sin(lightYaw)
-		const lx = light[0] * cosL + light[2] * sinL
-		const lz = -light[0] * sinL + light[2] * cosL
-		// Blinn half-vector of the yawed key light and the viewer — the sea glint
-		let hvx = lx
-		let hvy = light[1]
-		let hvz = lz + 1
-		const hm = Math.hypot(hvx, hvy, hvz) || 1
-		hvx /= hm
-		hvy /= hm
-		hvz /= hm
-		// the yawed light in the tilted frame the cloud shell samples in
 		const so = cl.shadowOffset
-		const ltx = lx
-		const lty = light[1] * cosT - lz * sinT
-		const ltz = light[1] * sinT + lz * cosT
 		// how thin the deck is — scales cover, so thinning opens it into scattered dither rather than fading
 		const thin = cloudThin
-		// this visit's storm centre: a unit vector in cloud space, so it rides the shell.
 		const st = PLANET.storm
-		const lonS = st.faceLon + (hash3(11, 23, 5) - 0.5) * st.lonJitter
-		const latS = st.latMin + (st.latMax - st.latMin) * hash3(17, 3, 29)
-		const sty = hash3(7, 13, 19) < 0.5 ? -latS : latS
-		// sin/cos order matches the view transform, so a storm at lonS faces the camera at that cloud angle
-		const rS = Math.sqrt(1 - sty * sty)
-		const stx = rS * Math.sin(lonS)
-		const stz = rS * Math.cos(lonS)
-		const stormCos = Math.cos(st.radius)
-		// Tangent basis at the storm centre for the rainbands' angle (latMax keeps it off the poles).
-		const u1m = Math.hypot(stx, stz) || 1
-		const u1x = -stz / u1m
-		const u1z = stx / u1m
-		const u2x = sty * u1z
-		const u2y = stz * u1x - stx * u1z
-		const u2z = -sty * u1x
-		const bandPhase = hash3(29, 41, 3) * Math.PI * 2
+		const { x: stx, y: sty, z: stz, cos: stormCos, u1x, u1z, u2x, u2y, u2z, bandPhase } = storm
 
 		// Cloud cover at a cloud-space point: the deck overhead and the shadow it casts read this one field.
 		let stormT = 0
@@ -235,10 +257,7 @@ export function createPlanetShader({ res, seed }) {
 						// The shell's normal is its direction from centre; its zero crossing sits shellTwilight past the terminator.
 						const inv = 1 / dist
 						const tw = PLANET.shellTwilight
-						const nl = Math.max(
-							0,
-							(dx * inv * lx + dy * inv * light[1] + tw) / (1 + tw)
-						)
+						const nl = Math.max(0, (dx * inv * lx + dy * inv * ly + tw) / (1 + tw))
 						const night = PLANET.shellNight
 						d[i] = col[0]
 						d[i + 1] = col[1]
@@ -250,7 +269,7 @@ export function createPlanetShader({ res, seed }) {
 
 				const dz = Math.sqrt(1 - d2)
 				// The key light picks a step on a ramp rather than scaling a colour, so the terminator is a hard edge.
-				const diff = Math.max(0, dx * lx + dy * light[1] + dz * lz)
+				const diff = Math.max(0, dx * lx + dy * ly + dz * lz)
 
 				// rotate the normal into planet space so the surface turns under static lighting
 				const ny = dy * cosT - dz * sinT
