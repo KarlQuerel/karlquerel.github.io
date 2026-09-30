@@ -1123,8 +1123,6 @@ export const ROUTE = {
 	// How many straight steps a corner arc is walked in; the browser draws the real curve.
 	curveSteps: 12,
 	nodePx: 7,
-	// how far the flown-mask dash's gap overruns its subpath, so no second dash starts inside it
-	dashTailPx: 10,
 	// read off the page when it can be, these when it cannot: the root size, and the WORK rail (rem)
 	remFallbackPx: 16,
 	railCenterRem: 2,
