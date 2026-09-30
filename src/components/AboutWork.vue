@@ -399,6 +399,7 @@
 		color: $yellow;
 	}
 
+	// A stepped fade on its own clock, no slide: text that hops in place while the page scrolls reads as stutter.
 	.ztl-item.is-visible .ztl-row,
 	.ztl-item.is-visible .ztl-chapter {
 		animation: card-in 0.5s steps(6, end) forwards;
@@ -407,11 +408,9 @@
 	@keyframes card-in {
 		from {
 			opacity: 0;
-			transform: translateY(16px);
 		}
 		to {
 			opacity: 1;
-			transform: none;
 		}
 	}
 
@@ -435,7 +434,6 @@
 		.ztl-row,
 		.ztl-chapter {
 			opacity: 1;
-			transform: none;
 		}
 
 		.ztl-item.is-visible .ztl-row,
