@@ -54,7 +54,8 @@
 	// Setting width/height reallocates and clears the backing store, so only do it on a real resize.
 	function resize() {
 		const el = canvasEl.value
-		if (!el || !dirty) return
+		// a canvas out of layout measures 0: sizing the store off that stretches one pixel over the frame
+		if (!el || !dirty || !el.clientWidth) return
 		dirty = false
 		const scale = HERO_FLYBY.motePixelScale
 		const next = [
@@ -132,7 +133,12 @@
 
 	const redraw = useRafThrottle(draw)
 
-	watch(() => [props.travel, props.fade, props.lean, props.heat, props.surge], redraw)
+	// Every input rides a frame loop (the scroll glide, the pointer's settle), so draw in that same frame:
+	// deferring to the next rAF collided with the glide's own tick and halved the field's rate. Post-flush,
+	// so a canvas the fade just brought back is already laid out when it is measured.
+	watch(() => [props.travel, props.fade, props.lean, props.heat, props.surge], draw, {
+		flush: 'post',
+	})
 
 	// a resize while parked by KeepAlive went unheard, so coming back re-reads the box too
 	function resized() {
