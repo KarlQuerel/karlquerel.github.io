@@ -1,21 +1,13 @@
 <template>
 	<!-- Pixel-art emblem framed as a timeline node. Decorative, so aria-hidden. Sprites
-	     are char grids in constants/emblems.js, rendered as run-length rects. -->
+	     are char grids in constants/emblems.js, rendered as one path per colour. -->
 	<span class="pixel-emblem" aria-hidden="true">
 		<svg
 			class="pixel-emblem__svg"
 			:viewBox="`0 0 ${size.w} ${size.h}`"
 			shape-rendering="crispEdges"
 		>
-			<rect
-				v-for="(r, i) in rects"
-				:key="i"
-				:class="`px-${r.c}`"
-				:x="r.x"
-				:y="r.y"
-				:width="r.w"
-				height="1"
-			/>
+			<path v-for="p in paths" :key="p.c" :class="`px-${p.c}`" :d="p.d" />
 		</svg>
 	</span>
 </template>
@@ -31,9 +23,10 @@
 	const rows = computed(() => EMBLEM_PIXEL_MAPS[props.emblem] ?? [])
 	const size = computed(() => ({ w: rows.value[0]?.length ?? 0, h: rows.value.length }))
 
-	// merge horizontal runs of one colour into single rects to keep the DOM lean
-	const rects = computed(() => {
-		const out = []
+	// Horizontal runs of one colour, each a unit-high box, gathered into one path per colour: a sprite
+	// is a dozen nodes instead of hundreds of rects, and a fraction of the markup the prerender ships.
+	const paths = computed(() => {
+		const runs = {}
 		rows.value.forEach((row, y) => {
 			for (let x = 0; x < row.length; ) {
 				const c = row[x]
@@ -43,11 +36,11 @@
 				}
 				let w = 1
 				while (row[x + w] === c) w += 1
-				out.push({ x, y, w, c })
+				;(runs[c] ??= []).push(`M${x} ${y}h${w}v1h-${w}z`)
 				x += w
 			}
 		})
-		return out
+		return Object.entries(runs).map(([c, d]) => ({ c, d: d.join('') }))
 	})
 </script>
 
