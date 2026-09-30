@@ -43,6 +43,8 @@
 	const canvasEl = ref(null)
 	let field = null
 	let lean = { x: 0, y: 0 }
+	// read in the scroll event: inside a frame, after the journey's style writes, it forces a layout
+	let scrollY = window.scrollY
 	const warp = useBackdropWarp()
 
 	// halt the drift when the page is hidden, or the entry veil has covered the sky
@@ -74,7 +76,7 @@
 		field.draw({
 			t: still ? 0 : driftSeconds(),
 			lean,
-			scrollY: scrollParallax && !still ? window.scrollY : 0,
+			scrollY: scrollParallax && !still ? scrollY : 0,
 			warp: scrollParallax && !still ? warp.value : 0,
 		})
 	}
@@ -128,9 +130,13 @@
 			lean = leanOf(event)
 			drawSoon()
 		})
-		useWindowListener('scroll', drawSoon)
-		// the warp rides scroll, so it stays off wherever scroll parallax does
-		watch(warp, drawSoon)
+		useWindowListener('scroll', () => {
+			scrollY = window.scrollY
+			drawSoon()
+		})
+		// the warp rides scroll, so it stays off wherever scroll parallax does; it changes in the glide's
+		// own frame, so it draws there rather than a frame later
+		watch(warp, draw)
 	}
 
 	onMounted(() => {
