@@ -43,13 +43,14 @@
 							:srcset="section.media.still"
 							media="(prefers-reduced-motion: reduce)"
 						/>
+						<!-- loading before src: Vue sets attributes in order, and a src set first fetches eagerly -->
 						<img
+							loading="lazy"
+							decoding="async"
 							:src="section.media.src"
 							:alt="section.media.alt"
 							:width="section.media.width"
 							:height="section.media.height"
-							loading="lazy"
-							decoding="async"
 						/>
 					</picture>
 					<p class="life-card__line" :class="{ 'life-card__lede': i === 0 }">
