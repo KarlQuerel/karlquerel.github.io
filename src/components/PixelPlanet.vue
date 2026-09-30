@@ -1,6 +1,8 @@
 <template>
 	<!-- procedural low-res planet, upscaled pixelated. Decorative -->
+	<!-- keyed on the renderer: a canvas WebGL has claimed can never give a 2D context to the fall-back -->
 	<canvas
+		:key="gpuLost"
 		ref="canvasEl"
 		class="planet"
 		:class="{ 'planet--smooth': smooth }"
@@ -12,6 +14,7 @@
 <script setup>
 	import {
 		computed,
+		nextTick,
 		ref,
 		watch,
 		onActivated,
@@ -21,6 +24,7 @@
 	} from 'vue'
 	import { useWindowListener } from '@/composables/useWindowListener'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
+	import { createPlanetGpu } from '@/js/planetGpu'
 	import { createPlanetShader } from '@/js/planetShader'
 	import PlanetWorker from '@/js/planet.worker.js?worker'
 	import { PLANET } from '@/constants/planet'
@@ -30,8 +34,8 @@
 		// False parks the shader. The globe keeps its canvas and seed, but a sweep under zero opacity is
 		// the most expensive way to draw nothing — and the entry is exactly where it would happen.
 		awake: { type: Boolean, default: true },
-		// Longitude in radians. null → the planet free-spins on the clock over PLANET.spinSeconds.
-		spin: { type: Number, default: null },
+		// Longitude in radians, scroll-driven.
+		spin: { type: Number, default: 0 },
 		// Sun yaw in radians about the view's vertical. 0 keeps the fixed upper-left key light.
 		lightYaw: { type: Number, default: 0 },
 		// 0 -> full cloud deck, 1 -> clear. At landing magnification a deck reads as a checker layer.
@@ -41,14 +45,15 @@
 	})
 
 	const canvasEl = ref(null)
+	// The GPU draws a sweep in well under a millisecond; the CPU path (worker, then 2D blit) is the fall-back.
+	let gpu = null
+	const gpuLost = ref(false)
 	let ctx = null
-	let rafId = 0
 	let drawId = 0
 	let lastDraw = -1
 	const isMobile = window.matchMedia(MOBILE_VIEWPORT_QUERY).matches
 	// phones draw a smaller sprite — the per-pixel shader cost is resolution²
 	const res = isMobile ? PLANET.resolutionMobile : PLANET.resolution
-	const frameMs = 1000 / (isMobile ? PLANET.fpsMobile : PLANET.fps)
 	const orbitFrameMs = 1000 / (isMobile ? PLANET.orbitFpsMobile : PLANET.orbitFps)
 
 	// Device px each cell covers on screen: the dither aliases into checkers unless it is filtered to that.
@@ -64,7 +69,7 @@
 		return blur > 0 ? { filter: `blur(${blur}px)` } : null
 	})
 	useWindowListener('resize', measureBox)
-	// this visit's world, fixed here so both threads' shaders roll the same terrain
+	// this visit's world, fixed here so every renderer rolls the same terrain
 	const seed = Math.floor(Math.random() * 1e5) + 1
 
 	// One buffer, ping-ponged with the worker so a frame allocates nothing.
@@ -79,19 +84,21 @@
 	let drawnSpin = null
 	let drawnYaw = 0
 	let drawnThin = 0
-
 	// Reduced motion holds the globe's turn where it was first drawn; light and weather still follow.
 	let heldSpin = 0
-	const spinTarget = () => (prefersReducedMotion() ? heldSpin : (props.spin ?? 0))
+	const spinTarget = () => (prefersReducedMotion() ? heldSpin : props.spin)
 
-	// A redraw that cannot move an art pixel costs a full sweep to produce the picture already on screen.
+	// The CPU waits for a whole art pixel of turn before paying for a sweep. The GPU's sweep is nearly free,
+	// and a part-cell turn still flips the cells on an edge, so it follows every change: the glide stays fluid.
 	const cellTurn = (2 * Math.PI) / res
 	function moved() {
+		const turn = gpu ? 0 : cellTurn
+		const thin = gpu ? 0 : PLANET.cloudThinStep
 		return (
 			drawnSpin === null ||
-			Math.abs(spinTarget() - drawnSpin) >= cellTurn ||
-			Math.abs(props.lightYaw - drawnYaw) >= cellTurn ||
-			Math.abs(props.cloudThin - drawnThin) >= PLANET.cloudThinStep
+			Math.abs(spinTarget() - drawnSpin) > turn ||
+			Math.abs(props.lightYaw - drawnYaw) > turn ||
+			Math.abs(props.cloudThin - drawnThin) > thin
 		)
 	}
 
@@ -105,6 +112,10 @@
 		drawnSpin = spin
 		drawnYaw = props.lightYaw
 		drawnThin = props.cloudThin
+		if (gpu) {
+			gpu.draw(spin, drawnYaw, drawnThin)
+			return
+		}
 		if (!worker) {
 			shader.draw(pixels, spin, drawnYaw, drawnThin)
 			blit()
@@ -123,7 +134,7 @@
 		pixels = new Uint8ClampedArray(data.buffer)
 		if (ctx) blit()
 		// the angles may have run on while the sweep was in flight — chase them
-		if (props.spin !== null) scheduleDraw()
+		scheduleDraw()
 	}
 
 	// A worker that cannot run must not take the globe down: the sweep comes back to this thread.
@@ -132,20 +143,18 @@
 		worker = null
 		if (!pixels) pixels = new Uint8ClampedArray(res * res * 4)
 		drawnSpin = null
-		resume()
+		scheduleDraw()
 	}
 
-	function loop(ts) {
-		if (pixels && (lastDraw < 0 || ts - lastDraw >= frameMs)) {
-			lastDraw = ts
-			render((ts / 1000 / PLANET.spinSeconds) * Math.PI * 2)
-		}
-		rafId = requestAnimationFrame(loop)
-	}
-
-	// Driven mode: at most one sweep in flight, always trailing to the latest angle.
+	// The GPU draws in the same frame the angles changed. The CPU keeps at most one sweep in flight,
+	// capped in rate and always trailing to the latest angle.
 	function scheduleDraw() {
-		if (drawId || !pixels || parked || !ctx || !props.awake || !moved()) return
+		if (parked || !props.awake || !moved()) return
+		if (gpu) {
+			render(spinTarget())
+			return
+		}
+		if (drawId || !pixels || !ctx) return
 		drawId = requestAnimationFrame(ts => {
 			drawId = 0
 			if (lastDraw >= 0 && ts - lastDraw < orbitFrameMs) {
@@ -157,22 +166,8 @@
 		})
 	}
 
-	// free-spinning planets run the idle loop; driven ones redraw off the spin watcher
-	function resume() {
-		if (parked || !ctx) return
-		if (props.spin !== null) {
-			scheduleDraw()
-			return
-		}
-		if (!rafId && props.awake && !prefersReducedMotion()) {
-			rafId = requestAnimationFrame(loop)
-		}
-	}
-
 	function stopLoop() {
-		if (rafId) cancelAnimationFrame(rafId)
 		if (drawId) cancelAnimationFrame(drawId)
-		rafId = 0
 		drawId = 0
 	}
 
@@ -180,17 +175,21 @@
 	watch(() => props.lightYaw, scheduleDraw)
 	watch(() => props.cloudThin, scheduleDraw)
 	// coming back on has to catch the picture up: `moved` sees a stale angle and redraws
-	watch(() => props.awake, resume)
+	watch(() => props.awake, scheduleDraw)
 
-	onMounted(() => {
-		const el = canvasEl.value
-		measureBox()
-		el.width = res
-		el.height = res
+	// A lost context drops the globe to the CPU path for the rest of the visit, on a fresh canvas.
+	async function toCpu() {
+		gpu = null
+		gpuLost.value = true
+		await nextTick()
+		start()
+	}
+
+	function startCpu(el) {
 		ctx = el.getContext('2d')
+		if (!ctx) return
 		shader = createPlanetShader({ res, seed })
 		// the first frame on this thread, so the globe is ready the instant it reveals
-		heldSpin = props.spin ?? 0
 		render(heldSpin)
 		try {
 			worker = new PlanetWorker()
@@ -200,8 +199,31 @@
 		} catch {
 			worker = null
 		}
-		resume()
-	})
+	}
+
+	function start() {
+		const el = canvasEl.value
+		measureBox()
+		el.width = res
+		el.height = res
+		heldSpin = props.spin
+		drawnSpin = null
+		if (!gpuLost.value) {
+			gpu = createPlanetGpu(el, { res, seed })
+			if (!gpu) {
+				// a failed compile has already claimed this canvas
+				toCpu()
+				return
+			}
+			el.addEventListener('webglcontextlost', toCpu, { once: true })
+			render(heldSpin)
+			return
+		}
+		startCpu(el)
+		scheduleDraw()
+	}
+
+	onMounted(start)
 
 	// kept alive under HomeJourney: onBeforeUnmount never fires on navigation
 	onDeactivated(() => {
@@ -211,12 +233,13 @@
 	onActivated(() => {
 		parked = false
 		measureBox()
-		resume()
+		scheduleDraw()
 	})
 
 	onBeforeUnmount(() => {
 		parked = true
 		stopLoop()
+		gpu?.release()
 		if (worker) worker.terminate()
 	})
 </script>
