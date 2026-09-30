@@ -1,18 +1,7 @@
 <template>
-	<!-- fixed backdrop: drifting parallax pixel-star layers + occasional shooting star. Decorative -->
-	<div
-		class="space-bg"
-		:class="{ 'is-paused': paused }"
-		:style="parallaxStyle"
-		aria-hidden="true"
-	>
-		<div
-			v-for="layer in starLayers"
-			:key="layer.id"
-			:ref="el => el && (layerEls[layer.id] = el)"
-			class="star-layer"
-			:style="layer.style"
-		/>
+	<!-- fixed backdrop: drifting parallax pixel-star planes + occasional shooting star. Decorative -->
+	<div class="space-bg" aria-hidden="true">
+		<canvas ref="canvasEl" class="space-bg__stars" />
 		<div
 			v-for="star in shootingStars"
 			:key="star.id"
@@ -32,132 +21,87 @@
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { useSkySpawner } from '@/composables/useSkySpawner'
 	import { useWindowListener } from '@/composables/useWindowListener'
-	import {
-		STAR_COLORS,
-		STAR_LAYERS,
-		STAR_LAYER_PAD,
-		STAR_SIZE_JITTER,
-		STAR_TILE_MAX_DPR,
-		SCROLL_PARALLAX,
-		SHOOTING_STAR,
-		DRIFT_STEP_DEVICE_PX,
-	} from '@/constants/starfield'
+	import { STAR_LAYERS, SHOOTING_STAR } from '@/constants/starfield'
 	import { FINE_POINTER_QUERY, MOBILE_VIEWPORT_QUERY } from '@/constants/viewport'
 	import { randIn } from '@/js/math'
+	import { createStarfield } from '@/js/starfield'
 
 	function pick(arr) {
 		return arr[Math.floor(Math.random() * arr.length)]
 	}
 
-	// #rrggbb + 0..1 alpha → #rrggbbaa so each dot carries its own opacity
-	function withAlpha(hex, alpha) {
-		return (
-			hex +
-			Math.round(alpha * 255)
-				.toString(16)
-				.padStart(2, '0')
-		)
-	}
-
-	const dpr = Math.min(window.devicePixelRatio || 1, STAR_TILE_MAX_DPR)
-
-	// paint the tile's dots once into a bitmap: eviction then costs one blit, not dozens of gradients
-	function rasterizeTile(layer) {
-		const [w, h] = layer.tile
-		const canvas = document.createElement('canvas')
-		canvas.width = w * dpr
-		canvas.height = h * dpr
-		const ctx = canvas.getContext('2d')
-		ctx.scale(dpr, dpr)
-		for (let i = 0; i < layer.count; i++) {
-			ctx.fillStyle = withAlpha(pick(STAR_COLORS), randIn(layer.alpha))
-			ctx.beginPath()
-			ctx.arc(
-				randIn([0, w]),
-				randIn([0, h]),
-				(layer.size * randIn(STAR_SIZE_JITTER)) / 2,
-				0,
-				Math.PI * 2
-			)
-			ctx.fill()
-		}
-		return canvas.toDataURL()
-	}
-
 	const still = prefersReducedMotion()
 
-	// scroll parallax is desktop-only: full-rate recomposits during scroll were the phone lag
+	// scroll parallax is desktop-only: full-rate redraws during scroll were the phone lag
 	const scrollParallax = window.matchMedia(FINE_POINTER_QUERY).matches
 
-	// one parallax plane: its pre-rendered dot tile + drift vars
-	function buildLayer(layer, id) {
-		const [w, h] = layer.tile
-		// bleed only the two trailing edges (leading never uncovers); pad covers the mouse parallax.
-		const [dirX, dirY] = layer.dir
-		const pad = layer.depth + STAR_LAYER_PAD
-		return {
-			id,
-			style: {
-				backgroundImage: `url(${rasterizeTile(layer)})`,
-				backgroundSize: `${w}px ${h}px`,
-				'--bleed-top': `${(dirY > 0 ? h : 0) + pad}px`,
-				'--bleed-right': `${(dirX < 0 ? w : 0) + pad}px`,
-				'--bleed-bottom': `${(dirY < 0 || scrollParallax ? h : 0) + pad}px`,
-				'--bleed-left': `${(dirX > 0 ? w : 0) + pad}px`,
-				// drift exactly one tile so the loop is seamless; sign sets direction
-				'--drift-x': `${dirX * w}px`,
-				'--drift-y': `${dirY * h}px`,
-				'--dur': `${layer.duration}s`,
-				// one step per device pixel of travel: reads as continuous motion, yet skips ~9 frames in 10
-				'--drift-steps': Math.max(
-					1,
-					Math.round((Math.hypot(w, h) * dpr) / DRIFT_STEP_DEVICE_PX)
-				),
-				'--depth': layer.depth,
-			},
-		}
-	}
-
-	// phones skip the faintest far plane — one fewer full-screen composited layer
+	// phones skip the faintest far plane
 	const layerSpecs = window.matchMedia(MOBILE_VIEWPORT_QUERY).matches
 		? STAR_LAYERS.slice(1)
 		: STAR_LAYERS
-	// Generated once per visit → no two loads share the same sky.
-	const starLayers = layerSpecs.map((layer, i) => buildLayer(layer, i))
-	const layerEls = []
 
-	// Streaming the planes past at depth-scaled rates as the page scrolls — the "camera travelling" cue.
-	const onScrollParallax = useRafThrottle(() => {
-		const y = window.scrollY
-		layerSpecs.forEach((spec, i) => {
-			const el = layerEls[i]
-			if (!el) return
-			const offset = Math.round((y * SCROLL_PARALLAX * spec.depth) % spec.tile[1])
-			el.style.setProperty('--sy', `${-offset}px`)
-		})
-	})
-
-	// Written straight to the planes like --sy: a Vue re-render per scroll frame was the cost.
+	const canvasEl = ref(null)
+	let field = null
+	let lean = { x: 0, y: 0 }
 	const warp = useBackdropWarp()
-	const applyWarp = useRafThrottle(() => {
-		layerSpecs.forEach((spec, i) => {
-			// an exponent, so every plane zooms at a steady rate, the near ones fastest
-			layerEls[i]?.style.setProperty('scale', ((1 + spec.warp) ** warp.value).toFixed(3))
-		})
-	})
 
-	const pointer = ref({ x: 0, y: 0 })
-	const parallaxStyle = computed(() => ({ '--mx': pointer.value.x, '--my': pointer.value.y }))
-
-	const onPointerMove = useRafThrottle(event => (pointer.value = leanOf(event)))
-
-	// halt the drift loops when the page is hidden, or the entry veil has covered the sky
+	// halt the drift when the page is hidden, or the entry veil has covered the sky
 	const covered = useBackdropCover()
 	const hidden = ref(false)
 	const paused = computed(() => hidden.value || covered.value)
 	const onVisibility = () => {
 		hidden.value = document.visibilityState !== 'visible'
 	}
+
+	// The drift's clock stops while paused, so the sky resumes where it was rather than jumping on.
+	let clockBase = 0
+	let runningSince = performance.now()
+	const driftSeconds = () =>
+		(clockBase + (paused.value ? 0 : performance.now() - runningSince)) / 1000
+
+	watch(paused, now => {
+		if (now) {
+			clockBase += performance.now() - runningSince
+			stopDrift()
+		} else {
+			runningSince = performance.now()
+			startDrift()
+		}
+	})
+
+	function draw() {
+		if (!field || covered.value) return
+		field.draw({
+			t: still ? 0 : driftSeconds(),
+			lean,
+			scrollY: scrollParallax && !still ? window.scrollY : 0,
+			warp: scrollParallax && !still ? warp.value : 0,
+		})
+	}
+	const drawSoon = useRafThrottle(draw)
+
+	// The idle drift ticks at the fastest plane's one-pixel hop: nothing moves in between.
+	let driftTimer = 0
+	function startDrift() {
+		if (still || driftTimer || !field) return
+		const tick = () => {
+			drawSoon()
+			driftTimer = window.setTimeout(tick, field.hopSeconds() * 500)
+		}
+		tick()
+	}
+	function stopDrift() {
+		window.clearTimeout(driftTimer)
+		driftTimer = 0
+	}
+
+	useWindowListener(
+		'resize',
+		useRafThrottle(() => {
+			field?.resize()
+			draw()
+		})
+	)
 
 	// covered, the comets would sit behind a paused sky and never end; the first rides a short fuse
 	const { items: shootingStars, remove: removeStar } = useSkySpawner({
@@ -178,19 +122,28 @@
 		}),
 	})
 
-	// no cursor on touch, and their drag-scrolls fire pointermove, restyling every star layer mid-scroll
+	// no cursor on touch, and their drag-scrolls fire pointermove mid-scroll
 	if (scrollParallax && !still) {
-		useWindowListener('pointermove', onPointerMove)
-		useWindowListener('scroll', onScrollParallax)
+		useWindowListener('pointermove', event => {
+			lean = leanOf(event)
+			drawSoon()
+		})
+		useWindowListener('scroll', drawSoon)
 		// the warp rides scroll, so it stays off wherever scroll parallax does
-		watch(warp, applyWarp)
+		watch(warp, drawSoon)
 	}
 
 	onMounted(() => {
+		field = createStarfield(canvasEl.value, layerSpecs)
+		draw()
 		if (!still) document.addEventListener('visibilitychange', onVisibility)
+		if (!paused.value) startDrift()
 	})
 
-	onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisibility))
+	onBeforeUnmount(() => {
+		stopDrift()
+		document.removeEventListener('visibilitychange', onVisibility)
+	})
 </script>
 
 <style scoped lang="scss">
@@ -203,40 +156,12 @@
 		pointer-events: none;
 	}
 
-	// drift runs on transform, mouse parallax on the separate translate, so they never collide
-	.star-layer {
+	// one device pixel per canvas pixel: the stars are placed on the screen's own grid
+	.space-bg__stars {
 		position: absolute;
-		inset: calc(var(--bleed-top) * -1) calc(var(--bleed-right) * -1)
-			calc(var(--bleed-bottom) * -1) calc(var(--bleed-left) * -1);
-		background-repeat: repeat;
-		translate: calc(var(--mx, 0) * var(--depth) * 1px)
-			calc(var(--my, 0) * var(--depth) * 1px + var(--sy, 0px));
-		// the hero pass flies into the frame's centre, so the planes zoom about it, near ones hardest
-		transform-origin: calc(var(--bleed-left) + 50vw) calc(var(--bleed-top) + 50vh);
-		// no will-change: the animation promotes the layer while it runs; a permanent hint keeps it resident
-		animation: starDrift var(--dur) linear infinite;
-		// Default (phones): hops of one device pixel. The identical frames between cost nothing.
-		animation-timing-function: steps(var(--drift-steps, 600), end);
-	}
-
-	// Desktop can afford a full-rate composited transform; phones keep the stepped hops.
-	@media (hover: hover) and (pointer: fine) {
-		.star-layer {
-			animation-timing-function: linear;
-		}
-	}
-
-	.is-paused .star-layer {
-		animation-play-state: paused;
-	}
-
-	@keyframes starDrift {
-		from {
-			transform: translate3d(0, 0, 0);
-		}
-		to {
-			transform: translate3d(var(--drift-x), var(--drift-y), 0);
-		}
+		inset: 0;
+		width: 100%;
+		height: 100%;
 	}
 
 	// comet: pixel head (::after) + fading streak, rotated to its travel angle
@@ -280,15 +205,6 @@
 		100% {
 			transform: rotate(var(--angle)) translateX(var(--travel));
 			opacity: 0;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.star-layer {
-			animation: none;
-			translate: none;
-			scale: none;
-			transform: none;
 		}
 	}
 </style>
