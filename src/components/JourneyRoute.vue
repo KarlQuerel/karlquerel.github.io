@@ -1,26 +1,9 @@
 <template>
 	<!-- The route: the journey's own line, drawn in the page rather than the chrome. -->
-	<svg v-if="geo" v-bind="frame" class="route" :style="frameStyle" aria-hidden="true">
-		<defs>
-			<!-- One mask path per subpath: Chromium restarts the dash phase at every moveto. -->
-			<mask
-				id="route-flown"
-				maskUnits="userSpaceOnUse"
-				x="0"
-				y="0"
-				:width="geo.w"
-				:height="geo.h"
-			>
-				<path
-					v-for="(sub, i) in geo.subs"
-					:key="i"
-					class="route__draw"
-					:d="sub.d"
-					:stroke-dasharray="`${reveal(sub).toFixed(1)} ${(sub.len + ROUTE.dashTailPx).toFixed(1)}`"
-				/>
-			</mask>
-		</defs>
-		<g class="route__flown" mask="url(#route-flown)">
+	<!-- The line only ever runs downward, so the flown stretch is everything above the tip: a clip at
+	     that height reveals it, and the drawing itself never repaints as you scroll. -->
+	<div v-if="geo" class="route route--flown" :style="[frameStyle, flownStyle]" aria-hidden="true">
+		<svg v-bind="frame" class="route__art">
 			<path class="route__casing" :d="geo.d" />
 			<path class="route__ink" :d="geo.d" />
 			<rect
@@ -33,22 +16,19 @@
 				:height="ROUTE.nodePx"
 				:transform="`rotate(45 ${n[0]} ${n[1]})`"
 			/>
-		</g>
-	</svg>
+		</svg>
+	</div>
 	<!-- The cursor rides its own layer above the reading matter: at the trace's own depth it sat behind
-	     the station bodies at 66 of 88 sampled scroll positions, on desktop and phone alike. -->
+	     the station bodies at 66 of 88 sampled scroll positions, on desktop and phone alike.
+	     A dart-sized box moved by transform, so the compositor carries it without a repaint. -->
 	<svg
 		v-if="geo && tip"
-		v-bind="frame"
 		class="route route--cursor"
-		:style="frameStyle"
+		:style="[frameStyle, cursorStyle]"
+		:viewBox="TIP_BOX"
 		aria-hidden="true"
 	>
-		<polygon
-			class="route__tip"
-			:points="TIP_DART"
-			:transform="`translate(${tip[0]} ${tip[1]}) rotate(${heading})`"
-		/>
+		<polygon class="route__tip" :points="TIP_DART" />
 	</svg>
 </template>
 
@@ -67,7 +47,8 @@
 	})
 
 	const geo = ref(null)
-	const flownLen = ref(0)
+	// how far down the track the flown stretch reaches, in px
+	const flownY = ref(0)
 	const tip = ref(null)
 	// which way the tip is pointing, in degrees - the tangent of the path under it
 	const heading = ref(90)
@@ -98,9 +79,19 @@
 	]
 		.map(p => p.join(','))
 		.join(' ')
+	// the dart's local box, centred on its pivot so the transform can place and turn it in one
+	const TIP_R = Math.max(ROUTE.tipNosePx, ROUTE.tipTailPx, ROUTE.tipHalfPx)
+	const TIP_BOX = `${-TIP_R} ${-TIP_R} ${TIP_R * 2} ${TIP_R * 2}`
 
-	// how much of one subpath the flown length reaches
-	const reveal = sub => clamp(flownLen.value - sub.start, 0, sub.len)
+	const flownStyle = computed(() => ({
+		width: `${geo.value.w}px`,
+		height: `${flownY.value.toFixed(1)}px`,
+	}))
+	const cursorStyle = computed(() => ({
+		width: `${TIP_R * 2}px`,
+		height: `${TIP_R * 2}px`,
+		transform: `translate(${tip.value[0] - TIP_R}px, ${tip.value[1] - TIP_R}px) rotate(${heading.value}deg)`,
+	}))
 
 	// painted segments in order with cumulative length
 	let segs = []
@@ -255,7 +246,6 @@
 		geo.value = {
 			w,
 			h,
-			subs: flown.subs,
 			d: flown.subs.map(sub => sub.d).join(' '),
 			// The gate and the entry point carry the waypoint glyph, lit when the flown stretch reaches them.
 			nodes: [start, [xAim, yEnd]],
@@ -263,13 +253,13 @@
 		update()
 	}
 
-	// flown fraction, tip position, heading and fade for this scroll
+	// flown depth, tip position, heading and fade for this scroll
 	function update() {
 		if (!segs.length) return
 		const yT = window.scrollY + vh * ROUTE.tipFrac
-		const { flown, pos, on } = walkRoute(segs, total, yT)
+		const { pos, on } = walkRoute(segs, total, yT)
 		heading.value = +((Math.atan2(on.y2 - on.y1, on.x2 - on.x1) * 180) / Math.PI).toFixed(1)
-		flownLen.value = flown
+		flownY.value = clamp(yT, 0, geo.value.h)
 		const orbited = smoothstep(
 			clamp(
 				(window.scrollY - orbit[0]) / orbit[1] - ROUTE.orbitOutAt,
@@ -278,7 +268,7 @@
 			) / ROUTE.orbitOutSpan
 		)
 		fade.value = +(1 - orbited).toFixed(3)
-		tip.value = yT >= span[0] && yT <= span[1] ? [pos[0].toFixed(1), pos[1].toFixed(1)] : null
+		tip.value = yT >= span[0] && yT <= span[1] ? [+pos[0].toFixed(1), +pos[1].toFixed(1)] : null
 	}
 
 	useWindowListener('scroll', useRafThrottle(update))
@@ -306,22 +296,34 @@
 	// emblems and year ticks instead of across them.
 	.route--cursor {
 		z-index: 3;
+		// the glow spills past the dart's box
+		overflow: visible;
+		will-change: transform;
 	}
 
-	// Scoped to the visible group: a bare `.route path` would match the mask paths and outrank their dashes.
-	.route__flown path {
+	// The clip box: it grows down the track with the tip, over art laid out once in its own layer.
+	.route--flown {
+		overflow: hidden;
+	}
+
+	.route__art {
+		display: block;
+		will-change: transform;
+	}
+
+	.route--flown path {
 		fill: none;
 		// the WORK spine's own cadence, so docking into it reads as one line
 		stroke-dasharray: 6 6;
 	}
 
-	.route__flown .route__ink {
+	.route--flown .route__ink {
 		stroke-width: 2px;
 		stroke: rgba($yellow, 0.8);
 	}
 
 	// A dark casing under the gold: a bare 2px line at half alpha disappears into the planet's lit limb.
-	.route__flown .route__casing {
+	.route--flown .route__casing {
 		// one pixel of halo each side and lighter than the gold, or it reads as black with a gold core
 		stroke-width: 4px;
 		stroke: rgba($black, 0.6);
@@ -329,15 +331,8 @@
 		stroke-dashoffset: -1;
 	}
 
-	.route__flown .route__node {
+	.route--flown .route__node {
 		fill: rgba($yellow, 0.9);
-	}
-
-	// Mask ink: a wide stroke of the same path, drawn to the flown length by dash arithmetic.
-	.route__draw {
-		fill: none;
-		stroke: #fff;
-		stroke-width: 12px;
 	}
 
 	// You are here: reserved gold at full strength, with the one self-running motion on the line, stepped.
