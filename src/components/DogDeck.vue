@@ -1,6 +1,7 @@
 <template>
 	<!-- photo deck: offset cards peek out behind each frame to hint there's more; photos
-	     auto-cycle while the deck is on screen and nobody is tabbed into it -->
+	     auto-cycle while the deck is on screen and nobody is tabbed into it. `loading` goes
+	     before `src`: Vue sets attributes in template order, and a src set first fetches eagerly -->
 	<div ref="deckEl" class="dogs" @focusin="onFocusIn" @focusout="onFocusOut">
 		<figure v-for="dog in DOGS" :key="dog.name" class="dog">
 			<button
@@ -12,13 +13,13 @@
 				<img
 					v-for="(photo, i) in dog.photos"
 					:key="photo"
+					loading="lazy"
+					decoding="async"
 					:src="photo"
 					:alt="i === activeIndex(dog) ? DOG_DECK_LABELS.photo(dog.name) : ''"
 					:aria-hidden="i === activeIndex(dog) ? null : 'true'"
 					class="dog__photo"
 					:class="{ 'is-active': i === activeIndex(dog) }"
-					loading="lazy"
-					decoding="async"
 				/>
 			</button>
 			<figcaption class="dog__name">
