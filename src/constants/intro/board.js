@@ -1,6 +1,6 @@
 // Shot 8, the crossing: a star chart of the ten routes out of Sol, and the board of lights over it.
-// Nine ships are lost, one at a time, evenly between `outFrom` and `outTo` seconds; the day counter runs from `daysFrom` to
-// `daysTo`, and the log keeps the last `logLines` ships lost.
+// Nine ships are lost, one at a time, evenly between `outFrom` and `outTo` seconds; the crossing's
+// clock runs from `daysFrom` to `daysTo`.
 export const BOARD = {
 	duration: 11,
 	cols: 10,
@@ -9,7 +9,6 @@ export const BOARD = {
 	outTo: 9.4,
 	daysFrom: 0.4,
 	daysTo: 9.6,
-	logLines: 3,
 	// the order the lights go out in is rolled from this seed, once
 	seed: 31,
 	// the chart fades up over this long
@@ -20,8 +19,6 @@ export const BOARD = {
 	// shorter than the gap between losses, so every loss is its own beat
 	flashSteps: 6,
 	flashFor: 0.8,
-	// a ship's label comes up once it is this far along its route, clear of the crowd at Sol
-	labelFrom: 0.1,
 	// where a lost ship stopped, quantised to `stopLevels` steps and packed `stopsPerWord` to a float:
 	// 4 x 6 bits stays inside a float's exact 24
 	stopLevels: 63,
@@ -58,10 +55,6 @@ export const BOARD = {
 			[0, -0.12],
 		],
 	},
-	// distance rings, in chart units, and what each one is labelled in light-years
+	// distance rings, in chart units
 	rings: [0.25, 0.5, 0.75, 1],
-	ringLy: [30, 60, 90, 120],
-	// the chart's own marks: the root star and the unit its rings are read in
-	solLabel: 'SOL',
-	ringUnit: 'LY',
 }
