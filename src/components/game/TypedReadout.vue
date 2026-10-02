@@ -15,8 +15,8 @@
 </template>
 
 <script setup>
-	import { onBeforeUnmount, ref, watch } from 'vue'
-	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
+	import { watch } from 'vue'
+	import { useTypewriter } from '@/composables/useTypewriter'
 
 	const props = defineProps({
 		// { lead, accent, delayMs, charMs }: the accent is the highlighted tail
@@ -26,32 +26,18 @@
 	})
 
 	const { lead, accent, delayMs, charMs } = props.line
-	const total = lead.length + accent.length
-	const shown = ref(0)
+	const { shown, start: type } = useTypewriter({ delayMs, charMs })
 	let started = false
-	let frame = 0
-	let from = 0
-
-	function tick(now) {
-		if (!from) from = now
-		const next = Math.min(total, Math.floor((now - from - delayMs) / charMs))
-		if (next > shown.value) shown.value = next
-		if (shown.value < total) frame = requestAnimationFrame(tick)
-	}
 
 	watch(
 		() => props.start,
 		on => {
 			if (!on || started) return
 			started = true
-			if (prefersReducedMotion()) shown.value = total
-			else frame = requestAnimationFrame(tick)
+			type(lead.length + accent.length)
 		},
 		{ immediate: true }
 	)
-	onBeforeUnmount(() => {
-		if (frame) cancelAnimationFrame(frame)
-	})
 </script>
 
 <style scoped lang="scss">
