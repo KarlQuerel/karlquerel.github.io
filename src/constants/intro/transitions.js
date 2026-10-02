@@ -1,14 +1,22 @@
 // How each shot is entered, keyed by the incoming shot: the kind picks a branch of
 // shaders/intro/transition.frag.glsl, dur is seconds. A shot not listed cuts.
-export const TRANSITION_KINDS = { dissolve: 0, black: 1, burn: 2, mosaic: 3, blink: 4, flash: 5 }
+export const TRANSITION_KINDS = {
+	dissolve: 0,
+	black: 1,
+	burn: 2,
+	mosaic: 3,
+	blink: 4,
+	flash: 5,
+	wipe: 6,
+	clock: 7,
+}
 
 export const INTRO_TRANSITIONS = {
 	// the stars match across the cut, so only the planet's eclipse ring dissolves in over them
 	earth: { kind: 'dissolve', dur: 2.4 },
-	// a match cut: the sun shot opens on the earth shot's own sun, so a crossfade is all it needs
-	sun: { kind: 'dissolve', dur: 1.6 },
-	// the sun stays in frame across the cut and comes down onto the horizon
-	fields: { kind: 'dissolve', dur: 2.4 },
+	// the old serials' wipes: a hard edge across to the sun, a clock hand round to the fields
+	sun: { kind: 'wipe', dur: 1.1 },
+	fields: { kind: 'clock', dur: 1.4 },
 	chamber: { kind: 'black', dur: 1.6 },
 	shipyard: { kind: 'mosaic', dur: 1.3 },
 	// POV begins: the first thing the envoy does is open their eyes
