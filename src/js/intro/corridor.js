@@ -1,7 +1,7 @@
 import frag from '../../shaders/intro/corridor.frag.glsl?raw'
 import hands from '../../shaders/intro/hands.glsl?raw'
 import human from '../../shaders/intro/human.glsl?raw'
-import { INTRO_CARDS, INTRO_HUD, INTRO_ROLES } from '../../data/gameIntro.js'
+import { INTRO_CARDS, INTRO_ROLES } from '../../data/gameIntro.js'
 import { itemOf } from './wake.js'
 import { CORRIDOR } from '../../constants/intro/corridor.js'
 import { ramp } from '../math.js'
@@ -38,13 +38,7 @@ export const corridor = {
 			h: [2, item, item ? ramp(t, state.pickedAt, state.pickedAt + C.handsRise) : 0, 0],
 		}
 	},
-	hud: (clock, marks) =>
-		marks.hud
-			? {
-					readouts: [INTRO_HUD.ship, ...INTRO_HUD.readouts],
-					boot: ramp(clock, C.hudAt, C.hudAt + C.hudBoot),
-				}
-			: null,
+	hud: (_clock, marks) => (marks.hud ? {} : null),
 	choice: (_clock, marks, choices) =>
 		marks.lockers && !choices.role
 			? { key: 'role', options: INTRO_ROLES.map(({ key, label }) => ({ key, label })) }
