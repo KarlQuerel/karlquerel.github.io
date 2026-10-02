@@ -1,10 +1,15 @@
-// Shot 4, BURNING EVERYTHING: the dead farm as flat layers under a swollen sun, the camera trucking
-// sideways. Positions are shares of the frame (x of its width, y of its height, from the top
+// Shot 4, BURNING EVERYTHING: the dead farm as flat layers under a giant sun, the
+// land rising into frame under it, then the camera trucking sideways. Positions are shares of the frame (x of its width, y of its height, from the top
 // left); sizes are shares of its height. The ground is painted in perspective and each of its rows moves
 // by its own depth, so the sideways truck reads as real parallax with every move a whole cell.
 export const FIELDS = {
-	duration: 10,
-	cardAt: 0.8,
+	duration: 12,
+	cardAt: 3,
+	// The land rises into frame under the sun, the camera tilting down off it: it opens `drop` frame
+	// heights low and comes up over `rise` seconds. The trees rise `nearRise` times faster.
+	drop: 0.75,
+	rise: [0.5, 3.6],
+	nearRise: 1.25,
 	cellPx: 2,
 	horizon: 0.6,
 	// where the channel and the furrows run to
@@ -28,19 +33,35 @@ export const FIELDS = {
 		chanW: 0.55,
 		haze: 0.12,
 	},
+	// The sky: dusk from `top` to `low` on the ramp, and the giant sun over it: its centre, its radius as
+	// a share of the height, capped at `fitWidth` of the width so a portrait frame holds it.
 	sky: {
-		sunAt: [0.6, 0.47],
-		sunR: 0.22,
 		depth: 0.04,
-		plumes: [0.08, 0.3, 0.78, 0.95],
-		// cloud bars across the sun's lower half: height below its centre and x offset (sun radii),
-		// half-length (sun radii), thickness (cells)
-		bars: [
-			[0.08, -0.15, 0.9, 2],
-			[0.3, 0.2, 1.15, 3],
-			[0.52, -0.05, 0.8, 2],
-		],
+		sun: { at: [0.5, 0.45], radius: 0.42, fitWidth: 0.5 },
+		top: 0.08,
+		low: 0.72,
 	},
+	// Smoke off the burning fields, at the farm's depth: where each column stands (share of the
+	// width), its lean (cells across per cell up), width at its foot and growth (cells per cell up),
+	// and how fast it climbs (cells a second).
+	smoke: {
+		columns: [
+			{ x: 0.08, lean: 0.5, foot: 5, grow: 0.2 },
+			{ x: 0.24, lean: 0.35, foot: 3, grow: 0.12 },
+			{ x: 0.84, lean: 0.55, foot: 6, grow: 0.22 },
+		],
+		climb: 7,
+	},
+	// Fire fronts burning across the stubble: distance (m), the world x they span (m), and how tall
+	// their flames stand (m). The far ones are a line of flicker, the near one a wall.
+	fires: [
+		{ z: 5.5, from: -14, to: -2.5, h: 1.3 },
+		{ z: 11, from: 0.5, to: 16, h: 1.4 },
+		{ z: 24, from: -30, to: -4, h: 1.5 },
+		{ z: 46, from: 6, to: 60, h: 1.6 },
+	],
+	// how far toward the camera a front has already burnt the ground black (m)
+	char: 3.5,
 	// The farm on the horizon: barely moves, it is that far off.
 	farm: {
 		depth: 0.08,
