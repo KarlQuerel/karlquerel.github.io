@@ -331,5 +331,6 @@ export function createPlanetShader({ res, seed }) {
 		}
 	}
 
-	return { res, draw }
+	// elevation is exposed so a painter on top (the intro's city lights) can tell land from sea
+	return { res, draw, elevation }
 }
