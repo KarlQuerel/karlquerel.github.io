@@ -121,7 +121,6 @@ export const wake = {
 	chunks: [hands],
 	duration: 0,
 	card: { at: WAKE.cardAt, text: INTRO_CARDS.warning },
-	marks: { alarms: WAKE.alarmsAt, wipe: WAKE.wipeAt },
 	setup(gl) {
 		glass.texture = gl.createTexture()
 		gl.bindTexture(gl.TEXTURE_2D, glass.texture)
@@ -189,12 +188,7 @@ export const wake = {
 			mask: glass.texture,
 		}
 	},
-	hud: (clock, marks) => ({
-		readouts: [INTRO_HUD.ship, ...INTRO_HUD.wake],
-		boot: ramp(clock, WAKE.bootFrom, WAKE.bootTo),
-		alarms: marks.alarms ? INTRO_HUD.alarms : [],
-		alert: glass.alerted ? INTRO_HUD.alert : '',
-	}),
+	hud: () => ({}),
 	choice: (_clock, marks, choices) =>
 		glass.alerted && !choices.responded
 			? { key: 'responded', options: [{ key: true, label: INTRO_HUD.respond }] }
