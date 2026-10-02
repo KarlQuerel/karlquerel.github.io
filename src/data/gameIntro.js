@@ -18,25 +18,15 @@ export const INTRO_ROLES = [
 	{ key: 'pilot', label: 'PILOT', item: 'CUTTER' },
 ]
 
-// The visor's readouts. DEST names no real star: a candidate world, not Kepler.
+// The visor's one button: the wake waits on it.
 export const INTRO_HUD = {
-	ship: 'HERMES-8',
-	readouts: ['CRYO BAY 01 - POD SEALED', 'CREW 1/1 - VITALS NOMINAL', 'DEST: CANDIDATE 09'],
-	wake: ['CRYO BAY 01 - POD OPEN', 'CREW 1/1 - VITALS ERRATIC', 'DEST: CANDIDATE 09'],
-	alarms: ['HULL INTEGRITY 34%', 'O2 RESERVE LOW', 'NAV ARRAY OFFLINE', 'GRAVITY WELL DETECTED'],
-	alert: 'PROXIMITY ALERT',
 	respond: 'RESPOND',
-	cryoEngage: 'CRYOSTASIS ENGAGED',
-	day: 'DAY',
 }
 
 // The board of ten: one light per ship, yours lit, the rest going out over the crossing.
 export const INTRO_BOARD = {
 	ships: 10,
 	yours: 8,
-	prefix: 'HERMES-',
-	lost: 'SIGNAL LOST',
-	days: 141209,
 }
 
 export const INTRO_SKIP = 'SKIP >>'
