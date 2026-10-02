@@ -1,9 +1,8 @@
 // Shot 6, the corridor: every second of the walk to the door, and what the visor does on the way.
 export const CORRIDOR = {
 	cardAt: 1,
-	// the visor boots here, and takes this long to steady
+	// the visor comes up here
 	hudAt: 2.2,
-	hudBoot: 2.5,
 	// the hands rise into frame with the picked tool
 	handsRise: 0.8,
 	// the walk ends short of the door at `arrival`: an unhurried pace past five bays, the bob a
