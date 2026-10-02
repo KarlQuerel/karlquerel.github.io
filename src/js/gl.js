@@ -50,5 +50,19 @@ export function bindAttribute(gl, buffer, location, size) {
 	gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0)
 }
 
+// A texture read cell for cell: nearest on both filters, clamped, so an art grid samples exactly.
+export function pixelTexture(gl) {
+	const tex = gl.createTexture()
+	gl.bindTexture(gl.TEXTURE_2D, tex)
+	for (const [k, v] of [
+		[gl.TEXTURE_MIN_FILTER, gl.NEAREST],
+		[gl.TEXTURE_MAG_FILTER, gl.NEAREST],
+		[gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE],
+		[gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE],
+	])
+		gl.texParameteri(gl.TEXTURE_2D, k, v)
+	return tex
+}
+
 // Browsers cap live contexts per tab, and a dropped canvas otherwise keeps its one.
 export const loseContext = gl => gl.getExtension('WEBGL_lose_context')?.loseContext()
