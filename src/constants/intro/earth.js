@@ -27,6 +27,23 @@ export const EARTH = {
 	// and a share `lit` of its cells on a lattice `fine` across burns
 	cities: { night: 0.02, built: 0.56, lit: 0.12, fine: 160 },
 	moon: { at: [0.13, 0.22], radius: 0.06, depth: 0.4, seed: 77 },
-	star: { at: [0.74, 0.26], radius: 0.045, depth: 0.12 },
+	// the Sun, already past its prime: its age on star()'s scale, 0 white to 1 a red giant
+	star: { at: [0.74, 0.26], radius: 0.045, depth: 0.12, age: 0.3 },
+	// share of a ramp step given to dither at each seam of the globe's light
+	seam: 0.22,
+	// clouds where a second world's elevation passes this
+	cloud: 0.6,
+	// The air past the limb, in cells: `depth` toward the sun, `night` away from it, `wrap` how far the
+	// glow reaches round toward the night side; inner band out. `twilight` is how deep past the
+	// terminator the ground stays red, `limb` where the lit edge catches `limbLift` more.
+	air: {
+		depth: 9,
+		night: 1,
+		wrap: 0.35,
+		ramp: ['sand', 'haze', 'rust'],
+		twilight: 0.04,
+		limb: 0.92,
+		limbLift: 0.18,
+	},
 	tidyPasses: 2,
 }
