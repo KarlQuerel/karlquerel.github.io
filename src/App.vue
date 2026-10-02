@@ -31,7 +31,7 @@
 	const SCROLLABLE_PATHS = ['/', '/sport', '/lab']
 
 	// Unlisted pages with no site chrome at all — no drifting starfield behind the text.
-	const BARE_PATHS = ['/sport', '/lab']
+	const BARE_PATHS = ['/sport', '/lab', '/game']
 
 	// Component names (see defineOptions) kept mounted across navigation.
 	const KEPT_ALIVE_VIEWS = ['HomeJourney']
