@@ -12,6 +12,4 @@ export const CRYO = {
 	// the technician crosses the catwalk beyond the crown's glass, in this many strides
 	walk: [0, 8],
 	strides: 5.2,
-	// CRYOSTASIS ENGAGED, once the lid has sealed
-	engageAt: 5,
 }
