@@ -51,7 +51,7 @@ export function openSprite(el, w, h) {
 }
 
 // The tidy pass every sprite takes: a cell whose four neighbours all agree becomes what they are.
-function tidySprite(img, w, h, passes) {
+export function tidySprite(img, w, h, passes) {
 	const cells = new Uint32Array(img.data.buffer)
 	for (let pass = 0; pass < passes; pass++) {
 		for (let y = 1; y < h - 1; y++) {
