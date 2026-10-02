@@ -2,7 +2,6 @@ import './styles/main.scss'
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { prefersReducedMotion } from './composables/usePrefersReducedMotion.js'
-import { GAME_SHIPPED } from './constants/game.js'
 import App from './App.vue'
 
 // every route is lazy so the Firebase-carrying pages stay out of the entry chunk
@@ -40,9 +39,10 @@ const routes = [
 		meta: { title: 'Under Construction' },
 	},
 	{
-		// the game itself, dev server only until GAME_SHIPPED — a build sends visitors to the holding screen
+		// the game itself, dev server only until GAME_SHIPPED (a Vite define, so a build folds this
+		// away and sends visitors to the holding screen with none of the game bundled)
 		path: '/game',
-		...(GAME_SHIPPED || import.meta.env.DEV
+		...(import.meta.env.GAME_SHIPPED || import.meta.env.DEV
 			? { component: () => import('./components/game/GamePage.vue'), meta: { title: 'Game' } }
 			: { redirect: '/under-construction' }),
 	},
