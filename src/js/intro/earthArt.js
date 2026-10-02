@@ -5,7 +5,7 @@ import { EARTH } from '../../constants/intro/earth.js'
 import { PALETTE } from '../../constants/palette.js'
 import { PLANET } from '../../constants/planet.js'
 import { createPlanetShader, planetDisc, planetFrame, planetWorld } from '../planetShader.js'
-import { ditherIndex } from '../pixelNoise.js'
+import { ditherIndex, ditherThreshold } from '../pixelNoise.js'
 import { tidySprite } from '../ridge.js'
 
 const DEG = Math.PI / 180
@@ -62,12 +62,87 @@ function paintCities(d, res, shader, frame) {
 	}
 }
 
+// A step on a ramp of `n`, rounded, dithered only across a narrow seam: hard bands, never a checker field.
+function seamStep(v, n, x, y) {
+	const g = Math.max(0, Math.min(1, v)) * (n - 1)
+	const i = Math.floor(g)
+	const f = (g - i - 0.5) / EARTH.seam + 0.5
+	return Math.min(n - 1, i + (f > ditherThreshold(x, y) ? 1 : 0))
+}
+
+const RAMPS = PLANET.bands.map(([name]) => PLANET.ramps[name])
+const EDGES = PLANET.bands.map(([, offset]) => PLANET.seaLevel + offset)
+const bandOf = n => {
+	const i = EDGES.findIndex(e => n < e)
+	return i < 0 ? EDGES.length - 1 : i
+}
+
+// The globe, backlit: hard lit bands across the crescent, a red twilight past the terminator, solid
+// cloud shapes, and an atmosphere a few cells deep, thickest toward the sun.
 function paintPlanet(res) {
 	const d = new Uint8ClampedArray(res * res * 4)
 	const shader = createPlanetShader({ res, seed: EARTH.planet.seed })
+	const sky = createPlanetShader({ res, seed: EARTH.planet.seed + 3 })
 	const yaw = EARTH.planet.lightYawDeg * DEG
-	shader.draw(d, EARTH.planet.spin, yaw, 0)
-	paintCities(d, res, shader, planetFrame(EARTH.planet.spin, yaw))
+	const frame = planetFrame(EARTH.planet.spin, yaw)
+	const { cosS, sinS, light } = frame
+	const [lx, ly, lz] = light
+	const { radius, center, cosT, sinT } = planetDisc(res)
+	const A = EARTH.air
+	const lxy = Math.hypot(lx, ly) || 1
+	for (let y = 0; y < res; y++) {
+		const dy = (y + 0.5 - center) / radius
+		for (let x = 0; x < res; x++) {
+			const dx = (x + 0.5 - center) / radius
+			const d2 = dx * dx + dy * dy
+			const i = (y * res + x) * 4
+			if (d2 >= 1) {
+				// the air: cells past the limb, as deep as the sun's side of the globe is lit
+				const out = (Math.sqrt(d2) - 1) * radius
+				const toward = (dx * lx + dy * ly) / (lxy * Math.sqrt(d2))
+				const deep =
+					A.night + (A.depth - A.night) * Math.max(0, (toward + A.wrap) / (1 + A.wrap))
+				if (out < deep) {
+					const k = out / deep
+					put(d, i, k < 0.34 ? A.ramp[0] : k < 0.67 ? A.ramp[1] : A.ramp[2])
+					// the outermost band is a checker, so the air thins rather than stops
+					if (k >= 0.67 && ditherThreshold(x, y) > 0.5) d[i + 3] = 0
+				}
+				continue
+			}
+			const dz = Math.sqrt(1 - d2)
+			const diff = dx * lx + dy * ly + dz * lz
+			// the renderer's own turn into planet space
+			const ny = dy * cosT - dz * sinT
+			const nz = dy * sinT + dz * cosT
+			const sx = dx * cosS + nz * sinS
+			const sz = -dx * sinS + nz * cosS
+			const n = shader.elevation(sx, ny, sz)
+			const band = bandOf(n)
+			const cloud = sky.elevation(sz, ny * 1.6, -sx) > EARTH.cloud
+			const ramp = cloud ? PLANET.cloudRamp : RAMPS[band]
+			// relief tips the catch, so the bands follow the ground; the limb catches a step more
+			const relief = cloud ? 0 : (n - PLANET.seaLevel) * PLANET.relief
+			const rim = d2 > A.limb ? A.limbLift : 0
+			const step =
+				diff > 0 ? seamStep(diff * 1.15 + relief * 0.3 + rim, ramp.length, x, y) : 0
+			let name = ramp[step]
+			// the ramp's dark foot: red twilight just past the terminator, black beyond it
+			if (step === 0)
+				name =
+					diff > -A.twilight
+						? cloud
+							? 'slate'
+							: n < PLANET.seaLevel
+								? 'deep'
+								: 'basalt'
+						: n < PLANET.seaLevel && !cloud
+							? 'void'
+							: 'ink'
+			put(d, i, name)
+		}
+	}
+	paintCities(d, res, shader, frame)
 	tidySprite({ data: d }, res, res, EARTH.tidyPasses)
 	return d
 }
