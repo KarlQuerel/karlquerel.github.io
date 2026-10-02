@@ -37,10 +37,18 @@ void main(){
     float m = floor((1.0 - abs(p*2.0 - 1.0))*3.0 + 0.001)/3.0;
     float v = abs(gl_FragCoord.y/uRes.y - 0.5)*2.0;
     col = v > 1.0 - m*1.02 ? VOID : (p < 0.5 ? at(uA, cell) : at(uB, cell));
-  } else {
+  } else if (kind < 5.5){
     // flash: white out in ordered steps, then the new frame out of the white
     float m = 1.0 - abs(p*2.0 - 1.0);
     col = bayer8(cell) < m ? LINEN : (p < 0.5 ? at(uA, cell) : at(uB, cell));
+  } else if (kind < 6.5){
+    // wipe, the old serials' way: one hard edge crossing the frame left to right at an even pace
+    col = cell.x < floor(p*(uRes.x + 1.0)) ? at(uB, cell) : at(uA, cell);
+  } else {
+    // clock wipe: a hand sweeping clockwise from twelve, the new frame behind it
+    vec2 c = cell + 0.5 - uRes*0.5;
+    float turn = fract(atan(c.x, c.y)/(2.0*PI) + 1.0);
+    col = turn < p ? at(uB, cell) : at(uA, cell);
   }
   gl_FragColor = vec4(col, 1.0);
 }
