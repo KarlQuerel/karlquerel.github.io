@@ -30,7 +30,7 @@ const paint = () => new Promise(r => requestAnimationFrame(() => requestAnimatio
 
 export function useArtCanvas(
 	canvasRef,
-	{ bootWeights = { frame: 1 }, build, frame, resize, release }
+	{ bootWeights = { frame: 1 }, build, frame, resize, release, cellPx }
 ) {
 	const order = Object.keys(bootWeights)
 	const supported = ref(true)
@@ -58,7 +58,10 @@ export function useArtCanvas(
 		const dpr = window.devicePixelRatio || 1
 		const devW = Math.round(window.innerWidth * dpr)
 		const devH = Math.round(window.innerHeight * dpr)
-		const k = Math.max(ART_MIN_DEVICE_PX, Math.round(devH / ART_TARGET) + rung)
+		// a scene can ask for a fixed CSS size per art pixel instead of the target height
+		const px = cellPx?.()
+		const base = px ? Math.round(px * dpr) : Math.round(devH / ART_TARGET)
+		const k = Math.max(ART_MIN_DEVICE_PX, base + rung)
 		grid.width = Math.max(ART_MIN_WIDTH, Math.ceil(devW / k))
 		grid.height = Math.max(ART_MIN_HEIGHT, Math.ceil(devH / k))
 		canvas.width = grid.width
@@ -241,5 +244,5 @@ export function useArtCanvas(
 	})
 	onBeforeUnmount(dispose)
 
-	return { supported, booting, bootProgress, bootCeiling, grid, wake: resume }
+	return { supported, booting, bootProgress, bootCeiling, grid, wake: resume, refit: onResize }
 }
