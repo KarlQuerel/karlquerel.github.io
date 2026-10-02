@@ -3,10 +3,6 @@ export const WAKE = {
 	cardAt: 0.6,
 	// the lids open over this long, in three steps
 	eyelid: 1,
-	// the visor reboots between these
-	bootFrom: 0.3,
-	bootTo: 2.2,
-	alarmsAt: 2.4,
 	// from here a drag wipes the glass; the hands go from rest to reach over `reachSpan`
 	wipeAt: 4,
 	reachSpan: 0.6,
