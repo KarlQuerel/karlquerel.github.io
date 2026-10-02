@@ -155,8 +155,8 @@ export function useIntro(canvasRef) {
 			card.value = s.card.text
 			cardShown = true
 		}
-		// a choice or an alert takes the frame: the card has had its turn by then
-		if (card.value && (choice.value || hud.value?.alert)) card.value = ''
+		// a choice takes the frame: the card has had its turn by then
+		if (card.value && choice.value) card.value = ''
 		if (s.marks)
 			for (const [k, at] of Object.entries(s.marks))
 				if (!marks.value[k] && local >= at) marks.value = { ...marks.value, [k]: true }
