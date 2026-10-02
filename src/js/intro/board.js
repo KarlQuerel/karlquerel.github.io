@@ -16,7 +16,7 @@ export const LOST_ORDER = Array.from({ length: INTRO_BOARD.ships }, (_, i) => i 
 
 // how many ships have gone dark by shot time t, and how far the crossing has run (0..1)
 export const goneAt = t => Math.floor(ramp(t, BOARD.outFrom, BOARD.outTo) * LOST_ORDER.length)
-export const daysAt = t => smoothstep(ramp(t, BOARD.daysFrom, BOARD.daysTo))
+const daysAt = t => smoothstep(ramp(t, BOARD.daysFrom, BOARD.daysTo))
 
 // Where the chart sits in frame uv (y -0.5..0.5, x by aspect). The shader rebuilds the same frame
 // from uH, so the DOM labels land on the stars they name.
@@ -44,7 +44,7 @@ export function angleOf(i) {
 }
 
 // a point `r` out along angle `a` from Sol, in frame uv
-export function chartPoint(layout, r, a) {
+function chartPoint(layout, r, a) {
 	const u = r * Math.cos(a)
 	const v = r * Math.sin(a)
 	const [sx, sy] = layout.sol
@@ -53,16 +53,8 @@ export function chartPoint(layout, r, a) {
 		: [sx + u * layout.spanX, sy + v * layout.spanY]
 }
 
-export const destOf = (layout, i) => chartPoint(layout, reachOf(i), angleOf(i))
-
 // how far along its route ship i is: the far ones travel faster, so the fleet spreads out together
-export const shipProgress = (i, days) => Math.min(1, (days * BOARD.progMax * C.far) / reachOf(i))
-
-// frame uv -> CSS percentages of the viewport, for the labels
-export const toViewport = ([x, y], aspect) => ({
-	left: `${(x / aspect + 0.5) * 100}%`,
-	top: `${(0.5 - y) * 100}%`,
-})
+const shipProgress = (i, days) => Math.min(1, (days * BOARD.progMax * C.far) / reachOf(i))
 
 // One key track of the chart camera, eased through its keys on a monotone cubic: no overshoot.
 const CAM = BOARD.camera
@@ -93,7 +85,7 @@ const PORTRAIT_SCREEN = screenTrack(CAM.portraitScreen)
 // The chart as the camera sees it at shot time t: the same layout, zoomed about the point it
 // watches (between Sol and your marker) and slid to where that point sits in the frame. The shader
 // and the labels both read this, so they cannot drift apart.
-export function cameraLayout(aspect, t) {
+function cameraLayout(aspect, t) {
 	const base = chartLayout(aspect)
 	const z = track(CAM.zoom, ZOOM, t)
 	const w = track(CAM.ship, SHIP, t)
@@ -120,9 +112,6 @@ const packLost = gone => LOST_ORDER.slice(0, gone).reduce((w, s) => w + 2 ** (s 
 const lostTime = j => BOARD.outFrom + ((j + 1) / LOST_ORDER.length) * (BOARD.outTo - BOARD.outFrom)
 // how far along its route each lost ship got before it went dark; yours never stops
 const STOPS = new Map(LOST_ORDER.map((s, j) => [s, shipProgress(s, daysAt(lostTime(j)))]))
-// how far along its route ship i is at shot time t, stopped for good once it is lost
-export const progressAt = (i, t) =>
-	STOPS.has(i) && LOST_ORDER.indexOf(i) < goneAt(t) ? STOPS.get(i) : shipProgress(i, daysAt(t))
 
 // The stops as three floats for uP.yzw: ship i in word floor((i-1)/4), six bits each.
 const STOP_WORDS = [0, 0, 0]
