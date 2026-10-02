@@ -1,5 +1,6 @@
 <template>
-	<!-- The intro: the storyboard's shots on one art canvas, the cards and the visor over it. -->
+	<!-- The intro: the storyboard's shots on one art canvas, the typed cards and the visor over it.
+	     No other text on screen: the picture carries the world. -->
 	<div class="intro" :class="{ 'intro--flat': !supported, 'intro--shake': shaking }">
 		<canvas ref="canvas" class="intro__canvas" aria-hidden="true" />
 		<BootCover :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
@@ -7,7 +8,6 @@
 		<template v-if="settled">
 			<IntroCard :text="card" :visor="!!hud" />
 			<IntroHud v-if="hud" v-bind="hud" />
-			<IntroWorld v-if="shot" :shot-key="shot.key" :clock="clock" />
 			<IntroBoard v-if="shot?.key === 'board'" :clock="clock" />
 			<IntroChoice
 				v-if="choice"
@@ -39,7 +39,6 @@
 	import IntroCard from './IntroCard.vue'
 	import IntroChoice from './IntroChoice.vue'
 	import IntroHud from './IntroHud.vue'
-	import IntroWorld from './IntroWorld.vue'
 	import PlatingWordmark from './PlatingWordmark.vue'
 	import TypedReadout from './TypedReadout.vue'
 	import { INTRO_CRASH, INTRO_INSPECT } from '@/constants/intro/timeline'
