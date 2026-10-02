@@ -2,25 +2,41 @@ import raw from '../../shaders/intro/sun.frag.glsl?raw'
 import { INTRO_CARDS } from '../../data/gameIntro.js'
 import { EARTH } from '../../constants/intro/earth.js'
 import { SUN } from '../../constants/intro/sun.js'
-import { INTRO_TRANSITIONS } from '../../constants/intro/transitions.js'
-import { pixelTexture } from '../gl.js'
+import { PALETTE } from '../../constants/palette.js'
 import { ramp, smoothstep } from '../math.js'
-import { arrive, skyPan } from './layerCamera.js'
-import { LAYERS_CHUNK, glslVec, sky } from './sky.js'
-import { paintSunAtlas, sunRadii } from './sunArt.js'
+import { skyPan } from './layerCamera.js'
+import { LAYERS_CHUNK, glslNum, glslVec, sky } from './sky.js'
 
-// it opens on the earth shot's sun, exactly where that shot leaves it
+const rgb = name => glslVec(PALETTE[name].map(c => c / 255))
+// the planets, unrolled into calls: GLSL ES 1.00 has no constant arrays
+const planets = SUN.planets.map(
+	p =>
+		`  col = planet(col, cell, ${glslNum(p.x)}, ${glslNum(p.r)}, ${rgb(p.lit)}, ${rgb(p.dark)});`
+)
+const layout = [
+	`const vec2 SUN_AT = ${glslVec(SUN.at)};`,
+	`const float HEAT = ${glslNum(SUN.heat)};`,
+	`const float FLASH = ${glslNum(SUN.flash)};`,
+]
 const frag = raw
-	.replace('__SUN_AT__', glslVec(SUN.at))
-	.replace('__EARTH_SUN_AT__', glslVec(EARTH.star.at))
+	.replace('__LAYOUT__', layout.join('\n'))
+	.replace('__PLANETS__', planets.join('\n'))
+	.replace(
+		'__ORBITS__',
+		SUN.planets.map(p => `  col = orbit(col, d, ang, ${glslNum(p.x)});`).join('\n')
+	)
 
-let atlas = null
-let painted = ''
-let sizes = [0, 0, 0]
-let radii = [0, 0, 0]
+const TAU = Math.PI * 2
 
-// how far through the states the star is: 0 young, 1 middle-aged, 2 a giant; fractions are a swell
-const stateAt = t => SUN.states.slice(1).reduce((s, { at }) => s + ramp(t, at - SUN.swell, at), 0)
+// The swell 0..1: eased at both ends, surging `surges` times between. A monotone warp of the clock, so
+// the star only ever grows; `surging` is how hard it is pushing right now, 0..1.
+function swell(t) {
+	const u = ramp(t, ...SUN.swell)
+	const k = SUN.surges * TAU
+	const warped = u - (SUN.surge * Math.sin(k * u)) / k
+	const surging = u > 0 && u < 1 ? Math.max(0, Math.cos(k * u)) : 0
+	return { grown: smoothstep(warped), surging }
+}
 
 export const sun = {
 	key: 'sun',
@@ -29,52 +45,18 @@ export const sun = {
 	cellPx: SUN.cellPx,
 	duration: SUN.duration,
 	card: { at: SUN.cardAt, text: INTRO_CARDS.sun },
-	setup(gl) {
-		atlas = pixelTexture(gl)
-		painted = ''
-	},
-	// painting is the expensive part: only a grid of a new size repaints
-	resize(gl, grid) {
-		const key = `${grid.width}x${grid.height}`
-		if (key === painted) return
-		painted = key
-		const art = paintSunAtlas(grid)
-		gl.bindTexture(gl.TEXTURE_2D, atlas)
-		gl.texImage2D(
-			gl.TEXTURE_2D,
-			0,
-			gl.RGBA,
-			art.width,
-			art.height,
-			0,
-			gl.RGBA,
-			gl.UNSIGNED_BYTE,
-			art.data
-		)
-		sizes = art.sizes
-		radii = sunRadii(grid)
-	},
-	release(gl) {
-		gl.deleteTexture(atlas)
-		atlas = null
-		painted = ''
-	},
-	// uP = approach 0..1, radius in cells, Mercury's transit, the ejection; uQ = the sky's pan, seconds,
-	// the state; uH = the three sprites' sides and how far the painted disc has taken over the plain one
+	// uP = radius in cells, the ejection 0..1; uQ = the sky's pan, the star's clock, its age;
+	// uH.x = the corona's reach
 	params(t, io, _gl, grid) {
-		const a = smoothstep(ramp(t, SUN.hold, SUN.approach))
-		const s = stateAt(t)
-		const i = Math.min(1, Math.floor(s))
-		const settled = radii[i] + (radii[i + 1] - radii[i]) * (s - i)
-		const from = EARTH.star.radius * Math.min(grid.width, grid.height)
-		const radius = t < SUN.approach ? from + (radii[0] - from) * a : settled
+		const { grown, surging } = swell(t)
+		const { young, giant } = SUN.limb
+		const radius = (young + (giant - young) * grown - SUN.at[0]) * grid.width
+		const age = EARTH.star.age + (SUN.age - EARTH.star.age) * grown
 		const drift = SUN.drift * smoothstep(ramp(t, 0, SUN.duration))
-		const carry = arrive(t, INTRO_TRANSITIONS.sun.dur, SUN.carry)
 		return {
-			p: [a, radius, ramp(t, ...SUN.transit), ramp(t, ...SUN.ejection)],
-			q: [...skyPan(grid, io, [drift + carry, 0]), t, s],
-			h: [...sizes, ramp(t, SUN.approach - SUN.reveal, SUN.approach)],
-			mask: atlas,
+			p: [radius, ramp(t, ...SUN.ejection), 0, 0],
+			q: [...skyPan(grid, io, [drift, 0]), t, age],
+			h: [1 + SUN.puff * surging, 0, 0, 0],
 			sky: sky.texture,
 		}
 	},
