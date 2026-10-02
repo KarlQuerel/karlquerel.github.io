@@ -64,7 +64,7 @@ export function layoutWordmark(mark) {
 		})
 	)
 
-	// Per letter: the face falls off toward the lower right, then a rivet inside each corner.
+	// Per letter: the face falls off toward the lower right.
 	boxes.forEach(({ x: bx, y: by, w, h }) => {
 		for (let cy = by; cy < by + h; cy++)
 			for (let cx = bx; cx < bx + w; cx++) {
@@ -73,29 +73,36 @@ export function layoutWordmark(mark) {
 				const fall = ramp(t, mark.shade.from, mark.shade.to)
 				if (ditherThreshold(cx, cy) < fall) roles[cy][cx] = 'shade'
 			}
-		const i = mark.rivet.inset
-		for (const [cx, cy] of [
-			[bx + i, by + i],
-			[bx + w - 1 - i, by + i],
-			[bx + i, by + h - 1 - i],
-			[bx + w - 1 - i, by + h - 1 - i],
-		]) {
-			if (!FACE.has(roles[cy][cx])) continue
-			roles[cy][cx] = 'hardware'
-			if (FACE.has(roles[cy - 1][cx - 1])) roles[cy - 1][cx - 1] = 'specular'
-		}
 	})
+	// A shaded cell with no shaded neighbour is where the dither first bites: alone, it reads as a
+	// dead pixel, so it goes back to face.
+	const SIDES = [
+		[1, 0],
+		[-1, 0],
+		[0, 1],
+		[0, -1],
+	]
+	const alone = []
+	roles.forEach((row, cy) =>
+		row.forEach((role, cx) => {
+			if (
+				role === 'shade' &&
+				!SIDES.some(([dx, dy]) => roles[cy + dy]?.[cx + dx] === 'shade')
+			)
+				alone.push([cx, cy])
+		})
+	)
+	for (const [cx, cy] of alone) roles[cy][cx] = 'face'
 
-	// Wear on a fixed seed: brushed grain in short runs across the faces, scratches, worn highlights,
+	// Wear on a fixed seed: brushed grain in short runs across the faces, worn highlights and a
 	// chipped outline. The grain lifts a cell one step, so it reads as light catching the brushing.
-	const { seed, run, streak, scratch, worn, chip } = mark.wear
+	const { seed, run, streak, worn, chip } = mark.wear
 	const outer = (cx, cy) =>
 		roles[cy][cx] === 'outline' && near(cx, cy, (x2, y2) => roles[y2]?.[x2] === null)
 	roles.forEach((row, cy) =>
 		row.forEach((role, cx) => {
 			const r = hash2(cx, cy, seed)
-			if (FACE.has(role) && r < scratch) row[cx] = 'dark'
-			else if (FACE.has(role) && hash2(Math.floor(cx / run), cy, seed + 1) < streak)
+			if (FACE.has(role) && hash2(Math.floor(cx / run), cy, seed + 1) < streak)
 				row[cx] = role === 'face' ? 'brushed' : 'face'
 			else if ((role === 'light' || role === 'specular') && r > 1 - worn) row[cx] = 'face'
 			else if (role === 'outline' && r < chip && outer(cx, cy)) row[cx] = null
