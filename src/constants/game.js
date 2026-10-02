@@ -4,7 +4,7 @@ export const GAME_SHIPPED = false
 // The letters: plain glyph masks, `#` = stroke, 26 rows, six-cell strokes. Light, depth, outline,
 // plating and wear are all derived in js/wordmark.js, so the letters are the only thing drawn by hand.
 export const GAME_WORDMARK = {
-	text: 'HERMES',
+	text: 'HERMES-8',
 	glyphs: {
 		H: [
 			'.####........####.',
@@ -146,6 +146,63 @@ export const GAME_WORDMARK = {
 			'.################.',
 			'..##############..',
 		],
+		// the dash and the 8 follow the letters' own rules: six-cell strokes, rounded ends
+		'-': [
+			'............',
+			'............',
+			'............',
+			'............',
+			'............',
+			'............',
+			'............',
+			'............',
+			'............',
+			'............',
+			'.##########.',
+			'############',
+			'############',
+			'############',
+			'############',
+			'.##########.',
+			'............',
+			'............',
+			'............',
+			'............',
+			'............',
+			'............',
+			'............',
+			'............',
+			'............',
+			'............',
+		],
+		8: [
+			'..##############..',
+			'.################.',
+			'##################',
+			'##################',
+			'##################',
+			'##################',
+			'######......######',
+			'######......######',
+			'######......######',
+			'######......######',
+			'.################.',
+			'..##############..',
+			'..##############..',
+			'..##############..',
+			'..##############..',
+			'.################.',
+			'######......######',
+			'######......######',
+			'######......######',
+			'######......######',
+			'##################',
+			'##################',
+			'##################',
+			'##################',
+			'.################.',
+			'..##############..',
+		],
 	},
 	gap: 5,
 	// how far the letters stand off the wall, in cells, down and to the right (away from the key light)
@@ -160,7 +217,6 @@ export const GAME_WORDMARK = {
 		shade: 'gun',
 		dark: 'gun',
 		rim: 'pewter',
-		hardware: 'graphite',
 		depth: 'graphite',
 		depthFar: 'iron',
 		outline: 'pitch',
@@ -168,11 +224,10 @@ export const GAME_WORDMARK = {
 	},
 	// the face falls off toward the lower right by dither, between these points of the box diagonal
 	shade: { from: 0.5, to: 1.1 },
-	// rivets: a dark dome with a lit cell up-left of it, inset from each corner of a letter's box
-	rivet: { inset: 2 },
-	// Wear on a fixed seed: brushed grain runs across the faces in short horizontal runs, a few dark
-	// scratches, highlights worn back to face here and there, chips out of the outer outline.
-	wear: { seed: 9, run: 6, streak: 0.42, scratch: 0.02, worn: 0.06, chip: 0.03 },
+	// Wear on a fixed seed: brushed grain runs across the faces in short horizontal runs, highlights
+	// worn back to face here and there, chips out of the outer outline. No scratches: at this size a
+	// dark cell reads as a dead pixel.
+	wear: { seed: 9, run: 6, streak: 0.2, worn: 0.06, chip: 0.03 },
 	// one diagonal glint sweeps the faces every `every` ms, one cell per `step` ms, `width` cells thick
 	glint: { every: 4200, step: 28, width: 3 },
 }
