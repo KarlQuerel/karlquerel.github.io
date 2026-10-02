@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
+import { GAME_SHIPPED } from './src/constants/game.js'
 import { paletteScss } from './src/constants/palette.js'
 import { breakpointsScss } from './src/constants/viewport.js'
 
@@ -14,6 +15,8 @@ const virtualImporter = {
 
 export default defineConfig({
 	plugins: [vue()],
+	// The ship flag as a literal: only a literal folds the game's imports out of a build.
+	define: { 'import.meta.env.GAME_SHIPPED': GAME_SHIPPED },
 	build: {
 		rolldownOptions: {
 			output: {
