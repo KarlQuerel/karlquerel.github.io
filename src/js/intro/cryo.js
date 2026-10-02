@@ -1,7 +1,7 @@
 import frag from '../../shaders/intro/cryo.frag.glsl?raw'
 import hands from '../../shaders/intro/hands.glsl?raw'
 import human from '../../shaders/intro/human.glsl?raw'
-import { INTRO_CARDS, INTRO_HUD } from '../../data/gameIntro.js'
+import { INTRO_CARDS } from '../../data/gameIntro.js'
 import { itemOf } from './wake.js'
 import { CRYO } from '../../constants/intro/cryo.js'
 import { ramp } from '../math.js'
@@ -14,11 +14,7 @@ export const cryo = {
 	chunks: [hands, human],
 	duration: CRYO.duration,
 	card: { at: CRYO.cardAt, text: INTRO_CARDS.chosen },
-	marks: { engage: CRYO.engageAt },
-	hud: (clock, marks) => ({
-		readouts: [INTRO_HUD.ship, ...INTRO_HUD.readouts],
-		alert: marks.engage ? INTRO_HUD.cryoEngage : '',
-	}),
+	hud: () => ({}),
 	params(t, io) {
 		const reach = window(t, CRYO.reach)
 		const grip = window(t, CRYO.grip)
