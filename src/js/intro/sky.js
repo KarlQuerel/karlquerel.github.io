@@ -4,6 +4,7 @@
 import layers from '../../shaders/intro/layers.glsl?raw'
 import { PALETTE } from '../../constants/palette.js'
 import { SKY } from '../../constants/intro/sky.js'
+import { STAR } from '../../constants/intro/star.js'
 import { pixelTexture } from '../gl.js'
 import { hash1 } from '../pixelNoise.js'
 
@@ -29,6 +30,11 @@ const skyConsts = [
 	`const float SKY_TILE = ${glslNum(SKY.tile)};`,
 	`const vec2 SKY_DEPTHS = ${glslVec(SKY.depths)};`,
 	`const float GALAXY_DEPTH = ${glslNum(SKY.galaxyDepth)};`,
+	`const float STAR_CELLS = ${glslNum(STAR.cells)};`,
+	`const float STAR_BOIL = ${glslNum(STAR.boil)};`,
+	`const float STAR_SPIN = ${glslNum(STAR.spin)};`,
+	`const float STAR_SEAM = ${glslNum(STAR.seam)};`,
+	`const float STAR_REACH = ${glslNum(STAR.reach)};`,
 ]
 // the chunk a flat-layer shot puts before its own fragment source
 export const LAYERS_CHUNK = [...palette, ...snap, ...skyConsts, layers].join('\n')
