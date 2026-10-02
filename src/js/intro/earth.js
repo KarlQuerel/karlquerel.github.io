@@ -18,6 +18,7 @@ const layout = [
 	`const vec2 SUN_AT = ${glslVec(star.at)};`,
 	`const float SUN_R = ${glslNum(star.radius)};`,
 	`const float SUN_DEPTH = ${glslNum(star.depth)};`,
+	`const float SUN_AGE = ${glslNum(star.age)};`,
 ]
 const frag = raw.replace('__LAYOUT__', layout.join('\n'))
 
@@ -61,12 +62,12 @@ export const earth = {
 		atlas = null
 		painted = ''
 	},
-	// uP = the pan in cells (x right, y down); uH = the planet and Moon sides
+	// uP = the pan in cells (x right, y down), the star's clock; uH = the planet and Moon sides
 	params: (t, io, _gl, grid) => {
 		const k = 1 - earthEase(t / EARTH.duration)
 		const [tx, ty] = EARTH.travel
 		return {
-			p: [...skyPan(grid, io, [tx * k, ty * k]), 0, 0],
+			p: [...skyPan(grid, io, [tx * k, ty * k]), t, 0],
 			h: [...sizes, 0, 0],
 			mask: atlas,
 			sky: sky.texture,
