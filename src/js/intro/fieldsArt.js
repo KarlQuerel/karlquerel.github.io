@@ -1,15 +1,14 @@
 // The fields' layers, painted once per grid and stacked in one atlas, each a frame tall and wider than
-// the frame by `margin` both sides so the truck never runs off them: the sky and the ground, the farm
-// on the horizon, the harvester, the tree. The windmill's blades, the fence and the embers are live.
+// the frame by `margin` both sides so the truck never runs off them: the ground, the farm
+// on the horizon, the harvester, the tree. The sky, the sun, the smoke, the fires, the windmill's
+// blades, the fence and the embers are live.
 
 import { FIELDS } from '../../constants/intro/fields.js'
 import { PALETTE } from '../../constants/palette.js'
-import { ditherIndex, ditherThreshold, fbm2, hash1, hash2 } from '../pixelNoise.js'
+import { ditherIndex, hash1, hash2 } from '../pixelNoise.js'
 import { tidySprite } from '../ridge.js'
 import { createLayer, disc, line, put, rect, rimLight, tri } from './raster.js'
 
-const SKY = ['basalt', 'garnet', 'rust', 'brick', 'clay', 'flare', 'amber', 'dune', 'sand']
-const SUN = ['rust', 'brick', 'clay', 'flare', 'amber', 'dune']
 const DIRT = ['void', 'basalt', 'rust', 'brick', 'clay', 'flare', 'amber', 'dune']
 const SLAB = ['basalt', 'ash', 'stone', 'bone']
 
@@ -44,48 +43,11 @@ function plates(x, z) {
 	return { f1, f2, id }
 }
 
-function paintSkyGround(W, H, M) {
+// The ground from the horizon down, in perspective; the sky over it is live (fields.frag.glsl).
+function paintGround(W, H, M) {
 	const L = createLayer(W + 2 * M, H)
-	const S = FIELDS.sky
 	const G = FIELDS.ground
 	const hz = Math.round(FIELDS.horizon * H)
-	const sx = S.sunAt[0] * W + M
-	const sy = S.sunAt[1] * H
-	const sr = S.sunR * H
-	for (let y = 0; y < hz; y++)
-		for (let x = 0; x < L.w; x++) {
-			const d = Math.hypot(x + 0.5 - sx, y + 0.5 - sy)
-			// heat pooled at the horizon, and the sun's own glare round it
-			const glow = Math.exp(-Math.max(0, d - sr) / (sr * 2))
-			let lit = 0.1 + 0.5 * (y / hz) ** 1.4 + 0.2 * glow
-			let ramp = SKY
-			// the disc: a swollen red sunset, darker at its rim, never white
-			if (d < sr) {
-				ramp = SUN
-				lit = 0.5 + 0.5 * Math.sqrt(1 - (d / sr) ** 2)
-			}
-			// cloud bars across its lower half, lit along their tops
-			for (const [by, bx, len, thick] of S.bars) {
-				const row = y - (sy + by * sr)
-				if (Math.abs(x - sx - bx * sr) < len * sr && row >= -thick && row < thick) {
-					ramp = SKY
-					lit = row < 1 - thick ? 0.5 : 0.12
-				}
-			}
-			// the plumes: smoke leaning off the burning fields, dark against the sky and across the sun
-			for (const px of S.plumes) {
-				const up = (hz - y) / H
-				const cx = px * W + M + up * 0.45 * H + (fbm2(y / 26, px * 9, 5) - 0.5) * 24
-				const w = 4 + up * 0.32 * H
-				const n = fbm2((x - cx) / 22, (y + px * 400) / 18, 9)
-				const body = (1 - Math.abs(x - cx) / w) * (0.6 + n) * Math.min(1, up * 6)
-				if (body > ditherThreshold(x, y) + 0.35) {
-					ramp = SKY
-					lit = Math.min(lit, 0.06 + 0.14 * n)
-				}
-			}
-			putRgb(L, x, y, PALETTE[ramp[ditherIndex(Math.min(1, lit), ramp.length, x, y)]])
-		}
 	for (let y = hz; y < H; y++) {
 		const k = (y + 0.5 - hz) / (H - hz)
 		// the lens in cells, and how far off the ground this row sees
@@ -97,7 +59,7 @@ function paintSkyGround(W, H, M) {
 		const stalk = Math.max(1, Math.min(6, Math.round(0.25 / pw)))
 		for (let x = 0; x < L.w; x++) {
 			const wx = (x - M - FIELDS.vanish * W) * pw
-			const sun = Math.exp(-((((x - M) / W - S.sunAt[0]) / 0.14) ** 2))
+			const sun = Math.exp(-((((x - M) / W - FIELDS.sky.sun.at[0]) / 0.14) ** 2))
 			let name
 			if (k < G.haze) {
 				const lit = 0.5 + 0.3 * sun + 0.2 * (1 - k / G.haze)
@@ -228,7 +190,7 @@ function paintFarm(W, H, M) {
 		disc(L, x, hz - h, r, ink)
 		line(L, x + r * 0.5, hz, x + r * 0.5, hz - h, 1, 'basalt')
 	}
-	rimLight(L, x => [Math.sign(FIELDS.sky.sunAt[0] * W + M - x) || 1, -1], 'clay')
+	rimLight(L, x => [Math.sign(FIELDS.sky.sun.at[0] * W + M - x) || 1, -1], 'clay')
 	return L
 }
 
@@ -284,7 +246,7 @@ export function paintFieldsAtlas(grid) {
 	const W = grid.width
 	const H = grid.height
 	const margin = fieldsMargin(grid)
-	const layers = [paintSkyGround, paintFarm, paintHarvester, paintTree].map(paint => {
+	const layers = [paintGround, paintFarm, paintHarvester, paintTree].map(paint => {
 		const L = paint(W, H, margin)
 		tidySprite({ data: L.data }, L.w, L.h, FIELDS.tidyPasses)
 		return L
