@@ -1,35 +1,34 @@
-// Shot 3, THE SUN HAS BEEN GROWING RELENTLESSLY. It opens on the earth shot's own sun, where that shot
-// left it, and the camera closes on it; then the star is shown in three painted states, each held, the
-// swell between them carried by a flare. Times in seconds, sizes as shares of the frame's height.
+// Shot 3, THE SUN HAS BEEN GROWING RELENTLESSLY. The sun's centre sits off the left of the frame, so
+// only its limb shows; the inner planets stand on their orbits across the frame and the limb swells
+// toward them, swallowing Mercury, then Venus, stopping short of a scorched Earth. Positions are shares
+// of the frame (x of its width, y of its height, from the top left); times in seconds.
 export const SUN = {
-	duration: 10,
-	cardAt: 0.8,
+	duration: 10.5,
+	cardAt: 1.2,
 	cellPx: 2,
-	// where the disc settles, as a share of the frame (x of its width, y of its height, from the top left)
-	at: [0.5, 0.45],
-	// the disc holds on the earth shot's sun through the cut, then the camera closes on it: the approach
-	// from there to `at` runs from `hold` to `approach`, growing to the first state as it comes
-	hold: 1.2,
-	approach: 3.0,
-	// the last of the approach given to handing the plain disc over to the painted one
-	reveal: 0.45,
-	// the states: when each is fully in, its radius, and its age (0 young and white, 1 a red giant)
-	states: [
-		{ at: 3.0, radius: 0.15, age: 0 },
-		{ at: 5.7, radius: 0.27, age: 0.5 },
-		{ at: 8.3, radius: 0.42, age: 1 },
+	// the sun's centre, off the frame's left edge
+	at: [-0.3, 0.56],
+	// where its limb crosses the planets' line, young and giant
+	limb: { young: 0.1, giant: 0.72 },
+	// the swell runs between these; it ages from the earth shot's star to `age`
+	swell: [0.6, 8.6],
+	age: 1,
+	// it comes in `surges`, each this much faster than the mean at its peak (under 1, so it never shrinks);
+	// the corona puffs out by `puff` with each
+	surges: 3,
+	surge: 0.7,
+	puff: 0.6,
+	// the planets on the line: x, radius (cells), and their lit and dark colours. Each heats as the limb
+	// comes within `heat` of it (cells) and flashes over `flash` cells as it goes under.
+	planets: [
+		{ x: 0.3, r: 6, lit: 'stone', dark: 'ash' },
+		{ x: 0.5, r: 10, lit: 'sand', dark: 'clay' },
+		{ x: 0.86, r: 11, lit: 'rime', dark: 'iron' },
 	],
-	// how long a swell from one state to the next takes, ending at the next state's `at`
-	swell: 0.6,
-	// a portrait frame caps the disc at this share of its width, so the giant fills it, not spills it
-	fitWidth: 0.5,
-	// Mercury crosses the young disc between these seconds
-	transit: [3.1, 5.6],
-	// the coronal mass ejection leaves the giant's limb over this span
-	ejection: [8.5, 9.9],
+	heat: 50,
+	flash: 14,
+	// the coronal mass ejection leaves the limb toward Earth over this span
+	ejection: [8.2, 10.4],
 	// the sky keeps sliding left the way the earth shot's camera went: frame heights at depth 1
 	drift: -0.15,
-	// the hand-off: the sky arrives this far right (frame heights at depth 1) and settles over the cut
-	carry: 0.12,
-	tidyPasses: 1,
 }
