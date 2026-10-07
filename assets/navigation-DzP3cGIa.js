@@ -1,0 +1,1 @@
+var e=[{to:`/#top`,label:`Home`},{to:`/#work`,label:`Work`},{to:`/#life`,label:`Life`},{to:`/#contact`,label:`Contact`}],t={to:`/under-construction`,label:`Game`},n={to:`/`,label:`Home`};export{n,e as r,t};
