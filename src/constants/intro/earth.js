@@ -29,19 +29,37 @@ export const EARTH = {
 	moon: { at: [0.13, 0.22], radius: 0.06, depth: 0.4, seed: 77 },
 	// the Sun, already past its prime: its age on star()'s scale, 0 white to 1 a red giant
 	star: { at: [0.74, 0.26], radius: 0.045, depth: 0.12, age: 0.3 },
-	// share of a ramp step given to dither at each seam of the globe's light
-	seam: 0.22,
+	// half-width of the dither at each seam of the globe's light, in ramp steps: 0.5 dithers all the way
+	seam: 0.4,
+	// The surface's finer life. `coast`/`wisp` are how far fine octaves at `scale` push the ground and the
+	// cloud cover; `cloudEdge` is how far past `cloud` a deck takes to go solid. The light: `gain` spreads
+	// it over the ramp, `hillshade` tips it by the slope toward the sun (measured over `slopeCells`), a
+	// deck's shadow falls `shadowOffset` down-sun and drops `shadowDrop`, the sea glints by `glint`.
+	detail: {
+		scale: 9,
+		octaves: 3,
+		coast: 0.2,
+		wisp: 0.35,
+		cloudEdge: 0.06,
+		gain: 1.15,
+		hillshade: 0.3,
+		slopeCells: 1.5,
+		shadowOffset: 0.03,
+		shadowDrop: 0.2,
+		glint: 0.5,
+		glintPower: 24,
+	},
 	// clouds where a second world's elevation passes this
 	cloud: 0.6,
 	// The air past the limb, in cells: `depth` toward the sun, `night` away from it, `wrap` how far the
 	// glow reaches round toward the night side; inner band out. `twilight` is how deep past the
-	// terminator the ground stays red, `limb` where the lit edge catches `limbLift` more.
+	// terminator the red ground fades out, `limb` where the lit edge catches `limbLift` more.
 	air: {
 		depth: 9,
 		night: 1,
 		wrap: 0.35,
 		ramp: ['sand', 'haze', 'rust'],
-		twilight: 0.04,
+		twilight: 0.12,
 		limb: 0.92,
 		limbLift: 0.18,
 	},

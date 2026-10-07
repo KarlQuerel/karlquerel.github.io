@@ -39,9 +39,13 @@
 
 	.choice__option {
 		@include void-button;
-		padding: 0.9rem 1.3rem;
-		font-family: $font-pixel;
-		font-size: $type-title;
-		letter-spacing: 1px;
+
+		// after the mixin's nested rules, so it needs the wrap to stay a plain declaration
+		& {
+			padding: 0.9rem 1.3rem;
+			font-family: $font-pixel;
+			font-size: $type-title;
+			letter-spacing: 1px;
+		}
 	}
 </style>
