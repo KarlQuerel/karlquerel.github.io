@@ -75,6 +75,8 @@ export function useIntro(canvasRef) {
 		shot.value = INTRO_SHOTS[i] ?? null
 		// a shot on its own pixel size takes the grid with it; the shot it leaves redraws on it too
 		if (shot.value?.cellPx !== px) refit()
+		// same grid: the shot only has to catch up with it (a no-op when its art is already that size)
+		else if (grid.width) shot.value?.resize?.(gl, grid)
 		local = t
 		card.value = ''
 		cardShown = false
@@ -90,15 +92,19 @@ export function useIntro(canvasRef) {
 	function next(skipped = false) {
 		if (!shot.value || last.value) return
 		const into = INTRO_TRANSITIONS[INTRO_SHOTS[index + 1].key]
-		const from = { shot: shot.value, local }
+		// set before go(): a refit there resizes the shot being left as well as the one coming in
+		leaving =
+			into && !still
+				? {
+						shot: shot.value,
+						local,
+						kind: TRANSITION_KINDS[into.kind],
+						dur: skipped ? Math.min(into.dur, INTRO_SKIP_DUR) : into.dur,
+						t: 0,
+					}
+				: null
 		go(index + 1)
-		if (!into || still) {
-			leaving = null
-			return
-		}
-		const dur = skipped ? Math.min(into.dur, INTRO_SKIP_DUR) : into.dur
-		leaving = { ...from, kind: TRANSITION_KINDS[into.kind], dur, t: 0 }
-		settled.value = false
+		if (leaving) settled.value = false
 	}
 
 	function skip() {
@@ -136,6 +142,9 @@ export function useIntro(canvasRef) {
 		sky.setup(gl)
 		for (const s of INTRO_SHOTS) s.setup?.(gl)
 		await step('programs')
+		// paint every shot's art now, at the grid it plays on, so no shot stalls the intro to paint it
+		for (const s of INTRO_SHOTS) s.resize?.(gl, gridFor(s.cellPx))
+		await step('art')
 		const { index: i, t } = opening(still)
 		go(i, t)
 	}
@@ -198,15 +207,15 @@ export function useIntro(canvasRef) {
 		passes[s.key].draw(grid, { time: t, look: io.look, ptr: io.ptr, ...u })
 	}
 
-	const { supported, booting, bootProgress, bootCeiling, grid, refit, wake } = useArtCanvas(
-		canvasRef,
-		{
+	const { supported, booting, bootProgress, bootCeiling, grid, gridFor, refit, wake } =
+		useArtCanvas(canvasRef, {
 			bootWeights: INTRO_BOOT_WEIGHTS,
 			cellPx: () => shot.value?.cellPx,
 			build,
 			frame,
+			// only the shots on screen: one off screen repaints when it comes on
 			resize(size) {
-				for (const s of INTRO_SHOTS) s.resize?.(gl, size)
+				for (const s of new Set([shot.value, leaving?.shot])) s?.resize?.(gl, size)
 			},
 			release() {
 				for (const s of INTRO_SHOTS) s.release?.(gl)
@@ -219,8 +228,7 @@ export function useIntro(canvasRef) {
 				if (quad) gl.deleteBuffer(quad)
 				quad = null
 			},
-		}
-	)
+		})
 
 	// The pointer over the frame: a look for the mouse, a position for whatever a shot lets you touch.
 	function track(e) {
