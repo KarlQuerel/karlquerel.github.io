@@ -2,7 +2,7 @@ import raw from '../../shaders/intro/fields.frag.glsl?raw'
 import { INTRO_CARDS } from '../../data/gameIntro.js'
 import { FIELDS } from '../../constants/intro/fields.js'
 import { pixelTexture } from '../gl.js'
-import { ramp, smoothstep } from '../math.js'
+import { ramp, smootherstep, smoothstep } from '../math.js'
 import { paintFieldsAtlas } from './fieldsArt.js'
 import { arrive } from './layerCamera.js'
 import { INTRO_TRANSITIONS } from '../../constants/intro/transitions.js'
@@ -104,7 +104,7 @@ export const fields = {
 		const carry = arrive(t, INTRO_TRANSITIONS.fields.dur, FIELDS.carry) * grid.height
 		const x = truck(t, grid) + carry + io.look[0] * FIELDS.lookCells
 		const u = ramp(t, ...FIELDS.rise)
-		const lift = FIELDS.drop * grid.height * (1 - u * u * u * (u * (u * 6 - 15) + 10))
+		const lift = FIELDS.drop * grid.height * (1 - smootherstep(u))
 		// the sun slides by the sky's depth, from where it stood at the open
 		const slide = (x - truck(0, grid) - FIELDS.carry * grid.height) * sky.depth
 		return {
