@@ -19,6 +19,9 @@ export const approach = (from, to, dt, tau) => to + (from - to) * Math.exp(-dt /
 // Hermite ease between 0 and 1 — the one easing curve used for scrubbed motion.
 export const smoothstep = t => t * t * (3 - 2 * t)
 
+// Quintic ease, flat at both ends: a camera move that starts and stops dead.
+export const smootherstep = t => t * t * t * (t * (t * 6 - 15) + 10)
+
 // 0 -> 1 across [rise, full], holds, back to 0 by [fall] — the window the scroll-driven fields ride.
 export function riseFall(t, rise, full, fall) {
 	const up = clamp01((t - rise) / (full - rise))
