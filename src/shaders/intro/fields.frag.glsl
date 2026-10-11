@@ -110,7 +110,7 @@ void main(){
   vec2 sky = cell + vec2(floor(sin(cell.y*0.9 + T*5.0)*1.4 + 0.5)*step(0.2, heat)*step(0.0, above), 0.0);
   float rise = clamp(1.0 - above/HZ, 0.0, 1.0);
   vec3 col = dusk(mix(DUSK.x, DUSK.y, pow(rise, 1.6)), sky);
-  col = star(col, sky - SC, SR, 1.0, uP.w, 1.0);
+  col = star(col, sky, SC, SR, 1.0, uP.w, 1.0);
 
   // --- smoke off the fields, then the farm on the horizon in front of it
 __SMOKE__
