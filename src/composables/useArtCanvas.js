@@ -38,7 +38,8 @@ export function useArtCanvas(
 	// how far the boot has got, and where the step in flight will land; the loader creeps toward it
 	const bootProgress = ref(0)
 	const bootCeiling = ref(bootWeights[order[0]])
-	const grid = { width: 0, height: 0 }
+	// cellPx: CSS px per cell as fitted, so a shot can keep its art a fixed size on any rung
+	const grid = { width: 0, height: 0, cellPx: 1 }
 
 	let canvas = null
 	let gl = null
@@ -53,17 +54,30 @@ export function useArtCanvas(
 	let dprQuery = null
 	const perf = { start: 0, frames: 0 }
 
-	function fit() {
+	// The grid the viewport takes at `px` CSS px per cell (none: sized to the target height).
+	function gridFor(px) {
 		// innerWidth, not the element's box: the element is about to be a hair wider than the viewport
 		const dpr = window.devicePixelRatio || 1
 		const devW = Math.round(window.innerWidth * dpr)
 		const devH = Math.round(window.innerHeight * dpr)
-		// a scene can ask for a fixed CSS size per art pixel instead of the target height
-		const px = cellPx?.()
 		const base = px ? Math.round(px * dpr) : Math.round(devH / ART_TARGET)
-		const k = Math.max(ART_MIN_DEVICE_PX, base + rung)
-		grid.width = Math.max(ART_MIN_WIDTH, Math.ceil(devW / k))
-		grid.height = Math.max(ART_MIN_HEIGHT, Math.ceil(devH / k))
+		// the floor guards auto-sized grids; a shot naming its own size gets it, down to a device pixel
+		const k = Math.max(px ? 1 : ART_MIN_DEVICE_PX, base + rung)
+		return {
+			width: Math.max(ART_MIN_WIDTH, Math.ceil(devW / k)),
+			height: Math.max(ART_MIN_HEIGHT, Math.ceil(devH / k)),
+			cellPx: k / dpr,
+			k,
+			devW,
+			devH,
+			dpr,
+		}
+	}
+
+	function fit() {
+		// a scene can ask for a fixed CSS size per art pixel instead of the target height
+		const { k, devW, devH, dpr, ...size } = gridFor(cellPx?.())
+		Object.assign(grid, size)
 		canvas.width = grid.width
 		canvas.height = grid.height
 		// The spill past the viewport is split by half, floored to a device pixel, so edges stay on the grid.
@@ -244,5 +258,14 @@ export function useArtCanvas(
 	})
 	onBeforeUnmount(dispose)
 
-	return { supported, booting, bootProgress, bootCeiling, grid, wake: resume, refit: onResize }
+	return {
+		supported,
+		booting,
+		bootProgress,
+		bootCeiling,
+		grid,
+		gridFor,
+		wake: resume,
+		refit: onResize,
+	}
 }
