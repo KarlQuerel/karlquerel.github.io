@@ -7,7 +7,7 @@ import { FIELDS } from '../../constants/intro/fields.js'
 import { PALETTE } from '../../constants/palette.js'
 import { ditherIndex, hash1, hash2 } from '../pixelNoise.js'
 import { tidySprite } from '../ridge.js'
-import { createLayer, disc, line, put, rect, rimLight, tri } from './raster.js'
+import { createLayer, disc, line, put, rect, rimLight, tri, putRgb } from './raster.js'
 
 const DIRT = ['void', 'basalt', 'rust', 'brick', 'clay', 'flare', 'amber', 'dune']
 const SLAB = ['basalt', 'ash', 'stone', 'bone']
@@ -19,8 +19,6 @@ export function fieldsMargin(grid) {
 		deepest * ((FIELDS.truck / 2 + FIELDS.carry) * grid.height + FIELDS.lookCells) + 4
 	)
 }
-
-const putRgb = (L, x, y, rgb) => L.data.set([...rgb, 255], (y * L.w + x) * 4)
 
 // F1 and F2 to the nearest plate centres, and the nearest plate's own hash
 function plates(x, z) {
