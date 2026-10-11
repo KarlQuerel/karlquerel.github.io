@@ -1,7 +1,8 @@
 // The intro's clock: shot order lives in js/intro/index.js, every second of it is tuned here.
 
-// Weighted boot for useArtCanvas: ten programs compile in one step, the first frame is the wait.
-export const INTRO_BOOT_WEIGHTS = { context: 0.05, programs: 0.45, frame: 0.5 }
+// Weighted boot for useArtCanvas: every program compiles in one step, the painted shots' art in the
+// next, then the first frame.
+export const INTRO_BOOT_WEIGHTS = { context: 0.05, programs: 0.3, art: 0.4, frame: 0.25 }
 
 // the pointer look, a shallow parallax on every shot: share of the distance closed per frame
 export const INTRO_LOOK_EASE = 0.06
