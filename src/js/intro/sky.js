@@ -30,11 +30,20 @@ const skyConsts = [
 	`const float SKY_TILE = ${glslNum(SKY.tile)};`,
 	`const vec2 SKY_DEPTHS = ${glslVec(SKY.depths)};`,
 	`const float GALAXY_DEPTH = ${glslNum(SKY.galaxyDepth)};`,
+	`const vec2 STAR_SPAN_YOUNG = ${glslVec(STAR.span.young)};`,
+	`const vec2 STAR_SPAN_GIANT = ${glslVec(STAR.span.giant)};`,
 	`const float STAR_CELLS = ${glslNum(STAR.cells)};`,
+	`const float STAR_SPLIT = ${glslNum(STAR.split)};`,
 	`const float STAR_BOIL = ${glslNum(STAR.boil)};`,
 	`const float STAR_SPIN = ${glslNum(STAR.spin)};`,
-	`const float STAR_SEAM = ${glslNum(STAR.seam)};`,
+	`const vec2 STAR_LIMB = ${glslVec(STAR.limb)};`,
+	`const vec2 STAR_BELT = ${glslVec(STAR.spots.belt)};`,
+	`const vec2 STAR_SPOT = ${glslVec([STAR.spots.penumbra, STAR.spots.umbra])};`,
+	`const vec2 STAR_FAR = ${glslVec(STAR.far)};`,
 	`const float STAR_REACH = ${glslNum(STAR.reach)};`,
+	`const vec3 STAR_CORONA = ${glslVec([STAR.flame, STAR.ray, STAR.spread])};`,
+	`const vec2 STAR_HEAT_K = ${glslVec([STAR.contrast, STAR.flood])};`,
+	`const float STAR_SEAM = ${glslNum(STAR.seam)};`,
 ]
 // the chunk a flat-layer shot puts before its own fragment source
 export const LAYERS_CHUNK = [...palette, ...snap, ...skyConsts, layers].join('\n')
