@@ -12,11 +12,10 @@ export const TRANSITION_KINDS = {
 }
 
 export const INTRO_TRANSITIONS = {
-	// the stars match across the cut, so only the planet's eclipse ring dissolves in over them
-	earth: { kind: 'dissolve', dur: 2.4 },
-	// the old serials' wipes: a hard edge across to the sun, a clock hand round to the fields
-	sun: { kind: 'wipe', dur: 1.1 },
-	fields: { kind: 'clock', dur: 1.4 },
+	// no earth entry: the year shot rests on the earth shot's opening pan, the Earth still below the
+	// frame, and the cut does not show; no sun entry either: it is the earth shot's camera carrying on
+	// the sun's surface burns through into the fields
+	fields: { kind: 'burn', dur: 1.4 },
 	chamber: { kind: 'black', dur: 1.6 },
 	shipyard: { kind: 'mosaic', dur: 1.3 },
 	// POV begins: the first thing the envoy does is open their eyes
