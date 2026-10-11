@@ -9,8 +9,16 @@ export function put(L, x, y, name) {
 	x = Math.round(x)
 	y = Math.round(y)
 	if (x < 0 || y < 0 || x >= L.w || y >= L.h) return
-	const [r, g, b] = PALETTE[name]
-	L.data.set([r, g, b, 255], (y * L.w + x) * 4)
+	putRgb(L, x, y, PALETTE[name])
+}
+
+// the painters' hot loop: four writes, not an array per pixel
+export function putRgb(L, x, y, [r, g, b]) {
+	const i = (y * L.w + x) * 4
+	L.data[i] = r
+	L.data[i + 1] = g
+	L.data[i + 2] = b
+	L.data[i + 3] = 255
 }
 
 export const filled = (L, x, y) =>
