@@ -113,7 +113,8 @@ export function layoutWordmark(mark) {
 }
 
 // Cuts the letters into plates, squares laid on each letter's box, and orders their landing: letters
-// in sequence, each starting once the one before is `overlap` along, plates shuffled within a letter.
+// in sequence, each starting once the one before is `overlap` along. Within a letter the plates land
+// diagonal by diagonal from the top left, shuffled only along a diagonal, so the letter grows whole.
 // Depth cells land with the cell that casts them.
 export function platesOf(layout, plating) {
 	const { plate, overlap, seed } = plating
@@ -126,13 +127,18 @@ export function platesOf(layout, plating) {
 			const [mx, my] = [x - d, y - d]
 			const letter = layout.owner[my][mx]
 			const box = layout.boxes[letter]
-			const key = `${letter}:${Math.floor((my - box.y) / plate)}:${Math.floor((mx - box.x) / plate)}`
-			if (!ids.has(key)) ids.set(key, { id: ids.size, letter, cells: [] })
+			const pr = Math.floor((my - box.y) / plate)
+			const pc = Math.floor((mx - box.x) / plate)
+			const key = `${letter}:${pr}:${pc}`
+			const span = Math.ceil(box.w / plate) + Math.ceil(box.h / plate)
+			// a hash under one keeps the shuffle inside the diagonal
+			const diag = (pr + pc + hash1(ids.size, seed)) / span
+			if (!ids.has(key)) ids.set(key, { letter, diag, cells: [] })
 			ids.get(key).cells.push([x, y])
 		})
 	)
 	const plates = [...ids.values()]
-	const at = p => p.letter + hash1(p.id, seed) * (1 + overlap)
+	const at = p => p.letter + p.diag * (1 + overlap)
 	plates.sort((a, b) => at(a) - at(b))
 	const centres = plates.map((p, rank) => {
 		p.cells.forEach(([x, y]) => (rankAt[y][x] = rank))
@@ -143,7 +149,7 @@ export function platesOf(layout, plating) {
 }
 
 // Paints the word mid-construction at (ox, oy): plates ranked under `landed` in their shaded steel,
-// the rest not yet there. `hot` plates glow, `glint` is the sweep's diagonal, `sparks` are cells.
+// the rest not yet there. `hot` plates glow, `glint` is the sweep's diagonal, `sparks` are [x, y, tone].
 export function paintPlating(ctx, layout, plates, mark, weld, state, ox, oy) {
 	const { landed, hot, glint, sparks } = state
 	const tones = layout.roles.map((row, y) =>
@@ -171,5 +177,5 @@ export function paintPlating(ctx, layout, plates, mark, weld, state, ox, oy) {
 		ctx.fillRect(ox + x, oy + y, 1, 1)
 	}
 	tones.forEach((row, y) => row.forEach((name, x) => name && put(x, y, name)))
-	for (const [x, y] of sparks) put(x, y, weld.spark)
+	for (const [x, y, tone] of sparks) put(x, y, tone)
 }
