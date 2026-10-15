@@ -4,7 +4,7 @@
 import { ENTRY } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
 import { clamp01 } from './math.js'
-import { ditherIndex, fallThreshold, fbm2, seamIndex } from './pixelNoise.js'
+import { fallThreshold, fbm2, seamIndex } from './pixelNoise.js'
 import { cellFor } from './ridge.js'
 
 // The sky's grain: the haze and mottle, the only part of it no sun can touch. Generating it is nearly
@@ -218,7 +218,9 @@ export function paintSun(sky, now) {
 					clamp01(1 - (d - S.r) / (reach - S.r)) *
 					now.light *
 					(1 - S.coronaFade * now.low)
-				const step = dark[i] + ditherIndex(g * g, S.coronaLift, x, y)
+				// the cell's own threshold, not Bayer: `g` carries a global fade, and a Bayer rung flips together
+				const v = g * g * (S.coronaLift - 1)
+				const step = dark[i] + Math.floor(v) + (v % 1 > thr[i] ? 1 : 0)
 				col = ramp[step > top ? top : step]
 			}
 			px[i * 4] = col[0]
