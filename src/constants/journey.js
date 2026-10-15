@@ -754,6 +754,21 @@ export const ENTRY = {
 		coronaFade: 0.7,
 	},
 
+	// The moon, high over the side the sun leaves from. Drawn into the sky's grid and lit on its
+	// sunward limb; it comes out cell by cell as the sky's night walks, wholly out by `fullAt` of it.
+	// `phase` is how far the shadow disc sits off the lit one, in radii, away from the sun.
+	moon: {
+		// up in the corner the heading leaves free, on a phone too
+		x: 0.78,
+		y: 0.09,
+		r: 6,
+		phase: 0.75,
+		fullAt: 0.45,
+		shades: ['stone', 'bone', 'chalk', 'cream'],
+		// mare: darker seas on the lit face, `cells` across, taking up to `depth` of a cell's light
+		mare: { cells: 3.5, depth: 0.45 },
+	},
+
 	// First stars, masked off before the horizon glow. Two coprime tile sizes, so no repeat lines up.
 	stars: {
 		appearStart: 0.52,
@@ -935,6 +950,26 @@ export const ENTRY = {
 	snowRuffleCells: 24,
 	// How a cap answers to prominence rather than to altitude alone, shared for the same reason.
 	snowProminence: { cells: 16, base: 0.25, ref: 0.05 },
+	// Valley mist, for a band with `mist`: a flat sheet from `level` of the band down, full `thick`
+	// lower, torn into long wisps. It walks its own pale ramp, faintly shaded by the rock under it,
+	// and thickens by `night` of itself as the rock's dusk comes on.
+	// The wisps are where the noise clears `hole`, full by `hole + soft`; the rest is torn open.
+	// A thin veil by day (`day` of itself), it gains `night` more as the rock goes dark, and walks
+	// only `walk` of the rock's night, so after dark it hangs paler than the rock it lies on.
+	mist: {
+		wispCells: 42,
+		wispRows: 5,
+		hole: 0.42,
+		soft: 0.28,
+		day: 0.55,
+		night: 0.9,
+		walk: 0.75,
+		tone: 0.1,
+		body: 0.45,
+		relief: 0.25,
+		shades: ['haze', 'dune', 'sand'],
+		foot: ['ink', 'slate', 'shale'],
+	},
 	// Furthest range: tallest silhouette, least contrast — aerial perspective washes it toward the sky.
 	distant: {
 		sunGlow: true,
@@ -972,6 +1007,7 @@ export const ENTRY = {
 			// off a cliff of tone and crumbled away cell by cell instead of going dark as one patch
 			foot: ['stone', 'bone'],
 		},
+		mist: { level: 0.45, thick: 0.2 },
 	},
 	far: {
 		sunGlow: true,
@@ -1005,6 +1041,19 @@ export const ENTRY = {
 			crest: 'cream',
 			// and one more under it for the night, so it walks as far as the rock it caps
 			foot: ['stone'],
+		},
+		// where its mist pools: the gaps the near range leaves
+		mist: { level: 0.5, thick: 0.16 },
+		// Other homes across the valley: a few clusters of windows, each its own switch after dark.
+		lights: {
+			clusters: 6,
+			perCluster: [2, 4],
+			spreadCells: 3,
+			// cells under the crest, where the near range leaves them in view
+			depth: [3, 9],
+			// on the rock's dusk, as the dome's lamp is (`habitat.lampAt`)
+			at: [2.3, 3.6],
+			shades: ['ember', 'amber', 'glow'],
 		},
 	},
 	near: {
@@ -1080,6 +1129,32 @@ export const ENTRY = {
 			pathMeander: 5,
 			pathWanderCells: 14,
 			pathShades: ['ash', 'stone'],
+			// Portholes round the shell, `row` cells over the sill: each is its own switch on the
+			// rock's dusk, so the house lights up room by room.
+			windows: { row: 2, at: [-6, -3, 3, 6], lightAt: [1.4, 2.6, 1.9, 3.1] },
+			// Someone sat out on the rocks with the dog, watching the sun go: one silhouette on the
+			// skyline, on the highest flat ledge `gap` cells off either side of the shell. A ledge
+			// steeper than `step` cells under the sprite stands it on a pillar: taken only if no flat one is.
+			watchers: {
+				gap: [4, 40],
+				step: 2,
+				edge: 5,
+				shade: 'void',
+				sprite: [
+					'.........###...',
+					'........#####..',
+					'........#####..',
+					'.........###...',
+					'..........#....',
+					'.#.#....#####..',
+					'.###...#######.',
+					'####..###.####.',
+					'..##.###..####.',
+					'..###.##.#####.',
+					'.####.########.',
+					'###############',
+				],
+			},
 		},
 	},
 }

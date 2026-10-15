@@ -54,6 +54,7 @@ export function drawArrivalSky(el, box, sun) {
 		night: -1,
 		// the cells the last disc covered, or null once `base` has changed under the whole frame
 		painted: null,
+		moon: moonCells(w, h),
 	}
 	rebuildSky(sky, sun)
 	paintSun(sky, sun)
@@ -160,8 +161,44 @@ export function darkenSky(sky, night) {
 		base[at + 2] = col[2]
 		base[at + 3] = 255
 	}
+	// the moon comes out on the same thresholds, so it surfaces cell by cell as the dark does
+	const out = night / (ENTRY.sun.night * ENTRY.moon.fullAt)
+	for (const { i, col } of sky.moon) {
+		if (out <= thr[i]) continue
+		// the unlit side is a rung over the sky behind it: the whole disc reads, the crescent carries
+		const c = col ?? ramp[Math.min(ramp.length - 1, dark[i] + 1)]
+		base.set(c, i * 4)
+	}
 	sky.night = night
 	sky.painted = null
+}
+
+// The moon's cells on the sky grid: the crescent on its own ramp, lit from the sun's side and blotted
+// with seas, and the rest of the disc left to the sky (`col` null).
+function moonCells(w, h) {
+	const M = ENTRY.moon
+	const shades = M.shades.map(name => PALETTE[name])
+	const [cx, cy] = [Math.round(M.x * w), Math.round(M.y * h)]
+	// the sun sets on the left, so the shadow disc sits off to the right and a little up
+	const [ox, oy] = [M.phase * M.r, -0.3 * M.phase * M.r]
+	const cells = []
+	for (let dy = -M.r; dy <= M.r; dy++) {
+		for (let dx = -M.r; dx <= M.r; dx++) {
+			const [x, y] = [cx + dx, cy + dy]
+			if (x < 0 || y < 0 || x >= w || y >= h || Math.hypot(dx, dy) > M.r + 0.3) continue
+			const lit = Math.hypot(dx - ox, dy - oy) > M.r + 0.3
+			if (!lit) {
+				cells.push({ i: y * w + x, col: null })
+				continue
+			}
+			// brightest on the limb turned to the sun, the seas taking their share off it
+			const limb = clamp01(0.5 - (dx / M.r) * 0.5)
+			const sea = fbm2(dx / M.mare.cells, dy / M.mare.cells, ENTRY.ridgeSeed + 11)
+			const v = clamp01(0.35 + 0.65 * limb - M.mare.depth * Math.max(0, sea - 0.5) * 2)
+			cells.push({ i: y * w + x, col: shades[seamIndex(v, shades.length, x, y, 0.2)] })
+		}
+	}
+	return cells
 }
 
 export function rebuildSky(sky, sun) {
