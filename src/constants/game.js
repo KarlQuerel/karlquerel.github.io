@@ -239,25 +239,27 @@ export const GAME_HOLDING = {
 	readout: { lead: 'GAME UNDER', accent: 'CONSTRUCTION', delayMs: 500, charMs: 55 },
 	// how far the name and its line lean with the cursor
 	depth: 9,
+	// once built, the name bobs this many px over this many ms, parked in orbit
+	float: { px: 4, ms: 7000 },
 	plating: {
 		// the word spans this share of the frame, at no more than cellMax CSS px per cell
 		span: 0.88,
 		cellMax: 3,
-		// cells of margin round the layout, room for the sparks
-		pad: 5,
+		// cells of margin round the layout, room for the sparks to drift into
+		pad: 9,
 		// plates are this many cells square, cut on each letter's box so they tile the strokes
 		plate: 6,
 		// one plate lands per step; a letter starts once the one before is this far along
-		stepMs: 48,
+		stepMs: 42,
 		overlap: 0.7,
-		// a landed plate glows for this many steps and throws this many sparks that live this long
+		// a landed plate glows for this many steps and throws this many sparks
 		hotSteps: 2,
-		sparks: 4,
-		sparkSteps: 3,
-		// how many cells out from the plate's centre a spark lands
-		sparkReach: [2, 6],
+		sparks: 2,
+		// zero-g: a spark coasts straight out from the plate's centre, `from` to `to` cells over `life`
+		// ms, cooling once it is `cools` of the way
+		drift: { from: 2, to: 8, life: 700, cools: 0.5 },
 		seed: 4,
 	},
 	// a plate that has just landed, and the sparks it throws
-	weld: { spark: 'glow', hot: 'glow' },
+	weld: { spark: 'glow', cool: 'amber', hot: 'glow' },
 }
