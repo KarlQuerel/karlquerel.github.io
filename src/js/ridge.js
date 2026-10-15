@@ -175,7 +175,6 @@ export function cutRidge(el, band, visitSeed, frame) {
 	const rough = new Float32Array(w * h)
 	const haze = new Float32Array(w * h)
 	const bite = new Uint8Array(w * h)
-	const mist = band.mist ? new Float32Array(w * h) : null
 	const tops = new Uint16Array(w)
 	const slope = new Float32Array(w)
 	// what the habitat lays down stands in its own light, so it is painted here and never relit
@@ -225,7 +224,6 @@ export function cutRidge(el, band, visitSeed, frame) {
 				const H = band.haze
 				haze[i] = H.lift * clamp01((y - yTop) / (H.depth * h)) ** H.power
 			}
-			if (mist) mist[i] = mistAt(band.mist, x, y, h, band.seed + visitSeed)
 			// Inside the cap, the same light is walked on the snow ramp, keeping the rock's facets and shadow.
 			const edge = capCells - (y - yTop)
 			kind[i] =
@@ -266,12 +264,7 @@ export function cutRidge(el, band, visitSeed, frame) {
 				faceAt,
 				seed: band.seed + visitSeed,
 			})
-		: { vent: null, lamp: [], lights: [] }
-	if (band.lights) {
-		habitat.lights.push(
-			...scatterLights(band.lights, { w, h, tops, kind, seed: band.seed + visitSeed })
-		)
-	}
+		: { vent: null, lamp: [] }
 
 	return {
 		ctx,
@@ -284,7 +277,6 @@ export function cutRidge(el, band, visitSeed, frame) {
 		rough,
 		haze,
 		bite,
-		mist,
 		tops,
 		slope,
 		steep,
@@ -362,101 +354,7 @@ function paintHabitat(put, hab, range) {
 	for (let y = lip; y <= base - shell; y++) {
 		if (y <= ventGround) put(vx, y, y === lip ? rim : shellShades[1])
 	}
-	const lights = paintWindows(put, hab, range, site)
-	paintWatchers(put, hab.watchers, range, site)
-	return { vent: { x: (vx + 0.5) / w, y: lip / h }, lamp, lights }
-}
-
-// The portholes: dark by day like the doorway, each lit on its own beat of the dusk.
-function paintWindows(put, hab, { w, h, profile }, { hx, base, shellShades }) {
-	const W = hab.windows
-	const light = PALETTE[hab.light]
-	const lights = []
-	const y = base - W.row
-	W.at.forEach((dx, k) => {
-		for (const x of [hx + dx, hx + dx + 1]) {
-			// a porthole the hill in front has buried stays buried
-			if (x < 0 || x >= w || y > Math.round(h * (1 - profile[x]))) continue
-			put(x, y, shellShades[0])
-			lights.push({ x, y, col: light, at: W.lightAt[k] })
-		}
-	})
-	return lights
-}
-
-// The watchers' sprite on the flattest ledge in reach, the rock under it filled down to the range.
-function paintWatchers(put, watchers, { w, tops }, { hx, half }) {
-	const rows = watchers.sprite
-	const sw = rows[0].length
-	const [near, far] = watchers.gap
-	// past the shell's right side, or its left on a frame too narrow for that
-	// kept `edge` cells in from the frame, where the band's lean would slide them off it
-	const [lo, hi] = [watchers.edge, w - sw - watchers.edge]
-	const spans = [
-		[hx + half + near, Math.min(hi, hx + half + far)],
-		[Math.max(lo, hx - half - far - sw), hx - half - near - sw],
-	]
-	// how far the ground under the span falls from its highest cell: the pillar it would stand on
-	const ledge = x0 => {
-		const span = tops.subarray(x0, x0 + sw)
-		return { top: Math.min(...span), drop: Math.max(...span) - Math.min(...span) }
-	}
-	// among the flat ledges the highest, as they came out for the view; failing one, the least steep
-	const worse = (a, b) =>
-		Math.max(a.drop, watchers.step) - Math.max(b.drop, watchers.step) || a.top - b.top
-	let x0 = -1
-	for (const [from, to] of spans) {
-		for (let x = from; x <= to; x++) {
-			if (x0 < 0 || worse(ledge(x), ledge(x0)) < 0) x0 = x
-		}
-	}
-	if (x0 < 0) return
-	const foot = ledge(x0).top
-	const shade = PALETTE[watchers.shade]
-	rows.forEach((row, r) => {
-		const y = foot - (rows.length - 1 - r)
-		for (let dx = 0; dx < sw; dx++) if (row[dx] === '#') put(x0 + dx, y, shade)
-	})
-	for (let dx = 0; dx < sw; dx++) {
-		for (let y = foot + 1; y <= tops[x0 + dx]; y++) put(x0 + dx, y, shade)
-	}
-}
-
-// A band's far-off windows: clusters strung under the crest, each light its own switch on the dusk.
-function scatterLights(L, { w, h, tops, kind, seed }) {
-	const lights = []
-	const shades = L.shades.map(name => PALETTE[name])
-	const clusters = Math.max(1, Math.round((L.clusters * w) / ENTRY.ridgeRefCells))
-	const roll = ([lo, hi], r) => lo + (hi - lo) * r
-	for (let c = 0; c < clusters; c++) {
-		// one cluster per stretch of the width, jittered inside it, so they never bunch up
-		const cx = Math.floor(((c + 0.2 + 0.6 * hash1(c * 7, seed + 41)) / clusters) * w)
-		const count = Math.round(roll(L.perCluster, hash1(c * 7 + 1, seed + 41)))
-		const depth = Math.round(roll(L.depth, hash1(c * 7 + 2, seed + 41)))
-		for (let k = 0; k < count; k++) {
-			const r = hash1(c * 31 + k, seed + 43)
-			const x = cx + Math.round((r - 0.5) * 2 * L.spreadCells)
-			if (x < 0 || x >= w) continue
-			const y = tops[x] + depth + (k % 2)
-			if (y >= h || kind[y * w + x] !== ROCK) continue
-			lights.push({
-				x,
-				y,
-				col: shades[Math.floor(hash1(c * 31 + k, seed + 47) * shades.length)],
-				at: roll(L.at, hash1(c * 31 + k, seed + 53)),
-			})
-		}
-	}
-	return lights
-}
-
-// How thick the valley mist stands on a cell before night thickens it: the sheet under its level, torn.
-function mistAt(pool, x, y, h, seed) {
-	const M = ENTRY.mist
-	const sheet = clamp01((y / h - pool.level) / pool.thick)
-	if (sheet <= 0) return 0
-	const wisp = fbm2(x / M.wispCells, y / M.wispRows, seed + 97)
-	return sheet * smoothstep(clamp01((wisp - M.hole) / M.soft))
+	return { vent: { x: (vx + 0.5) / w, y: lip / h }, lamp }
 }
 
 // The shell, lit off a real surface normal, gathering sun and sky separately at each cell.
@@ -555,8 +453,8 @@ function spillPool(lamp, hab, { w, h, tops, kind }, { hx, base }) {
 // ramp, then the tidy pass. The cut paid for the noise; this is arithmetic over kept cells, so the
 // ranges follow the sun across the sky.
 export function lightRidge(sprite, sky) {
-	const { ctx, w, h, cell, band, kind, thr, rough, haze, bite, mist, tops } = sprite
-	const { line, under, term, frameH, fixed, img, lamp, lights } = sprite
+	const { ctx, w, h, cell, band, kind, thr, rough, haze, bite, tops } = sprite
+	const { line, under, term, frameH, fixed, img, lamp } = sprite
 	const { shades, snowShades, rockFoot, snowFoot, at, rockCrest, snowyCrest } = nightRamps(
 		band,
 		sky.ground
@@ -591,11 +489,6 @@ export function lightRidge(sprite, sky) {
 	// read once, not once a cell: this loop runs every step of the sun
 	const { ridgeDepthFade, ridgeContrast, ridgeAmbient, ridgeSeam, strataMinLit, snowAmbient } =
 		ENTRY
-	const M = ENTRY.mist
-	const mistShades = M.shades.map(name => PALETTE[name])
-	const mistFoot = M.foot.map(name => PALETTE[name])
-	const thicken = M.day + (M.night * sky.ground) / ENTRY.sun.night
-	const mistWalk = nightRamps(band, sky.ground * M.walk).at
 	const px = img.data
 	px.set(fixed.data)
 	const write = (x, y, col) => {
@@ -658,22 +551,7 @@ export function lightRidge(sprite, sky) {
 					idx + ditherIndex(reach * cast, ENTRY.sunGlowLevels, x, y)
 				)
 			}
-			if (mist && mist[i] * thicken > ditherThreshold(x, y)) {
-				const thick = clamp01(mist[i] * thicken)
-				const fog = M.tone + thick * M.body + (lit - 0.5) * M.relief
-				write(
-					x,
-					y,
-					mistWalk(
-						mistShades,
-						mistFoot,
-						seamIndex(fog, mistShades.length, x, y, ridgeSeam),
-						thr[i]
-					)
-				)
-			} else {
-				write(x, y, at(ramp, snowy ? snowFoot : rockFoot, idx, thr[i]))
-			}
+			write(x, y, at(ramp, snowy ? snowFoot : rockFoot, idx, thr[i]))
 		}
 		// The lit rim along the top: snow-capped where a cap hangs, warmed where the crest runs near the
 		// disc, and down in the shade with its face — a bright rim over a shadowed face read as a glitch.
@@ -706,8 +584,6 @@ export function lightRidge(sprite, sky) {
 	}
 	// No pixel stands alone: a lone cell inside another is the tell of a generated sprite.
 	tidySprite(img, w, h, ENTRY.tidyPasses)
-	// after the tidy: a lone window is the point, not a stray cell
-	for (const c of lights) if (sky.ground >= c.at) write(c.x, c.y, c.col)
 	ctx.putImageData(img, 0, 0)
 }
 
