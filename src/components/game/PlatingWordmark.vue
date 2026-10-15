@@ -38,37 +38,50 @@
 	let phaseAt = 0
 	let step = -1
 	let frame = 0
-	const sparkLife = []
+	// live sparks as { x, y, ux, uy, born }: a plate centre, a unit heading and a birth time
+	let flying = []
 
 	function paint() {
 		const ctx = el.value.getContext('2d')
 		paintPlating(ctx, layout, plates, GAME_WORDMARK, GAME_HOLDING.weld, state, P.pad, P.pad)
 	}
 
-	// each plate that lands throws sparks off its centre, a few cells out in every direction
-	function land(rank) {
-		const [cx, cy] = plates.centres[rank]
+	// each plate that lands throws sparks off its centre, one heading each
+	function land(rank, now) {
+		const [x, y] = plates.centres[rank]
 		for (let i = 0; i < P.sparks; i++) {
 			const a = hash1(rank * 7 + i, P.seed) * Math.PI * 2
-			const [near, far] = P.sparkReach
-			const r = near + hash1(rank * 7 + i + 3, P.seed) * (far - near)
-			state.sparks.push([Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r)])
-			sparkLife.push(step + P.sparkSteps)
+			flying.push({ x, y, ux: Math.cos(a), uy: Math.sin(a), born: now })
 		}
 	}
 
+	// sparks coast on whole cells, so the grid quantises the drift; true while any are left to draw
+	function drift(now) {
+		const { from, to, life, cools } = P.drift
+		const { spark, cool } = GAME_HOLDING.weld
+		const had = state.sparks.length
+		flying = flying.filter(s => now - s.born < life)
+		state.sparks = flying.map(s => {
+			const t = (now - s.born) / life
+			const r = from + t * (to - from)
+			return [
+				Math.round(s.x + s.ux * r),
+				Math.round(s.y + s.uy * r),
+				t < cools ? spark : cool,
+			]
+		})
+		return had > 0
+	}
+
 	function build(now) {
+		const moved = drift(now)
 		const next = Math.floor((now - phaseAt) / P.stepMs)
-		if (next === step) return false
+		if (next === step) return moved
 		for (step = step + 1; step <= next && state.landed < plates.count; step++)
-			land(state.landed++)
+			land(state.landed++, now)
 		step = next
 		state.hot = new Set([...Array(P.hotSteps)].map((_, i) => state.landed - 1 - i))
-		while (sparkLife.length && sparkLife[0] <= step) {
-			sparkLife.shift()
-			state.sparks.shift()
-		}
-		if (state.landed === plates.count && !sparkLife.length) {
+		if (state.landed === plates.count) {
 			phase = 'hold'
 			phaseAt = now
 			state.hot = new Set()
@@ -78,10 +91,12 @@
 	}
 
 	function hold(now) {
+		const moved = drift(now)
 		const { every, step: pace } = GAME_WORDMARK.glint
-		const t = (now - phaseAt) % (every + pace * (layout.cols + layout.rows))
+		// offset by `every` so the first sweep runs the moment the last plate lands
+		const t = (now - phaseAt + every) % (every + pace * (layout.cols + layout.rows))
 		const next = t < every ? -1 : Math.floor((t - every) / pace)
-		if (next === state.glint) return false
+		if (next === state.glint) return moved
 		state.glint = next
 		return true
 	}
