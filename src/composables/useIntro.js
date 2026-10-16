@@ -3,6 +3,7 @@
 import { computed, ref, shallowRef } from 'vue'
 import { FULLSCREEN_QUAD, staticBuffer } from '../js/gl.js'
 import { INTRO_SHOTS } from '../js/intro/index.js'
+import { dropPainter } from '../js/intro/artWorker.js'
 import { createIntroPass } from '../js/intro/introPass.js'
 import { sky } from '../js/intro/sky.js'
 import { createTransition } from '../js/intro/transition.js'
@@ -126,8 +127,7 @@ export function useIntro(canvasRef) {
 		gl = glCtx
 		quad = staticBuffer(gl, FULLSCREEN_QUAD)
 		await step('context')
-		// Every program starts at once and links in the background where the driver can, so the
-		// loader keeps moving and no one shader can freeze the page; shots on one source share a pass.
+		// shots on one source share a pass
 		const bySource = new Map()
 		passes = Object.fromEntries(
 			INTRO_SHOTS.map(s => {
@@ -139,17 +139,32 @@ export function useIntro(canvasRef) {
 		mixer = createTransition(gl, quad)
 		sky.setup(gl)
 		for (const s of INTRO_SHOTS) s.setup?.(gl)
-		const links = [...bySource.values(), mixer]
-		for (const [i, link] of links.entries()) {
-			while (!link.ready()) await step('programs', i / links.length)
-			link.finish()
-			await step('programs', (i + 1) / links.length)
+		// Every shot's art is painted now, at the grid it plays on, so no shot stalls the intro to paint
+		// it; the painters' thread does it under the linking below.
+		const painting = INTRO_SHOTS.filter(s => s.resize).map(s => s.resize(gl, gridFor(s.cellPx)))
+		// The programs start one after another, each once the one before has answered ready(). A driver
+		// that links on the spot (Mesa) only answers once the program is built: a stall per program,
+		// with a loader frame between, rather than one for them all. A driver that links in the
+		// background answers at once, and has them all in flight within a few frames.
+		const programs = [...bySource.values(), mixer]
+		let live = []
+		let done = 0
+		for (let next = 0; done < programs.length; ) {
+			if (next < programs.length) {
+				programs[next].start()
+				live.push(programs[next++])
+			}
+			live = live.filter(program => {
+				if (!program.ready()) return true
+				program.finish()
+				done++
+				return false
+			})
+			await step('programs', done / programs.length)
 		}
-		// paint every shot's art now, at the grid it plays on, so no shot stalls the intro to paint it
-		const painted = INTRO_SHOTS.filter(s => s.resize)
-		for (const [i, s] of painted.entries()) {
-			s.resize(gl, gridFor(s.cellPx))
-			await step('art', (i + 1) / painted.length)
+		for (const [i, paint] of painting.entries()) {
+			await paint
+			await step('art', (i + 1) / painting.length)
 		}
 		const { index: i, t } = opening(still)
 		go(i, t)
@@ -225,6 +240,7 @@ export function useIntro(canvasRef) {
 			},
 			release() {
 				for (const s of INTRO_SHOTS) s.release?.(gl)
+				dropPainter()
 				for (const pass of new Set(Object.values(passes ?? {}))) pass.release()
 				passes = null
 				mixer?.release()

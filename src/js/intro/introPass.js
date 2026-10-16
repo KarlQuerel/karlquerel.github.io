@@ -1,6 +1,6 @@
 // One intro shot: its fragment program over the art grid, drawn with the shared uniform contract
-// declared at the top of shaders/intro/common.glsl. The program links in the background: ready()
-// polls it and finish() takes it up, before the first draw.
+// declared at the top of shaders/intro/common.glsl. The program links in the background from start():
+// ready() polls it and finish() takes it up, before the first draw.
 
 import quadVert from '../../shaders/flyby/scene.vert.glsl?raw'
 import blackFrag from '../../shaders/intro/black.frag.glsl?raw'
@@ -19,7 +19,8 @@ const SKY_UNIT = 4
 const ZERO4 = [0, 0, 0, 0]
 
 export function createIntroPass(gl, quad, { key, frag, chunks = [] }) {
-	const link = compileProgram(gl, quadVert, [common, ...chunks, frag].join('\n'))
+	const src = [common, ...chunks, frag].join('\n')
+	let link = null
 	let program = null
 	let U = null
 	let aP = -1
@@ -64,5 +65,11 @@ export function createIntroPass(gl, quad, { key, frag, chunks = [] }) {
 		gl.drawArrays(gl.TRIANGLES, 0, QUAD_VERTICES)
 	}
 
-	return { ready: link.ready, finish, draw, release: () => gl.deleteProgram(program) }
+	return {
+		start: () => (link = compileProgram(gl, quadVert, src)),
+		ready: () => link.ready(),
+		finish,
+		draw,
+		release: () => gl.deleteProgram(program),
+	}
 }

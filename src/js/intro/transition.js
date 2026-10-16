@@ -27,14 +27,15 @@ function target(gl, width, height) {
 }
 
 export function createTransition(gl, quad) {
-	const link = compileProgram(gl, quadVert, `${common}\n${LAYERS_CHUNK}\n${frag}`)
+	const src = `${common}\n${LAYERS_CHUNK}\n${frag}`
+	let link = null
 	let program = null
 	let U = null
 	let aP = -1
 	let targets = []
 	let size = [0, 0]
 
-	// the program links in the background: ready() polls it, finish() takes it up before a draw
+	// the program links in the background from start(): ready() polls it, finish() takes it up before a draw
 	function finish() {
 		program = link.finish()
 		U = uniformLocations(gl, program, ['uRes', 'uP', 'uA', 'uB'])
@@ -88,5 +89,11 @@ export function createTransition(gl, quad) {
 		gl.deleteProgram(program)
 	}
 
-	return { ready: link.ready, finish, draw, release }
+	return {
+		start: () => (link = compileProgram(gl, quadVert, src)),
+		ready: () => link.ready(),
+		finish,
+		draw,
+		release,
+	}
 }
