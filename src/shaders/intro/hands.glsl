@@ -218,18 +218,22 @@ vec4 hdDraw(vec2 p, float curl, float item, float mirror, float cell){
   if (di < 0.0 && (p.y > HD_KNUCKLE + 0.016 || sil > 0.0)){
     return vec4(di > -cell ? HD_PITCH : icol + iglow*0.4, 1.0);
   }
-  // the surface: slope off the height field, the light from the upper left of the frame
-  float e = cell*1.5;
-  float hx = hdHeight(p + vec2(e, 0.0), curl);
-  float hy = hdHeight(p + vec2(0.0, e), curl);
+  // The surface: the slope off the height field, and the creases and gaps where the surface around
+  // a point stands above it. Six taps of the field through one call, so the glove is inlined once.
+  float e = cell*1.5, r = 0.010;
+  float hx = 0.0, hy = 0.0, around = 0.0;
+  for (int i = 0; i < 6; i++){
+    vec2 o = i == 0 ? vec2(e, 0.0) : i == 1 ? vec2(0.0, e) : i == 2 ? vec2(r, 0.0) : i == 3 ? vec2(-r, 0.0) : i == 4 ? vec2(0.0, r) : vec2(0.0, -r);
+    float h = hdHeight(p + o, curl);
+    if (i == 0) hx = h;
+    else if (i == 1) hy = h;
+    else around += h;
+  }
   vec3 n = normalize(vec3(-(hx - H)/e, -(hy - H)/e, 1.0));
   n.x *= mirror;
+  // the light from the upper left of the frame
   vec3 L = normalize(vec3(-0.55, 0.60, 0.58));
   float diff = max(dot(n, L), 0.0);
-  // creases and gaps: the surface around a point stands above it
-  float r = 0.010;
-  float around = hdHeight(p + vec2(r, 0.0), curl) + hdHeight(p - vec2(r, 0.0), curl)
-               + hdHeight(p + vec2(0.0, r), curl) + hdHeight(p - vec2(0.0, r), curl);
   float cavity = clamp((around*0.25 - H)*28.0, 0.0, 0.55);
   float lit = (0.22 + 0.86*diff)*(1.0 - cavity);
   // the scene lights the far edge a little, which is what stops it reading as a sticker
@@ -324,8 +328,11 @@ vec4 hands(vec2 uv){
   // hold is a three-quarter fist round the item
   float curl = state < 1.0 ? 1.0 - state : (state - 1.0)*(uH.y > 1.5 && uH.y < 2.5 ? 1.0 : 0.9);
   float cell = 1.0/(uRes.y*sc);
-  vec4 r = hdDraw(hdRot((uv - anchorR)/sc, tiltR), curl, uH.y, 1.0, cell);
-  if (r.a > 0.0) return r;
-  vec2 pl = (uv - anchorL)/sc;
-  return hdDraw(hdRot(vec2(-pl.x, pl.y), HD_TILT), curl, 0.0, -1.0, cell);
+  // the right glove over the left, both through one call of hdDraw, so the glove is inlined once
+  for (int side = 0; side < 2; side++){
+    vec2 q = side == 0 ? hdRot((uv - anchorR)/sc, tiltR) : hdRot((uv - anchorL)/sc*vec2(-1.0, 1.0), HD_TILT);
+    vec4 r = hdDraw(q, curl, side == 0 ? uH.y : 0.0, side == 0 ? 1.0 : -1.0, cell);
+    if (r.a > 0.0) return r;
+  }
+  return vec4(0.0);
 }
