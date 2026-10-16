@@ -139,11 +139,6 @@ float hdField(vec2 p, float curl, out float M, out float sil){
   return H;
 }
 
-float hdHeight(vec2 p, float curl){
-  float m, s;
-  return hdField(p, curl, m, s);
-}
-
 // a ramp of up to six colours, indexed by a dithered light level
 vec3 hdFabric(float i){
   return i < 0.5 ? HD_ASH : i < 1.5 ? HD_STONE : i < 2.5 ? HD_BONE : i < 3.5 ? HD_CHALK : i < 4.5 ? HD_CREAM : HD_LINEN;
@@ -209,26 +204,31 @@ float hdStitch(float d, float along, float cell){
 // One glove at p (hand space). mirror flips the light for the left hand. Returns rgb + coverage.
 vec4 hdDraw(vec2 p, float curl, float item, float mirror, float cell){
   if (p.x < -0.19 || p.x > 0.20 || p.y > 0.30 || p.y < -0.62) return vec4(0.0);
-  float M, sil;
-  float H = hdField(p, curl, M, sil);
   vec3 icol; float iglow;
   float di = hdItem(p, item, icol, iglow);
-  if (sil > 0.0 && di > 0.0) return vec4(0.0);
-  // the item: in front above the fist, inside it below the knuckles
-  if (di < 0.0 && (p.y > HD_KNUCKLE + 0.016 || sil > 0.0)){
-    return vec4(di > -cell ? HD_PITCH : icol + iglow*0.4, 1.0);
-  }
-  // The surface: the slope off the height field, and the creases and gaps where the surface around
-  // a point stands above it. Six taps of the field through one call, so the glove is inlined once.
+  // The field at the point, then the slope off it and the creases and gaps where the surface around
+  // stands above it: seven taps through one call, so the glove is inlined once. Past the silhouette,
+  // or on the item, the first tap is the last.
   float e = cell*1.5, r = 0.010;
-  float hx = 0.0, hy = 0.0, around = 0.0;
-  for (int i = 0; i < 6; i++){
-    vec2 o = i == 0 ? vec2(e, 0.0) : i == 1 ? vec2(0.0, e) : i == 2 ? vec2(r, 0.0) : i == 3 ? vec2(-r, 0.0) : i == 4 ? vec2(0.0, r) : vec2(0.0, -r);
-    float h = hdHeight(p + o, curl);
-    if (i == 0) hx = h;
-    else if (i == 1) hy = h;
+  float H = 0.0, M = -1.0, sil = 1e9, hx = 0.0, hy = 0.0, around = 0.0;
+  bool clear = false, held = false;
+  for (int i = 0; i < 7; i++){
+    vec2 o = i == 0 ? vec2(0.0) : i == 1 ? vec2(e, 0.0) : i == 2 ? vec2(0.0, e) : i == 3 ? vec2(r, 0.0) : i == 4 ? vec2(-r, 0.0) : i == 5 ? vec2(0.0, r) : vec2(0.0, -r);
+    float m, sl;
+    float h = hdField(p + o, curl, m, sl);
+    if (i == 0){
+      H = h; M = m; sil = sl;
+      clear = sil > 0.0 && di > 0.0;
+      // the item: in front above the fist, inside it below the knuckles
+      held = di < 0.0 && (p.y > HD_KNUCKLE + 0.016 || sil > 0.0);
+      if (clear || held) break;
+    }
+    else if (i == 1) hx = h;
+    else if (i == 2) hy = h;
     else around += h;
   }
+  if (clear) return vec4(0.0);
+  if (held) return vec4(di > -cell ? HD_PITCH : icol + iglow*0.4, 1.0);
   vec3 n = normalize(vec3(-(hx - H)/e, -(hy - H)/e, 1.0));
   n.x *= mirror;
   // the light from the upper left of the frame
