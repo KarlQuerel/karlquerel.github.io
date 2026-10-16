@@ -183,11 +183,6 @@ float scene(vec3 p){
   return d;
 }
 
-vec3 normalAt(vec3 p, float t){
-  vec2 e = vec2(1.0, -1.0)*(0.0012*t + 0.0015);
-  return normalize(e.xyy*scene(p + e.xyy) + e.yyx*scene(p + e.yyx) +
-                   e.yxy*scene(p + e.yxy) + e.xxx*scene(p + e.xxx));
-}
 
 float shadowAt(vec3 p){
   float s = 1.0, t = 0.03;
@@ -315,22 +310,32 @@ void main(){
   vec3 tn = min(t0, t1), tf = max(t0, t1);
   float tNear = max(max(tn.x, tn.y), max(tn.z, 0.0));
   float tFar = min(min(tf.x, tf.y), min(tf.z, MAX_T));
+  // The march, and on the hit four more passes of the same loop for the normal's taps, so the scene
+  // is inlined once rather than once a tap.
   float hitT = 1e9;
+  float m = 0.0;
+  vec3 n = vec3(0.0);
   if (tNear < tFar){
     float t = tNear;
-    for (int i = 0; i < 110; i++){
-      vec3 p = ro + rd*t;
-      float d = scene(p);
-      if (d < 0.0012*t){ hitT = t; break; }
-      t += d*0.9;
-      if (t > tFar) break;
+    int tap = 0;
+    for (int i = 0; i < 114; i++){
+      vec3 o = tap == 1 ? vec3(1.0, -1.0, -1.0) : tap == 2 ? vec3(-1.0, -1.0, 1.0) : tap == 3 ? vec3(-1.0, 1.0, -1.0) : vec3(1.0);
+      o *= tap == 0 ? 0.0 : 0.0012*t + 0.0015;
+      float d = scene(ro + rd*t + o);
+      if (tap == 0){
+        if (d < 0.0012*t){ hitT = t; m = mat; tap = 1; }
+        else { t += d*0.9; if (t > tFar) break; }
+      } else {
+        n += o*d;
+        if (tap == 4) break;
+        tap++;
+      }
     }
   }
 
   if (hitT < 1e8){
     vec3 p = ro + rd*hitT;
-    float m = mat;
-    vec3 n = normalAt(p, hitT);
+    n = normalize(n);
     // panels: brushed steel plates with dark seams, foil in amber, dish and fins bright
     vec3 base = mix(GUN, BRUSHED, step(0.45, hash13(floor(p*vec3(3.0, 3.0, 1.6)))));
     if (m < 0.5) base = mix(GRAPHITE, PEWTER, 0.35 + 0.3*hash13(floor(p*4.0)));
