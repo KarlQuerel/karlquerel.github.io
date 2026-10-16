@@ -135,7 +135,7 @@ vec2 opU(vec2 a, vec2 b){ return a.x < b.x ? a : b; }
 
 // Materials: 1 suit, 2 helmet shell, 3 pack, 4 skin, 5 coverall, 6 dark fittings, 7 visor,
 // 8 chest lamp, 9 belt, 10 mattress, 11 vitals monitor, 12 furniture, 13 brushed rail,
-// 14 medic's uniform, 15 console screen, 16 hair, 17 undersuit.
+// 14 medic's uniform, 15 console screen, 16 hair, 17 undersuit, 18 a spare suit in its locker.
 
 // a figure's frame from the bay's (rx, y, z): standing at `at`, facing angle a (0 = into the room)
 vec3 huAt(vec3 q, vec2 at, float a){
@@ -146,12 +146,53 @@ vec3 huAt(vec3 q, vec2 at, float a){
 // the idle drift every person has: a slow weight shift, a turn of the head
 float idle(float seed, float rate){ return sin(uTime*rate + seed*5.1); }
 vec3 relaxed(float sg){ return vec3(0.05, 0.86, sg*0.23); }
-vec2 figure(vec3 f, vec3 wl, vec3 wr, vec4 pose, vec4 look, float outfit){
-  return huFigure(f, wl, wr, pose, look, outfit).xy;
-}
 // a helmet set down or carried: the bubble, its visor facing +x
 vec2 helmetAt(vec3 h){
   return vec2(length(h) - 0.165, h.x > 0.05 && abs(h.y + 0.01) < 0.085 && abs(h.z) < 0.12 ? 7.0 : 2.0);
+}
+
+// Who stands in the bays, j-th of bay k: a table, so huFigure is called once, in bayContents' loop
+// (inlined at every figure it took Mesa over a minute, then failed to link). `at` is (rx, z) in the
+// bay's frame, `face` the way they face, `held` what they hold: a kind for heldBy, then its place in
+// their frame. An outfit below zero ends the bay.
+struct Person { vec2 at; float face; vec3 wl; vec3 wr; vec4 pose; vec4 look; float outfit; vec4 held; };
+const vec4 NOTHING = vec4(0.0);
+Person person(float k, int j){
+  if (k < 0.5){
+    // suit-up: one with the helmet under an arm, one being fitted by a technician, spare suits racked
+    if (j == 0) return Person(vec2(0.5, -0.2), PI - 0.5, relaxed(-1.0), vec3(0.13, 1.03, 0.27), vec4(0.6 + 0.15*idle(1.0, 0.4), 0.0, 1.05, 0.0), vec4(-0.25 + 0.3*idle(1.0, 0.23), 1.0, 0.0, 0.0), 1.0, vec4(1.0, 0.13, 1.14, 0.36));
+    if (j == 1) return Person(vec2(0.72, 0.75), PI, vec3(0.05, 1.0, -0.36), vec3(0.05, 1.0, 0.36), vec4(-0.3, 0.0, 1.0, 0.0), vec4(0.1*idle(2.0, 0.3), 2.0, 0.0, 0.0), 0.0, NOTHING);
+    if (j == 2) return Person(vec2(1.12, 1.35), -2.3, vec3(0.34, 1.22, -0.08), vec3(0.36, 1.3, 0.08), vec4(0.4, 0.0, 0.95, -0.15), vec4(0.0, 3.0, 0.0, 0.0), 2.0, NOTHING);
+    if (j < 6) return Person(vec2(1.36, -0.45 - float(j - 3)*0.48), PI, vec3(0.0), vec3(0.0), vec4(0.0, 1.02, 0.95, 0.0), vec4(0.0, float(j - 3), 0.0, 0.0), 4.0, vec4(2.0, 0.0, 1.58, 0.0));
+  } else if (k < 1.5){
+    // medical: an envoy sat on the edge of the bed being checked, the medic with a tablet
+    if (j == 0) return Person(vec2(0.98, 0.25), PI, vec3(0.3, 0.8, -0.13), vec3(0.28, 0.82, 0.14), vec4(0.0, 0.69, 1.0, -0.18), vec4(0.15*idle(4.0, 0.2), 4.0, 0.0, 0.0), 1.0, NOTHING);
+    if (j == 1) return Person(vec2(0.5, 0.9), -0.93, vec3(0.3, 1.08, -0.06), vec3(0.3, 1.1, 0.08), vec4(0.5 + 0.2*idle(5.0, 0.35), 0.0, 0.92, -0.25), vec4(0.0, 5.0, 0.0, 0.0), 3.0, vec4(4.0, 0.36, 1.13, 0.01));
+  } else if (k < 2.5){
+    // the mess: two at the table with their cups, a technician on a break by the wall
+    if (j == 0) return Person(vec2(0.36, -0.25), 0.0, vec3(0.33, 0.8, -0.12), vec3(0.14, 1.12 + 0.03*idle(6.0, 0.5), 0.1), vec4(0.0, 0.45, 1.05, 0.05), vec4(0.2*idle(6.0, 0.25), 6.0, 0.0, 0.0), 5.0, vec4(3.0, 0.2, 1.14, 0.06));
+    if (j == 1) return Person(vec2(1.32, 0.3), PI, vec3(0.3, 0.8, -0.13), vec3(0.3, 0.8, 0.13), vec4(0.0, 0.45, 0.88, 0.0), vec4(0.3 + 0.25*idle(7.0, 0.3), 7.0, 0.0, 0.0), 5.0, NOTHING);
+    if (j == 2) return Person(vec2(1.2, -1.0), PI - 0.7, relaxed(-1.0), vec3(0.22, 1.12, 0.1), vec4(0.8 + 0.1*idle(8.0, 0.3), 0.0, 1.0, 0.0), vec4(-0.3*idle(8.0, 0.2), 8.0, 0.0, 0.0), 2.0, vec4(3.0, 0.28, 1.13, 0.1));
+  } else if (k < 3.5){
+    // comms: a technician at the console with a hand to the headset, an envoy reading over the shoulder
+    if (j == 0) return Person(vec2(0.8, -0.3), 0.0, vec3(0.42, 0.8, -0.12), vec3(0.0, 1.28, 0.16), vec4(0.0, 0.5, 0.95, 0.1), vec4(0.1*idle(9.0, 0.3), 9.0, 0.0, 0.0), 2.0, NOTHING);
+    if (j == 1) return Person(vec2(0.45, 0.55), 0.15, vec3(0.16, 1.18, 0.1), vec3(0.15, 1.2, -0.08), vec4(0.5 + 0.15*idle(10.0, 0.3), 0.0, 1.05, 0.0), vec4(-0.2 + 0.2*idle(10.0, 0.2), 10.0, 0.0, 0.0), 0.0, NOTHING);
+  } else {
+    // the window: two at the glass, looking out at what they are leaving
+    if (j == 0) return Person(vec2(0.95, -0.35), 0.0, relaxed(-1.0), vec3(0.43, 1.03, 0.18), vec4(-0.6, 0.0, 1.0, 0.0), vec4(0.0, 11.0, 0.0, 0.0), 0.0, NOTHING);
+    if (j == 1) return Person(vec2(0.7, 0.75), -0.25, relaxed(-1.0), relaxed(1.0), vec4(0.5 + 0.1*idle(12.0, 0.25), 0.0, 0.92, 0.05), vec4(-0.35 + 0.1*idle(12.0, 0.2), 12.0, 0.0, 0.0), 1.0, NOTHING);
+  }
+  return Person(vec2(0.0), 0.0, vec3(0.0), vec3(0.0), vec4(0.0), vec4(0.0), -1.0, NOTHING);
+}
+// what a person holds, in their frame: 1 a helmet under the arm, 2 the hanger an empty suit is on,
+// 3 a cup, 4 a tablet
+vec2 heldBy(vec3 f, vec4 held){
+  vec3 h = f - held.yzw;
+  if (held.x < 0.5) return vec2(1e9, 0.0);
+  if (held.x < 1.5) return helmetAt(h);
+  if (held.x < 2.5) return vec2(huCone(h, vec3(0.0), vec3(0.0, 0.44, 0.0), 0.012, 0.012), 6.0);
+  if (held.x < 3.5) return vec2(huCone(h, vec3(0.0), vec3(0.0, 0.08, 0.0), 0.03, 0.028), 13.0);
+  return vec2(huBox(h, vec3(0.012, 0.085, 0.12), 0.006), h.x < 0.0 ? 15.0 : 6.0);
 }
 
 float bayZ(float k){ return BAY_FIRST + k*BAY_EVERY; }
@@ -182,22 +223,20 @@ vec2 bayContents(vec3 p){
   float z = p.z - bz;
   vec2 r = vec2(1e9, 0.0);
   vec3 q = vec3(rx, y, z);
-  const float PI_ = 3.14159265;
+  // the people, and what they hold: the one call of huFigure in the shader
+  for (int j = 0; j < 6; j++){
+    Person who = person(k, j);
+    if (who.outfit < 0.0) break;
+    vec3 f = huAt(q, who.at, who.face);
+    r = opU(r, huFigure(f, who.wl, who.wr, who.pose, who.look, who.outfit).xy);
+    r = opU(r, heldBy(f, who.held));
+  }
+  // the furniture
   if (k < 0.5){
-    // suit-up: one with the helmet under an arm, one being fitted by a technician, spare suits racked
-    vec3 fa = huAt(q, vec2(0.5, -0.2), PI_ - 0.5);
-    r = opU(r, figure(fa, relaxed(-1.0), vec3(0.13, 1.03, 0.27), vec4(0.6 + 0.15*idle(1.0, 0.4), 0.0, 1.05, 0.0), vec4(-0.25 + 0.3*idle(1.0, 0.23), 1.0, 0.0, 0.0), 1.0));
-    r = opU(r, helmetAt(fa - vec3(0.13, 1.14, 0.36)));
-    r = opU(r, figure(huAt(q, vec2(0.72, 0.75), PI_), vec3(0.05, 1.0, -0.36), vec3(0.05, 1.0, 0.36), vec4(-0.3, 0.0, 1.0, 0.0), vec4(0.1*idle(2.0, 0.3), 2.0, 0.0, 0.0), 0.0));
-    r = opU(r, figure(huAt(q, vec2(1.12, 1.35), -2.3), vec3(0.34, 1.22, -0.08), vec3(0.36, 1.3, 0.08), vec4(0.4, 0.0, 0.95, -0.15), vec4(0.0, 3.0, 0.0, 0.0), 2.0));
-    for (int i = 0; i < 3; i++){
-      vec3 fs = huAt(q, vec2(1.36, -0.45 - float(i)*0.48), PI_);
-      r = opU(r, figure(fs, vec3(0.0), vec3(0.0), vec4(0.0, 1.02, 0.95, 0.0), vec4(0.0, float(i), 0.0, 0.0), 4.0));
-      r = opU(r, vec2(huCone(fs, vec3(0.0, 1.58, 0.0), vec3(0.0, 2.02, 0.0), 0.012, 0.012), 6.0));
-    }
+    // the rail the spare suits hang from
     r = opU(r, vec2(length(vec2(rx - 1.36, y - 2.02)) - 0.025, 6.0));
   } else if (k < 1.5){
-    // medical: the bed and its monitor, an envoy sat on the edge being checked, the medic with a tablet
+    // the bed and its monitor, a helmet set down on the mattress
     vec3 b = vec3(1.15 - rx, y, z - 0.6);
     r = opU(r, vec2(huBox(b - vec3(0.0, 0.62, 0.0), vec3(0.32, 0.07, 0.6), 0.03), 10.0));
     r = opU(r, vec2(huBox(b - vec3(0.0, 0.29, 0.0), vec3(0.27, 0.26, 0.5), 0.02), 6.0));
@@ -205,37 +244,21 @@ vec2 bayContents(vec3 p){
     r = opU(r, vec2(huCone(m, vec3(0.0), vec3(0.0, 1.08, 0.0), 0.02, 0.02), 6.0));
     float scr = huBox(m - vec3(0.0, 1.26, 0.0), vec3(0.035, 0.16, 0.23), 0.01);
     r = opU(r, vec2(scr, m.x > 0.02 ? 11.0 : 6.0));
-    r = opU(r, figure(huAt(q, vec2(0.98, 0.25), PI_), vec3(0.3, 0.8, -0.13), vec3(0.28, 0.82, 0.14), vec4(0.0, 0.69, 1.0, -0.18), vec4(0.15*idle(4.0, 0.2), 4.0, 0.0, 0.0), 1.0));
     r = opU(r, helmetAt(q - vec3(1.02, 0.85, 1.0)));
-    vec3 fm = huAt(q, vec2(0.5, 0.9), -0.93);
-    r = opU(r, figure(fm, vec3(0.3, 1.08, -0.06), vec3(0.3, 1.1, 0.08), vec4(0.5 + 0.2*idle(5.0, 0.35), 0.0, 0.92, -0.25), vec4(0.0, 5.0, 0.0, 0.0), 3.0));
-    vec3 tb = fm - vec3(0.36, 1.13, 0.01);
-    r = opU(r, vec2(huBox(tb, vec3(0.012, 0.085, 0.12), 0.006), tb.x < 0.0 ? 15.0 : 6.0));
   } else if (k < 2.5){
-    // the mess: a table, two at it with their cups, a technician on a break by the wall
+    // the table on its post, two benches, a cup left on the table
     r = opU(r, vec2(huBox(q - vec3(0.85, 0.74, 0.0), vec3(0.3, 0.025, 0.6), 0.01), 12.0));
     r = opU(r, vec2(huCone(q, vec3(0.85, 0.0, 0.0), vec3(0.85, 0.72, 0.0), 0.05, 0.05), 6.0));
     r = opU(r, vec2(min(huBox(q - vec3(0.38, 0.43, 0.0), vec3(0.11, 0.025, 0.62), 0.01), huBox(q - vec3(1.3, 0.43, 0.0), vec3(0.11, 0.025, 0.62), 0.01)), 12.0));
-    vec3 e1 = huAt(q, vec2(0.36, -0.25), 0.0);
-    r = opU(r, figure(e1, vec3(0.33, 0.8, -0.12), vec3(0.14, 1.12 + 0.03*idle(6.0, 0.5), 0.1), vec4(0.0, 0.45, 1.05, 0.05), vec4(0.2*idle(6.0, 0.25), 6.0, 0.0, 0.0), 5.0));
-    r = opU(r, vec2(huCone(e1, vec3(0.2, 1.14, 0.06), vec3(0.2, 1.22, 0.06), 0.03, 0.028), 13.0));
-    r = opU(r, figure(huAt(q, vec2(1.32, 0.3), PI_), vec3(0.3, 0.8, -0.13), vec3(0.3, 0.8, 0.13), vec4(0.0, 0.45, 0.88, 0.0), vec4(0.3 + 0.25*idle(7.0, 0.3), 7.0, 0.0, 0.0), 5.0));
     r = opU(r, vec2(huCone(q, vec3(1.0, 0.765, 0.38), vec3(1.0, 0.85, 0.38), 0.03, 0.028), 13.0));
-    vec3 e3 = huAt(q, vec2(1.2, -1.0), PI_ - 0.7);
-    r = opU(r, figure(e3, relaxed(-1.0), vec3(0.22, 1.12, 0.1), vec4(0.8 + 0.1*idle(8.0, 0.3), 0.0, 1.0, 0.0), vec4(-0.3*idle(8.0, 0.2), 8.0, 0.0, 0.0), 2.0));
-    r = opU(r, vec2(huCone(e3, vec3(0.28, 1.13, 0.1), vec3(0.28, 1.21, 0.1), 0.03, 0.028), 13.0));
   } else if (k < 3.5){
-    // comms: a technician at the console with a hand to the headset, an envoy reading over the shoulder
+    // the console and its screen, a stool
     r = opU(r, vec2(huBox(q - vec3(1.32, 0.38, -0.1), vec3(0.18, 0.38, 0.9), 0.02), 12.0));
     vec3 sc = q - vec3(1.43, 1.12, -0.1);
     r = opU(r, vec2(huBox(sc, vec3(0.04, 0.3, 0.85), 0.01), sc.x < -0.02 ? 15.0 : 6.0));
     r = opU(r, vec2(min(huCone(q, vec3(0.8, 0.0, -0.3), vec3(0.8, 0.46, -0.3), 0.03, 0.03), huBox(q - vec3(0.8, 0.48, -0.3), vec3(0.14, 0.02, 0.14), 0.02)), 6.0));
-    r = opU(r, figure(huAt(q, vec2(0.8, -0.3), 0.0), vec3(0.42, 0.8, -0.12), vec3(0.0, 1.28, 0.16), vec4(0.0, 0.5, 0.95, 0.1), vec4(0.1*idle(9.0, 0.3), 9.0, 0.0, 0.0), 2.0));
-    r = opU(r, figure(huAt(q, vec2(0.45, 0.55), 0.15), vec3(0.16, 1.18, 0.1), vec3(0.15, 1.2, -0.08), vec4(0.5 + 0.15*idle(10.0, 0.3), 0.0, 1.05, 0.0), vec4(-0.2 + 0.2*idle(10.0, 0.2), 10.0, 0.0, 0.0), 0.0));
   } else {
-    // the window: two at the glass, looking out at what they are leaving
-    r = opU(r, figure(huAt(q, vec2(0.95, -0.35), 0.0), relaxed(-1.0), vec3(0.43, 1.03, 0.18), vec4(-0.6, 0.0, 1.0, 0.0), vec4(0.0, 11.0, 0.0, 0.0), 0.0));
-    r = opU(r, figure(huAt(q, vec2(0.7, 0.75), -0.25), relaxed(-1.0), relaxed(1.0), vec4(0.5 + 0.1*idle(12.0, 0.25), 0.0, 0.92, 0.05), vec4(-0.35 + 0.1*idle(12.0, 0.2), 12.0, 0.0, 0.0), 1.0));
+    // the rail along the glass
     r = opU(r, vec2(max(length(vec2(rx - 1.38, y - 1.02)) - 0.028, abs(z) - 1.4), 13.0));
   }
   return r;
@@ -294,17 +317,15 @@ float shell(vec3 p){
   return min(d, dx);
 }
 
-float map(vec3 p){
-  float d = min(shell(p), pipes(p));
-  d = min(d, bayContents(p).x);
-  d = min(d, DOOR_Z + recess(p) - p.z);
-  return min(d, lockerSuit(p));
+// what stands in the corridor: the bays' contents, and the spare suits as a material of their own
+vec2 contents(vec3 p){
+  return opU(bayContents(p), vec2(lockerSuit(p), 18.0));
 }
 
-vec3 contentsNormal(vec3 p){
-  vec2 e = vec2(0.004, -0.004);
-  return normalize(e.xyy*bayContents(p + e.xyy).x + e.yyx*bayContents(p + e.yyx).x +
-                   e.yxy*bayContents(p + e.yxy).x + e.xxx*bayContents(p + e.xxx).x);
+float map(vec3 p){
+  float d = min(shell(p), pipes(p));
+  d = min(d, DOOR_Z + recess(p) - p.z);
+  return min(d, contents(p).x);
 }
 
 // a strip's state on a stepped clock: a few of them flicker, the rest hold
@@ -387,6 +408,22 @@ void main(){
   }
   vec3 p = ro + rd*t;
 
+  // Every tap the shading takes on the contents, through one call so the figures are inlined once
+  // more and not once a tap: the hit, a normal's four, the occlusion along it, the deck's contact
+  // shadow. Unconditional and here, with little else live: gated on the surface, Mesa took twice as long.
+  vec2 bc = vec2(1e9, 0.0);
+  vec3 cn = vec3(0.0);
+  float ao = 1.0, shade = 1.0;
+  for (int i = 0; i < 7; i++){
+    vec3 e = i == 1 ? vec3(1.0, -1.0, -1.0) : i == 2 ? vec3(-1.0, -1.0, 1.0) : i == 3 ? vec3(-1.0, 1.0, -1.0) : vec3(1.0);
+    vec3 at = i == 0 ? p : i < 5 ? p + 0.004*e : i == 5 ? p + normalize(cn)*0.06 : p + vec3(0.0, 0.08, 0.0);
+    vec2 c = contents(at);
+    if (i == 0) bc = c;
+    else if (i < 5) cn += e*c.x;
+    else if (i == 5) ao = clamp(0.35 + 0.65*c.x/0.06, 0.35, 1.0);
+    else shade = mix(0.3, 1.0, smoothstep(0.0, 0.22, c.x));
+  }
+
   // --- which surface: the same terms as map, at the hit
   float inset = RIB_IN*ribAt(p.z);
   float k = bayIndex(p.z);
@@ -397,12 +434,11 @@ void main(){
   float dCeil = CEIL - inset - p.y;
   float dWall = (inRoom ? W + BAY_DEPTH : W - inset) - abs(p.x);
   float dSide = inRoom ? min(dz, CEIL - LINTEL - p.y) : 1e9;
-  vec2 bc = bayContents(p);
-  float dFig = bc.x;
   float dPipe = pipes(p);
   float dEnd = DOOR_Z + recess(p) - p.z;
-  float dSuit = lockerSuit(p);
-  float dm = min(min(min(dFloor, dCeil), min(dWall, dSide)), min(min(dFig, dPipe), min(dEnd, dSuit)));
+  float dm = min(min(min(dFloor, dCeil), min(dWall, dSide)), min(min(bc.x, dPipe), dEnd));
+  bool onSuit = dm == bc.x && bc.y > 17.5;
+  bool onFig = dm == bc.x && !onSuit;
 
   vec3 n = vec3(0.0, 1.0, 0.0);
   vec3 base = GUN;
@@ -433,7 +469,7 @@ void main(){
     }
     base = mix(base, EMBER*0.55*grime, paint*wear);
     // contact shadow: the deck darkens under feet, benches and beds
-    base *= mix(0.3, 1.0, smoothstep(0.0, 0.22, bayContents(p + vec3(0.0, 0.08, 0.0)).x));
+    base *= shade;
     // hazard stripes across the threshold of the door
     if (p.z > DOOR_Z - 0.75 && p.z < DOOR_Z - 0.3){
       base = mix(PITCH, EMBER*0.6, step(0.5, fract((p.x + p.z)*2.2)))*grime;
@@ -542,13 +578,11 @@ void main(){
       base = ZINC;
       emit = wall ? mix(mix(SILVER, STAR, 0.4), bayTint(k)*1.3, 0.35)*louvre*fall*bayPanel(k)*0.7 : mix(RIME, SILVER, 0.5)*0.7;
     }
-  } else if (dm == dFig){
-    n = contentsNormal(p);
+  } else if (onFig){
+    n = normalize(cn);
     float mat = bc.y;
     rimK = 1.0;
     float cloth = 0.85 + 0.3*noise3(p*40.0);
-    // where limbs meet the body the light cannot reach: a two-tap occlusion along the normal
-    float ao = clamp(0.35 + 0.65*bayContents(p + n*0.06).x/0.06, 0.35, 1.0);
     if (mat < 1.5) base = mix(BONE, SILVER, 0.45)*0.8*cloth;
     else if (mat < 2.5) base = BRUSHED*0.62;
     else if (mat < 3.5) base = mix(GRAPHITE, BONE*0.7, 0.35);
@@ -593,10 +627,8 @@ void main(){
       base = mix(BONE*0.85, mix(BONE*0.85, GRAPHITE, 0.6), step(0.9, fract(p.y*24.0 + 0.4*sin(p.x*26.0 + p.z*26.0))))*cloth;
     }
     base *= ao;
-  } else if (dm == dSuit){
-    vec2 e = vec2(0.004, -0.004);
-    n = normalize(e.xyy*lockerSuit(p + e.xyy) + e.yyx*lockerSuit(p + e.yyx) +
-                  e.yxy*lockerSuit(p + e.yxy) + e.xxx*lockerSuit(p + e.xxx));
+  } else if (onSuit){
+    n = normalize(cn);
     // the spare suits, lit from inside their lockers once the lockers come up
     base = mix(BONE, SILVER, 0.45)*mix(0.12, 0.55, uP.w)*(0.85 + 0.3*noise3(p*40.0));
     col_suitLight = mix(RIME, SILVER, 0.6)*uP.w*(0.35 + 0.65*max(n.y, 0.0))*0.6;
@@ -679,7 +711,7 @@ void main(){
     vec3 bayCol = bayTint(k);
     col += base*bayCol*max(dot(n, Lb), 0.0)*3.0/(1.0 + 0.3*db2)*vis;
     // what stands in a bay is bathed in its light from every side, not only from behind
-    if (dm == dFig) col += base*bayCol*(0.35 + 0.25*max(dot(n, vec3(-side, 0.3, -0.4)), 0.0));
+    if (onFig) col += base*bayCol*(0.35 + 0.25*max(dot(n, vec3(-side, 0.3, -0.4)), 0.0));
     if (rimK > 0.0){
       float rim = pow(1.0 - max(dot(n, -rd), 0.0), 2.0);
       vec3 from = rimK > 1.5 ? vec3(0.0, 0.0, 1.0) : vec3(side, 0.0, 0.0);
