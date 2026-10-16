@@ -11,9 +11,10 @@ import { cellFor } from './ridge.js'
 // all the cost, so it is cut once and kept, with each cell's own threshold for the night walk; the sky
 // proper is placed back off it whenever the sun has moved enough to change where the light comes from.
 export function drawArrivalSky(el, box, sun) {
+	// whole cells covering the frame: the canvas is shown at exactly this many, never stretched to fit
 	const cell = cellFor(box)
-	const w = Math.max(8, Math.round(box.w / cell))
-	const h = Math.max(8, Math.round(box.h / cell))
+	const w = Math.max(8, Math.ceil(box.w / cell))
+	const h = Math.max(8, Math.ceil(box.h / cell))
 	el.width = w
 	el.height = h
 	const ramp = ENTRY.sky.map(name => PALETTE[name])
@@ -37,6 +38,7 @@ export function drawArrivalSky(el, box, sun) {
 		el,
 		w,
 		h,
+		cell,
 		ramp,
 		top,
 		grain,
