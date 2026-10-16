@@ -301,8 +301,10 @@ export function cutRidge(el, band, visitSeed, frame) {
 		under: new Float32Array(w),
 		term: new Float32Array(w),
 		...habitat,
-		// the frame the band was cut for, to place the sun on the band's grid
+		// the frame the band was cut for and how far it runs past it, to place the sun on the band's grid
+		frameW: frame.w,
 		frameH: frame.h,
+		bleed: frame.bleed ?? 0,
 		// the habitat's own pixels, and the sheet the range is painted onto over them
 		fixed: img,
 		img: ctx.createImageData(w, h),
@@ -315,7 +317,7 @@ export function cutRidge(el, band, visitSeed, frame) {
 // ranges follow the sun across the sky.
 export function lightRidge(sprite, sky) {
 	const { ctx, w, h, cell, band, kind, thr, rough, haze, bite, tone, glow, tops } = sprite
-	const { line, under, term, frameH, fixed, img, lamp } = sprite
+	const { line, under, term, frameW, frameH, bleed, fixed, img, lamp } = sprite
 	const { shades, snowShades, rockFoot, snowFoot, at, rockCrest, snowyCrest } = nightRamps(
 		band,
 		sky.ground
@@ -325,8 +327,9 @@ export function lightRidge(sprite, sky) {
 	// The disc stands IN the frame, so it is a place and not a direction: a peak to its left is lit from
 	// the right and one to its right from the left. Taken on the band's own grid — `atCol` across,
 	// `atUp` its height over the band's foot, which runs off the top of the sprite and is meant to.
-	const atCol = sky.x * w
-	const atUp = h - (sky.y * frameH - (frameH - h * cell)) / cell
+	// The band starts `bleed` px left of the frame and ends `bleed` under it.
+	const atCol = (sky.x * frameW + bleed) / cell
+	const atUp = ((1 - sky.y) * frameH + bleed) / cell
 	const SH = ENTRY.ridgeShadow
 	// The direct sun still on the rock, carrying both the shade it casts and the warmth it lays near
 	// the disc. Both go out as the range swallows the disc: it was throwing hard shade on rock with no
