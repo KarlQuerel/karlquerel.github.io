@@ -6,7 +6,7 @@ import frag from '../../shaders/intro/transition.frag.glsl?raw'
 import {
 	QUAD_VERTICES,
 	bindAttribute,
-	createProgram,
+	compileProgram,
 	pixelTexture,
 	uniformLocations,
 } from '../gl.js'
@@ -27,11 +27,19 @@ function target(gl, width, height) {
 }
 
 export function createTransition(gl, quad) {
-	const program = createProgram(gl, quadVert, `${common}\n${LAYERS_CHUNK}\n${frag}`)
-	const U = uniformLocations(gl, program, ['uRes', 'uP', 'uA', 'uB'])
-	const aP = gl.getAttribLocation(program, 'aP')
+	const link = compileProgram(gl, quadVert, `${common}\n${LAYERS_CHUNK}\n${frag}`)
+	let program = null
+	let U = null
+	let aP = -1
 	let targets = []
 	let size = [0, 0]
+
+	// the program links in the background: ready() polls it, finish() takes it up before a draw
+	function finish() {
+		program = link.finish()
+		U = uniformLocations(gl, program, ['uRes', 'uP', 'uA', 'uB'])
+		aP = gl.getAttribLocation(program, 'aP')
+	}
 
 	function drop() {
 		for (const t of targets) {
@@ -80,5 +88,5 @@ export function createTransition(gl, quad) {
 		gl.deleteProgram(program)
 	}
 
-	return { draw, release }
+	return { ready: link.ready, finish, draw, release }
 }

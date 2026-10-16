@@ -6,7 +6,6 @@ import { INTRO_SHOTS } from '../js/intro/index.js'
 import { createIntroPass } from '../js/intro/introPass.js'
 import { sky } from '../js/intro/sky.js'
 import { createTransition } from '../js/intro/transition.js'
-import blackFrag from '../shaders/intro/black.frag.glsl?raw'
 import { prefersReducedMotion } from './usePrefersReducedMotion.js'
 import { useArtCanvas } from './useArtCanvas.js'
 import { useWindowListener } from './useWindowListener.js'
@@ -123,28 +122,35 @@ export function useIntro(canvasRef) {
 		() => shot.value?.choice?.(clock.value, marks.value, choices.value) ?? null
 	)
 
-	// A shot whose shader fails on this GPU plays black rather than taking the intro down with it.
-	function compile(s) {
-		try {
-			return createIntroPass(gl, quad, s.frag, s.chunks)
-		} catch (err) {
-			console.error(`intro shot ${s.key}:`, err)
-			return createIntroPass(gl, quad, blackFrag)
-		}
-	}
-
 	async function build(glCtx, step) {
 		gl = glCtx
 		quad = staticBuffer(gl, FULLSCREEN_QUAD)
 		await step('context')
-		passes = Object.fromEntries(INTRO_SHOTS.map(s => [s.key, compile(s)]))
+		// Every program starts at once and links in the background where the driver can, so the
+		// loader keeps moving and no one shader can freeze the page; shots on one source share a pass.
+		const bySource = new Map()
+		passes = Object.fromEntries(
+			INTRO_SHOTS.map(s => {
+				const src = [s.frag, ...(s.chunks ?? [])].join('\n')
+				if (!bySource.has(src)) bySource.set(src, createIntroPass(gl, quad, s))
+				return [s.key, bySource.get(src)]
+			})
+		)
 		mixer = createTransition(gl, quad)
 		sky.setup(gl)
 		for (const s of INTRO_SHOTS) s.setup?.(gl)
-		await step('programs')
+		const links = [...bySource.values(), mixer]
+		for (const [i, link] of links.entries()) {
+			while (!link.ready()) await step('programs', i / links.length)
+			link.finish()
+			await step('programs', (i + 1) / links.length)
+		}
 		// paint every shot's art now, at the grid it plays on, so no shot stalls the intro to paint it
-		for (const s of INTRO_SHOTS) s.resize?.(gl, gridFor(s.cellPx))
-		await step('art')
+		const painted = INTRO_SHOTS.filter(s => s.resize)
+		for (const [i, s] of painted.entries()) {
+			s.resize(gl, gridFor(s.cellPx))
+			await step('art', (i + 1) / painted.length)
+		}
 		const { index: i, t } = opening(still)
 		go(i, t)
 	}
@@ -219,7 +225,7 @@ export function useIntro(canvasRef) {
 			},
 			release() {
 				for (const s of INTRO_SHOTS) s.release?.(gl)
-				for (const pass of Object.values(passes ?? {})) pass.release()
+				for (const pass of new Set(Object.values(passes ?? {}))) pass.release()
 				passes = null
 				mixer?.release()
 				mixer = null
