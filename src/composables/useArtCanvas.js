@@ -1,5 +1,6 @@
 // One WebGL context on the art grid: sizing, the perf ladder, the boot, the frame loop and its losses.
-// build(gl, step) reruns after a context restore; the last bootWeights key is the first frame, reported here.
+// build(gl, step) reruns after a context restore: step(key) lands a checkpoint of bootWeights, step(key, part)
+// reports it part-way there; the last key is the first frame, reported here.
 // frame(dt) returns whether it drew: a run of empty frames parks the loop, and wake() restarts it.
 
 import { onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
@@ -134,12 +135,18 @@ export function useArtCanvas(
 
 	function stepper(id) {
 		let done = 0
-		return async key => {
+		return async (key, part = 1) => {
 			if (booting.value) {
-				done += bootWeights[key]
-				bootProgress.value = done
-				const next = bootWeights[order[order.indexOf(key) + 1]] ?? 0
-				bootCeiling.value = Math.min(1, done + next)
+				const weight = bootWeights[key]
+				bootProgress.value = done + weight * part
+				if (part < 1) bootCeiling.value = Math.min(1, done + weight)
+				else {
+					done += weight
+					bootCeiling.value = Math.min(
+						1,
+						done + (bootWeights[order[order.indexOf(key) + 1]] ?? 0)
+					)
+				}
 			}
 			await paint()
 			if (id !== run || gl.isContextLost()) throw STALE
