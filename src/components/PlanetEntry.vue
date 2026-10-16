@@ -53,8 +53,8 @@
 	import { useFrameReshape } from '@/composables/useFrameReshape'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { ENTRY } from '@/constants/journey'
-	import { paletteRgb } from '@/constants/palette'
-	import { drawCloud, drawStarTile, seedClouds } from '@/js/entrySprites'
+	import { drawCloud, drawPuff, drawStarTile, seedClouds } from '@/js/entrySprites'
+	import { sunAt } from '@/js/sun'
 	import { clamp01, ramp, smoothstep } from '@/js/math'
 	import { hash1 } from '@/js/pixelNoise'
 	import { createArrival } from '@/js/arrivalCut'
@@ -140,9 +140,26 @@
 			// one whole cell per step on the way up, one whole cell per step wider
 			'--rise-ease': `steps(${S.riseCells}, end)`,
 			'--puff-ease': `steps(${S.grow - 1}, end)`,
-			'--smoke': paletteRgb(S.shade),
+			'--smoke': `url(${puffSprites[smokeLit.value.night ? 'night' : 'day'][smokeLit.value.side < 0 ? 0 : 1]})`,
 		}
 	})
+	// The puffs take the light as it stands: lit on the sun's side, dim once the lamp is on. Drawn once
+	// per visit, four sprites, and only swapped when the sun crosses the chimney or the lamp turns.
+	const puffSprites = {
+		day: [-1, 1].map(side => drawPuff(ENTRY.smoke.shades, side)),
+		night: [-1, 1].map(side => drawPuff(ENTRY.smoke.nightShades, side)),
+	}
+	const smokeLit = ref({ side: -1, night: false })
+	function lightSmoke() {
+		if (!vent.value) return
+		const sun = sunAt(sunk, frame)
+		const side = sun.x < vent.value.x ? -1 : 1
+		const night = sun.ground >= ENTRY.near.habitat.lampAt
+		if (side !== smokeLit.value.side || night !== smokeLit.value.night) {
+			smokeLit.value = { side, night }
+		}
+	}
+
 	// Staggered backwards, so the column is already full on the frame it appears on.
 	const puffStyle = i => {
 		const S = ENTRY.smoke
@@ -194,6 +211,7 @@
 		sunk += last ? now - last : 0
 		last = now
 		arrival?.step(sunk)
+		lightSmoke()
 	}
 
 	// `immediate`, because a reload restores the scroll: mount can already be on the ground, and a
@@ -219,6 +237,7 @@
 		frame = { w: window.innerWidth, h: window.innerHeight }
 		arrival?.cut(frame, sunk).then(at => {
 			vent.value = at && { ...at, band: ARRIVAL_BANDS.find(band => band.key === at.key) }
+			lightSmoke()
 		})
 	}
 
@@ -312,7 +331,8 @@
 		width: var(--puff);
 		height: var(--puff);
 		margin: calc(var(--puff) / -2) 0 0 calc(var(--puff) / -2);
-		background: var(--smoke);
+		background: var(--smoke) center / 100% 100%;
+		image-rendering: pixelated;
 		opacity: 0;
 		animation:
 			entry-smoke var(--period) var(--rise-ease) var(--delay) infinite,
