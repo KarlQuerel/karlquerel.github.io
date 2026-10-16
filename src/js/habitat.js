@@ -71,7 +71,7 @@ export function paintHabitat(put, hab, range) {
 		if (y <= groundAt(vx)) put(vx, y, y === lip ? lipShade : shellShades[1])
 	}
 
-	return { vent: { x: (vx + 0.5) / w, y: lip / h }, lamp }
+	return { vent: { col: vx, row: lip }, lamp }
 }
 
 // The airlock porch: a frame standing proud of the shell round the doorway, so it reads as built.

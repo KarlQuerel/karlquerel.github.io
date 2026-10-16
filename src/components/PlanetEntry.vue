@@ -5,7 +5,7 @@
 		<!-- two coprime tiles, so the field never repeats inside a viewport -->
 		<div
 			v-for="(layer, i) in ENTRY.stars.layers"
-			:key="layer.tile"
+			:key="layer.cells"
 			class="entry__stars"
 			:style="starStyle(layer, i)"
 		/>
@@ -26,7 +26,7 @@
 			:key="band.key"
 			:ref="el => (ridgeEls[i] = el)"
 			class="entry__ridge"
-			:style="ridgeStyle(band)"
+			:style="ridgeStyle(band, i)"
 		/>
 		<!-- someone is home: the habitat's chimney, over the near band it stands on -->
 		<div v-if="smoke" class="entry__smoke" :style="smoke">
@@ -82,10 +82,16 @@
 		display: deck.value > 0 ? null : 'none',
 	}))
 
+	// Every canvas is shown at exactly the cells it was cut on (see arrivalSurface.js): stretched to
+	// the frame instead, a cell came out 5.5 pixels wide and 5.6 tall and the dither wobbled with it.
+	const sizes = ref({ sky: null, bands: [] })
+	const sized = grid =>
+		grid ? { width: `${grid.cols * grid.cell}px`, height: `${grid.rows * grid.cell}px` } : {}
+
 	// dusk takeover: transparent space → opaque sky, then it holds
 	const skyStyle = computed(() => {
 		const t = ramp(props.progress, ENTRY.skyStart, ENTRY.skyFull)
-		return { opacity: t.toFixed(3), display: t > 0 ? null : 'none' }
+		return { opacity: t.toFixed(3), display: t > 0 ? null : 'none', ...sized(sizes.value.sky) }
 	})
 
 	// Each cloud rushes up past the camera inside its own window of the drop.
@@ -110,36 +116,38 @@
 	}
 
 	// each ridge band lifts into place on its own beat — the two-plane parallax
-	function ridgeStyle(band) {
+	function ridgeStyle(band, i) {
 		const t = smoothstep(clamp01((props.progress - band.revealAt) / ENTRY.ridgeSettle))
 		return {
 			display: t > 0 ? null : 'none',
 			'--depth': band.depth,
 			opacity: t.toFixed(3),
-			height: `${band.heightVh}vh`,
+			...sized(sizes.value.bands[i]),
 			transform: `translate3d(0, ${((1 - t) * band.liftVh).toFixed(1)}vh, 0)`,
 		}
 	}
 
 	// The chimney's plume: where it hangs comes back from the cut, which alone knows the habitat's place.
+	// A puff is a `cellsTo` box of whole cells with its floor on the chimney's lip (drawPuff), so
+	// everything about it is counted in cells and lands on the band's grid.
 	const vent = ref(null)
 	const smoke = computed(() => {
 		if (!vent.value) return null
-		const { x, y, cell, band } = vent.value
+		const { col, row, cell, band } = vent.value
 		const S = ENTRY.smoke
+		const frames = S.cellsTo - S.cellsFrom + 1
 		return {
-			...ridgeStyle(band),
-			'--vent-x': `${(x * 100).toFixed(2)}%`,
-			'--vent-y': `${(y * 100).toFixed(2)}%`,
-			'--puff': `${(S.puffCells * cell).toFixed(1)}px`,
-			'--rise': `${(-S.riseCells * cell).toFixed(1)}px`,
-
-			'--grow': S.grow,
+			...ridgeStyle(ARRIVAL_BANDS[band], band),
+			'--vent-x': `${(col - Math.floor((S.cellsTo - 1) / 2)) * cell}px`,
+			'--vent-y': `${(row - S.cellsTo) * cell}px`,
+			'--puff': `${S.cellsTo * cell}px`,
+			'--rise': `${-S.riseCells * cell}px`,
 			'--peak': S.peak,
 			'--period': `${S.periodMs}ms`,
-			// one whole cell per step on the way up, one whole cell per step wider
+			// one whole cell per step on the way up, one whole frame per step as it grows
 			'--rise-ease': `steps(${S.riseCells}, end)`,
-			'--puff-ease': `steps(${S.grow - 1}, end)`,
+			'--sheet-shift': `${-(frames - 1) * S.cellsTo * cell}px`,
+			'--puff-ease': `steps(${frames - 1}, end)`,
 			'--smoke': `url(${puffSprites[smokeLit.value.night ? 'night' : 'day'][smokeLit.value.side < 0 ? 0 : 1]})`,
 		}
 	})
@@ -153,20 +161,25 @@
 	function lightSmoke() {
 		if (!vent.value) return
 		const sun = sunAt(sunk, frame)
-		const side = sun.x < vent.value.x ? -1 : 1
+		// the chimney's column as a share of the frame: its band starts `depth` px left of it
+		const { col, cell, band } = vent.value
+		const side = sun.x * frame.w < col * cell - ARRIVAL_BANDS[band].depth ? -1 : 1
 		const night = sun.ground >= ENTRY.near.habitat.lampAt
 		if (side !== smokeLit.value.side || night !== smokeLit.value.night) {
 			smokeLit.value = { side, night }
 		}
 	}
 
-	// Staggered backwards, so the column is already full on the frame it appears on.
+	// Staggered backwards, so the column is already full on the frame it appears on. Each puff's drift
+	// is a whole number of cells, stepped one at a time, so it never sits across two.
 	const puffStyle = i => {
 		const S = ENTRY.smoke
 		const wander = S.driftMin + (1 - S.driftMin) * 2 * hash1(i, ENTRY.ridgeSeed)
+		const drift = Math.max(1, Math.round(S.driftCells * wander))
 		return {
 			'--delay': `${(-(i * S.periodMs) / S.puffs).toFixed(0)}ms`,
-			'--drift': `${(S.driftCells * (vent.value?.cell ?? 0) * wander).toFixed(1)}px`,
+			'--drift': `${drift * (vent.value?.cell ?? 0)}px`,
+			'--drift-ease': `steps(${drift}, end)`,
 		}
 	}
 
@@ -186,13 +199,15 @@
 		return smoothstep(t) * maxOpacity
 	})
 
+	// The tiles are drawn on the cut's grid (drawStarTile), so they wait on it like the ranges do.
 	function starStyle(layer, i) {
+		const tile = layer.cells * (sizes.value.sky?.cell ?? 0)
 		return {
 			opacity: starFade.value.toFixed(3),
 			display: starFade.value > 0 && starTiles.value[i] ? null : 'none',
 			'--depth': layer.depth,
 			backgroundImage: `url(${starTiles.value[i]})`,
-			backgroundSize: `${layer.tile}px ${layer.tile}px`,
+			backgroundSize: `${tile}px ${tile}px`,
 		}
 	}
 
@@ -234,10 +249,16 @@
 
 	// Cut for the frame as it stands; the chimney's place comes back with it, for the smoke.
 	function cut() {
-		frame = { w: window.innerWidth, h: window.innerHeight }
-		arrival?.cut(frame, sunk).then(at => {
-			vent.value = at && { ...at, band: ARRIVAL_BANDS.find(band => band.key === at.key) }
+		// `dpr` snaps the cell to whole device pixels (cellFor), the one thing that keeps a dither even
+		frame = { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 }
+		arrival?.cut(frame, sunk).then(({ sizes: grids, vent: at }) => {
+			sizes.value = grids
+			// the band by index, not by object: a ref wraps what it holds, so the object would not be found
+			vent.value = at && { ...at, band: ARRIVAL_BANDS.findIndex(band => band.key === at.key) }
 			lightSmoke()
+			starTiles.value = ENTRY.stars.layers.map((layer, i) =>
+				drawStarTile(visitSeed + i * 991, layer, grids.sky.cell)
+			)
 		})
 	}
 
@@ -253,9 +274,6 @@
 			cloudSprites.value = Array.from({ length: ENTRY.cloud.variants }, (_, i) =>
 				drawCloud(visitSeed + i * 137)
 			)
-			starTiles.value = ENTRY.stars.layers.map((layer, i) =>
-				drawStarTile(visitSeed + i * 991, layer)
-			)
 		})
 	})
 
@@ -269,12 +287,12 @@
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
-	// Alien dusk, cut from the shared palette on the ranges' own grid (see drawArrivalSky).
+	// Alien dusk, cut from the shared palette on the ranges' own grid (see drawArrivalSky). Sized by
+	// the cut, so the last column may run past the frame; the pin clips it.
 	.entry__sky {
 		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
+		top: 0;
+		left: 0;
 		image-rendering: pixelated;
 	}
 
@@ -313,30 +331,32 @@
 	}
 
 	// The smoke shares the near band's box and depth: it stands on that rock, so it leans with it.
+	// A band is cut `depth` px past the frame on each side (its bleed), so it starts that far out.
 	.entry__ridge,
 	.entry__smoke {
 		position: absolute;
 		bottom: calc(var(--depth, 0) * -1px);
 		left: calc(var(--depth, 0) * -1px);
-		width: calc(100% + var(--depth, 0) * 2px);
 		// hard-edged silhouettes, like the rest of the sprite work
 		image-rendering: pixelated;
 	}
 
-	// A puff is one cell: `translate` carries the climb and `scale` the spread, so neither lands on half.
+	// A puff is a box of whole cells showing one frame of its sheet: `translate` carries the climb a
+	// cell a step, `transform` the drift a cell a step, and the sheet steps a frame at a time as it
+	// grows. Nothing is scaled, so a cell of smoke is a cell of the range it rises from.
 	.entry__puff {
 		position: absolute;
 		top: var(--vent-y);
 		left: var(--vent-x);
 		width: var(--puff);
 		height: var(--puff);
-		margin: calc(var(--puff) / -2) 0 0 calc(var(--puff) / -2);
-		background: var(--smoke) center / 100% 100%;
+		background: var(--smoke) 0 0 / auto 100% no-repeat;
 		image-rendering: pixelated;
 		opacity: 0;
 		animation:
 			entry-smoke var(--period) var(--rise-ease) var(--delay) infinite,
-			entry-smoke-spread var(--period) var(--puff-ease) var(--delay) infinite;
+			entry-smoke-grow var(--period) var(--puff-ease) var(--delay) infinite,
+			entry-smoke-drift var(--period) var(--drift-ease) var(--delay) infinite;
 	}
 
 	@keyframes entry-smoke {
@@ -349,14 +369,20 @@
 			opacity: var(--peak);
 		}
 		100% {
-			translate: var(--drift) var(--rise);
+			translate: 0 var(--rise);
 			opacity: 0;
 		}
 	}
 
-	@keyframes entry-smoke-spread {
+	@keyframes entry-smoke-grow {
 		to {
-			scale: var(--grow);
+			background-position-x: var(--sheet-shift);
+		}
+	}
+
+	@keyframes entry-smoke-drift {
+		to {
+			transform: translateX(var(--drift));
 		}
 	}
 

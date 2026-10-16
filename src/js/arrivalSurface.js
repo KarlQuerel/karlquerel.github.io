@@ -36,19 +36,29 @@ export function createSurface({ sky: skyEl, bands: bandEls }) {
 		lightRanges(now)
 	}
 
-	// Cut for `box` with the sun `sunk` ms into its circuit. Hands back where the habitat's chimney
-	// stands, in the band's own fractions and cells, for the smoke.
+	// Cut for `box` with the sun `sunk` ms into its circuit; each band runs its `depth` past the frame
+	// for the cursor's lean. Hands back the grid every canvas was cut on, so the page can size each to
+	// its own cells, and the cell the habitat's chimney tops out at, for the smoke.
 	function cut(box, sunk) {
 		frame = box
 		const now = sunAt(sunk, frame)
 		sky = drawArrivalSky(skyEl, frame, now)
 		ranges = ARRIVAL_BANDS.map(
-			(band, i) => bandEls[i] && cutRidge(bandEls[i], band, ENTRY.ridgeSeed, frame)
+			(band, i) =>
+				bandEls[i] &&
+				cutRidge(bandEls[i], band, ENTRY.ridgeSeed, { ...frame, bleed: band.depth })
 		)
 		lightRanges(now)
 		jobs.length = 0
+		const grid = ({ w, h, cell }) => ({ cols: w, rows: h, cell })
 		const i = ranges.findIndex(sprite => sprite?.vent)
-		return i < 0 ? null : { ...ranges[i].vent, cell: ranges[i].cell, key: ARRIVAL_BANDS[i].key }
+		return {
+			sizes: { sky: grid(sky), bands: ranges.map(sprite => sprite && grid(sprite)) },
+			vent:
+				i < 0
+					? null
+					: { ...ranges[i].vent, cell: ranges[i].cell, key: ARRIVAL_BANDS[i].key },
+		}
 	}
 
 	// One step of the circuit, at `sunk` ms on the surface. The disc is repainted whenever it has slid
