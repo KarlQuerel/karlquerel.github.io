@@ -760,21 +760,13 @@ export const ENTRY = {
 		// `coronaJitter` how far its Bayer lattice is broken. Flat rings read as layers; a glow has none.
 		coronaSeam: 0.3,
 		coronaJitter: 0,
-		// The disc and its rim cool as the sun comes down, one tone per share of the drop, lower limb first
-		// across a band `blend` radii tall — as tall as the disc, so a low sun wears a gradient from a paler
-		// crown to a redder foot, as air reddens a real one, on an ordered dither (a cell's own threshold
-		// made it a dot screen). The disc stops where the sky's own ramp tops out: a sun is the brightest
-		// thing in its glare, and a disc walked under the corona read as an eclipse.
-		// The disc holds its cream through the first share and goes to sand over the second, so it is still
-		// the brightest thing in its glare while it stands clear and only wears the orange as the peaks
-		// take it; the rim warms through the first share and then holds.
-		disc: ['glow', 'glow', 'sand'],
+		// The disc holds its cream: a disc that reddened read as a different sun, and every tone under cream
+		// stops where the glare's own top is, so a reddened disc sat darker than its halo. The rim cools as
+		// the sun comes down, one tone per share of the drop, lower limb first across a band `blend` radii
+		// tall, on an ordered dither (a cell's own threshold made it a dot screen).
+		disc: ['glow'],
 		rim: ['sand', 'dune'],
 		blend: 2,
-		// The share of the drop (`low`) the cooling runs over. The visitor lands at about 0.3 and the
-		// peaks take the disc near 0.7, so run over the whole drop it was a tan sun on arrival and the
-		// red of it happened behind the rock.
-		redden: { from: 0.3, to: 0.7 },
 		// how much shorter than wide the disc stands at the skyline: refraction squashes a real low sun
 		flatten: 0.14,
 		// how much of the corona goes as the sun comes down — glare falls off through more air, and the
