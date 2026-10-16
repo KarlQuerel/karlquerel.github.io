@@ -322,12 +322,6 @@ vec2 contents(vec3 p){
   return opU(bayContents(p), vec2(lockerSuit(p), 18.0));
 }
 
-float map(vec3 p){
-  float d = min(shell(p), pipes(p));
-  d = min(d, DOOR_Z + recess(p) - p.z);
-  return min(d, contents(p).x);
-}
-
 // a strip's state on a stepped clock: a few of them flicker, the rest hold
 float stripOn(float k){
   if (hash11(k*7.31 + 0.5) > 0.2) return 1.0;
@@ -400,31 +394,30 @@ void main(){
   vec3 up = cross(fwd, right);
   vec3 rd = normalize(uv.x*right + uv.y*up + FOCAL*fwd);
 
+  // The march, and once it lands six more passes of the same loop for the taps the shading takes on
+  // the contents: a normal's four, the occlusion along it, the deck's contact shadow. One loop, so
+  // the figures are inlined once in the whole shader (a second copy cost Mesa another second).
   float t = 0.0;
-  for (int i = 0; i < 96; i++){
-    float d = map(ro + rd*t);
-    if (d < 0.002 + 0.0015*t || t > 45.0) break;
-    t += d*0.72;
-  }
-  vec3 p = ro + rd*t;
-
-  // Every tap the shading takes on the contents, through one call so the figures are inlined once
-  // more and not once a tap: the hit, a normal's four, the occlusion along it, the deck's contact
-  // shadow. Unconditional and here, with little else live: gated on the surface, Mesa took twice as long.
+  int tap = 0;
+  vec3 p = ro;
   vec2 bc = vec2(1e9, 0.0);
   vec3 cn = vec3(0.0);
   float ao = 1.0, shade = 1.0;
-  for (int i = 0; i < 7; i++){
-    vec3 e = i == 1 ? vec3(1.0, -1.0, -1.0) : i == 2 ? vec3(-1.0, -1.0, 1.0) : i == 3 ? vec3(-1.0, 1.0, -1.0) : vec3(1.0);
-    vec3 at = i == 0 ? p : i < 5 ? p + 0.004*e : i == 5 ? p + normalize(cn)*0.06 : p + vec3(0.0, 0.08, 0.0);
+  for (int i = 0; i < 102; i++){
+    vec3 e = tap == 1 ? vec3(1.0, -1.0, -1.0) : tap == 2 ? vec3(-1.0, -1.0, 1.0) : tap == 3 ? vec3(-1.0, 1.0, -1.0) : vec3(1.0);
+    vec3 at = tap == 0 ? ro + rd*t : tap < 5 ? p + 0.004*e : tap == 5 ? p + normalize(cn)*0.06 : p + vec3(0.0, 0.08, 0.0);
     vec2 c = contents(at);
-    if (i == 0) bc = c;
-    else if (i < 5) cn += e*c.x;
-    else if (i == 5) ao = clamp(0.35 + 0.65*c.x/0.06, 0.35, 1.0);
-    else shade = mix(0.3, 1.0, smoothstep(0.0, 0.22, c.x));
+    if (tap == 0){
+      float d = min(min(shell(at), pipes(at)), min(DOOR_Z + recess(at) - at.z, c.x));
+      if (d < 0.002 + 0.0015*t || t > 45.0 || i == 95){ p = at; bc = c; tap = 1; }
+      else t += d*0.72;
+    }
+    else if (tap < 5){ cn += e*c.x; tap++; }
+    else if (tap == 5){ ao = clamp(0.35 + 0.65*c.x/0.06, 0.35, 1.0); tap++; }
+    else { shade = mix(0.3, 1.0, smoothstep(0.0, 0.22, c.x)); break; }
   }
 
-  // --- which surface: the same terms as map, at the hit
+  // --- which surface: the same terms as the march, at the hit
   float inset = RIB_IN*ribAt(p.z);
   float k = bayIndex(p.z);
   float bz = bayZ(k), side = baySide(k);
