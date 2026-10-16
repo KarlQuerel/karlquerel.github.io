@@ -4,7 +4,7 @@
 import { ENTRY } from '../constants/journey.js'
 import { PALETTE, paletteRgb } from '../constants/palette.js'
 import { clamp01 } from './math.js'
-import { ditherIndex, fbm1, fbm2, hash1 } from './pixelNoise.js'
+import { ditherIndex, fbm1, fbm2, hash1, hash2 } from './pixelNoise.js'
 
 function sheet(w, h) {
 	const el = document.createElement('canvas')
@@ -153,38 +153,64 @@ function shadeCloud(px, cleaned, w, h) {
 	}
 }
 
-// One tile of first-evening stars; two at coprime sizes are what stop the field reading as wallpaper.
-export function drawStarTile(seed, layer) {
-	const { tile, count } = layer
-	const { alpha, doubleAbove } = ENTRY.stars
+// One tile of first-evening stars on the ranges' grid, `cell` px a cell; two tiles at coprime sizes
+// are what stop the field reading as wallpaper. The brightest are a cross, a cell each way.
+export function drawStarTile(seed, layer, cell) {
+	const { cells, count } = layer
+	const { alpha, crossAbove } = ENTRY.stars
 	const colors = ENTRY.stars.colors.map(paletteRgb)
-	const { el, ctx } = sheet(tile, tile)
+	const { el, ctx } = sheet(cells * cell, cells * cell)
+	const put = (x, y) =>
+		ctx.fillRect(((x + cells) % cells) * cell, ((y + cells) % cells) * cell, cell, cell)
 	for (let i = 0; i < count; i++) {
-		const x = Math.floor(hash1(i, seed) * tile)
-		const y = Math.floor(hash1(i, seed + 101) * tile)
+		const x = Math.floor(hash1(i, seed) * cells)
+		const y = Math.floor(hash1(i, seed + 101) * cells)
 		const pick = hash1(i, seed + 202)
 		const bright = hash1(i, seed + 303)
 		ctx.globalAlpha = alpha.from + bright * alpha.run
 		ctx.fillStyle = colors[Math.floor(pick * colors.length)]
-		const size = bright > doubleAbove ? 2 : 1
-		ctx.fillRect(x, y, size, size)
+		put(x, y)
+		if (bright > crossAbove) {
+			put(x - 1, y)
+			put(x + 1, y)
+			put(x, y - 1)
+			put(x, y + 1)
+		}
 	}
 	return el.toDataURL()
 }
 
-// One smoke puff, two cells by two: the corner toward the sun lit, the far one in shade. `side` is
-// -1 for a sun on the left, 1 on the right; `shades` runs lit, body, shade.
+// A smoke puff's life as a sheet of frames, one per cell of width from `cellsFrom` to `cellsTo`, each
+// a rounded blob standing on the floor of a `cellsTo` box: the side toward the sun and the top lit,
+// the far side and the underside in shade, and the grown frames thinned cell by cell on a hash — in
+// Bayer order the thinning came out as a ladder, not as smoke coming apart.
+// `side` is -1 for a sun on the left, 1 on the right; `shades` runs lit, body, shade.
 export function drawPuff(shades, side) {
-	const { el, ctx } = sheet(2, 2)
+	const { cellsFrom: from, cellsTo: to, thin } = ENTRY.smoke
+	const frames = to - from + 1
+	const { el, ctx } = sheet(frames * to, to)
 	const [lit, body, shade] = shades.map(name => paletteRgb(name))
-	const near = side < 0 ? 0 : 1
-	const put = (x, y, col) => {
-		ctx.fillStyle = col
-		ctx.fillRect(x, y, 1, 1)
+	// a cell at `r` of the blob's radius or further out is a corner; inside `ragged`, some are cut by noise
+	const ROUND = 0.85
+	const RAGGED = 0.55
+	for (let f = 0; f < frames; f++) {
+		const s = from + f
+		const r = s / 2
+		const left = f * to + Math.floor((to - s) / 2)
+		const top = to - s
+		const keep = 1 - thin * (f / (frames - 1)) ** 2
+		for (let y = 0; y < s; y++) {
+			for (let x = 0; x < s; x++) {
+				const dx = (x + 0.5 - r) / r
+				const dy = (y + 0.5 - r) / r
+				const d2 = dx * dx + dy * dy
+				if (d2 > ROUND || (d2 > RAGGED && hash2(x, y, f + 7) > 0.75)) continue
+				if (hash2(x, y, f + 31) >= keep) continue
+				const toward = side * dx - dy
+				ctx.fillStyle = toward > 0.5 ? lit : toward < -0.5 ? shade : body
+				ctx.fillRect(left + x, top + y, 1, 1)
+			}
+		}
 	}
-	put(near, 0, lit)
-	put(1 - near, 0, body)
-	put(near, 1, body)
-	put(1 - near, 1, shade)
 	return el.toDataURL()
 }

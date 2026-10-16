@@ -620,16 +620,20 @@ export const ENTRY = {
 		scaleJitter: 0.4,
 	},
 
-	// The chimney's smoke, DOM over the near band — the one moving thing on a static cut.
+	// The chimney's smoke, DOM over the near band — the one moving thing on a static cut. A puff is a
+	// sheet of frames drawn on the grid (drawPuff), one per cell of width from `cellsFrom` to `cellsTo`,
+	// and grows by stepping frames: scaled, its four cells became blocks three cells wide.
 	smoke: {
 		puffs: 10,
 		periodMs: 7000,
-		puffCells: 2,
+		cellsFrom: 2,
+		cellsTo: 6,
+		// how far a grown puff has thinned, as the share of its cells gone, in ordered-dither order
+		thin: 0.55,
 		riseCells: 24,
 		driftCells: 8,
 		// each puff's own share of the wind rolls between this and 2 minus it
 		driftMin: 0.45,
-		grow: 3,
 		// lit side toward the sun, body, shaded side; the night set takes over with the habitat's lamp
 		shades: ['linen', 'cream', 'chalk'],
 		nightShades: ['stone', 'ash', 'shale'],
@@ -667,12 +671,12 @@ export const ENTRY = {
 		// Wide and shallow: sampled this way the haze comes out as cirrus streaks, not round blooms.
 		driftCells: 130,
 		driftRows: 20,
-		mottle: 0.5,
-		mottleCells: 2.4,
+		mottle: 0.3,
+		mottleCells: 5,
 	},
 	// How much of the gap between rungs carries the checker; the rock wants a narrow seam, the sky a
 	// wider one. At 0.5 the whole sky was checker and the bands never read; the corona shares it.
-	skySeam: 0.25,
+	skySeam: 0.14,
 	// and scattered inside each Bayer level, since a full-width dither is where the lattice shows
 	skyJitter: 1,
 
@@ -757,18 +761,21 @@ export const ENTRY = {
 		coronaFade: 0.7,
 	},
 
-	// First stars, masked off before the horizon glow. Two coprime tile sizes, so no repeat lines up.
+	// First stars, masked off before the horizon glow, drawn on the ranges' grid: a star is one cell,
+	// like every other pixel in the frame, where a one-pixel dot over six-pixel cells read as dust.
+	// Two coprime tile sizes (in cells), so no repeat lines up.
 	stars: {
 		appearStart: 0.52,
 		appearEnd: 0.76,
 		maxOpacity: 0.9,
 		colors: ['star', 'star', 'linen', 'glow', 'chalk'],
-		// a star's alpha from its brightness roll; past `doubleAbove` it is two cells across
+		// a star's alpha from its brightness roll; past `crossAbove` it is a cross, a cell each way — a
+		// landmark, so rare, and the tiles wide enough that a frame holds no more than two of each
 		alpha: { from: 0.35, run: 0.65 },
-		doubleAbove: 0.92,
+		crossAbove: 0.97,
 		layers: [
-			{ tile: 359, count: 14, depth: 4 },
-			{ tile: 512, count: 18, depth: 8 },
+			{ cells: 127, count: 60, depth: 4 },
+			{ cells: 181, count: 74, depth: 8 },
 		],
 		// A handful breathe and the rest hold still: twinkling the whole field reads as noise.
 		twinkle: { count: 4, periodMs: 2600, spreadVh: 34 },
@@ -961,16 +968,16 @@ export const ENTRY = {
 		snow: {
 			line: 0.5,
 			ruffle: 0.12,
-			depth: 0.9,
-			aspect: 2,
-			gully: 0.45,
+			depth: 0.7,
+			aspect: 1,
+			gully: 0.2,
 			gullyCells: 9,
-			edge: 2,
+			edge: 1,
 			minCap: 3.5,
 			minRun: 5,
 			// Aerial perspective on snow lifts the shadow end, not dims the lit: a pale patch, little contrast.
-			shades: ['chalk', 'cream'],
-			crest: 'cream',
+			shades: ['bone', 'chalk'],
+			crest: 'chalk',
 			// two more rungs of the same snow ladder for the night walk: on the rock's foot the cap fell
 			// off a cliff of tone and crumbled away cell by cell instead of going dark as one patch
 			foot: ['stone', 'bone'],
@@ -995,11 +1002,11 @@ export const ENTRY = {
 		snow: {
 			line: 0.48,
 			ruffle: 0.12,
-			depth: 1.3,
-			aspect: 3,
-			gully: 0.5,
+			depth: 0.9,
+			aspect: 1,
+			gully: 0.2,
 			gullyCells: 8,
-			edge: 2,
+			edge: 1,
 			// A long flat ridge just over the line wore a one-cell strip of white; this cull prevents that.
 			minCap: 3,
 			minRun: 5,
@@ -1028,11 +1035,11 @@ export const ENTRY = {
 		snow: {
 			line: 0.54,
 			ruffle: 0.12,
-			depth: 1.5,
-			aspect: 3,
-			gully: 0.5,
+			depth: 1,
+			aspect: 1,
+			gully: 0.2,
 			gullyCells: 7,
-			edge: 2,
+			edge: 1,
 			minCap: 3,
 			minRun: 4,
 			shades: ['ash', 'stone', 'bone', 'chalk', 'cream', 'linen'],
@@ -1043,9 +1050,9 @@ export const ENTRY = {
 			w: 21,
 			h: 9,
 			// The shell's light on a real hemisphere normal: `sun` off a cosine, `sky` off how far it turns up.
-			sun: 0.78,
-			sky: 0.34,
-			ambient: 0.06,
+			sun: 1,
+			sky: 0.4,
+			ambient: 0.12,
 			sunUp: 0.45,
 			sunFront: 0.55,
 			panels: 5,
@@ -1057,7 +1064,7 @@ export const ENTRY = {
 			footDip: 0.26,
 			rimLift: 0.3,
 			// how much of its own light the shell keeps whatever the ground is doing
-			bed: 0.55,
+			bed: 0.75,
 			// cells of shell below the ground line, and the least that must stand above it to draw a column
 			sink: 2,
 			minRise: 2,
