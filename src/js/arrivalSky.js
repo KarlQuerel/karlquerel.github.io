@@ -3,7 +3,7 @@
 
 import { ENTRY } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
-import { clamp01, ramp as rampOf } from './math.js'
+import { clamp01 } from './math.js'
 import { ditherThreshold, fallThreshold, fbm2, seamIndex } from './pixelNoise.js'
 import { cellFor } from './ridge.js'
 
@@ -190,8 +190,7 @@ export function paintSun(sky, now) {
 	// One seam serves both, so both walk the same shares of the drop: the count comes from the longer
 	// ramp and a shorter one holds its last tone. Counted off the disc alone, a disc of one tone left
 	// the rim on its first shade all day and the sun never reddened at all.
-	const heat =
-		rampOf(now.low, S.redden.from, S.redden.to) * (Math.max(S.disc.length, S.rim.length) - 1)
+	const heat = now.low * (Math.max(S.disc.length, S.rim.length) - 1)
 	const warm = Math.floor(heat)
 	const tone = (names, i) => PALETTE[names[Math.min(names.length - 1, i)]]
 	const [discLo, discHi] = [tone(S.disc, warm), tone(S.disc, warm + 1)]
