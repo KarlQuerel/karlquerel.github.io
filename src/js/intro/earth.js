@@ -5,7 +5,7 @@ import { EARTH } from '../../constants/intro/earth.js'
 import { PLANET } from '../../constants/planet.js'
 import { artScale, earthEase, skyPan } from './layerCamera.js'
 import { clamp01, ramp, smootherstep, smoothstep } from '../math.js'
-import { paintEarthAtlas } from './earthArt.js'
+import { paintArt } from './artWorker.js'
 import { LAYERS_CHUNK, glslNum, glslVec, sky } from './sky.js'
 import { pixelTexture } from '../gl.js'
 
@@ -41,14 +41,16 @@ export const earth = {
 		atlas = pixelTexture(gl)
 		painted = ''
 	},
-	// painting is the expensive part: only a new size of art grid repaints
-	resize(gl, grid) {
+	// painting is the expensive part, and the painters' thread's: only a new size of art grid repaints
+	async resize(gl, grid) {
 		const a = artScale(grid)
 		const artGrid = { width: Math.ceil(grid.width / a), height: Math.ceil(grid.height / a) }
 		const key = `${artGrid.width}x${artGrid.height}`
 		if (key === painted) return
 		painted = key
-		const art = paintEarthAtlas(artGrid)
+		const art = await paintArt('earth', artGrid)
+		// a newer grid, or the release, got there first
+		if (!art || key !== painted || !atlas) return
 		gl.bindTexture(gl.TEXTURE_2D, atlas)
 		gl.texImage2D(
 			gl.TEXTURE_2D,

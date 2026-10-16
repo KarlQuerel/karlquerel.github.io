@@ -3,7 +3,7 @@ import { INTRO_CARDS } from '../../data/gameIntro.js'
 import { FIELDS } from '../../constants/intro/fields.js'
 import { pixelTexture } from '../gl.js'
 import { ramp, smootherstep, smoothstep } from '../math.js'
-import { paintFieldsAtlas } from './fieldsArt.js'
+import { paintArt } from './artWorker.js'
 import { arrive } from './layerCamera.js'
 import { INTRO_TRANSITIONS } from '../../constants/intro/transitions.js'
 import { LAYERS_CHUNK, glslNum, glslVec } from './sky.js'
@@ -73,12 +73,14 @@ export const fields = {
 		atlas = pixelTexture(gl)
 		painted = ''
 	},
-	// painting is the expensive part: only a grid of a new size repaints
-	resize(gl, grid) {
+	// painting is the expensive part, and the painters' thread's: only a grid of a new size repaints
+	async resize(gl, grid) {
 		const key = `${grid.width}x${grid.height}`
 		if (key === painted) return
 		painted = key
-		const art = paintFieldsAtlas(grid)
+		const art = await paintArt('fields', grid)
+		// a newer grid, or the release, got there first
+		if (!art || key !== painted || !atlas) return
 		gl.bindTexture(gl.TEXTURE_2D, atlas)
 		gl.texImage2D(
 			gl.TEXTURE_2D,
