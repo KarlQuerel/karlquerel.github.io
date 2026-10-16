@@ -193,6 +193,7 @@ export function paintSun(sky, now) {
 	const band = S.blend * S.r
 	const seamY = cy + S.r + band / 2 - (heat - warm) * (2 * S.r + band)
 	const reach = S.r * S.coronaR
+	const seam = ENTRY.skySeam
 	const px = img.data
 	const disc = {
 		x0: Math.max(0, Math.ceil(cx - reach)),
@@ -218,9 +219,13 @@ export function paintSun(sky, now) {
 					clamp01(1 - (d - S.r) / (reach - S.r)) *
 					now.light *
 					(1 - S.coronaFade * now.low)
-				// the cell's own threshold, not Bayer: `g` carries a global fade, and a Bayer rung flips together
+				// the cell's own threshold, not Bayer: `g` carries a global fade, and a Bayer rung flips together;
+				// dithered only across the seam between two rungs, as the sky itself is
 				const v = g * g * (S.coronaLift - 1)
-				const step = dark[i] + Math.floor(v) + (v % 1 > thr[i] ? 1 : 0)
+				const f = v % 1
+				const up =
+					Math.abs(f - 0.5) <= seam ? (f - 0.5 + seam) / (2 * seam) > thr[i] : f >= 0.5
+				const step = dark[i] + Math.floor(v) + (up ? 1 : 0)
 				col = ramp[step > top ? top : step]
 			}
 			px[i * 4] = col[0]
