@@ -630,7 +630,9 @@ export const ENTRY = {
 		// each puff's own share of the wind rolls between this and 2 minus it
 		driftMin: 0.45,
 		grow: 3,
-		shade: 'cream',
+		// lit side toward the sun, body, shaded side; the night set takes over with the habitat's lamp
+		shades: ['linen', 'cream', 'chalk'],
+		nightShades: ['stone', 'ash', 'shale'],
 		peak: 0.55,
 	},
 
@@ -668,8 +670,9 @@ export const ENTRY = {
 		mottle: 0.5,
 		mottleCells: 2.4,
 	},
-	// How much of the gap between rungs carries the checker; the rock wants a narrow seam, the sky wide.
-	skySeam: 0.5,
+	// How much of the gap between rungs carries the checker; the rock wants a narrow seam, the sky a
+	// wider one. At 0.5 the whole sky was checker and the bands never read; the corona shares it.
+	skySeam: 0.25,
 	// and scattered inside each Bayer level, since a full-width dither is where the lattice shows
 	skyJitter: 1,
 
@@ -1064,22 +1067,49 @@ export const ENTRY = {
 			glow: 'glow',
 			// The lamp is a switch, thrown once the rock's dusk is this many steps along (`ground`: 0 as the
 			// disc's lower limb meets the skyline, 4 as it is wholly behind) — the peaks holding half the
-			// disc, the hour a light goes on in a window — and thrown back there at dawn. On the sky's
-			// night it waited until the sun was long gone. By day the doorway is dark.
+			// disc, the hour a light goes on in a window — and thrown back there at dawn. By day the
+			// doorway is dark; lit, it throws its light a little way down the path.
 			lampAt: 2,
-			// The doorway's pool: `spillR` reach, squashed by `spillSquash`, `spillDrop` below the sill.
-			spillShades: ['basalt', 'rust', 'ochre', 'amber'],
-			spillR: 9,
-			spillSquash: 1.45,
-			spillDrop: 2,
-			spillPower: 1.6,
+			// The doorway's light on the ground: `width` cells at the sill, opening `open` a row toward the
+			// viewer over `reach` rows, `power` its falloff and `edge` how soft its sides. `gain` is its
+			// strength at the sill at full night, `dusk` of that while the sky is light; `grain` is how
+			// much the rock's crag breaks it.
+			doorLight: {
+				width: 3,
+				open: 0.5,
+				reach: 11,
+				power: 1.3,
+				edge: 1,
+				gain: 1.2,
+				dusk: 0.5,
+				grain: 1.5,
+				// the warm tones it lays on, dimmest first; a stratum or the tread's crown moves a cell a step
+				shades: ['basalt', 'rust', 'brick', 'ochre', 'clay'],
+			},
 			shadowLen: 5,
 			// The chimney: a short stack off the crown, on the sun side so its lip catches the last light.
 			vent: { at: -4, h: 2 },
-			pathSpread: 5,
-			pathMeander: 5,
-			pathWanderCells: 14,
-			pathShades: ['ash', 'stone'],
+			// the airlock frame round the doorway: shade side, sun side, lintel
+			porch: ['rust', 'ochre', 'amber'],
+			// The trail. Width grows by `spread` toward the viewer; the wander comes in over `settle`
+			// rows; each shoulder ragged by `rag` cells; the crown pales the middle, `crownFade` less far
+			// from the door.
+			path: {
+				spread: 5,
+				// the S-bends: `bend` cells either way over a `bendRows` swing, plus a `meander` jog
+				bend: 4,
+				bendRows: 26,
+				meander: 4,
+				wanderCells: 14,
+				settle: 4,
+				rag: 1.4,
+				ragCells: 3,
+				crownFade: 0.5,
+				seam: 0.2,
+				shades: ['ash', 'stone'],
+				// the steps under the ramp the night walks it down into, as `foot` does for a band
+				foot: ['void', 'ink', 'shale'],
+			},
 		},
 	},
 }
