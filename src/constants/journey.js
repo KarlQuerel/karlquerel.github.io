@@ -644,6 +644,7 @@ export const ENTRY = {
 	parallax: { cloud: 16, distant: 5, far: 11, near: 22 },
 
 	// The dusk sky, dark top to bright horizon, dithered onto the same grid the ranges are cut on.
+	// Warm the whole way: `haze`, a mauve rung between flare and dune, drew a grey ring round the sun.
 	sky: [
 		'void',
 		'ink',
@@ -655,7 +656,6 @@ export const ENTRY = {
 		'brick',
 		'clay',
 		'flare',
-		'haze',
 		'dune',
 		'sand',
 	],
@@ -718,8 +718,10 @@ export const ENTRY = {
 		// the fall itself — on a straight line the fan was invisible for the first twenty seconds.
 		rays: {
 			count: 12,
-			sharp: 9,
-			amp: 1.3,
+			// Under a rung of lift and a few cells wide: a spoke then notches the ring edges it crosses and
+			// nowhere stands alone. Sharper and a full rung, over the calmed corona it was a one-cell hair.
+			sharp: 2,
+			amp: 0.8,
 			reach: 0.3,
 			keepTop: 0.3,
 			floor: 0.55,
@@ -748,6 +750,9 @@ export const ENTRY = {
 		r: 13,
 		coronaR: 4,
 		coronaLift: 7,
+		// How much of the sky's grain the corona smooths away, whole at the disc and gone at its reach:
+		// rings broken on the haze and mottle read as blotches, not as a glow.
+		coronaCalm: 0.85,
 		// The disc holds its cream: in this palette every tone under it is a stripe, a dot screen or a snap
 		// across the sun, and none reads as one. The rim cools as the sun comes down, one tone per share
 		// of the drop, lower limb first across a band `blend` radii tall; the rim and the shrinking corona
@@ -761,21 +766,18 @@ export const ENTRY = {
 		coronaFade: 0.7,
 	},
 
-	// First stars, masked off before the horizon glow, drawn on the ranges' grid: a star is one cell,
-	// like every other pixel in the frame, where a one-pixel dot over six-pixel cells read as dust.
-	// Two coprime tile sizes (in cells), so no repeat lines up.
+	// First stars, masked off before the horizon glow. Two coprime tile sizes, so no repeat lines up.
 	stars: {
 		appearStart: 0.52,
 		appearEnd: 0.76,
 		maxOpacity: 0.9,
 		colors: ['star', 'star', 'linen', 'glow', 'chalk'],
-		// a star's alpha from its brightness roll; past `crossAbove` it is a cross, a cell each way — a
-		// landmark, so rare, and the tiles wide enough that a frame holds no more than two of each
+		// a star's alpha from its brightness roll; past `doubleAbove` it is two cells across
 		alpha: { from: 0.35, run: 0.65 },
-		crossAbove: 0.97,
+		doubleAbove: 0.92,
 		layers: [
-			{ cells: 127, count: 60, depth: 4 },
-			{ cells: 181, count: 74, depth: 8 },
+			{ tile: 359, count: 14, depth: 4 },
+			{ tile: 512, count: 18, depth: 8 },
 		],
 		// A handful breathe and the rest hold still: twinkling the whole field reads as noise.
 		twinkle: { count: 4, periodMs: 2600, spreadVh: 34 },
