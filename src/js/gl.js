@@ -5,8 +5,11 @@ export const FULLSCREEN_QUAD = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1,
 export const UNIT_QUAD = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
 export const QUAD_VERTICES = 6
 
-// Throws on a compile or link failure so the caller can fall back instead of drawing black.
-export function createProgram(gl, vertexSrc, fragmentSrc) {
+// Starts a compile and link and hands back the wait on it. Where the driver links in the background
+// (KHR_parallel_shader_compile) ready() polls it without blocking; without that it is true at once
+// and finish() blocks instead. finish() returns the linked program, or throws on a compile or link
+// failure so the caller can fall back instead of drawing black.
+export function compileProgram(gl, vertexSrc, fragmentSrc) {
 	const program = gl.createProgram()
 	for (const [type, src] of [
 		[gl.VERTEX_SHADER, vertexSrc],
@@ -15,23 +18,26 @@ export function createProgram(gl, vertexSrc, fragmentSrc) {
 		const shader = gl.createShader(type)
 		gl.shaderSource(shader, src)
 		gl.compileShader(shader)
-		const ok = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
-		const log = gl.getShaderInfoLog(shader)
 		gl.attachShader(program, shader)
 		gl.deleteShader(shader)
-		if (!ok) {
-			gl.deleteProgram(program)
-			throw new Error(`shader compile failed: ${log}`)
-		}
 	}
 	gl.linkProgram(program)
-	if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-		const log = gl.getProgramInfoLog(program)
-		gl.deleteProgram(program)
-		throw new Error(`program link failed: ${log}`)
+	const parallel = gl.getExtension('KHR_parallel_shader_compile')
+	return {
+		ready: () => !parallel || gl.getProgramParameter(program, parallel.COMPLETION_STATUS_KHR),
+		finish() {
+			if (gl.getProgramParameter(program, gl.LINK_STATUS)) return program
+			const logs = (gl.getAttachedShaders(program) ?? []).map(s => gl.getShaderInfoLog(s))
+			const log = [...logs, gl.getProgramInfoLog(program)].filter(Boolean).join('\n')
+			gl.deleteProgram(program)
+			throw new Error(`program failed: ${log}`)
+		},
 	}
-	return program
 }
+
+// the same, waited for on the spot
+export const createProgram = (gl, vertexSrc, fragmentSrc) =>
+	compileProgram(gl, vertexSrc, fragmentSrc).finish()
 
 // Keyed by name with any `[0]` dropped, so an array uniform reads like a scalar one.
 export const uniformLocations = (gl, program, names) =>
