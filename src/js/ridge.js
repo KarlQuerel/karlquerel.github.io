@@ -3,7 +3,7 @@
 import { DEPARTURE_RIDGE, ENTRY } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
 import { clamp01, smoothstep } from './math.js'
-import { norm } from './vec3.js'
+import { paintHabitat } from './habitat.js'
 import {
 	ditherIndex,
 	ditherThreshold,
@@ -51,7 +51,8 @@ export function openSprite(el, w, h) {
 }
 
 // The tidy pass every sprite takes: a cell whose four neighbours all agree becomes what they are.
-export function tidySprite(img, w, h, passes) {
+// `keep` spares cells that must not follow their neighbours.
+export function tidySprite(img, w, h, passes, keep) {
 	const cells = new Uint32Array(img.data.buffer)
 	for (let pass = 0; pass < passes; pass++) {
 		for (let y = 1; y < h - 1; y++) {
@@ -60,6 +61,7 @@ export function tidySprite(img, w, h, passes) {
 				const around = cells[i - 1]
 				if (
 					around !== cells[i] &&
+					!keep?.(i) &&
 					cells[i + 1] === around &&
 					cells[i - w] === around &&
 					cells[i + w] === around
@@ -75,6 +77,8 @@ export function tidySprite(img, w, h, passes) {
 const ROCK = 0
 const SNOW = 1
 const FIXED = 2
+// the habitat's trail: its own ramp, walked into the night with the rock
+const PATH = 3
 
 // A column's facing under a light (`Lx` across, `Ly` up, a unit vector): the slope's turn toward the
 // sun's side, and under a high sun the gentle ground over the steep, weighted by `ridgeUp` and taken
@@ -175,6 +179,9 @@ export function cutRidge(el, band, visitSeed, frame) {
 	const rough = new Float32Array(w * h)
 	const haze = new Float32Array(w * h)
 	const bite = new Uint8Array(w * h)
+	// a trail cell's rung on the path's ramp, and how much of the doorway's light reaches each cell
+	const tone = new Uint8Array(w * h)
+	const glow = new Float32Array(w * h)
 	const tops = new Uint16Array(w)
 	const slope = new Float32Array(w)
 	// what the habitat lays down stands in its own light, so it is painted here and never relit
@@ -259,8 +266,13 @@ export function cutRidge(el, band, visitSeed, frame) {
 				w,
 				h,
 				profile,
-				tops,
-				kind,
+				// ground the doorway's light can fall on: the range, or what the habitat laid down
+				solid: (x, y) => y >= tops[x] || kind[y * w + x] === FIXED,
+				tread: (x, y, rung) => {
+					kind[y * w + x] = PATH
+					tone[y * w + x] = rung
+				},
+				light: (x, y, f) => (glow[y * w + x] = f),
 				faceAt,
 				seed: band.seed + visitSeed,
 			})
@@ -277,6 +289,8 @@ export function cutRidge(el, band, visitSeed, frame) {
 		rough,
 		haze,
 		bite,
+		tone,
+		glow,
 		tops,
 		slope,
 		steep,
@@ -295,165 +309,12 @@ export function cutRidge(el, band, visitSeed, frame) {
 	}
 }
 
-// The habitat (band.habitat): one dome in the middle stretch — the journey was TO somewhere. Its lamp,
-// the doorway and the pool it throws on the ground, is kept aside for lightRidge: lit as the sun goes.
-function paintHabitat(put, hab, range) {
-	const { w, h, profile } = range
-	const lamp = []
-	const shellShades = hab.shades.map(name => PALETTE[name])
-	const half = (hab.w - 1) / 2
-	const groundAt = x => Math.round(h * (1 - profile[Math.max(0, Math.min(w - 1, x))]))
-	// wherever the middle stretch is lowest; the footing buries the downhill edge
-	let hx = Math.round(w * 0.5)
-	for (let x = Math.round(w * 0.25); x < w * 0.75; x++) {
-		if (profile[x] < profile[hx]) hx = x
-	}
-	// footed on the lowest ground it spans
-	let base = 0
-	for (let dx = -half; dx <= half; dx++) base = Math.max(base, groundAt(hx + dx))
-	const site = { hx, base, half, shellShades }
-
-	paintDome(put, hab, range, site)
-	// the shell's ground shadow, thrown along the surface away from the sun — a shape without one floats
-	const shadowDir = -Math.sign(ENTRY.ridgeLight)
-	for (let i = 1; i <= hab.shadowLen; i++) {
-		const x = hx + (half + i) * shadowDir
-		if (x < 0 || x >= w) continue
-		const y = Math.round(h * (1 - profile[x]))
-		if (i > hab.shadowLen - 2 && ditherThreshold(x, y) > 0.5) continue
-		put(x, y, shellShades[0])
-	}
-	paintTrail(put, hab, range, site)
-	spillPool(lamp, hab, range, site)
-
-	// The entrance is an arch, not a slab: ember walls around a hotter core read as light from inside.
-	// By day it is a dark doorway, as a doorway is; the lit cells wait on the lamp.
-	const light = PALETTE[hab.light]
-	const glow = PALETTE[hab.glow]
-	const arch = (x, y, col) => {
-		put(x, y, shellShades[0])
-		if (x >= 0 && y >= 0 && x < w && y < h) lamp.push({ x, y, col })
-	}
-	arch(hx - 1, base, light)
-	arch(hx + 1, base, light)
-	arch(hx - 1, base - 1, light)
-	arch(hx + 1, base - 1, light)
-	arch(hx, base - 2, light)
-	arch(hx, base, glow)
-	arch(hx, base - 1, glow)
-
-	// The chimney: one column standing off the shell, its lip on the rim shade so the sun catches it.
-	const vx = hx + hab.vent.at
-	const shell = Math.max(
-		1,
-		Math.round((hab.h + hab.sink) * Math.sqrt(1 - (hab.vent.at / (half + 0.5)) ** 2)) - hab.sink
-	)
-	const lip = base - shell - hab.vent.h + 1
-	const ventGround = groundAt(vx)
-	const rim = PALETTE[hab.rim]
-	for (let y = lip; y <= base - shell; y++) {
-		if (y <= ventGround) put(vx, y, y === lip ? rim : shellShades[1])
-	}
-	return { vent: { x: (vx + 0.5) / w, y: lip / h }, lamp }
-}
-
-// The shell, lit off a real surface normal, gathering sun and sky separately at each cell.
-function paintDome(put, hab, { h, w, profile, faceAt }, { hx, base, half, shellShades }) {
-	const sunDir = norm([ENTRY.ridgeLight, hab.sunUp, hab.sunFront])
-	const edgeShades = [shellShades[0], shellShades[2], shellShades[3], PALETTE[hab.rim]]
-	for (let dx = -half; dx <= half; dx++) {
-		const x = hx + dx
-		if (x < 0 || x >= w) continue
-		// The shell springs from `sink` cells UNDER the ground, so what stands above is the top of a bigger dome.
-		const rise = Math.round((hab.h + hab.sink) * Math.sqrt(1 - (dx / (half + 0.5)) ** 2))
-		// A dome is its own shape, but it stands in the mountain's light and not in its own.
-		const u = dx / (half + 0.5)
-		const bedded = hab.bed + (1 - hab.bed) * clamp01(faceAt(x))
-		// The hill in front buries it. `base` is the LOWEST ground the shell spans, so other columns stand above.
-		const ground = Math.round(h * (1 - profile[x]))
-		const foot = base + hab.sink
-		// what is left of the column once the hill has buried it; too little is a stray cell
-		if (rise - Math.max(0, foot - ground) < hab.minRise) continue
-		let crownLit = 0
-		let footCourse = true
-		for (let dy = 0; dy < rise; dy++) {
-			const y = foot - dy
-			const v = dy / (hab.h + hab.sink)
-			const nz = Math.sqrt(Math.max(0, 1 - u * u - v * v))
-			const lit = clamp01(
-				hab.ambient +
-					hab.sun * bedded * clamp01(u * sunDir[0] + v * sunDir[1] + nz * sunDir[2]) +
-					hab.sky * v
-			)
-			crownLit = lit
-			if (y > ground) continue
-			// Panel seams run as longitude, not screen x: across the width they came out as a cylinder's meridians.
-			const lon = Math.atan2(u, Math.max(nz, 1e-3))
-			const m = (lon / Math.PI + 0.5) * hab.panels
-			const onSeam = v < hab.panelTop && Math.abs(m - Math.round(m)) * (1 / hab.panelSeam) < 1
-			// The base course: the lowest cell a column shows is where shell meets ground, and it drops a notch.
-			const shade = clamp01(
-				lit - (onSeam ? hab.panelDip : 0) - (footCourse ? hab.footDip : 0)
-			)
-			footCourse = false
-			put(x, y, shellShades[seamIndex(shade, shellShades.length, x, y, ENTRY.ridgeSeam)])
-		}
-		// The crown is lit by the sky too. `lip` is the skylight floor, so the top edge stays above the body.
-		const edgeY = foot - rise + 1
-		if (edgeY <= ground) {
-			// Seamed, not checkered: a one-cell rim alternating shades is a dotted line, and that is not an edge.
-			const lip = clamp01(crownLit + hab.rimLift)
-			put(x, edgeY, edgeShades[seamIndex(lip, edgeShades.length, x, edgeY, ENTRY.ridgeSeam)])
-		}
-	}
-}
-
-// The worn path down the face: a solid tread with a dithered fringe, widening as it nears.
-function paintTrail(put, hab, { w, h, profile, seed }, { hx, base }) {
-	const trailShades = hab.pathShades.map(name => PALETTE[name])
-	for (let y = base + 1; y < h; y++) {
-		const t = (y - base) / Math.max(1, h - 1 - base)
-		const cx = hx + 0.5 + (fbm1(y / hab.pathWanderCells, seed + 13) - 0.5) * hab.pathMeander * t
-		const wPath = (1 + hab.pathSpread * t) / 2
-		for (let dx = -Math.ceil(wPath) - 1; dx <= Math.ceil(wPath) + 1; dx++) {
-			const x = Math.floor(cx) + dx
-			if (x < 0 || x >= w) continue
-			if (y <= Math.round(h * (1 - profile[x]))) continue
-			const d = Math.abs(x + 0.5 - cx)
-			if (d > wPath + 0.5) continue
-			if (d > wPath - 0.5 && ditherThreshold(x, y) > 0.5) continue
-			put(x, y, trailShades[ditherIndex(1 - t, trailShades.length, x, y)])
-		}
-	}
-}
-
-// The doorway's pool, squashed along the ground and thrown only where something is there to be lit.
-function spillPool(lamp, hab, { w, h, tops, kind }, { hx, base }) {
-	const spillShades = hab.spillShades.map(name => PALETTE[name])
-	const R = hab.spillR
-	for (let sy = -R; sy <= R; sy++) {
-		for (let sx = -R; sx <= R; sx++) {
-			const x = hx + sx
-			const y = base + hab.spillDrop + sy
-			if (x < 0 || x >= w || y < 0 || y >= h) continue
-			if (y < tops[x] && kind[y * w + x] !== FIXED) continue
-			const f = clamp01(1 - Math.hypot(sx, sy * hab.spillSquash) / R) ** hab.spillPower
-			if (f <= ditherThreshold(x, y)) continue
-			lamp.push({
-				x,
-				y,
-				col: spillShades[seamIndex(f, spillShades.length, x, y, ENTRY.ridgeSeam)],
-			})
-		}
-	}
-}
-
 // The range in the light it stands in now: each cell's facing under the sun as it stands, the shadow
 // the peak on the sun's side throws across it, the sun's warmth near the disc, the night walk down its
 // ramp, then the tidy pass. The cut paid for the noise; this is arithmetic over kept cells, so the
 // ranges follow the sun across the sky.
 export function lightRidge(sprite, sky) {
-	const { ctx, w, h, cell, band, kind, thr, rough, haze, bite, tops } = sprite
+	const { ctx, w, h, cell, band, kind, thr, rough, haze, bite, tone, glow, tops } = sprite
 	const { line, under, term, frameH, fixed, img, lamp } = sprite
 	const { shades, snowShades, rockFoot, snowFoot, at, rockCrest, snowyCrest } = nightRamps(
 		band,
@@ -482,10 +343,38 @@ export function lightRidge(sprite, sky) {
 	const faceDepth = band.faceDepth
 	// the lean reaches only as far as the face does: under it the mass is dark anyway, and a cell a
 	// whole band down read the facing of a column twenty cells away, which striped it
-	const faceAt = (x, d) =>
-		faceCol[Math.max(0, Math.min(w - 1, Math.round(x + leanCol[x] * Math.min(d, faceDepth))))]
+	// blended between the two columns it falls between: rounded, a cap under a disc overhead swapped
+	// halves each time the lean crossed a half cell
+	const faceAt = (x, d) => {
+		const at = Math.max(0, Math.min(w - 1, x + leanCol[x] * Math.min(d, faceDepth)))
+		const lo = Math.floor(at)
+		const hi = Math.min(w - 1, lo + 1)
+		return faceCol[lo] + (faceCol[hi] - faceCol[lo]) * (at - lo)
+	}
 	// outside the glow's reach it promotes nothing, so the distance is only taken inside its box
 	const G = ENTRY.sunGlowCells
+	// the habitat's trail: its ramp, and the darker steps under it that the night walks it into
+	const trail = band.habitat?.path
+	const pathShades = trail?.shades.map(name => PALETTE[name])
+	const pathFoot = trail?.foot.map(name => PALETTE[name])
+	// The doorway's light, once the lamp is on: a warm ramp of its own, faint while the sky still holds
+	// the sun and full only once the rock is at its night floor. The cell's crag, its stratum and the
+	// path's tread all move it a step, so the surface still reads under the light instead of a wash.
+	const DL = band.habitat?.doorLight
+	const lampOn = DL && sky.ground >= band.habitat.lampAt
+	const dark = lampOn
+		? clamp01((sky.ground - band.habitat.lampAt) / (ENTRY.sun.night - band.habitat.lampAt))
+		: 0
+	const lampGain = lampOn ? DL.gain * (DL.dusk + (1 - DL.dusk) * dark) : 0
+	const warm = DL?.shades.map(name => PALETTE[name])
+	// the warm tone a lit cell takes, or null where the light is too faint to beat the night
+	const lampAt = (i, x, y, texture) => {
+		if (!lampGain || !glow[i]) return null
+		const v = clamp01(glow[i] * lampGain * (1 + rough[i] * DL.grain)) * warm.length
+		// a threshold of its own, not Bayer: the gain sweeps the whole pool at dusk
+		const r = Math.floor(v) + (v % 1 > ditherThreshold(y, x, 1) ? 1 : 0) - 1 + texture
+		return r < 0 ? null : warm[Math.min(warm.length - 1, r)]
+	}
 	// read once, not once a cell: this loop runs every step of the sun
 	const { ridgeDepthFade, ridgeContrast, ridgeAmbient, ridgeSeam, strataMinLit, snowAmbient } =
 		ENTRY
@@ -516,6 +405,11 @@ export function lightRidge(sprite, sky) {
 		for (let y = yTop; y < h; y++) {
 			const i = y * w + x
 			if (kind[i] === FIXED) continue
+			if (kind[i] === PATH) {
+				// the tread's paler crown takes the light a step brighter
+				write(x, y, lampAt(i, x, y, tone[i]) ?? at(pathShades, pathFoot, tone[i], thr[i]))
+				continue
+			}
 			const snowy = kind[i] === SNOW
 			const d = y - yTop
 			// the face is a band under the crest; below it the mass goes dark
@@ -541,17 +435,36 @@ export function lightRidge(sprite, sky) {
 			lit = amb + (1 - amb) * lit
 			lit += (1 - lit) * haze[i]
 			const ramp = snowy ? snowShades : shades
+			// the disc's warmth near it, in ramp steps
+			const glow =
+				glowCol && Math.abs(y - sunY) < G
+					? clamp01(1 - Math.sqrt((x - sunX) ** 2 + (y - sunY) ** 2) / G) *
+						cast *
+						(ENTRY.sunGlowLevels - 1)
+					: 0
 			// `seam` holds the checker to a narrow window either side of a step and leaves the rest solid.
-			let idx = seamIndex(lit, ramp.length, x, y, ridgeSeam)
+			// Snow takes the glow before it is rounded: rounded apart, the two steps crossed a frame apart
+			// and a cap cell went up, down and up again.
+			let idx = seamIndex(
+				snowy ? clamp01(lit + glow / (ramp.length - 1)) : lit,
+				ramp.length,
+				x,
+				y,
+				ridgeSeam
+			)
 			if (kind[i] === ROCK && lit > strataMinLit) idx = Math.max(0, idx - bite[i])
-			if (glowCol && Math.abs(y - sunY) < G) {
-				const reach = clamp01(1 - Math.sqrt((x - sunX) ** 2 + (y - sunY) ** 2) / G)
+			// on the cell's own threshold: a Bayer lattice slid across the rock with the disc
+			if (!snowy && glow)
 				idx = Math.min(
 					ramp.length - 1,
-					idx + ditherIndex(reach * cast, ENTRY.sunGlowLevels, x, y)
+					idx + Math.floor(glow) + (glow % 1 > thr[i] ? 1 : 0)
 				)
-			}
-			write(x, y, at(ramp, snowy ? snowFoot : rockFoot, idx, thr[i]))
+			write(
+				x,
+				y,
+				lampAt(i, x, y, kind[i] === ROCK ? -bite[i] : 0) ??
+					at(ramp, snowy ? snowFoot : rockFoot, idx, thr[i])
+			)
 		}
 		// The lit rim along the top: snow-capped where a cap hangs, warmed where the crest runs near the
 		// disc, and down in the shade with its face — a bright rim over a shadowed face read as a glitch.
@@ -577,13 +490,16 @@ export function lightRidge(sprite, sky) {
 			)
 		)
 	}
+	// No pixel stands alone: a lone cell inside another is the tell of a generated sprite.
+	// Snow is spared: a cap is relit every step, and a cell tidied to its neighbours flashed for a frame
+	// each time one of them crossed a seam.
+	tidySprite(img, w, h, ENTRY.tidyPasses, i => kind[i] === SNOW)
 	// The habitat's lamp is a switch: thrown once the rock's own dusk is `lampAt` steps along, the disc
-	// going behind the peaks, thrown back there at dawn — the doorway and the pool it throws, all at once.
+	// going behind the peaks, thrown back there at dawn — the doorway and the light it throws at once.
+	// Laid after the tidy, which would clot the light's dither into blobs.
 	if (lamp.length && sky.ground >= band.habitat.lampAt) {
 		for (const c of lamp) write(c.x, c.y, c.col)
 	}
-	// No pixel stands alone: a lone cell inside another is the tell of a generated sprite.
-	tidySprite(img, w, h, ENTRY.tidyPasses)
 	ctx.putImageData(img, 0, 0)
 }
 
@@ -600,7 +516,9 @@ function nightRamps(band, ground) {
 	const part = ground - whole
 	const at = (ramp, foot, i, t) => {
 		const j = i + foot.length - whole - (part > t ? 1 : 0)
-		return j < foot.length ? (foot[Math.max(0, j)] ?? ramp[0]) : ramp[j - foot.length]
+		return j < foot.length
+			? (foot[Math.max(0, j)] ?? ramp[0])
+			: ramp[Math.min(ramp.length - 1, j - foot.length)]
 	}
 	// a crest is the top of its band's own ramp, so night walks it down at the rock's rate
 	const crestOf = (ramp, foot, tip) => {
