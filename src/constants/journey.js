@@ -644,7 +644,7 @@ export const ENTRY = {
 	parallax: { cloud: 16, distant: 5, far: 11, near: 22 },
 
 	// The dusk sky, dark top to bright horizon, dithered onto the same grid the ranges are cut on.
-	// Warm the whole way: `haze`, a mauve rung between flare and dune, drew a grey ring round the sun.
+	// `haze` is the mauve belt the glare passes through on its way out from the disc.
 	sky: [
 		'void',
 		'ink',
@@ -656,6 +656,7 @@ export const ENTRY = {
 		'brick',
 		'clay',
 		'flare',
+		'haze',
 		'dune',
 		'sand',
 	],
@@ -718,10 +719,11 @@ export const ENTRY = {
 		// the fall itself — on a straight line the fan was invisible for the first twenty seconds.
 		rays: {
 			count: 12,
-			// Under a rung of lift and a few cells wide: a spoke then notches the ring edges it crosses and
-			// nowhere stands alone. Sharper and a full rung, over the calmed corona it was a one-cell hair.
+			// Well under a rung of lift and a few cells wide, so a spoke only swells the glare a little along
+			// its line: a real sun has no rays, only an unevenness in its glare. Sharper and a full rung,
+			// over the calmed corona it drew one-cell hairs.
 			sharp: 2,
-			amp: 0.8,
+			amp: 0.6,
 			reach: 0.3,
 			keepTop: 0.3,
 			floor: 0.55,
@@ -753,14 +755,28 @@ export const ENTRY = {
 		// How much of the sky's grain the corona smooths away, whole at the disc and gone at its reach:
 		// rings broken on the haze and mottle read as blotches, not as a glow.
 		coronaCalm: 0.85,
-		// The disc holds its cream: in this palette every tone under it is a stripe, a dot screen or a snap
-		// across the sun, and none reads as one. The rim cools as the sun comes down, one tone per share
-		// of the drop, lower limb first across a band `blend` radii tall; the rim and the shrinking corona
-		// carry the reddening. Whatever a ramp holds stops where the sky's own top is: a sun is the
-		// brightest thing in its glare, and a disc walked under the corona read as an eclipse.
-		disc: ['glow'],
+		// The glare is one dithered gradient from the disc out, not rungs with stippled edges: `coronaSeam`
+		// is the share of each gap that carries the checker (0.5 is all of it, and read as a carpet) and
+		// `coronaJitter` how far its Bayer lattice is broken. Flat rings read as layers; a glow has none.
+		coronaSeam: 0.3,
+		coronaJitter: 0,
+		// The disc and its rim cool as the sun comes down, one tone per share of the drop, lower limb first
+		// across a band `blend` radii tall — as tall as the disc, so a low sun wears a gradient from a paler
+		// crown to a redder foot, as air reddens a real one, on an ordered dither (a cell's own threshold
+		// made it a dot screen). The disc stops where the sky's own ramp tops out: a sun is the brightest
+		// thing in its glare, and a disc walked under the corona read as an eclipse.
+		// The disc holds its cream through the first share and goes to sand over the second, so it is still
+		// the brightest thing in its glare while it stands clear and only wears the orange as the peaks
+		// take it; the rim warms through the first share and then holds.
+		disc: ['glow', 'glow', 'sand'],
 		rim: ['sand', 'dune'],
 		blend: 2,
+		// The share of the drop (`low`) the cooling runs over. The visitor lands at about 0.3 and the
+		// peaks take the disc near 0.7, so run over the whole drop it was a tan sun on arrival and the
+		// red of it happened behind the rock.
+		redden: { from: 0.3, to: 0.7 },
+		// how much shorter than wide the disc stands at the skyline: refraction squashes a real low sun
+		flatten: 0.14,
 		// how much of the corona goes as the sun comes down — glare falls off through more air, and the
 		// halo would otherwise reach the sky's top and swallow a disc that has cooled to the same tone
 		coronaFade: 0.7,
