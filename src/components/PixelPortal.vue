@@ -26,19 +26,30 @@
 	@use '@/styles/mixins' as *;
 
 	$portal-radius: 4rem;
-	$portal-icon-size: 5.5rem;
+	// The sprites (public/assets/contact) are 50 art pixels across, drawn at 4 source px each. Shown
+	// at a whole number of CSS px per art pixel: scaled to a rem they came out at 1.76 px a pixel, and
+	// the nearest-neighbour downscale dropped rows, so every outline ran thick and thin.
+	$portal-art-cols: 50;
+	$portal-art-px: 2px;
+	$portal-icon-size: $portal-art-cols * $portal-art-px;
 	$portal-pad-x: 1.4rem;
 	$portal-pad-y: 0.9rem;
 	// a step below $heading-pixel-size so page headings stay dominant
 	$portal-label-size: px8(2);
-	// Phone sizes: three tiles share one line, so the icon comes down and the padding with it.
-	$portal-icon-size-mobile: 3.75rem;
+	// Phone sizes: three tiles share one line, so the icon comes down a whole step and the padding with it.
+	$portal-art-px-mobile: 1px;
+	$portal-icon-size-mobile: $portal-art-cols * $portal-art-px-mobile;
 	$portal-pad-mobile: 0.5rem;
 	// One 8px step. Press Start 2P is drawn at 8px, so this is its native size, not a shrunk 16.
 	$portal-label-size-mobile: px8(1);
-	// The resting rim: one whole pixel, so it stays one on a retina screen too.
-	$rim: 1px;
 	$rim-colour: rgba($yellow, 0.85);
+
+	// The resting rim: one art pixel on every side, so it reads as part of the sprite. Four hard
+	// offsets and no blur: the scene bands its colour, it does not glow.
+	@mixin rim-lit($px) {
+		filter: drop-shadow($px 0 0 $rim-colour) drop-shadow(-$px 0 0 $rim-colour)
+			drop-shadow(0 $px 0 $rim-colour) drop-shadow(0 (-$px) 0 $rim-colour);
+	}
 
 	.portal {
 		display: flex;
@@ -89,14 +100,15 @@
 		image-rendering: pixelated;
 		// Rim-lit at rest, so the tile reads as a live control. It carries no frame, no plate and no
 		// lift, and a bare grey shape with none of those is the shape of a disabled one whatever the
-		// label says. Four hard offsets and no blur: the scene bands its colour, it does not glow.
-		filter: drop-shadow($rim 0 0 $rim-colour) drop-shadow(-$rim 0 0 $rim-colour)
-			drop-shadow(0 $rim 0 $rim-colour) drop-shadow(0 (-$rim) 0 $rim-colour);
+		// label says.
+		@include rim-lit($portal-art-px);
 	}
 
+	// A lift of two art pixels and no scale: a sprite scaled by a few percent lands its pixels on
+	// fractions, and the grid the rest of the scene keeps went soft on the one thing under the cursor.
 	.portal:hover .portal__icon,
 	.portal:focus-visible .portal__icon {
-		transform: scale(1.09) translateY(-5px);
+		transform: translateY(-2 * $portal-art-px);
 		filter: drop-shadow(0 0 10px rgba($yellow, 0.8)) drop-shadow(0 0 24px rgba($yellow, 0.4));
 		animation: icon-bloom 1.8s ease-in-out infinite;
 	}
@@ -153,6 +165,10 @@
 		.portal__icon,
 		.portal__img {
 			width: $portal-icon-size-mobile;
+		}
+
+		.portal__img {
+			@include rim-lit($portal-art-px-mobile);
 		}
 
 		.portal__label {
