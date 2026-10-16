@@ -3,8 +3,8 @@
 
 import { ENTRY } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
-import { clamp01 } from './math.js'
-import { fallThreshold, fbm2, seamIndex } from './pixelNoise.js'
+import { clamp01, ramp as rampOf } from './math.js'
+import { ditherThreshold, fallThreshold, fbm2, seamIndex } from './pixelNoise.js'
 import { cellFor } from './ridge.js'
 
 // The sky's grain: the haze and mottle, the only part of it no sun can touch. Generating it is nearly
@@ -181,7 +181,7 @@ export function rebuildSky(sky, sun) {
 // disc is painted again — the cost no longer follows the size of the frame. `cx` keeps its fraction:
 // the edge cells answer to it, so the sun crosses the grid instead of hopping it.
 export function paintSun(sky, now) {
-	const { el, w, h, ramp, top, thr, base, dark, img } = sky
+	const { el, w, h, ramp, top, base, dark, img } = sky
 	const S = ENTRY.sun
 	// The disc and its rim cool down their ramps as the sun comes down the sky, from the lower limb up,
 	// the way air reddens a low sun from the horizon: a band `blend` radii tall between the tone they
@@ -190,7 +190,8 @@ export function paintSun(sky, now) {
 	// One seam serves both, so both walk the same shares of the drop: the count comes from the longer
 	// ramp and a shorter one holds its last tone. Counted off the disc alone, a disc of one tone left
 	// the rim on its first shade all day and the sun never reddened at all.
-	const heat = now.low * (Math.max(S.disc.length, S.rim.length) - 1)
+	const heat =
+		rampOf(now.low, S.redden.from, S.redden.to) * (Math.max(S.disc.length, S.rim.length) - 1)
 	const warm = Math.floor(heat)
 	const tone = (names, i) => PALETTE[names[Math.min(names.length - 1, i)]]
 	const [discLo, discHi] = [tone(S.disc, warm), tone(S.disc, warm + 1)]
@@ -200,8 +201,9 @@ export function paintSun(sky, now) {
 	// the band starts wholly under the disc and ends wholly over it, so neither tone ever snaps
 	const band = S.blend * S.r
 	const seamY = cy + S.r + band / 2 - (heat - warm) * (2 * S.r + band)
+	// refraction squashes the disc and its rim toward the skyline; the glare round them stays round
+	const squash = 1 - S.flatten * now.low
 	const reach = S.r * S.coronaR
-	const seam = ENTRY.skySeam
 	const px = img.data
 	const disc = {
 		x0: Math.max(0, Math.ceil(cx - reach)),
@@ -218,21 +220,27 @@ export function paintSun(sky, now) {
 			if (d > reach) continue
 			const i = y * w + x
 			let col
-			const cooler = (y - seamY) / band + 0.5 > thr[i]
-			if (d <= S.r) col = cooler ? discHi : discLo
-			else if (d <= S.r + 1.5) col = cooler ? rimHi : rimLo
+			// on an ordered dither, so the disc's gradient reads as shading and not as a dot screen
+			const cooler = (y - seamY) / band + 0.5 > ditherThreshold(x, y)
+			const dd = Math.sqrt((x - cx) ** 2 + ((y - cy) / squash) ** 2)
+			if (dd <= S.r) col = cooler ? discHi : discLo
+			else if (dd <= S.r + 1.5) col = cooler ? rimHi : rimLo
 			else {
 				// the corona climbs the sky's own ramp rather than adding light, so every pixel is a palette entry
 				const g =
 					clamp01(1 - (d - S.r) / (reach - S.r)) *
 					now.light *
 					(1 - S.coronaFade * now.low)
-				// the cell's own threshold, not Bayer: `g` carries a global fade, and a Bayer rung flips together;
-				// dithered only across the seam between two rungs, as the sky itself is
+				// Dithered across the whole gap between rungs (`coronaSeam`), so the glare is one gradient and
+				// not rings. A flat ring was where a global fade flipped a Bayer level all at once, which is
+				// why this once took the cell's own threshold; a gradient has no flat to flip.
 				const v = g * g * (S.coronaLift - 1)
 				const f = v % 1
 				const up =
-					Math.abs(f - 0.5) <= seam ? (f - 0.5 + seam) / (2 * seam) > thr[i] : f >= 0.5
+					Math.abs(f - 0.5) <= S.coronaSeam
+						? (f - 0.5 + S.coronaSeam) / (2 * S.coronaSeam) >
+							ditherThreshold(x, y, S.coronaJitter)
+						: f >= 0.5
 				const step = dark[i] + Math.floor(v) + (up ? 1 : 0)
 				col = ramp[step > top ? top : step]
 			}
