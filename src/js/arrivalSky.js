@@ -107,6 +107,10 @@ function placeSky(sky, sun) {
 	const S = ENTRY.skyLight
 	const R = ENTRY.sun.rays
 	const [sx, sy] = [sun.x * w, sun.y * h]
+	// The corona's reach, inside which the grain is smoothed away toward the disc (`coronaCalm`): the
+	// halo is painted as whole rungs over this sky, so rings broken on the grain came out as blotches.
+	const { r: discR, coronaR, coronaCalm } = ENTRY.sun
+	const halo = discR * coronaR
 	// The fan grows as the disc falls — a low sun has the air to scatter through — but keeps `floor`
 	// of itself at the top of the arc, where the visitor arrives.
 	const gain = R.floor + (1 - R.floor) * Math.sqrt(sun.low)
@@ -131,7 +135,9 @@ function placeSky(sky, sun) {
 			const dy = Math.max(0, sy - y)
 			const off = Math.sqrt(dx * dx + dy * dy) / (S.spread * h)
 			const near = Math.pow(clamp01(1 - off), ENTRY.skyGamma)
-			let lit = alt * (1 - S.pull) + near * S.pull + grain[i]
+			const calm =
+				coronaCalm * clamp01(1 - (Math.hypot(x - sx, y - sy) - discR) / (halo - discR))
+			let lit = alt * (1 - S.pull) + near * S.pull + grain[i] * (1 - calm)
 			if (held > 0) lit += rayAt(x - sx, y - sy, reach, R, spin, sway) * held * lift
 			step[i] = Math.min(
 				top,
