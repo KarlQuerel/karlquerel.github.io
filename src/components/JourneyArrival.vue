@@ -284,9 +284,13 @@
 		}
 	}
 
+	// The bug sprite is 50 art pixels across (public/assets/contact, 4 source px each). At 25px that is
+	// half a CSS px an art pixel, a whole device pixel on a retina screen; at 1.6em it was 0.51 and the
+	// downscale dropped rows unevenly.
 	.arrival__report-icon {
-		width: 1.6em;
+		width: 25px;
 		height: auto;
+		image-rendering: pixelated;
 	}
 
 	// The portals hold their row here (portal-row), so the menu keeps the size and the stand-off it
