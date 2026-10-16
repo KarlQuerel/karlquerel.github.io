@@ -5,7 +5,7 @@
 		<!-- two coprime tiles, so the field never repeats inside a viewport -->
 		<div
 			v-for="(layer, i) in ENTRY.stars.layers"
-			:key="layer.cells"
+			:key="layer.tile"
 			class="entry__stars"
 			:style="starStyle(layer, i)"
 		/>
@@ -199,15 +199,13 @@
 		return smoothstep(t) * maxOpacity
 	})
 
-	// The tiles are drawn on the cut's grid (drawStarTile), so they wait on it like the ranges do.
 	function starStyle(layer, i) {
-		const tile = layer.cells * (sizes.value.sky?.cell ?? 0)
 		return {
 			opacity: starFade.value.toFixed(3),
 			display: starFade.value > 0 && starTiles.value[i] ? null : 'none',
 			'--depth': layer.depth,
 			backgroundImage: `url(${starTiles.value[i]})`,
-			backgroundSize: `${tile}px ${tile}px`,
+			backgroundSize: `${layer.tile}px ${layer.tile}px`,
 		}
 	}
 
@@ -256,9 +254,6 @@
 			// the band by index, not by object: a ref wraps what it holds, so the object would not be found
 			vent.value = at && { ...at, band: ARRIVAL_BANDS.findIndex(band => band.key === at.key) }
 			lightSmoke()
-			starTiles.value = ENTRY.stars.layers.map((layer, i) =>
-				drawStarTile(visitSeed + i * 991, layer, grids.sky.cell)
-			)
 		})
 	}
 
@@ -273,6 +268,9 @@
 			cloudField.value = seedClouds(visitSeed)
 			cloudSprites.value = Array.from({ length: ENTRY.cloud.variants }, (_, i) =>
 				drawCloud(visitSeed + i * 137)
+			)
+			starTiles.value = ENTRY.stars.layers.map((layer, i) =>
+				drawStarTile(visitSeed + i * 991, layer)
 			)
 		})
 	})

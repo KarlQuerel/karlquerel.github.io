@@ -153,29 +153,21 @@ function shadeCloud(px, cleaned, w, h) {
 	}
 }
 
-// One tile of first-evening stars on the ranges' grid, `cell` px a cell; two tiles at coprime sizes
-// are what stop the field reading as wallpaper. The brightest are a cross, a cell each way.
-export function drawStarTile(seed, layer, cell) {
-	const { cells, count } = layer
-	const { alpha, crossAbove } = ENTRY.stars
+// One tile of first-evening stars; two at coprime sizes are what stop the field reading as wallpaper.
+export function drawStarTile(seed, layer) {
+	const { tile, count } = layer
+	const { alpha, doubleAbove } = ENTRY.stars
 	const colors = ENTRY.stars.colors.map(paletteRgb)
-	const { el, ctx } = sheet(cells * cell, cells * cell)
-	const put = (x, y) =>
-		ctx.fillRect(((x + cells) % cells) * cell, ((y + cells) % cells) * cell, cell, cell)
+	const { el, ctx } = sheet(tile, tile)
 	for (let i = 0; i < count; i++) {
-		const x = Math.floor(hash1(i, seed) * cells)
-		const y = Math.floor(hash1(i, seed + 101) * cells)
+		const x = Math.floor(hash1(i, seed) * tile)
+		const y = Math.floor(hash1(i, seed + 101) * tile)
 		const pick = hash1(i, seed + 202)
 		const bright = hash1(i, seed + 303)
 		ctx.globalAlpha = alpha.from + bright * alpha.run
 		ctx.fillStyle = colors[Math.floor(pick * colors.length)]
-		put(x, y)
-		if (bright > crossAbove) {
-			put(x - 1, y)
-			put(x + 1, y)
-			put(x, y - 1)
-			put(x, y + 1)
-		}
+		const size = bright > doubleAbove ? 2 : 1
+		ctx.fillRect(x, y, size, size)
 	}
 	return el.toDataURL()
 }
