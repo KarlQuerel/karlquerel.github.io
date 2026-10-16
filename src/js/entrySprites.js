@@ -1,4 +1,5 @@
-// The arrival's procedural sprites (PlanetEntry.vue): cloud puffs, star tiles and the bird sheet.
+// The arrival's procedural sprites (PlanetEntry.vue): cloud puffs, star tiles, the bird sheet and the
+// chimney's smoke.
 
 import { ENTRY } from '../constants/journey.js'
 import { PALETTE, paletteRgb } from '../constants/palette.js'
@@ -168,5 +169,22 @@ export function drawStarTile(seed, layer) {
 		const size = bright > doubleAbove ? 2 : 1
 		ctx.fillRect(x, y, size, size)
 	}
+	return el.toDataURL()
+}
+
+// One smoke puff, two cells by two: the corner toward the sun lit, the far one in shade. `side` is
+// -1 for a sun on the left, 1 on the right; `shades` runs lit, body, shade.
+export function drawPuff(shades, side) {
+	const { el, ctx } = sheet(2, 2)
+	const [lit, body, shade] = shades.map(name => paletteRgb(name))
+	const near = side < 0 ? 0 : 1
+	const put = (x, y, col) => {
+		ctx.fillStyle = col
+		ctx.fillRect(x, y, 1, 1)
+	}
+	put(near, 0, lit)
+	put(1 - near, 0, body)
+	put(near, 1, body)
+	put(1 - near, 1, shade)
 	return el.toDataURL()
 }
