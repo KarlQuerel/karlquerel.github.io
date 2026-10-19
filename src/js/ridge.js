@@ -3,7 +3,7 @@
 import { DEPARTURE_RIDGE, ENTRY } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
 import { clamp01, smoothstep } from './math.js'
-import { paintHabitat } from './habitat.js'
+import { lightHabitat, paintHabitat, shadeHabitat } from './habitat.js'
 import {
 	ditherIndex,
 	ditherThreshold,
@@ -73,10 +73,10 @@ export function tidySprite(img, w, h, passes, keep) {
 	}
 }
 
-// What a cut cell is, so a relight knows which ramp it walks — or that it is the habitat's own colour.
+// What a cut cell is, so a relight knows which ramp it walks — or that the habitat lights it.
 const ROCK = 0
 const SNOW = 1
-const FIXED = 2
+const HABITAT = 2
 // the habitat's trail: its own ramp, walked into the night with the rock
 const PATH = 3
 
@@ -171,7 +171,7 @@ function summitsOf(relief, reach) {
 // sun. Each face cell keeps what its light needs that the sun cannot change; lightRidge does the rest.
 export function cutRidge(el, band, visitSeed, frame) {
 	const { w, h, cell } = gridFor(band, frame)
-	const { ctx, img, put: fix } = openSprite(el, w, h)
+	const { ctx, img } = openSprite(el, w, h)
 	// Per cell: what it is, its own threshold for the night walk, its crag, the haze lifting it and the
 	// bite of the stratum it sits in. Per column: the crest row and the gained slope.
 	const kind = new Uint8Array(w * h)
@@ -184,11 +184,8 @@ export function cutRidge(el, band, visitSeed, frame) {
 	const glow = new Float32Array(w * h)
 	const tops = new Uint16Array(w)
 	const slope = new Float32Array(w)
-	// what the habitat lays down stands in its own light, so it is painted here and never relit
-	const put = (x, y, col) => {
-		fix(x, y, col)
-		if (x >= 0 && y >= 0 && x < w && y < h) kind[y * w + x] = FIXED
-	}
+	// what the habitat stands on is its own: lightHabitat lights it after the rock
+	const claim = (x, y) => (kind[y * w + x] = HABITAT)
 	// optional snowcaps: a second ramp above the band's snowline (see band.snow)
 	const snow = band.snow
 
@@ -262,21 +259,20 @@ export function cutRidge(el, band, visitSeed, frame) {
 	steep /= w
 
 	const habitat = band.habitat
-		? paintHabitat(put, band.habitat, {
+		? paintHabitat(claim, band.habitat, {
 				w,
 				h,
 				profile,
 				// ground the doorway's light can fall on: the range, or what the habitat laid down
-				solid: (x, y) => y >= tops[x] || kind[y * w + x] === FIXED,
+				solid: (x, y) => y >= tops[x] || kind[y * w + x] === HABITAT,
 				tread: (x, y, rung) => {
 					kind[y * w + x] = PATH
 					tone[y * w + x] = rung
 				},
 				light: (x, y, f) => (glow[y * w + x] = f),
-				faceAt,
 				seed: band.seed + visitSeed,
 			})
-		: { vent: null, lamp: [] }
+		: { vent: null, lamp: [], habitat: null }
 
 	return {
 		ctx,
@@ -305,9 +301,8 @@ export function cutRidge(el, band, visitSeed, frame) {
 		frameW: frame.w,
 		frameH: frame.h,
 		bleed: frame.bleed ?? 0,
-		// the habitat's own pixels, and the sheet the range is painted onto over them
-		fixed: img,
-		img: ctx.createImageData(w, h),
+		// the sheet the range is painted onto
+		img,
 	}
 }
 
@@ -317,7 +312,7 @@ export function cutRidge(el, band, visitSeed, frame) {
 // ranges follow the sun across the sky.
 export function lightRidge(sprite, sky) {
 	const { ctx, w, h, cell, band, kind, thr, rough, haze, bite, tone, glow, tops } = sprite
-	const { line, under, term, frameW, frameH, bleed, fixed, img, lamp } = sprite
+	const { line, under, term, frameW, frameH, bleed, img, lamp, habitat } = sprite
 	const { shades, snowShades, rockFoot, snowFoot, at, rockCrest, snowyCrest } = nightRamps(
 		band,
 		sky.ground
@@ -381,8 +376,10 @@ export function lightRidge(sprite, sky) {
 	// read once, not once a cell: this loop runs every step of the sun
 	const { ridgeDepthFade, ridgeContrast, ridgeAmbient, ridgeSeam, strataMinLit, snowAmbient } =
 		ENTRY
+	// the cells the habitat's shell shades this relight, shaded below as a peak shades them
+	const shelter = habitat && shadeHabitat(habitat, [atCol, atUp])
 	const px = img.data
-	px.set(fixed.data)
+	px.fill(0)
 	const write = (x, y, col) => {
 		const i = (y * w + x) * 4
 		px[i] = col[0]
@@ -407,7 +404,7 @@ export function lightRidge(sprite, sky) {
 			Math.min(clamp01((-ran - d + crumb) / SH.soft), clamp01((cut + d + crumb) / SH.soft))
 		for (let y = yTop; y < h; y++) {
 			const i = y * w + x
-			if (kind[i] === FIXED) continue
+			if (kind[i] === HABITAT) continue
 			if (kind[i] === PATH) {
 				// the tread's paler crown takes the light a step brighter
 				write(x, y, lampAt(i, x, y, tone[i]) ?? at(pathShades, pathFoot, tone[i], thr[i]))
@@ -429,7 +426,7 @@ export function lightRidge(sprite, sky) {
 			const crumb = rough[i] * SH.crumb
 			let seam = clamp01((over + d + crumb) / SH.soft)
 			if (wedged) seam = Math.min(seam, 1 - wedgeAt(d, crumb))
-			if (seam > ditherThreshold(x, y)) lit *= 1 - SH.depth * cast
+			if (seam > ditherThreshold(x, y) || shelter?.[i]) lit *= 1 - SH.depth * cast
 			// Skylight after the curve, not before: a slope turned from the sun still sits under an open sky.
 			// Snow holds far more of it than rock does, so its shading compresses into the top of its own
 			// ramp: `ash` and `stone` are where the night walk takes a cap, not where an afternoon does.
@@ -472,7 +469,7 @@ export function lightRidge(sprite, sky) {
 		// The lit rim along the top: snow-capped where a cap hangs, warmed where the crest runs near the
 		// disc, and down in the shade with its face — a bright rim over a shadowed face read as a glitch.
 		const top = kind[yTop * w + x]
-		if (top === FIXED) continue
+		if (top === HABITAT) continue
 		const crestRamp = top === SNOW ? snowyCrest : rockCrest
 		const crestGlow = sun
 			? clamp01(1 - Math.sqrt((x - sunX) ** 2 + (yTop - sunY) ** 2) / G) * cast
@@ -483,7 +480,8 @@ export function lightRidge(sprite, sky) {
 		const crumbTop = rough[iTop] * SH.crumb
 		let crestSeam = clamp01((over + crumbTop) / SH.soft)
 		if (wedged) crestSeam = Math.min(crestSeam, 1 - wedgeAt(0, crumbTop))
-		const crestShade = crestSeam > ditherThreshold(x, yTop) && cast > thr[iTop] ? 1 : 0
+		const crestShade =
+			(crestSeam > ditherThreshold(x, yTop) || shelter?.[iTop]) && cast > thr[iTop] ? 1 : 0
 		write(
 			x,
 			yTop,
@@ -493,6 +491,8 @@ export function lightRidge(sprite, sky) {
 			)
 		)
 	}
+	// the habitat after the rock it stands on, in the same sun
+	if (habitat) lightHabitat(habitat, { disc: [atCol, atUp], cast, face: faceCol, at }, write)
 	// No pixel stands alone: a lone cell inside another is the tell of a generated sprite.
 	// Snow is spared: a cap is relit every step, and a cell tidied to its neighbours flashed for a frame
 	// each time one of them crossed a seam.

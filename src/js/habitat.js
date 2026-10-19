@@ -1,23 +1,34 @@
 // The habitat on the nearest arrival range: the dome, its doorway and lamp, the trail down the face.
-// Painted once at the cut in its own light; only the lamp cells wait on lightRidge.
+// Cut once with the range, then lit with it (lightHabitat): it stands in the same sun as the rock.
 
 import { ENTRY } from '../constants/journey.js'
 import { PALETTE } from '../constants/palette.js'
 import { clamp01 } from './math.js'
-import { norm } from './vec3.js'
-import { ditherThreshold, fbm1, seamIndex } from './pixelNoise.js'
+import { dot, norm } from './vec3.js'
+import { ditherThreshold, fallThreshold, fbm1, seamIndex } from './pixelNoise.js'
 
 // The habitat (band.habitat): one dome in the middle stretch — the journey was TO somewhere. Its lamp,
 // the lit doorway, is kept aside for lightRidge: lit as the sun goes.
-export function paintHabitat(put, hab, range) {
+export function paintHabitat(claim, hab, range) {
 	const { w, h, profile } = range
 	const lamp = []
-	// a cell that waits on the lamp: `day` as cut, `col` once the lamp is thrown
+	// The habitat's own ramp, dark to lit; its top step is the sun's on the metal.
+	const names = hab.shades
+	const step = name => names.indexOf(name)
+	const top = names.length - 1
+	// Each cell keeps how it takes the light, as a rung on that ramp under the sun as it stands.
+	// A later cell wins: the doorway over the shell, the porch over both.
+	const cells = new Map()
+	const relit = (x, y, rung) => {
+		if (x < 0 || y < 0 || x >= w || y >= h) return
+		claim(x, y)
+		cells.set(y * w + x, { x, y, rung, thr: fallThreshold(x, y) })
+	}
+	// a cell that waits on the lamp: `day` as lit, `col` once the lamp is thrown
 	const lit = (x, y, day, col) => {
-		put(x, y, day)
+		relit(x, y, day)
 		if (x >= 0 && y >= 0 && x < w && y < h) lamp.push({ x, y, col })
 	}
-	const shellShades = hab.shades.map(name => PALETTE[name])
 	const half = (hab.w - 1) / 2
 	const groundAt = x => Math.round(h * (1 - profile[Math.max(0, Math.min(w - 1, x))]))
 	// wherever the middle stretch is lowest; the footing buries the downhill edge
@@ -34,27 +45,28 @@ export function paintHabitat(put, hab, range) {
 			1,
 			Math.round((hab.h + hab.sink) * Math.sqrt(1 - (dx / (half + 0.5)) ** 2)) - hab.sink
 		)
-	const site = { hx, base, half, shellShades }
+	const site = { hx, base, half }
 
-	paintDome(put, hab, range, site)
-	// the shell's ground shadow, thrown along the surface away from the sun — a shape without one floats
-	const shadowDir = -Math.sign(ENTRY.ridgeLight)
-	for (let i = 1; i <= hab.shadowLen; i++) {
-		const x = hx + (half + i) * shadowDir
-		if (x < 0 || x >= w) continue
-		const y = groundAt(x)
-		if (i > hab.shadowLen - 2 && ditherThreshold(x, y) > 0.5) continue
-		put(x, y, shellShades[0])
+	const shell = paintDome(relit, hab, range, site)
+	// The ground either side the shell's shadow can fall on; shadeHabitat throws it away from the disc.
+	// It starts where the shell is last seen, not at its full width: the hill buries its outer columns.
+	const shadow = []
+	for (const side of [-1, 1]) {
+		for (let i = 1; i <= hab.shadowLen; i++) {
+			const x = (side < 0 ? shell.left : shell.right) + i * side
+			if (x < 0 || x >= w) continue
+			shadow.push({ x, y: groundAt(x), side, i })
+		}
 	}
 	paintTrail(hab, range, site)
 	doorLight(hab, range, site)
-	paintPorch(put, hab, site)
+	paintPorch(lit, hab, site, step)
 
 	// The entrance is an arch, not a slab: ember walls around a hotter core read as light from inside.
 	// By day it is a dark doorway, as a doorway is; the lit cells wait on the lamp.
 	const light = PALETTE[hab.light]
 	const glow = PALETTE[hab.glow]
-	const dark = shellShades[0]
+	const dark = () => 0
 	lit(hx - 1, base, dark, light)
 	lit(hx + 1, base, dark, light)
 	lit(hx - 1, base - 1, dark, light)
@@ -62,79 +74,175 @@ export function paintHabitat(put, hab, range) {
 	lit(hx, base - 2, dark, light)
 	lit(hx, base, dark, glow)
 	lit(hx, base - 1, dark, glow)
-
-	// The chimney: one column standing off the shell, its lip on the rim shade so the sun catches it.
-	const vx = hx + hab.vent.at
-	const lip = base - shellAt(hab.vent.at) - hab.vent.h + 1
-	const lipShade = PALETTE[hab.rim]
-	for (let y = lip; y <= base - shellAt(hab.vent.at); y++) {
-		if (y <= groundAt(vx)) put(vx, y, y === lip ? lipShade : shellShades[1])
+	// the arch's shoulders catch the lamp with the frame, or the lit doorway reads as two eyes over a glow
+	for (const dx of [-1, 1]) {
+		if (hx + dx >= 0 && hx + dx < w)
+			lamp.push({ x: hx + dx, y: base - 2, col: PALETTE[hab.porchLamp] })
 	}
 
-	return { vent: { col: vx, row: lip }, lamp }
+	// The chimney: one column standing off the shell, its lip on the top step so the sun catches it.
+	const vx = hx + hab.vent.at
+	const lip = base - shellAt(hab.vent.at) - hab.vent.h + 1
+	const rim = () => top
+	const stack = () => 1
+	for (let y = lip; y <= base - shellAt(hab.vent.at); y++) {
+		if (y <= groundAt(vx)) relit(vx, y, y === lip ? rim : stack)
+	}
+
+	return {
+		vent: { col: vx, row: lip },
+		lamp,
+		habitat: {
+			hab,
+			w,
+			h,
+			hx,
+			base,
+			cells: [...cells.values()],
+			shadow,
+			// the cells under the shell's shadow this relight, kept so a relight allocates nothing
+			shade: new Uint8Array(w * h),
+			ramp: names.map(name => PALETTE[name]),
+		},
+	}
+}
+
+// The disc as the dome sees it: across and up from the doorway, on the band's grid.
+function sightOf({ h, hx, base }, disc) {
+	const ax = disc[0] - hx
+	const ay = Math.max(0, disc[1] - (h - base))
+	return { ax, ay, len: Math.hypot(ax, ay) || 1 }
+}
+
+// Where the shell's shadow lies on the ground now, for lightRidge to shade the rock under it as it
+// shades it under a peak, crags and all: thrown away from the disc, `shadowRows` deep at the footing
+// and thinning out, long under a low sun and gone under a high one. A shape without one floats.
+export function shadeHabitat(habitat, disc) {
+	const { hab, w, h, shadow, shade } = habitat
+	const { ax, len } = sightOf(habitat, disc)
+	const long = (hab.shadowLen * Math.abs(ax)) / len
+	shade.fill(0)
+	for (const s of shadow) {
+		if (s.side === Math.sign(ax) || s.i > long) continue
+		const rows = Math.max(1, Math.round(hab.shadowRows * (1 - (s.i - 1) / long)))
+		for (let y = s.y; y < Math.min(h, s.y + rows); y++) {
+			// the tip breaks up rather than stopping square
+			if (s.i > long - 2 && ditherThreshold(s.x, y) > 0.5) continue
+			shade[y * w + s.x] = 1
+		}
+	}
+	return shade
+}
+
+// The habitat in the light it stands in now, after the rock it stands on (see lightRidge). `disc` is
+// the sun's place on the band's grid, `cast` the direct sun left on the rock, `face` each column's
+// facing under it and `at` the night's walk.
+export function lightHabitat(habitat, { disc, cast, face, at }, write) {
+	const { hab, cells, ramp } = habitat
+	// `sunFront` brings the disc out of the screen toward us: it stands behind the range, and lit from
+	// there the face would stay dark.
+	const { ax, ay, len } = sightOf(habitat, disc)
+	const dir = norm([ax / len, ay / len, hab.sunFront])
+	// we look down into the valley, not level at it, so the mirror of the disc sits higher on the shell
+	const view = norm([0, hab.lookDown, 1])
+	const sun = {
+		dir,
+		// halfway between the disc and us: where the shell turns to it, it mirrors the sun
+		half: norm([dir[0] + view[0], dir[1] + view[1], dir[2] + view[2]]),
+		// A dome is its own shape, but it stands in the mountain's light and not in its own.
+		reach: x => cast * (hab.bed + (1 - hab.bed) * clamp01(face[x])),
+	}
+	// No foot under the ramp: the shell bottoms out a step over the night rock, so the dome still stands.
+	for (const c of cells) write(c.x, c.y, at(ramp, [], c.rung(sun), c.thr))
 }
 
 // The airlock porch: a frame standing proud of the shell round the doorway, so it reads as built.
-function paintPorch(put, hab, { hx, base }) {
-	const [side, lit, top] = hab.porch.map(name => PALETTE[name])
-	// the sun side of the frame catches the light
-	const sunSide = Math.sign(ENTRY.ridgeLight) || 1
-	for (let dy = 0; dy < 3; dy++) {
-		put(hx + 2 * sunSide, base - dy, lit)
-		put(hx - 2 * sunSide, base - dy, side)
+// By day the post on the disc's side catches the sun; at night the whole frame catches the lamp.
+function paintPorch(lit, hab, { hx, base }, step) {
+	const [side, sunlit, top] = hab.porch.map(step)
+	const lamp = PALETTE[hab.porchLamp]
+	for (const post of [-1, 1]) {
+		const rung = sun => (Math.sign(sun.dir[0]) === post ? sunlit : side)
+		for (let dy = 0; dy < 3; dy++) lit(hx + 2 * post, base - dy, rung, lamp)
 	}
-	for (let dx = -1; dx <= 1; dx++) put(hx + dx, base - 3, top)
+	for (let dx = -1; dx <= 1; dx++) lit(hx + dx, base - 3, () => top, lamp)
 }
 
-// The shell, lit off a real surface normal, gathering sun and sky separately at each cell.
-function paintDome(put, hab, { h, w, profile, faceAt }, { hx, base, half, shellShades }) {
-	const sunDir = norm([ENTRY.ridgeLight, hab.sunUp, hab.sunFront])
-	const edgeShades = [shellShades[0], shellShades[2], shellShades[3], PALETTE[hab.rim]]
+// A shell cell's light off its normal `n`: the sun on a cosine where it reaches, the sky by how far
+// the cell turns up, and on the side turned from the sun the lit ground's light thrown back into its
+// lower half, so the darkest band runs along the terminator and the far edge reads round.
+function shellLight(hab, sun, n, x) {
+	const facing = dot(n, sun.dir)
+	const sunlit = hab.sun * sun.reach(x) * clamp01(facing) ** hab.falloff
+	const bounce = hab.bounce * sun.reach(x) * clamp01(-facing) * (1 - n[1])
+	return clamp01(hab.ambient + sunlit + bounce + hab.sky * n[1])
+}
+
+// The shell, lit off a real surface normal, gathering sun and sky separately at each cell. Hands back
+// the first and last columns it shows.
+function paintDome(relit, hab, { h, w, profile }, { hx, base, half }) {
+	// the top step is the sun's: diffuse light stops a step under it
+	const top = hab.shades.length - 1
+	const shown = { left: hx, right: hx }
 	for (let dx = -half; dx <= half; dx++) {
 		const x = hx + dx
 		if (x < 0 || x >= w) continue
 		// The shell springs from `sink` cells UNDER the ground, so what stands above is the top of a bigger dome.
 		const rise = Math.round((hab.h + hab.sink) * Math.sqrt(1 - (dx / (half + 0.5)) ** 2))
-		// A dome is its own shape, but it stands in the mountain's light and not in its own.
 		const u = dx / (half + 0.5)
-		const bedded = hab.bed + (1 - hab.bed) * clamp01(faceAt(x))
 		// The hill in front buries it. `base` is the LOWEST ground the shell spans, so other columns stand above.
 		const ground = Math.round(h * (1 - profile[x]))
 		const foot = base + hab.sink
 		// what is left of the column once the hill has buried it; too little is a stray cell
 		if (rise - Math.max(0, foot - ground) < hab.minRise) continue
-		let crownLit = 0
+		shown.left = Math.min(shown.left, x)
+		shown.right = Math.max(shown.right, x)
+		let crown = null
 		let footCourse = true
 		for (let dy = 0; dy < rise; dy++) {
 			const y = foot - dy
 			const v = dy / (hab.h + hab.sink)
-			const nz = Math.sqrt(Math.max(0, 1 - u * u - v * v))
-			const lit = clamp01(
-				hab.ambient +
-					hab.sun * bedded * clamp01(u * sunDir[0] + v * sunDir[1] + nz * sunDir[2]) +
-					hab.sky * v
-			)
-			crownLit = lit
+			const n = [u, v, Math.sqrt(Math.max(0, 1 - u * u - v * v))]
+			crown = n
 			if (y > ground) continue
 			// Panel seams run as longitude, not screen x: across the width they came out as a cylinder's meridians.
-			const lon = Math.atan2(u, Math.max(nz, 1e-3))
+			const lon = Math.atan2(u, Math.max(n[2], 1e-3))
 			const m = (lon / Math.PI + 0.5) * hab.panels
 			const onSeam = v < hab.panelTop && Math.abs(m - Math.round(m)) * (1 / hab.panelSeam) < 1
 			// The base course: the lowest cell a column shows is where shell meets ground, and it drops a notch.
-			const shade = clamp01(
-				lit - (onSeam ? hab.panelDip : 0) - (footCourse ? hab.footDip : 0)
-			)
+			const dip = (onSeam ? hab.panelDip : 0) + (footCourse ? hab.footDip : 0)
 			footCourse = false
-			put(x, y, shellShades[seamIndex(shade, shellShades.length, x, y, ENTRY.ridgeSeam)])
+			relit(x, y, sun => {
+				const rung = seamIndex(
+					clamp01(shellLight(hab, sun, n, x) - dip),
+					top,
+					x,
+					y,
+					ENTRY.ridgeSeam
+				)
+				// the glint, where the shell mirrors the disc toward us: the top step at its core and a step
+				// up around it, sliding over the shell with the sun
+				const glint = onSeam
+					? 0
+					: sun.reach(x) * clamp01(dot(n, sun.half)) ** hab.glint.power
+				if (glint > hab.glint.at) return top
+				return glint > hab.glint.halo ? Math.min(top - 1, rung + 1) : rung
+			})
 		}
-		// The crown is lit by the sky too. `lip` is the skylight floor, so the top edge stays above the body.
+		// The crown's edge catches the sun on the side turned to it, and only there: lit all round, the
+		// dome came out drawn in a bright outline. Rounded whole, not dithered: a one-cell row alternating
+		// shades is a dotted line, and that is not an edge.
 		const edgeY = foot - rise + 1
 		if (edgeY <= ground) {
-			// Seamed, not checkered: a one-cell rim alternating shades is a dotted line, and that is not an edge.
-			const lip = clamp01(crownLit + hab.rimLift)
-			put(x, edgeY, edgeShades[seamIndex(lip, edgeShades.length, x, edgeY, ENTRY.ridgeSeam)])
+			const edge = crown
+			relit(x, edgeY, sun => {
+				const catches = sun.reach(x) * clamp01(dot(edge, sun.dir))
+				const lip = clamp01(shellLight(hab, sun, edge, x) + hab.rimLift * catches)
+				return Math.min(top, Math.floor(lip * (top + 1)))
+			})
 		}
 	}
+	return shown
 }
 
 // The worn path down the face: S-bends, ragged shoulders and a paler crown where the feet go.

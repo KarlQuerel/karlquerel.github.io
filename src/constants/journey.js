@@ -1059,12 +1059,21 @@ export const ENTRY = {
 		habitat: {
 			w: 21,
 			h: 9,
-			// The shell's light on a real hemisphere normal: `sun` off a cosine, `sky` off how far it turns up.
-			sun: 1,
-			sky: 0.4,
-			ambient: 0.12,
-			sunUp: 0.45,
+			// The shell's light on a real hemisphere normal: `sun` off a cosine toward the disc, raised to
+			// `falloff` so the lit side shades round instead of flat; `sky` off how far it turns up;
+			// `bounce` the lit ground's light thrown back into the lower half turned from the sun, so a
+			// dark core runs along the terminator; `sunFront` how far the disc is brought out of the
+			// screen toward us, and `lookDown` how far we look down on the dome.
+			sun: 0.95,
+			falloff: 1.8,
+			sky: 0.3,
+			ambient: 0.08,
+			bounce: 0.8,
 			sunFront: 0.55,
+			lookDown: 0.5,
+			// The glint, where the shell mirrors the disc toward us: its turn to the half-vector raised to
+			// `power`; over `at` a cell takes the top step, over `halo` a step more than its own.
+			glint: { power: 40, at: 0.6, halo: 0.25 },
 			panels: 5,
 			panelSeam: 0.075,
 			// how far a seam dips the light, and how near the crown they run — meridians blot at the apex
@@ -1072,14 +1081,16 @@ export const ENTRY = {
 			panelTop: 0.8,
 			// how far the shell's lowest visible cell goes down: the skirt that stops it hovering
 			footDip: 0.26,
-			rimLift: 0.3,
+			// how far the sun lifts the crown's edge on the side turned to it
+			rimLift: 0.4,
 			// how much of its own light the shell keeps whatever the ground is doing
 			bed: 0.75,
 			// cells of shell below the ground line, and the least that must stand above it to draw a column
 			sink: 2,
 			minRise: 2,
-			shades: ['ink', 'basalt', 'rust', 'ochre'],
-			rim: 'amber',
+			// brushed metal, dark to lit: a cold shell stands off the warm rock. The top step is the sun's,
+			// kept for the glint and the lit edge.
+			shades: ['ink', 'graphite', 'gun', 'pewter', 'brushed', 'silver'],
 			light: 'ember',
 			glow: 'glow',
 			// The lamp is a switch, thrown once the rock's dusk is this many steps along (`ground`: 0 as the
@@ -1094,20 +1105,25 @@ export const ENTRY = {
 			doorLight: {
 				width: 3,
 				open: 0.5,
-				reach: 11,
-				power: 1.3,
+				reach: 8,
+				power: 1.5,
 				edge: 1,
-				gain: 1.2,
+				gain: 0.9,
 				dusk: 0.5,
 				grain: 1.5,
 				// the warm tones it lays on, dimmest first; a stratum or the tread's crown moves a cell a step
-				shades: ['basalt', 'rust', 'brick', 'ochre', 'clay'],
+				shades: ['basalt', 'rust', 'brick', 'clay'],
 			},
-			shadowLen: 5,
+			// the ground shadow's length under a sun on the skyline (it shortens as the disc climbs), and
+			// how many rows deep it lies at the footing
+			shadowLen: 6,
+			shadowRows: 3,
 			// The chimney: a short stack off the crown, on the sun side so its lip catches the last light.
 			vent: { at: -4, h: 2 },
 			// the airlock frame round the doorway: shade side, sun side, lintel
-			porch: ['rust', 'ochre', 'amber'],
+			porch: ['gun', 'brushed', 'pewter'],
+			// what the frame catches of the lamp once it is thrown
+			porchLamp: 'brick',
 			// The trail. Width grows by `spread` toward the viewer; the wander comes in over `settle`
 			// rows; each shoulder ragged by `rag` cells; the crown pales the middle, `crownFade` less far
 			// from the door.
