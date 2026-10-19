@@ -492,7 +492,13 @@ export function lightRidge(sprite, sky) {
 		)
 	}
 	// the habitat after the rock it stands on, in the same sun
-	if (habitat) lightHabitat(habitat, { disc: [atCol, atUp], cast, face: faceCol, at }, write)
+	if (habitat) {
+		lightHabitat(
+			habitat,
+			{ disc: [atCol, atUp], cast, face: faceCol, light: sky.light, line },
+			write
+		)
+	}
 	// No pixel stands alone: a lone cell inside another is the tell of a generated sprite.
 	// Snow is spared: a cap is relit every step, and a cell tidied to its neighbours flashed for a frame
 	// each time one of them crossed a seam.

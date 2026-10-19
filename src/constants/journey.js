@@ -1060,10 +1060,12 @@ export const ENTRY = {
 			w: 21,
 			h: 9,
 			// The shell's light on a real hemisphere normal: `sun` off a cosine toward the disc, raised to
-			// `falloff` so the lit side shades round instead of flat; `sky` off how far it turns up;
+			// `falloff` so the lit side shades round instead of flat; `sky` off how far it turns up, and
+			// `ambient` everywhere, both by what the sky still gives, so they are what is left at night;
 			// `bounce` the lit ground's light thrown back into the lower half turned from the sun, so a
 			// dark core runs along the terminator; `sunFront` how far the disc is brought out of the
-			// screen toward us, and `lookDown` how far we look down on the dome.
+			// screen toward us, and `lookDown` how far we look down on the dome. The sun's share goes
+			// with the disc, and with the shadow a peak throws over the shell, as it does on the rock.
 			sun: 0.95,
 			falloff: 1.8,
 			sky: 0.3,
@@ -1081,10 +1083,15 @@ export const ENTRY = {
 			panelTop: 0.8,
 			// how far the shell's lowest visible cell goes down: the skirt that stops it hovering
 			footDip: 0.26,
-			// how far the sun lifts the crown's edge on the side turned to it
+			// how far toward the top step the sun lifts an edge turned to it (the crown's rim, the
+			// chimney's lip), as a share of the ramp
 			rimLift: 0.4,
-			// how much of its own light the shell keeps whatever the ground is doing
+			// how much of its own light the shell keeps whatever the ground is doing, and how much of a
+			// peak's shadow it takes when one falls on it, as a share of the rock's: half keeps the rim
+			// and the glint inside a shaded valley, where the whole of it left a flat grey dome (1: as
+			// the rock does; 0: it stands lit inside the shade, and floats)
 			bed: 0.75,
+			shade: 0.5,
 			// cells of shell below the ground line, and the least that must stand above it to draw a column
 			sink: 2,
 			minRise: 2,
@@ -1120,8 +1127,9 @@ export const ENTRY = {
 			shadowRows: 3,
 			// The chimney: a short stack off the crown, on the sun side so its lip catches the last light.
 			vent: { at: -4, h: 2 },
-			// the airlock frame round the doorway: shade side, sun side, lintel
-			porch: ['gun', 'brushed', 'pewter'],
+			// the airlock frame round the doorway, lit off its own faces: how far the posts and the lintel
+			// turn out of the screen toward us
+			porch: { front: 0.5 },
 			// what the frame catches of the lamp once it is thrown
 			porchLamp: 'brick',
 			// The trail. Width grows by `spread` toward the viewer; the wander comes in over `settle`
