@@ -733,6 +733,17 @@ export const ENTRY = {
 			// the disc's fall — different clocks, or the whole fan turns as one wheel
 			turn: 1.1,
 			sway: 5.5,
+			// Crepuscular: as the disc goes behind the ranges the fan reaches `setReach` of the frame in
+			// place of `reach`, and beams of `setAmp` rungs come out with it, `setBase` of them even and
+			// the rest the spokes' unevenness, cut by the skyline: a beam shows only through the notch it
+			// leaves by and goes dark past the next peak it meets, so the sky over a sunset is barred with
+			// light and shade. Gone again `setFade` of the frame under the horizon; the dawn gets the same
+			// the other way round. `bars` is how many rays are marched for the cut.
+			setReach: 0.75,
+			setAmp: 2.5,
+			setBase: 0.6,
+			setFade: 0.2,
+			bars: 720,
 		},
 		// it is repainted once it has moved this much of a cell — below that nothing on screen would change
 		nudge: 0.08,

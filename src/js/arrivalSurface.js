@@ -3,7 +3,7 @@
 // arrival.worker.js (see arrivalCut.js for which).
 
 import { ENTRY } from '../constants/journey.js'
-import { darkenSky, drawArrivalSky, paintSun, rebuildSky } from './arrivalSky.js'
+import { darkenSky, drawArrivalSky, paintSun, rebuildSky, skylineOf } from './arrivalSky.js'
 import { cutRidge, lightRidge } from './ridge.js'
 import { sunAt } from './sun.js'
 
@@ -42,12 +42,13 @@ export function createSurface({ sky: skyEl, bands: bandEls }) {
 	function cut(box, sunk) {
 		frame = box
 		const now = sunAt(sunk, frame)
-		sky = drawArrivalSky(skyEl, frame, now)
 		ranges = ARRIVAL_BANDS.map(
 			(band, i) =>
 				bandEls[i] &&
 				cutRidge(bandEls[i], band, ENTRY.ridgeSeed, { ...frame, bleed: band.depth })
 		)
+		// the ranges before the sky: at sunset the sky's rays are cut by their skyline
+		sky = drawArrivalSky(skyEl, frame, now, skylineOf(ranges, frame))
 		lightRanges(now)
 		jobs.length = 0
 		const grid = ({ w, h, cell }) => ({ cols: w, rows: h, cell })
