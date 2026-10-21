@@ -7,38 +7,14 @@ import { clamp01 } from './math.js'
 import { ditherThreshold, fallThreshold, fbm2, seamIndex } from './pixelNoise.js'
 import { cellFor } from './ridge.js'
 
-// The sky's grid: whole cells covering the frame, shown at exactly this many and never stretched to fit.
-export function skyGrid(box) {
-	const cell = cellFor(box)
-	return {
-		cell,
-		w: Math.max(8, Math.ceil(box.w / cell)),
-		h: Math.max(8, Math.ceil(box.h / cell)),
-	}
-}
-
-// The skyline the sky sees, per sky column in sky rows: the highest rock across the ranges. A band
-// stands `bleed` px past the frame on the left and under it, so its columns and rows sit shifted.
-export function skylineOf(ranges, box) {
-	const { cell, w } = skyGrid(box)
-	const line = new Float32Array(w).fill(Infinity)
-	for (const sprite of ranges) {
-		if (!sprite) continue
-		const top = (box.h + sprite.bleed) / cell - sprite.h
-		for (let x = 0; x < w; x++) {
-			const c = Math.round(x + sprite.bleed / cell)
-			if (c >= 0 && c < sprite.w) line[x] = Math.min(line[x], top + sprite.tops[c])
-		}
-	}
-	return line
-}
-
 // The sky's grain: the haze and mottle, the only part of it no sun can touch. Generating it is nearly
 // all the cost, so it is cut once and kept, with each cell's own threshold for the night walk; the sky
 // proper is placed back off it whenever the sun has moved enough to change where the light comes from.
-// `skyline` is what cuts the rays once the disc is behind the ranges (skylineOf).
-export function drawArrivalSky(el, box, sun, skyline) {
-	const { cell, w, h } = skyGrid(box)
+export function drawArrivalSky(el, box, sun) {
+	// whole cells covering the frame: the canvas is shown at exactly this many, never stretched to fit
+	const cell = cellFor(box)
+	const w = Math.max(8, Math.ceil(box.w / cell))
+	const h = Math.max(8, Math.ceil(box.h / cell))
 	el.width = w
 	el.height = h
 	const ramp = ENTRY.sky.map(name => PALETTE[name])
@@ -67,7 +43,6 @@ export function drawArrivalSky(el, box, sun, skyline) {
 		top,
 		grain,
 		thr,
-		skyline,
 		// the rung each cell reaches in daylight, and the one it stands on once night has walked it down
 		step: new Uint8Array(w * h),
 		dark: new Uint8Array(w * h),
@@ -87,57 +62,28 @@ export function drawArrivalSky(el, box, sun, skyline) {
 	return sky
 }
 
-// One spoke of the sun's fan, by how far round the disc a cell sits (`nx, ny` the unit vector out of
-// it). `cos(count·angle)` comes off the Chebyshev recurrence rather than an atan2 per cell — the same
-// number for a fraction of the cost over a frame — and cosine being even is why the halves of the frame
-// need no sign between them.
+// One spoke of the sun's fan, by how far round the disc a cell sits and how far out. `cos(count·angle)`
+// comes off the Chebyshev recurrence rather than an atan2 per cell — the same number for a fraction of
+// the cost over a frame — and cosine being even is why the halves of the frame need no sign between them.
 //
 // Two of those run, on the same vector turned by different amounts. The first is the fan itself. The
 // second is slower (`varyAt` spokes to the fan's `count`) and only ever takes strength away, so some
 // spokes stand while their neighbours fade: an even fan is what reads as a cartoon sun. Turning the two
 // at different rates is what makes the fan move like air rather than a wheel — the spokes keep pointing
 // out of the disc, as light does, while which of them carry changes.
-function spokeAt(nx, ny, R, spin, sway) {
+function rayAt(rx, ry, reach, R, spin, sway) {
+	const d2 = rx * rx + ry * ry
+	if (d2 >= reach * reach) return 0
+	const dist = Math.sqrt(d2)
+	if (dist === 0) return 0
+	const nx = rx / dist
+	const ny = ry / dist
 	let spoke = chebyshev(nx * spin[0] + ny * spin[1], R.count)
 	if (spoke <= 0) return 0
 	const cur = spoke
 	for (let k = 1; k < R.sharp; k++) spoke *= cur
 	const slow = chebyshev(nx * sway[0] + ny * sway[1], R.varyAt)
-	return spoke * (1 - R.vary + R.vary * (slow * 0.5 + 0.5))
-}
-
-// The skyline's bars across the fan, for a disc behind the ranges: along each ray out of it, the beam
-// shows from where it first clears the rock to where it next meets some, and never past that — a
-// peak shades everything behind it. Marched once per angle over the upper half-turn, so a cell is a
-// lookup and not a march. Null without a skyline to cut by.
-function barsOf({ w, skyline }, sx, sy, reach) {
-	if (!skyline) return null
-	const K = ENTRY.sun.rays.bars
-	const from = new Float32Array(K)
-	const to = new Float32Array(K).fill(Infinity)
-	for (let k = 0; k < K; k++) {
-		const a = (Math.PI * k) / (K - 1)
-		const [dx, dy] = [Math.cos(a), -Math.sin(a)]
-		let out = -1
-		for (let r = 0; r <= reach; r++) {
-			const px = Math.round(sx + dx * r)
-			const rock = px >= 0 && px < w && sy + dy * r >= skyline[px]
-			if (out < 0) {
-				if (!rock) out = r
-			} else if (rock) {
-				to[k] = r
-				break
-			}
-		}
-		from[k] = out < 0 ? Infinity : out
-	}
-	return (rx, ry) => {
-		// under the disc is behind the ranges anyway
-		if (ry > 0) return 0
-		const k = Math.round((Math.atan2(-ry, rx) / Math.PI) * (K - 1))
-		const r = Math.sqrt(rx * rx + ry * ry)
-		return r >= from[k] && r < to[k] ? 1 : 0
-	}
+	return spoke * (1 - R.vary + R.vary * (slow * 0.5 + 0.5)) * (1 - dist / reach)
 }
 
 // cos(n·angle) from cos(angle), by the recurrence — no trig in the per-cell path
@@ -168,14 +114,8 @@ function placeSky(sky, sun) {
 	// The fan grows as the disc falls — a low sun has the air to scatter through — but keeps `floor`
 	// of itself at the top of the arc, where the visitor arrives.
 	const gain = R.floor + (1 - R.floor) * Math.sqrt(sun.low)
-	// and once the disc is behind the ranges it reaches further, lifts more and is cut by the skyline:
-	// the crepuscular rays of a sunset, eased in with the disc's going so the cut never snaps on
-	const { horizon } = ENTRY.sun.circuit
-	const set = (1 - sun.beam) * (1 - clamp01((sun.y - horizon) / R.setFade))
-	const fanLift = (R.amp * gain) / top
-	const beamLift = R.setAmp / top
-	const reach = (R.reach + (R.setReach - R.reach) * set) * h
-	const bars = set > 0 ? barsOf(sky, sx, sy, reach) : null
+	const lift = (R.amp * gain) / top
+	const reach = R.reach * h
 	const fade = R.keepTop * h
 	// Two clocks, so the fan never repeats: the spokes swing with the disc across the frame, and which
 	// of them carry drifts on the disc's fall, which runs on its own curve. One clock and the whole fan
@@ -188,7 +128,7 @@ function placeSky(sky, sun) {
 		// gamma keeps a band of light against the horizon; the rest of it gathers round the sun
 		const alt = Math.pow(y / (h - 1), ENTRY.skyGamma)
 		// what a ray keeps this high up the frame, where the stars hang
-		const held = clamp01(y / fade)
+		const held = lift > 0 ? clamp01(y / fade) : 0
 		for (let x = 0; x < w; x++) {
 			const i = y * w + x
 			const dx = (x - sx) * S.wide
@@ -198,22 +138,7 @@ function placeSky(sky, sun) {
 			const calm =
 				coronaCalm * clamp01(1 - (Math.hypot(x - sx, y - sy) - discR) / (halo - discR))
 			let lit = alt * (1 - S.pull) + near * S.pull + grain[i] * (1 - calm)
-			const [rx, ry] = [x - sx, y - sy]
-			const d2 = rx * rx + ry * ry
-			if (held > 0 && d2 > 0 && d2 < reach * reach) {
-				const d = Math.sqrt(d2)
-				const spoke = spokeAt(rx / d, ry / d, R, spin, sway)
-				const fall = 1 - d / reach
-				// The beams: broad light out through the notches, `setBase` of it even and the rest the
-				// spokes' unevenness. The fan keeps its spokes, and loses them where the beams do, eased in
-				// with `set` so the cut never snaps on.
-				const open = bars ? bars(rx, ry) : 1
-				lit +=
-					held *
-					fall *
-					(spoke * fanLift * (1 - set * (1 - open)) +
-						set * open * beamLift * (R.setBase + (1 - R.setBase) * spoke))
-			}
+			if (held > 0) lit += rayAt(x - sx, y - sy, reach, R, spin, sway) * held * lift
 			step[i] = Math.min(
 				top,
 				seamIndex(lit, ramp.length, x, y, ENTRY.skySeam, ENTRY.skyJitter)
