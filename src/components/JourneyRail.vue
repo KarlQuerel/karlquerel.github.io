@@ -91,7 +91,6 @@
 		gap: 0.7rem;
 		padding: $rail-stop-pad 0;
 		text-decoration: none;
-		color: $text-interactive;
 	}
 
 	// Invisible hit area past the 8px glyph, as a pseudo-element so the diamond stays on the line.
@@ -108,6 +107,8 @@
 		background: rgba($white, 0.35);
 		// a pixel square turned 45° — the void system's waypoint glyph
 		transform: rotate(45deg);
+		// its own keyline, for the stretch where the lit limb runs behind the rail
+		box-shadow: 0 0 0 1px rgba($black, 0.7);
 		transition:
 			background 0.2s steps(3, end),
 			box-shadow 0.2s steps(3, end);
@@ -120,12 +121,11 @@
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
 		white-space: nowrap;
-		// keyline, not a drop shadow: the labels cross the planet's lit limb
-		@include pixel-keyline($unit: 1px, $halo: 4px);
-		opacity: 0.55;
-		transition:
-			opacity 0.2s steps(3, end),
-			color 0.2s steps(3, end);
+		// Dimmed in the ink, never by opacity: faded whole, a label over the planet's lit limb faded
+		// its keyline with it, and the keyline is what carries it across the clouds.
+		color: rgba($white, 0.6);
+		@include pixel-keyline($unit: 1px, $halo: 6px);
+		transition: color 0.2s steps(3, end);
 	}
 
 	.rail__stop:hover .rail__diamond,
@@ -135,17 +135,17 @@
 
 	.rail__stop:hover .rail__label,
 	.rail__stop:focus-visible .rail__label {
-		opacity: 1;
 		color: $yellow;
 	}
 
 	.is-here .rail__diamond {
 		background: $yellow;
-		box-shadow: 0 0 8px rgba($yellow, 0.6);
+		box-shadow:
+			0 0 0 1px rgba($black, 0.7),
+			0 0 8px rgba($yellow, 0.6);
 	}
 
 	.is-here .rail__label {
-		opacity: 1;
 		color: $yellow;
 	}
 
