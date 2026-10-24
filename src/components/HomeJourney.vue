@@ -45,6 +45,7 @@
 						:role="HOME_LANDING.label"
 						:cue="HOME_LANDING.scrollHint"
 						:bare="plateBare"
+						:hover="titleHover"
 						@axis="onAxis"
 					/>
 				</div>
@@ -254,6 +255,8 @@
 	const passScale = computed(() => 1 / (1 - flown(clamp01(pass.value)) / HERO_FLYBY.titleZ))
 	// bare plate through the gate - see HERO_FLYBY.bareFromScale
 	const plateBare = computed(() => passScale.value >= HERO_FLYBY.bareFromScale)
+	// the title answers the cursor through the opening of the pass only
+	const titleHover = computed(() => passScale.value <= HERO_FLYBY.hover.maxScale)
 
 	const flybyStyle = computed(() => {
 		const scale = passScale.value
