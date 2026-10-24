@@ -504,7 +504,7 @@
 
 	// A child's text-shadow replaces the inherited one, so the yellow word restates the border itself.
 	.journey__station-head :deep(.page-heading__accent) {
-		@include pixel-keyline($halo: 0.5em, $halo-colour: rgba($yellow, 0.5));
+		@include pixel-keyline;
 	}
 
 	// the beat's number and name, small against the display size above it
@@ -515,8 +515,7 @@
 		letter-spacing: 0.22em;
 		text-transform: uppercase;
 		color: $yellow;
-		// px, not em: a fraction of an em at this size rounds away to nothing
-		@include pixel-keyline($unit: 1px, $halo: 6px);
+		@include pixel-keyline;
 	}
 
 	// the long departure leg: the whole approach from distant world to wall
