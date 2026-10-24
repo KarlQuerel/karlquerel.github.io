@@ -32,7 +32,7 @@ export function drawArrivalSky(el, box, sun) {
 				(fbm2(x / F.mottleCells, y / F.mottleCells, ENTRY.ridgeSeed + 3) - 0.5) *
 					F.mottle *
 					rung1
-			thr[y * w + x] = fallThreshold(x, y)
+			thr[y * w + x] = fallThreshold(x, y, ENTRY.sun.grain)
 		}
 	const sky = {
 		el,
