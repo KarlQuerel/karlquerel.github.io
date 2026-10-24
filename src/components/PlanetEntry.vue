@@ -11,7 +11,7 @@
 		/>
 		<!-- everything alive up there: a handful of stars breathing, and the occasional
 		     thing crossing a sky that is otherwise holding perfectly still -->
-		<EntrySkyLife :fade="starFade" :seed="visitSeed" />
+		<EntrySkyLife :fade="starFade" :clear="skyClear" :dusk="smokeLit.dusk" :seed="visitSeed" />
 		<div
 			v-for="(cloud, i) in cloudField"
 			:key="i"
@@ -33,8 +33,8 @@
 			<span
 				v-for="i in ENTRY.smoke.puffs"
 				:key="i"
+				:ref="el => (puffEls[i - 1] = el)"
 				class="entry__puff"
-				:style="puffStyle(i - 1)"
 			/>
 		</div>
 	</div>
@@ -43,6 +43,7 @@
 <script setup>
 	import {
 		computed,
+		nextTick,
 		onActivated,
 		onBeforeUnmount,
 		onDeactivated,
@@ -56,8 +57,9 @@
 	import { drawCloud, drawPuff, drawStarTile, seedClouds } from '@/js/entrySprites'
 	import { sunAt } from '@/js/sun'
 	import { clamp01, ramp, smoothstep } from '@/js/math'
-	import { hash1 } from '@/js/pixelNoise'
 	import { createArrival } from '@/js/arrivalCut'
+	import { windAt } from '@/js/wind'
+	import { createPlume } from '@/js/plume'
 	import { ARRIVAL_BANDS } from '@/js/arrivalSurface'
 	import EntrySkyLife from './EntrySkyLife.vue'
 
@@ -121,6 +123,8 @@
 		return {
 			display: t > 0 ? null : 'none',
 			'--depth': band.depth,
+			// far to near, with room between for the gulls (ENTRY.stacking)
+			'--layer': (i + 1) * ENTRY.stacking.range,
 			opacity: t.toFixed(3),
 			...sized(sizes.value.bands[i]),
 			transform: `translate3d(0, ${((1 - t) * band.liftVh).toFixed(1)}vh, 0)`,
@@ -134,30 +138,24 @@
 	const smoke = computed(() => {
 		if (!vent.value) return null
 		const { col, row, cell, band } = vent.value
-		const S = ENTRY.smoke
-		const frames = S.cellsTo - S.cellsFrom + 1
+		const { cellsTo } = ENTRY.smoke
 		return {
 			...ridgeStyle(ARRIVAL_BANDS[band], band),
-			'--vent-x': `${(col - Math.floor((S.cellsTo - 1) / 2)) * cell}px`,
-			'--vent-y': `${(row - S.cellsTo) * cell}px`,
-			'--puff': `${S.cellsTo * cell}px`,
-			'--rise': `${-S.riseCells * cell}px`,
-			'--peak': S.peak,
-			'--period': `${S.periodMs}ms`,
-			// one whole cell per step on the way up, one whole frame per step as it grows
-			'--rise-ease': `steps(${S.riseCells}, end)`,
-			'--sheet-shift': `${-(frames - 1) * S.cellsTo * cell}px`,
-			'--puff-ease': `steps(${frames - 1}, end)`,
+			'--vent-x': `${(col - Math.floor((cellsTo - 1) / 2)) * cell}px`,
+			'--vent-y': `${(row - cellsTo) * cell}px`,
+			'--puff': `${cellsTo * cell}px`,
 			'--smoke': `url(${puffSprites[smokeLit.value.night ? 'night' : 'day'][smokeLit.value.side < 0 ? 0 : 1]})`,
 		}
 	})
 	// The puffs take the light as it stands: lit on the sun's side, dim once the lamp is on. Drawn once
 	// per visit, four sprites, and only swapped when the sun crosses the chimney or the lamp turns.
+	// The gulls take the dusk as the disc goes behind the ranges, in steps: by night a paler tone, or
+	// the sky would have them.
 	const puffSprites = {
 		day: [-1, 1].map(side => drawPuff(ENTRY.smoke.shades, side)),
 		night: [-1, 1].map(side => drawPuff(ENTRY.smoke.nightShades, side)),
 	}
-	const smokeLit = ref({ side: -1, night: false })
+	const smokeLit = ref({ side: -1, night: false, dusk: 0 })
 	function lightSmoke() {
 		if (!vent.value) return
 		const sun = sunAt(sunk, frame)
@@ -165,22 +163,23 @@
 		const { col, cell, band } = vent.value
 		const side = sun.x * frame.w < col * cell - ARRIVAL_BANDS[band].depth ? -1 : 1
 		const night = sun.ground >= ENTRY.near.habitat.lampAt
-		if (side !== smokeLit.value.side || night !== smokeLit.value.night) {
-			smokeLit.value = { side, night }
+		const steps = ENTRY.flock.duskSteps
+		const dusk = Math.round((sun.ground / ENTRY.sun.night) * steps) / steps
+		const lit = smokeLit.value
+		if (side !== lit.side || night !== lit.night || dusk !== lit.dusk) {
+			smokeLit.value = { side, night, dusk }
 		}
 	}
 
-	// Staggered backwards, so the column is already full on the frame it appears on. Each puff's drift
-	// is a whole number of cells, stepped one at a time, so it never sits across two.
-	const puffStyle = i => {
-		const S = ENTRY.smoke
-		const wander = S.driftMin + (1 - S.driftMin) * 2 * hash1(i, ENTRY.ridgeSeed)
-		const drift = Math.max(1, Math.round(S.driftCells * wander))
-		return {
-			'--delay': `${(-(i * S.periodMs) / S.puffs).toFixed(0)}ms`,
-			'--drift': `${drift * (vent.value?.cell ?? 0)}px`,
-			'--drift-ease': `steps(${drift}, end)`,
-		}
+	// The plume (js/plume.js), flown on `dt` ms with the sun: every puff reads the wind as it blows now,
+	// so a gust leans the whole of it at once. Painted onto the spans directly: bound through `:style`,
+	// a puff crossing a cell re-patched every style in the scene, 4% of the main thread for ten boxes.
+	const plume = createPlume()
+	const puffEls = []
+	function blowSmoke(dt) {
+		if (!vent.value) return
+		plume.blow(windAt(performance.now(), visitSeed), dt)
+		plume.show(vent.value.cell, (i, style) => Object.assign(puffEls[i].style, style))
 	}
 
 	const ridgeEls = []
@@ -191,6 +190,9 @@
 	const skyEl = ref(null)
 	const starTiles = ref([])
 	const cloudField = ref([])
+
+	// the gulls wait for the deck to clear: born in it, they would fly over the whiteout
+	const skyClear = computed(() => props.progress >= ENTRY.deck.end)
 
 	// the first stars come out once the sky has settled, over the dark top of it
 	const starFade = computed(() => {
@@ -221,16 +223,18 @@
 	let last = 0
 	function sink(now) {
 		sinking = requestAnimationFrame(sink)
-		sunk += last ? now - last : 0
+		const dt = last ? now - last : 0
+		sunk += dt
 		last = now
 		arrival?.step(sunk)
 		lightSmoke()
+		blowSmoke(dt)
 	}
 
 	// `immediate`, because a reload restores the scroll: mount can already be on the ground, and a
 	// watcher that only answers a change would leave the sun stuck there for good. Reduced motion
 	// holds the sun where `cut` lit it: it is the largest moving thing on the page, and the sky-life
-	// and the puffs are already held for the same reason.
+	// is held for the same reason; the plume, flown by the same loop, stands where `cut` settled it.
 	const landed = () => props.progress >= ENTRY.sun.sinkFrom
 	function setSinking(on) {
 		cancelAnimationFrame(sinking)
@@ -254,6 +258,10 @@
 			// the band by index, not by object: a ref wraps what it holds, so the object would not be found
 			vent.value = at && { ...at, band: ARRIVAL_BANDS.findIndex(band => band.key === at.key) }
 			lightSmoke()
+			// the column stands full from its first frame, in the wind as it blows; its spans mount
+			// with the vent, a tick on
+			plume.settle(windAt(performance.now(), visitSeed))
+			nextTick(() => blowSmoke(0))
 		})
 	}
 
@@ -285,6 +293,14 @@
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
+	// The scene is its own stack: the ranges and the gulls' slabs sort by z-index inside it, and none
+	// of that reaches the arrival's content or its controls over it.
+	.entry {
+		position: absolute;
+		inset: 0;
+		isolation: isolate;
+	}
+
 	// Alien dusk, cut from the shared palette on the ranges' own grid (see drawArrivalSky). Sized by
 	// the cut, so the last column may run past the frame; the pin clips it.
 	.entry__sky {
@@ -300,12 +316,6 @@
 	.entry__ridge,
 	.entry__smoke {
 		@include lean;
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.entry__puff {
-			animation: none;
-		}
 	}
 
 	.entry__stars {
@@ -333,15 +343,16 @@
 	.entry__ridge,
 	.entry__smoke {
 		position: absolute;
+		z-index: var(--layer);
 		bottom: calc(var(--depth, 0) * -1px);
 		left: calc(var(--depth, 0) * -1px);
 		// hard-edged silhouettes, like the rest of the sprite work
 		image-rendering: pixelated;
 	}
 
-	// A puff is a box of whole cells showing one frame of its sheet: `translate` carries the climb a
-	// cell a step, `transform` the drift a cell a step, and the sheet steps a frame at a time as it
-	// grows. Nothing is scaled, so a cell of smoke is a cell of the range it rises from.
+	// A puff is a box of whole cells showing one frame of its sheet, carried a whole cell at a time and
+	// grown a whole frame at a time (js/plume.js). Nothing is scaled, so a cell of smoke is a cell of
+	// the range it rises from.
 	.entry__puff {
 		position: absolute;
 		top: var(--vent-y);
@@ -350,38 +361,8 @@
 		height: var(--puff);
 		background: var(--smoke) 0 0 / auto 100% no-repeat;
 		image-rendering: pixelated;
+		// unseen until the plume has painted it
 		opacity: 0;
-		animation:
-			entry-smoke var(--period) var(--rise-ease) var(--delay) infinite,
-			entry-smoke-grow var(--period) var(--puff-ease) var(--delay) infinite,
-			entry-smoke-drift var(--period) var(--drift-ease) var(--delay) infinite;
-	}
-
-	@keyframes entry-smoke {
-		0% {
-			translate: 0 0;
-			opacity: 0;
-		}
-		10%,
-		55% {
-			opacity: var(--peak);
-		}
-		100% {
-			translate: 0 var(--rise);
-			opacity: 0;
-		}
-	}
-
-	@keyframes entry-smoke-grow {
-		to {
-			background-position-x: var(--sheet-shift);
-		}
-	}
-
-	@keyframes entry-smoke-drift {
-		to {
-			transform: translateX(var(--drift));
-		}
 	}
 
 	// Inside the deck: a flat wash on purpose — any shaped gradient at full-frame size reads as a shape.
