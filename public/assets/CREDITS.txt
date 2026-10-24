@@ -38,5 +38,5 @@ Music
 Files: audio/northcape.mp3
 
 "Northcape" by Meltwater, used on the game's title screen with the
-rights holder's permission (re-encoded at 128 kbps). Not covered by the
+rights holder's permission (from 0:21, re-encoded at 128 kbps). Not covered by the
 CC0 dedication above.
