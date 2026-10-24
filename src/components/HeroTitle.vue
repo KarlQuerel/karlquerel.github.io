@@ -22,12 +22,12 @@
 </template>
 
 <script setup>
-	import { onActivated, onMounted, ref } from 'vue'
+	import { onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 	import { useRafThrottle } from '@/composables/useRafThrottle'
 	import { useWindowListener } from '@/composables/useWindowListener'
 	import { HERO_FLYBY } from '@/constants/journey'
 
-	defineProps({
+	const props = defineProps({
 		// the whole name, and the two words the camera flies between
 		name: { type: String, required: true },
 		firstWords: { type: String, required: true },
@@ -37,6 +37,8 @@
 		cue: { type: String, required: true },
 		// mid-transit the plate goes bare: the blurred passes would magnify into frame-sized washes
 		bare: { type: Boolean, default: false },
+		// the letter under the cursor stands off the page while this holds
+		hover: { type: Boolean, default: true },
 	})
 
 	const textEl = ref(null)
@@ -89,6 +91,16 @@
 		}
 	}
 
+	function drawGlyph(ctx, run, i, dpr, colour, dx, dy) {
+		ctx.font = `${run.size * dpr}px ${run.family}`
+		ctx.fillStyle = colour
+		ctx.fillText(
+			run.text[i],
+			(run.x + i * (run.size + run.spacing)) * dpr + dx,
+			run.mid * dpr + dy
+		)
+	}
+
 	// the eight ways round a glyph, for the keyline
 	const RING = [
 		[-1, -1],
@@ -103,6 +115,8 @@
 
 	// the store the plate was last painted at, so a resize that leaves the type alone repaints nothing
 	let painted = ''
+	// what the last full paint laid out, so the hover can redraw the ink alone
+	let plate = null
 
 	function paint(force = true) {
 		const el = canvasEl.value
@@ -161,29 +175,137 @@
 			glowCtx.shadowBlur = blur * dpr
 			for (const run of runs) if (run.bloom || !bloomOnly) drawRun(glowCtx, run, dpr)
 		}
+		plate = { runs, dpr, box, axis, stacked, last }
+		drawInk(ctx)
+		cutPort(glowCtx)
+
+		emit('axis', axis)
+	}
+
+	// The porthole, cut last so nothing silts it up: every pass spills into it.
+	function cutPort(g) {
+		const { dpr, box, axis, stacked, last } = plate
+		if (stacked) return
+		const port = HERO_FLYBY.qPort * last.size * dpr
+		g.clearRect(
+			(box.width / 2 + axis.x) * dpr - port / 2,
+			(box.height / 2 + axis.y) * dpr - port / 2,
+			port,
+			port
+		)
+	}
+
+	// The sharp layer: keylines, the hover's shadows deepest first (over the keyline, which is wider than
+	// a step), then the ink.
+	function drawInk(ctx = canvasEl.value.getContext('2d')) {
+		const { runs, dpr } = plate
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 		for (const run of runs.filter(r => r.keyline)) {
 			const off = HERO_FLYBY.plateKeylineEm * run.size * dpr
 			for (const [dx, dy] of RING) {
 				drawRun(ctx, run, dpr, HERO_FLYBY.plateKeyline, dx * off, dy * off)
 			}
 		}
-		for (const run of runs) drawRun(ctx, run, dpr)
-
-		// The porthole, cut last so nothing silts it up: every pass above spills into it.
-		if (!stacked) {
-			const port = HERO_FLYBY.qPort * last.size * dpr
-			for (const g of [ctx, glowCtx]) {
-				g.clearRect(
-					(box.width / 2 + axis.x) * dpr - port / 2,
-					(box.height / 2 + axis.y) * dpr - port / 2,
-					port,
-					port
-				)
+		for (const [key, depth] of raised) {
+			const [r, i] = key.split(':').map(Number)
+			const run = runs[r]
+			for (let s = depth; s >= 1; s--) {
+				const off = s * H.stepEm * run.size * dpr
+				drawGlyph(ctx, run, i, dpr, H.shadow[s - 1], off, off)
 			}
 		}
-
-		emit('axis', axis)
+		for (const run of runs) drawRun(ctx, run, dpr)
+		cutPort(ctx)
 	}
+
+	// The hover: the glyph under the cursor ('run:index') stands up a step at a time, the others settle.
+	const H = HERO_FLYBY.hover
+	const raised = new Map()
+	let under = null
+	let stepping = 0
+
+	// the name and the role's glyph under (x, y) on the plate, if any
+	function glyphUnder(x, y) {
+		for (const r of [0, 1, 2]) {
+			const run = plate.runs[r]
+			const advance = run.size + run.spacing
+			const i = Math.floor((x - run.x + run.spacing / 2) / advance)
+			if (
+				i >= 0 &&
+				i < run.text.length &&
+				run.text[i] !== ' ' &&
+				Math.abs(y - run.mid) <= run.size / 2
+			)
+				return `${r}:${i}`
+		}
+		return null
+	}
+
+	function step() {
+		let moved = false
+		for (const key of new Set([...raised.keys(), under].filter(Boolean))) {
+			const now = raised.get(key) ?? 0
+			const next = now + Math.sign((key === under ? H.shadow.length : 0) - now)
+			if (next === now) continue
+			moved = true
+			if (next) raised.set(key, next)
+			else raised.delete(key)
+		}
+		if (moved) drawInk()
+		stepping = moved ? setTimeout(step, H.stepMs) : 0
+	}
+	function aim(key) {
+		if (key === under) return
+		under = key
+		if (!stepping) step()
+	}
+
+	// Through the opening of the zoom the letter under the cursor is re-found as the title grows under a
+	// still mouse; once the pass is past it the shadows settle back.
+	let pointer = null
+	function track() {
+		if (!pointer || !plate || !canvasEl.value) return
+		if (!props.hover) return aim(null)
+		const box = canvasEl.value.getBoundingClientRect()
+		aim(
+			glyphUnder(
+				((pointer.x - box.left) / box.width) * plate.box.width,
+				((pointer.y - box.top) / box.height) * plate.box.height
+			)
+		)
+	}
+	function onPointer(event) {
+		if (event.pointerType === 'touch') return
+		pointer = { x: event.clientX, y: event.clientY }
+		track()
+	}
+	useWindowListener('pointermove', onPointer)
+	// the pass glides on after the last scroll event: follow it frame by frame until the title holds still
+	let following = 0
+	let still = 0
+	let lastLeft = null
+	function follow() {
+		const left = canvasEl.value?.getBoundingClientRect().left
+		still = left === lastLeft ? still + 1 : 0
+		lastLeft = left
+		track()
+		following = still < H.settleFrames ? requestAnimationFrame(follow) : 0
+	}
+	useWindowListener('scroll', () => {
+		still = 0
+		if (pointer && !following) following = requestAnimationFrame(follow)
+	})
+	watch(() => props.hover, track)
+	// a flick out of the window sends no last move
+	useWindowListener('pointerout', event => {
+		if (event.relatedTarget) return
+		pointer = null
+		aim(null)
+	})
+	onBeforeUnmount(() => {
+		clearTimeout(stepping)
+		cancelAnimationFrame(following)
+	})
 
 	const refit = useRafThrottle(() => paint(false))
 
