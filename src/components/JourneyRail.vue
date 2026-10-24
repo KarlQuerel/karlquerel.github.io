@@ -80,7 +80,7 @@
 		width: 2px;
 		height: calc((100% - #{$rail-track-inset} * 2) * var(--rail-progress, 0));
 		background: rgba($yellow, 0.75);
-		box-shadow: 0 0 6px rgba($yellow, 0.4);
+		box-shadow: 0 0 0 1px rgba($yellow, 0.3);
 		transition: height 0.25s steps(4, end);
 	}
 
@@ -124,7 +124,7 @@
 		// Dimmed in the ink, never by opacity: faded whole, a label over the planet's lit limb faded
 		// its keyline with it, and the keyline is what carries it across the clouds.
 		color: rgba($white, 0.6);
-		@include pixel-keyline($unit: 1px, $halo: 6px);
+		@include pixel-keyline;
 		transition: color 0.2s steps(3, end);
 	}
 
@@ -140,9 +140,10 @@
 
 	.is-here .rail__diamond {
 		background: $yellow;
+		// a hard ring outside the keyline, not a blur: the glow steps like the rest of the art
 		box-shadow:
 			0 0 0 1px rgba($black, 0.7),
-			0 0 8px rgba($yellow, 0.6);
+			0 0 0 2px rgba($yellow, 0.6);
 	}
 
 	.is-here .rail__label {
