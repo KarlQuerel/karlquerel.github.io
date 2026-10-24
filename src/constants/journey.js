@@ -76,6 +76,17 @@ export const HERO_FLYBY = {
 	plateGlowBlur: 26,
 	// Past this scale the plate repaints bare - ink and keyline, no blurred passes.
 	bareFromScale: 5,
+	// The letter under the cursor stands off the page: a hard shadow down and right, one tone per
+	// `stepEm` of offset (nearest first), grown and taken back a step every `stepMs`. It holds through
+	// the opening of the zoom, while the words still read as words, and lets go past `maxScale`.
+	hover: {
+		shadow: [paletteRgb('brick'), paletteRgb('rust')],
+		stepEm: 1 / 16,
+		stepMs: 60,
+		maxScale: 1.75,
+		// frames the title must hold still before the hover stops following the pass
+		settleFrames: 6,
+	},
 	plateDepth: 26,
 	// Chrome holds back until the hero has gone by — the opening frame is the name alone.
 	chromeFrom: 0.85,
