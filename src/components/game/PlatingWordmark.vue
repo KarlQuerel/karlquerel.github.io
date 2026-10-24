@@ -4,15 +4,21 @@
 </template>
 
 <script setup>
-	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+	import { onBeforeUnmount, onMounted, ref } from 'vue'
+	import { usePixelCell } from '@/composables/usePixelCell'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
-	import { useRafThrottle } from '@/composables/useRafThrottle'
-	import { GAME_HOLDING, GAME_WORDMARK } from '@/constants/game'
+	import { GAME_WORDMARK } from '@/constants/game'
 	import { hash1 } from '@/js/pixelNoise'
 	import { layoutWordmark, paintPlating, platesOf } from '@/js/wordmark'
 
+	const props = defineProps({
+		// false holds the name still, already built: only its glint runs
+		build: { type: Boolean, default: true },
+		// the most CSS px a cell may take on this page; unset, the plating's own cap
+		cellMax: { type: Number, default: 0 },
+	})
 	const emit = defineEmits(['built'])
-	const P = GAME_HOLDING.plating
+	const P = GAME_WORDMARK.plating
 	const layout = layoutWordmark(GAME_WORDMARK)
 	const plates = platesOf(layout, P)
 	const cols = layout.cols + 2 * P.pad
@@ -20,17 +26,10 @@
 
 	// one line always: the cell comes from the frame width, snapped to whole device pixels
 	const el = ref(null)
-	const cell = ref(P.cellMax)
-	const sizeStyle = computed(() => ({
-		width: `${cols * cell.value}px`,
-		height: `${rows * cell.value}px`,
-	}))
-	function fit() {
-		const dpr = window.devicePixelRatio || 1
-		const raw = Math.min(P.cellMax, (window.innerWidth * P.span) / cols)
-		cell.value = Math.max(1 / dpr, Math.floor(raw * dpr) / dpr)
-	}
-	const onResize = useRafThrottle(fit)
+	const { sizeStyle } = usePixelCell(cols, rows, {
+		span: P.span,
+		cellMax: props.cellMax || P.cellMax,
+	})
 
 	// Two phases: `step` counts plates landed in the build, then the hold runs the glint for good.
 	const state = { landed: 0, hot: new Set(), glint: -1, sparks: [] }
@@ -43,7 +42,7 @@
 
 	function paint() {
 		const ctx = el.value.getContext('2d')
-		paintPlating(ctx, layout, plates, GAME_WORDMARK, GAME_HOLDING.weld, state, P.pad, P.pad)
+		paintPlating(ctx, layout, plates, GAME_WORDMARK, GAME_WORDMARK.weld, state, P.pad, P.pad)
 	}
 
 	// each plate that lands throws sparks off its centre, one heading each
@@ -58,7 +57,7 @@
 	// sparks coast on whole cells, so the grid quantises the drift; true while any are left to draw
 	function drift(now) {
 		const { from, to, life, cools } = P.drift
-		const { spark, cool } = GAME_HOLDING.weld
+		const { spark, cool } = GAME_WORDMARK.weld
 		const had = state.sparks.length
 		flying = flying.filter(s => now - s.born < life)
 		state.sparks = flying.map(s => {
@@ -73,7 +72,7 @@
 		return had > 0
 	}
 
-	function build(now) {
+	function landing(now) {
 		const moved = drift(now)
 		const next = Math.floor((now - phaseAt) / P.stepMs)
 		if (next === step) return moved
@@ -101,7 +100,7 @@
 		return true
 	}
 
-	const phases = { build, hold }
+	const phases = { build: landing, hold }
 	function tick(now) {
 		if (!phaseAt) phaseAt = now
 		if (phases[phase](now)) paint()
@@ -109,18 +108,19 @@
 	}
 
 	onMounted(() => {
-		fit()
 		el.value.width = cols
 		el.value.height = rows
+		if (!props.build) {
+			state.landed = plates.count
+			phase = 'hold'
+		}
 		if (prefersReducedMotion()) {
 			state.landed = plates.count
 			paint()
-			emit('built')
 		} else frame = requestAnimationFrame(tick)
-		window.addEventListener('resize', onResize, { passive: true })
+		if (state.landed === plates.count) emit('built')
 	})
 	onBeforeUnmount(() => {
-		window.removeEventListener('resize', onResize)
 		if (frame) cancelAnimationFrame(frame)
 	})
 </script>
