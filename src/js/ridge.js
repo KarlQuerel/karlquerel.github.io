@@ -246,7 +246,7 @@ export function cutRidge(el, band, visitSeed, frame) {
 			const jitter = (hash1(which, band.seed + visitSeed + 89) - 0.5) * ENTRY.strataJitter
 			const off = (((bed - which - jitter) % 1) + 1) % 1
 			if (off < ENTRY.strataWidth * (0.4 + 1.6 * r)) bite[i] = r > ENTRY.strataDeepAt ? 2 : 1
-			thr[i] = fallThreshold(x, y)
+			thr[i] = fallThreshold(x, y, ENTRY.sun.grain)
 		}
 		// the crest is lit at paint time; the cut says where it runs, how it slopes and if a cap hangs on it
 		tops[x] = yTop
