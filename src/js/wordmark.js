@@ -1,7 +1,7 @@
 // A shaded wordmark from plain glyph masks. Light, depth, outline, plating and wear are all derived
 // here, so the constants hold nothing but the letter shapes, drawn coarse and doubled up to `scale`.
 
-import { paletteRgb } from '@/constants/palette'
+import { PALETTE } from '@/constants/palette'
 import { ramp } from './math.js'
 import { ditherThreshold, hash1, hash2 } from './pixelNoise.js'
 import { scaleMask } from './pixelScale.js'
@@ -133,7 +133,16 @@ export function layoutWordmark(mark) {
 		})
 	)
 
-	return { cols, rows, roles, boxes, mask, owner, castBy }
+	// the cells the cut took out of the letters, which the seam's light can fall on
+	const seam = []
+	if (mark.cut)
+		glyphRun({ ...mark, cut: null }).run.forEach(({ glyph, x: start }) => {
+			for (let y = mark.cut.at; y < mark.cut.at + mark.cut.rows; y++)
+				for (let i = 0; i < glyph[y].length; i++)
+					if (glyph[y][i] === '#') seam.push([start + 1 + i, y + 1])
+		})
+
+	return { cols, rows, roles, boxes, mask, owner, castBy, seam }
 }
 
 // Cuts the letters into plates, squares laid on each letter's box, and orders their landing: letters
@@ -174,8 +183,9 @@ export function platesOf(layout, plating) {
 
 // Paints the word mid-construction at (ox, oy): plates ranked under `landed` in their shaded steel,
 // the rest not yet there. `hot` plates glow, `glint` is the sweep's diagonal, `sparks` are [x, y, tone].
+// `beam`, when set, lights the cut around column `x`, every tone `ebb` steps further out as it dies.
 export function paintPlating(ctx, layout, plates, mark, weld, state, ox, oy) {
-	const { landed, hot, glint, sparks } = state
+	const { landed, hot, glint, sparks, beam } = state
 	const tones = layout.roles.map((row, y) =>
 		row.map((role, x) => {
 			if (!role || role === 'outline' || plates.rankAt[y][x] >= landed) return null
@@ -195,11 +205,25 @@ export function paintPlating(ctx, layout, plates, mark, weld, state, ox, oy) {
 				tones[y][x] = mark.ramp.outline
 		})
 	)
-	ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+	if (beam && landed >= plates.count) {
+		const { reach, tones: light } = mark.seam
+		for (const [x, y] of layout.seam) {
+			const step = Math.floor((Math.abs(x - beam.x) / reach) * light.length) + beam.ebb
+			if (step < light.length) tones[y][x] = light[step]
+		}
+	}
+	// one image for the whole canvas: a fill per cell made every glint step a frame's work
+	const { width, height } = ctx.canvas
+	const image = ctx.createImageData(width, height)
 	const put = (x, y, name) => {
-		ctx.fillStyle = paletteRgb(name)
-		ctx.fillRect(ox + x, oy + y, 1, 1)
+		const px = ox + x
+		const py = oy + y
+		if (px < 0 || py < 0 || px >= width || py >= height) return
+		const i = (py * width + px) * 4
+		image.data.set(PALETTE[name], i)
+		image.data[i + 3] = 255
 	}
 	tones.forEach((row, y) => row.forEach((name, x) => name && put(x, y, name)))
 	for (const [x, y, tone] of sparks) put(x, y, tone)
+	ctx.putImageData(image, 0, 0)
 }
