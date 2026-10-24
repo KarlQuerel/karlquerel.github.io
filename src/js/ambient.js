@@ -27,27 +27,26 @@ export function createAmbient({ sources, volume, fadeInMs, fadeOutMs }) {
 		})
 		.catch(() => {})
 
-	// A straight ramp over `ms` from `delayMs` on, the way the title fades, so the two arrive together.
-	// Whatever was still scheduled gives way, so a pause is never overtaken by an earlier fade-in.
-	const fade = (to, ms, delayMs = 0) => {
-		const from = ctx.currentTime + delayMs / 1000
-		level.gain.cancelScheduledValues(ctx.currentTime)
-		level.gain.setValueAtTime(level.gain.value, from)
-		level.gain.linearRampToValueAtTime(to, from + ms / 1000)
+	// A straight ramp over `ms`. Whatever was still scheduled gives way, so a pause is never overtaken by
+	// an earlier fade-in.
+	const fade = (to, ms) => {
+		const now = ctx.currentTime
+		level.gain.cancelScheduledValues(now)
+		level.gain.setValueAtTime(level.gain.value, now)
+		level.gain.linearRampToValueAtTime(to, now + ms / 1000)
 	}
 	let wanted = false
 	// the engine sleeps once faded out, unless played again meanwhile
 	let hush = 0
 
 	return {
-		// Up to `share` of the volume over `ms`, from `delayMs` on; by default all the way, quickly.
-		// Resolves false while the browser still holds sound back for a gesture.
-		play({ share = 1, ms = fadeInMs, delayMs = 0 } = {}) {
+		// In over `fadeInMs`. Resolves false while the browser still holds sound back for a gesture.
+		play() {
 			wanted = true
 			clearTimeout(hush)
 			return ctx
 				.resume()
-				.then(() => fade(volume * share, ms, delayMs))
+				.then(() => fade(volume, fadeInMs))
 				.then(() => ready)
 				.then(() => ctx.state === 'running')
 		},
