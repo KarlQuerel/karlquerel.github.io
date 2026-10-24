@@ -1,6 +1,6 @@
 <template>
 	<!-- The line under the name, typed in one character per step. -->
-	<p class="readout">
+	<p class="readout" :class="{ 'readout--pixel': pixel }">
 		<span class="sr-only">{{ line.lead }} {{ line.accent }}</span>
 		<span aria-hidden="true">
 			<!-- the space lives between the boxes, explicit so the compiler keeps it: a wrapped line then
@@ -23,6 +23,8 @@
 		line: { type: Object, required: true },
 		// typing begins when this turns true
 		start: { type: Boolean, default: false },
+		// set in the pixel face, to sit with a pixel-art title
+		pixel: { type: Boolean, default: false },
 	})
 
 	const { lead, accent, delayMs, charMs } = props.line
@@ -52,6 +54,18 @@
 		text-transform: uppercase;
 		color: $light-gray;
 		text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+	}
+
+	// Press Start 2P on its own grid, tracked two glyph pixels, no soft glow
+	.readout--pixel {
+		font-family: $font-pixel;
+		font-size: $type-title;
+		letter-spacing: 2 * $font-pixel-unit;
+		text-shadow: none;
+
+		.readout__accent {
+			text-shadow: none;
+		}
 	}
 
 	// a narrow frame wraps between the two halves, never inside one
