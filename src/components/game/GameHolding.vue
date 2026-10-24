@@ -3,10 +3,9 @@
 	     Earth, the ship's status typed under it. -->
 	<div class="content holding" :style="parallaxStyle">
 		<HomeChip :class="{ 'holding__chip--wait': !shown }" />
-		<!-- the music comes in with the name -->
-		<SoundChip :class="{ 'holding__chip--wait': !shown }" :cue="risen" :entrance="T" />
+		<SoundChip :class="{ 'holding__chip--wait': !shown }" />
 		<h1 class="sr-only">{{ GAME_WORDMARK.text }}</h1>
-		<!-- the entrance: the world rises, then the name rises and fades in, then the status types -->
+		<!-- the entrance: the world rises, then the name rises and fades in, then the status -->
 		<HoldingEarth @risen="risen = true" />
 		<!-- the name and its line lean together with the cursor, the nearest layer -->
 		<div
@@ -22,7 +21,13 @@
 				:cell-max="GAME_HOLDING.title.cellMax"
 				lit
 			/>
-			<TypedReadout :line="GAME_HOLDING.readout" :start="shown" pixel />
+			<TypedReadout
+				class="holding__status"
+				:class="{ 'holding__status--in': shown }"
+				:line="GAME_HOLDING.readout"
+				:typed="false"
+				pixel
+			/>
 		</div>
 	</div>
 </template>
@@ -39,12 +44,15 @@
 	import TypedReadout from './TypedReadout.vue'
 
 	const { parallaxStyle } = usePointerParallax()
-	const { title: T } = GAME_HOLDING.rise
+	const { title: T, status: S } = GAME_HOLDING.rise
 	const cardStyle = {
 		'--depth': GAME_HOLDING.title.depth,
 		'--title-ms': `${T.ms}ms`,
 		'--title-delay': `${T.delayMs}ms`,
 		'--title-from': `${T.from * 100}vh`,
+		'--status-ms': `${S.ms}ms`,
+		'--status-delay': `${S.delayMs}ms`,
+		'--status-from': `${S.from * 100}vh`,
 	}
 	const risen = ref(false)
 	// the name is in place: the status types, the way home shows
@@ -83,7 +91,22 @@
 		transform: none;
 	}
 
+	// the status line rises after the name the same way
+	.holding__status {
+		opacity: 0;
+		transform: translateY(var(--status-from));
+		transition:
+			opacity var(--status-ms) linear var(--status-delay),
+			transform var(--status-ms) $ease-settle var(--status-delay);
+	}
+
+	.holding__status--in {
+		opacity: 1;
+		transform: none;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
+		.holding__status,
 		.holding__card {
 			transition: none;
 		}
