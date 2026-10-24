@@ -210,8 +210,9 @@ export const GAME_WORDMARK = {
 		],
 	},
 	gap: 10,
-	// how far the letters stand off the wall, in cells, down and to the right (away from the key light)
-	depth: 6,
+	// how far the letters stand off the wall, in cells, down and to the right (away from the key light):
+	// none, so the plates sit flat with only their bevel and outline
+	depth: 0,
 	// Brushed steel under the site's upper-left key light. The lit and shaded bands are `bevel` cells
 	// deep; the very top row is the specular line and the very bottom row a thin rim light off the floor.
 	bevel: 4,
@@ -238,6 +239,10 @@ export const GAME_WORDMARK = {
 	glint: { every: 4200, step: 14, width: 6 },
 	// one line of void sawn through every letter, `rows` cells thick from row `at`: just above the bars
 	cut: { at: 16, rows: 4 },
+	// Under the cursor the cut lights up as if the saw had just passed: the hottest tone at the cursor's
+	// column, a step cooler every `reach` / tones.length cells, dark past `reach`. Leaving, it dies a
+	// tone every `ebbMs`.
+	seam: { reach: 30, tones: ['glow', 'ember', 'amber', 'brick', 'rust'], ebbMs: 70 },
 	// The build (PlatingWordmark.vue), plate by plate.
 	plating: {
 		// the word spans this share of the frame, at no more than cellMax CSS px per cell
@@ -314,15 +319,20 @@ export const GAME_HOLDING = {
 	// below it, the nearer Moon further and so faster, fading in from space. `title.delayMs` later the
 	// name rises `title.from` frame heights and fades in over `title.ms`, and the status types.
 	rise: { ms: 3500, earth: 0.14, moon: 0.24, title: { delayMs: 700, ms: 1800, from: 0.04 } },
-	// The title screen's music (js/ambient.js): "Northcape" by Meltwater from 0:21, eased in over
-	// `fadeInMs` so the arrival never clicks, out over `fadeOutMs`, and looped by crossfading each pass's
-	// last `crossfadeMs` into the next.
+	// The title screen's music (js/ambient.js): a 33 s loop of "Charon" from the IXION soundtrack, Opus
+	// where the browser decodes it (a seventh of the size) and lossless FLAC elsewhere; both keep the
+	// loop's exact length, so it wraps sample-exact. It opens quietly, `arrival.share` of `volume` over `arrival.ms` (the world's
+	// rise, so it is still climbing as the name comes), and swells to full with the name's fade.
+	// Otherwise it eases in over `fadeInMs` and out over `fadeOutMs`.
 	ambient: {
-		src: '/assets/audio/northcape.mp3',
-		volume: 0.6,
+		sources: [
+			{ src: '/assets/audio/charon-loop.opus', type: 'audio/ogg; codecs=opus' },
+			{ src: '/assets/audio/charon-loop.flac', type: 'audio/flac' },
+		],
+		volume: 0.27,
+		arrival: { share: 0.25, ms: 3500 },
 		fadeInMs: 600,
 		fadeOutMs: 3000,
-		crossfadeMs: 2500,
 	},
 	// the Moon risen over the night limb, `radius` a share of the frame's short side
 	moon: { at: [0.13, 0.58], radius: 0.045, depth: 5 },
