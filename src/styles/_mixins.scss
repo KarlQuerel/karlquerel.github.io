@@ -1,3 +1,4 @@
+@use 'sass:list';
 @use 'variables';
 
 // The static "window onto the void" chrome: a hairline frame over a translucent dark fill.
@@ -46,10 +47,9 @@
 	@include void-button($lift: -2px, $bg: transparent);
 
 	// No backing and no frame: a filled box pinned over the scene reads as a panel floating in front.
-	// px units, not em — a fraction of an em at this size rounds away to nothing.
 	& {
 		border: 0;
-		@include pixel-keyline($unit: 1px, $halo: 6px);
+		@include pixel-keyline;
 	}
 
 	// Hover is the colour and lift void-button already gives; its glow goes with the box.
@@ -60,18 +60,23 @@
 	}
 }
 
-// A keyline all the way round: display type over the world has to be held off it from every side.
-@mixin pixel-keyline($unit: 0.08em, $halo: 0.4em, $halo-colour: rgba(0, 0, 0, 0.9)) {
-	text-shadow:
-		#{$unit} #{$unit} 0 variables.$black,
-		-#{$unit} #{$unit} 0 variables.$black,
-		#{$unit} -#{$unit} 0 variables.$black,
-		-#{$unit} -#{$unit} 0 variables.$black,
-		0 #{$unit} 0 variables.$black,
-		0 -#{$unit} 0 variables.$black,
-		#{$unit} 0 0 variables.$black,
-		-#{$unit} 0 0 variables.$black,
-		0 0 #{$halo} $halo-colour;
+// A keyline all the way round, one glyph pixel thick and nothing softer: display type over the world has
+// to be held off it from every side, and a glow on a pixel grid would have to step like the rest of the
+// art, so there is none.
+@mixin pixel-keyline($unit: variables.$font-pixel-unit) {
+	$keyline: ();
+	@for $dx from -1 through 1 {
+		@for $dy from -1 through 1 {
+			@if $dx != 0 or $dy != 0 {
+				$keyline: list.append(
+					$keyline,
+					($dx * $unit) ($dy * $unit) 0 variables.$black,
+					comma
+				);
+			}
+		}
+	}
+	text-shadow: $keyline;
 }
 
 // The pointer over anything clickable: ember, so the cursor turns at the same moment the label does.
