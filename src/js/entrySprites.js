@@ -1,5 +1,4 @@
-// The arrival's procedural sprites (PlanetEntry.vue): cloud puffs, star tiles, the bird sheet and the
-// chimney's smoke.
+// The arrival's procedural sprites (PlanetEntry.vue): cloud puffs, star tiles and the chimney's smoke.
 
 import { ENTRY } from '../constants/journey.js'
 import { PALETTE, paletteRgb } from '../constants/palette.js'
@@ -11,21 +10,6 @@ function sheet(w, h) {
 	el.width = w
 	el.height = h
 	return { el, ctx: el.getContext('2d') }
-}
-
-// One sheet, frames side by side, walked by background-position. A silhouette needs no shading.
-export function drawBirdSheet() {
-	const b = ENTRY.bird
-	const { el, ctx } = sheet(b.w * b.frames.length, b.h)
-	ctx.fillStyle = paletteRgb(b.colour)
-	b.frames.forEach((rows, f) => {
-		rows.forEach((row, y) => {
-			for (let x = 0; x < row.length; x++) {
-				if (row[x] === '#') ctx.fillRect(f * b.w + x, y, 1, 1)
-			}
-		})
-	})
-	return el.toDataURL()
 }
 
 // Lanes advance by the golden ratio from a seeded phase: no two consecutive puffs share a lane.
