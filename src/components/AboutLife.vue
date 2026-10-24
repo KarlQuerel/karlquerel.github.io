@@ -139,7 +139,7 @@
 		text-align: inherit;
 		color: rgba(255, 255, 255, 0.88);
 		// A black keyline in px (this face is crisp only on its 11px grid), for where the lit limb crosses.
-		@include pixel-keyline($unit: 1px, $halo: 6px);
+		@include pixel-keyline($unit: 1px);
 	}
 
 	.life-card__line:last-child {
