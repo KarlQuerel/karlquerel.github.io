@@ -200,7 +200,7 @@
 
 	// the accent word's own shadow would replace the border, so it takes it too
 	.arrival__head :deep(.page-heading__accent) {
-		@include pixel-keyline($halo: 0.5em, $halo-colour: rgba($yellow, 0.5));
+		@include pixel-keyline;
 	}
 
 	.arrival__channels {
@@ -227,7 +227,7 @@
 		// yellow at rest, unlike the white portal labels: the accent colour is what the eye lands on
 		color: $yellow;
 		transition: color 0.3s ease;
-		@include pixel-keyline($unit: 1px, $halo: 6px, $halo-colour: rgba($yellow, 0.5));
+		@include pixel-keyline;
 	}
 
 	// up a whole 8px step with the heading, on the heading's own breakpoint
@@ -251,9 +251,9 @@
 		width: 0.5em;
 		height: 0.875em;
 		fill: $yellow;
-		// zero-blur shadows on every side: the keyline, for a shape text-shadow cannot reach
-		filter: drop-shadow(1px 0 0 $black) drop-shadow(-1px 0 0 $black) drop-shadow(0 1px 0 $black)
-			drop-shadow(0 -1px 0 $black);
+		// zero-blur shadows on every side, one cell of the face: the keyline, for a shape text-shadow cannot reach
+		filter: drop-shadow($font-pixel-unit 0 0 $black) drop-shadow((-$font-pixel-unit) 0 0 $black)
+			drop-shadow(0 $font-pixel-unit 0 $black) drop-shadow(0 (-$font-pixel-unit) 0 $black);
 		animation: cursor-blink 1s steps(1, end) infinite;
 	}
 
@@ -284,11 +284,14 @@
 		}
 	}
 
-	// The bug sprite is 50 art pixels across (public/assets/contact, 4 source px each). At 25px that is
-	// half a CSS px an art pixel, a whole device pixel on a retina screen; at 1.6em it was 0.51 and the
-	// downscale dropped rows unevenly.
+	// The chip's bug is drawn at the size it is shown (bug-small.png, 4 source px an art pixel) and
+	// lands at a whole number of CSS px per art pixel. The portal-size bug downscaled to 25px was half a
+	// CSS px an art pixel on a 1x screen, and the nearest-neighbour downscale dropped rows unevenly.
+	$report-art-cols: 13;
+	$report-art-px: 2px;
+
 	.arrival__report-icon {
-		width: 25px;
+		width: $report-art-cols * $report-art-px;
 		height: auto;
 		image-rendering: pixelated;
 	}
