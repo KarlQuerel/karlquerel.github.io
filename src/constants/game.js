@@ -311,12 +311,19 @@ export const GAME_HOLDING = {
 		depth: 3,
 	},
 	// The entrance: the Earth and the Moon rise into place over `ms`, from `earth` and `moon` frame heights
-	// below it, the nearer Moon further and so faster, fading in from space. Then the name rises `title.from` frame heights and
-	// fades in over `title.ms`, and the status types.
-	rise: { ms: 1900, earth: 0.14, moon: 0.24, title: { ms: 900, from: 0.04 } },
-	// The title screen's music (js/ambient.js): "Northcape" by Meltwater, faded to `volume` over `fadeMs`
-	// and looped by crossfading each pass's last `crossfadeMs` into the next.
-	ambient: { src: '/assets/audio/northcape.mp3', volume: 0.6, fadeMs: 3000, crossfadeMs: 2500 },
+	// below it, the nearer Moon further and so faster, fading in from space. `title.delayMs` later the
+	// name rises `title.from` frame heights and fades in over `title.ms`, and the status types.
+	rise: { ms: 3500, earth: 0.14, moon: 0.24, title: { delayMs: 700, ms: 1800, from: 0.04 } },
+	// The title screen's music (js/ambient.js): "Northcape" by Meltwater from 0:21, eased in over
+	// `fadeInMs` so the arrival never clicks, out over `fadeOutMs`, and looped by crossfading each pass's
+	// last `crossfadeMs` into the next.
+	ambient: {
+		src: '/assets/audio/northcape.mp3',
+		volume: 0.6,
+		fadeInMs: 600,
+		fadeOutMs: 3000,
+		crossfadeMs: 2500,
+	},
 	// the Moon risen over the night limb, `radius` a share of the frame's short side
 	moon: { at: [0.13, 0.58], radius: 0.045, depth: 5 },
 }
