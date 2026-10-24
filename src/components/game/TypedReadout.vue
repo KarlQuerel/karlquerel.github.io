@@ -1,21 +1,21 @@
 <template>
-	<!-- The line under the name, typed in one character per step. -->
+	<!-- The line under the name, typed in one character per step, or set whole. -->
 	<p class="readout" :class="{ 'readout--pixel': pixel }">
 		<span class="sr-only">{{ line.lead }} {{ line.accent }}</span>
 		<span aria-hidden="true">
 			<!-- the space lives between the boxes, explicit so the compiler keeps it: a wrapped line then
 			     centres on its own text -->
-			<span class="readout__part">{{ line.lead.slice(0, shown) }}</span
+			<span class="readout__part">{{ line.lead.slice(0, count) }}</span
 			>{{ ' '
 			}}<span class="readout__part readout__accent">{{
-				line.accent.slice(0, Math.max(0, shown - line.lead.length))
+				line.accent.slice(0, Math.max(0, count - line.lead.length))
 			}}</span>
 		</span>
 	</p>
 </template>
 
 <script setup>
-	import { watch } from 'vue'
+	import { computed, watch } from 'vue'
 	import { useTypewriter } from '@/composables/useTypewriter'
 
 	const props = defineProps({
@@ -25,10 +25,13 @@
 		start: { type: Boolean, default: false },
 		// set in the pixel face, to sit with a pixel-art title
 		pixel: { type: Boolean, default: false },
+		// false sets the line whole, for a page that brings it in some other way
+		typed: { type: Boolean, default: true },
 	})
 
 	const { lead, accent, delayMs, charMs } = props.line
 	const { shown, start: type } = useTypewriter({ delayMs, charMs })
+	const count = computed(() => (props.typed ? shown.value : lead.length + accent.length))
 	let started = false
 
 	watch(
@@ -65,6 +68,13 @@
 
 		.readout__accent {
 			text-shadow: none;
+		}
+	}
+
+	// a size up on the face's own grid where the frame is wide enough to carry it
+	@media (min-width: $breakpoint-desktop) {
+		.readout--pixel {
+			font-size: px8(3);
 		}
 	}
 
