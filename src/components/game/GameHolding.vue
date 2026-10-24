@@ -37,6 +37,7 @@
 	const cardStyle = {
 		'--depth': GAME_HOLDING.title.depth,
 		'--title-ms': `${T.ms}ms`,
+		'--title-delay': `${T.delayMs}ms`,
 		'--title-from': `${T.from * 100}vh`,
 	}
 	const risen = ref(false)
@@ -66,8 +67,8 @@
 		opacity: 0;
 		transform: translateY(var(--title-from));
 		transition:
-			opacity var(--title-ms) linear,
-			transform var(--title-ms) $ease-settle;
+			opacity var(--title-ms) linear var(--title-delay),
+			transform var(--title-ms) $ease-settle var(--title-delay);
 		@include lean;
 	}
 
