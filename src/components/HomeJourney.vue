@@ -53,7 +53,7 @@
 
 		<section id="work" ref="workRef" class="journey__station journey__station--work">
 			<!-- the heading sits in the scene: the planet's limb crosses it -->
-			<header class="journey__station-head" :style="headingStyle">
+			<header class="journey__station-head" :style="stationStyle">
 				<p class="journey__kicker">{{ kicker(1) }}</p>
 				<PageTitle
 					tag="h2"
@@ -61,11 +61,11 @@
 					:accent="ABOUT_HEADINGS.work.accent"
 				/>
 			</header>
-			<div class="journey__station-body" :style="bodyStyle"><AboutWork /></div>
+			<div class="journey__station-body" :style="stationStyle"><AboutWork /></div>
 		</section>
 
 		<section id="life" ref="lifeRef" class="journey__station journey__station--life">
-			<header class="journey__station-head" :style="headingStyle">
+			<header class="journey__station-head" :style="stationStyle">
 				<p class="journey__kicker">{{ kicker(2) }}</p>
 				<PageTitle
 					tag="h2"
@@ -73,7 +73,7 @@
 					:accent="ABOUT_HEADINGS.life.accent"
 				/>
 			</header>
-			<div class="journey__station-body" :style="bodyStyle"><AboutLife /></div>
+			<div class="journey__station-body" :style="stationStyle"><AboutLife /></div>
 		</section>
 
 		<!-- Arrival: entry over the horizon carries the contact portals. -->
@@ -155,11 +155,8 @@
 	const lastWord = nameWords.at(-1)
 	const portrait = ref(false)
 
-	// the headings answer the cursor too — less than the planet (see JOURNEY.parallax)
-	const headingStyle = { '--depth': JOURNEY.parallax.heading }
-
-	// the prose leans too, as the nearest layer bar the title plate
-	const bodyStyle = { '--depth': JOURNEY.parallax.body }
+	// the station's heading and prose answer the cursor as one plane, the nearest layer (JOURNEY.parallax)
+	const stationStyle = { '--depth': JOURNEY.parallax.station }
 
 	// Where the corridor sits from the lockup's centre (px) — HeroTitle measures it and hands it up.
 	const axis = ref({ x: 0, y: 0 })

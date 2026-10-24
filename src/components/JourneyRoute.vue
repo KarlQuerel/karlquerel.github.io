@@ -67,7 +67,7 @@
 	)
 	const frameStyle = computed(() => ({
 		opacity: fade.value,
-		'--depth': JOURNEY.parallax.body,
+		'--depth': JOURNEY.parallax.station,
 	}))
 
 	// nose, shoulder, tail, shoulder - a dart in local space, pointing along +x

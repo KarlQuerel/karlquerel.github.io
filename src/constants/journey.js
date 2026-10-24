@@ -13,7 +13,9 @@ export const JOURNEY = {
 	// The sun's swing around the planet (turns): the terminator advances, so landing is at dusk.
 	sunTurns: 0.12,
 	// Cursor lean, px per layer, nearest first. Ridge and planet never share a frame.
-	parallax: { planet: 22, heading: 10, body: 24 },
+	// Mouse parallax, px of travel per layer. A station's head and body lean as one plane, and the
+	// route with them: a title at a different depth from the prose and the line under it lagged the frame.
+	parallax: { planet: 22, station: 24 },
 	// Departure beats, as fractions of the run to WORK. `void` must sit past HERO_FLYBY.runVh.
 	departure: { void: 0.38, dot: 0.48, close: 0.61, orbitIn: 0.7, orbitOut: 0.85 },
 	// A few px of globe reads as a smudge, so a bright dot stands in until the disc can carry it.
