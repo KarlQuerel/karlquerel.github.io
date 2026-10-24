@@ -1,5 +1,5 @@
 <template>
-	<!-- the arrival's sky traffic: a few stars breathing, and the odd meteor or flock crossing -->
+	<!-- the arrival's sky traffic: a few stars breathing, and the odd meteor crossing -->
 	<div class="entry__sky-life" :style="lifeStyle">
 		<span
 			v-for="(tw, i) in twinklers"
@@ -14,35 +14,60 @@
 			:style="m.style"
 			@animationend="removeMeteor(m.id)"
 		/>
-		<div
-			v-for="fl in flocks"
-			:key="`f${fl.id}`"
-			class="entry__flock"
-			:style="fl.style"
-			@animationend="removeFlock(fl.id)"
-		>
-			<span v-for="(b, i) in fl.birds" :key="i" class="entry__bird" :style="birdStyle(b)" />
-		</div>
+	</div>
+	<!-- the gulls, a slab of depth a layer: each leans with the ranges either side of it and draws
+	     over the ones it has passed (js/gulls.js) -->
+	<div
+		v-for="tier in ENTRY.flock.tiers"
+		:key="tier.over"
+		class="entry__flight"
+		:style="flightStyle(tier)"
+	>
+		<template v-for="fl in flocks" :key="fl.id">
+			<template v-if="fl.flock.tier.over === tier.over">
+				<span
+					v-for="(b, i) in fl.flock.birds"
+					:key="i"
+					:ref="el => perch(fl, i, el)"
+					class="entry__bird"
+				/>
+			</template>
+		</template>
 	</div>
 </template>
 
 <script setup>
-	import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+	import {
+		computed,
+		markRaw,
+		onActivated,
+		onBeforeUnmount,
+		onDeactivated,
+		onMounted,
+		ref,
+		watch,
+	} from 'vue'
 	import { useSkySpawner } from '@/composables/useSkySpawner'
 	import { ENTRY } from '@/constants/journey'
-	import { paletteRgb } from '@/constants/palette'
-	import { drawBirdSheet, seedTwinklers } from '@/js/entrySprites'
+	import { PALETTE, paletteRgb } from '@/constants/palette'
+	import { seedTwinklers } from '@/js/entrySprites'
+	import { drawGullSheet } from '@/js/gullArt'
+	import { flyFlock, spawnFlock } from '@/js/gulls'
 	import { randIn, randInt } from '@/js/math'
+	import { windAt } from '@/js/wind'
 
 	const props = defineProps({
 		// the first stars' opacity: the whole layer shows, and spawns, only while it is up
 		fade: { type: Number, default: 0 },
+		// the deck has cleared: only then do gulls fly, or they would cross the whiteout
+		clear: { type: Boolean, default: false },
+		// how far the sun has gone behind the ranges, 0 by day to 1 by night: the gulls' tone walks with it
+		dusk: { type: Number, default: 0 },
 		// the visit's weather seed, shared with the rest of the arrival
 		seed: { type: Number, required: true },
 	})
 
 	const twinklers = ref([])
-	const birdSheet = ref('')
 
 	const lifeStyle = computed(() => ({
 		opacity: props.fade.toFixed(3),
@@ -72,64 +97,107 @@
 		},
 	})
 
-	// A flock: one container crossing the frame, with its birds strung out inside it.
-	const { items: flocks, remove: removeFlock } = useSkySpawner({
+	// A flock (js/gulls.js): its line through the air and its birds, flown by the loop below. Raw, so
+	// a frame's arithmetic on it never asks the template to render.
+	const {
+		items: flocks,
+		remove: removeFlock,
+		spawn: callUp,
+	} = useSkySpawner({
 		gapMs: ENTRY.flock.gapMs,
-		// Only while the sky layer shows (hidden, spawns never end and pile up) and one flock at a time.
-		active: () => props.fade > 0 && flocks.value.length === 0,
-		make: () => {
-			const f = ENTRY.flock
-			const bird = ENTRY.bird
-			const scale = randInt(f.scale)
-			const flap = Math.round(randIn(f.flapMs))
-			const sheet = bird.frames.length * bird.w * scale
-			const rightward = Math.random() < 0.5
-			return {
-				style: {
-					'--y': `${randIn(f.y).toFixed(1)}%`,
-					'--from': `${rightward ? f.enterVw.rightward : f.enterVw.leftward}vw`,
-					'--travel': `${(randIn(f.travelVw) * (rightward ? 1 : -1)).toFixed(1)}vw`,
-					'--drift': `${randIn(f.driftVh).toFixed(1)}vh`,
-					'--dur': `${Math.round(randIn(f.durMs))}ms`,
-					'--peak': randIn(f.peak).toFixed(2),
-				},
-				// Positions are counted in sprite cells and scaled once, so the flock shares one pixel grid.
-				birds: (() => {
-					let x = 0
-					return Array.from({ length: randInt(f.count) }, () => {
-						const at = {
-							left: x * scale,
-							top: randInt(f.jitterCells) * scale,
-							w: bird.w * scale,
-							h: bird.h * scale,
-							sheet,
-							flap,
-							// its own phase, so the wingbeats never line up
-							delay: Math.round(Math.random() * flap),
-						}
-						// wingtip to wingtip: the bird's own width, then clear air
-						x += bird.w + randInt(f.gapCells)
-						return at
-					})
-				})(),
-			}
-		},
+		// over a clear sky, and a few at a time at most
+		active: () => props.clear && flocks.value.length < ENTRY.flock.atOnce,
+		make: plan => ({ flock: markRaw(spawnFlock(plan)) }),
 	})
 
-	function birdStyle(b) {
-		return {
-			left: `${b.left}px`,
-			top: `${b.top}px`,
-			width: `${b.w}px`,
-			height: `${b.h}px`,
-			backgroundImage: `url(${birdSheet.value})`,
-			backgroundSize: `${b.sheet}px ${b.h}px`,
-			animationDuration: `${b.flap}ms`,
-			animationDelay: `-${b.delay}ms`,
-			'--sheet': `-${b.sheet}px`,
-			'--frames': ENTRY.bird.frames.length,
+	// Reaching the scene, the sky is alive at once: a flock a slab, one each way, from a rolled slab
+	// on; and again when the visitor comes back to a cleared sky with none up.
+	watch(
+		() => props.clear,
+		clear => {
+			if (!clear) return
+			const { tiers, arrive } = ENTRY.flock
+			const from = randInt([0, tiers.length - 1])
+			for (let k = 0; k < arrive; k++) {
+				callUp({ tier: tiers[(from + k) % tiers.length], rightward: k % 2 === 0 })
+			}
+		},
+		{ immediate: true }
+	)
+
+	const flightStyle = tier => ({
+		display: props.clear ? null : 'none',
+		'--depth': tier.depth,
+		'--layer': tier.over * ENTRY.stacking.range + ENTRY.stacking.flight,
+	})
+
+	// one sheet a slab, in its night tone and seen from its pitch, drawn the first time it asks
+	const birdSheets = {}
+	const sheetFor = tier =>
+		(birdSheets[tier.over] ??= drawGullSheet(ENTRY.bird, tier.tone.night, tier.pitch))
+
+	// The sheet dimmed to the hour: down to the day tone's light while the sun is up, by luminance,
+	// walking back to the night tone as the dusk comes on.
+	const lum = name =>
+		PALETTE[name].reduce((sum, c, i) => sum + c * [0.2126, 0.7152, 0.0722][i], 0)
+	function shade(tier, dusk) {
+		const day = lum(tier.tone.day) / lum(tier.tone.night)
+		return `brightness(${(day + (1 - day) * dusk).toFixed(3)})`
+	}
+
+	// A bird's span as it mounts, dressed once: the sheet for its slab shaded to the hour, its
+	// flock's density, and the mirror when the viewer is on its left, as it is for every bird flying
+	// left. The flight paints the rest, so the template never renders a frame.
+	const birdEls = new Map()
+	function perch(item, i, el) {
+		const key = `${item.id}:${i}`
+		if (!el) return void birdEls.delete(key)
+		if (birdEls.has(key)) return
+		birdEls.set(key, { el, tier: item.flock.tier })
+		el.style.backgroundImage = `url(${sheetFor(item.flock.tier)})`
+		el.style.filter = shade(item.flock.tier, props.dusk)
+		el.style.opacity = item.flock.peak.toFixed(2)
+		if (!item.flock.rightward) el.style.transform = 'scaleX(-1)'
+	}
+	// the dusk walks a step: every bird up shades with it
+	watch(
+		() => props.dusk,
+		dusk => {
+			for (const { el, tier } of birdEls.values()) el.style.filter = shade(tier, dusk)
+		}
+	)
+
+	// The gulls fly on a loop of their own while a flock is up: the wind is read once a frame, on the
+	// arrival's seed so it is the gust the chimney smoke leans to, and a flock that has left is let go.
+	let flying = 0
+	let last = 0
+	function fly(now) {
+		flying = flocks.value.length ? requestAnimationFrame(fly) : 0
+		const dt = last ? now - last : 0
+		last = now
+		const strength = windAt(now, props.seed)
+		const frame = { w: window.innerWidth, h: window.innerHeight }
+		for (const item of [...flocks.value]) {
+			const paint = (i, style) => {
+				const el = birdEls.get(`${item.id}:${i}`)?.el
+				if (el) Object.assign(el.style, style)
+				return !!el
+			}
+			if (flyFlock(item.flock, strength, dt, now, frame, paint)) removeFlock(item.id)
 		}
 	}
+	const takeOff = () => {
+		if (!flocks.value.length || flying) return
+		last = 0
+		flying = requestAnimationFrame(fly)
+	}
+	const ground = () => {
+		cancelAnimationFrame(flying)
+		flying = 0
+	}
+	watch(() => flocks.value.length, takeOff)
+	onActivated(takeOff)
+	onDeactivated(ground)
 
 	// Negative delays, so they are already mid-cycle rather than all lighting together.
 	function twinkleStyle(tw) {
@@ -147,14 +215,18 @@
 	onMounted(() => {
 		deferred = requestAnimationFrame(() => {
 			twinklers.value = seedTwinklers(props.seed)
-			birdSheet.value = drawBirdSheet()
 		})
 	})
 
-	onBeforeUnmount(() => cancelAnimationFrame(deferred))
+	onBeforeUnmount(() => {
+		cancelAnimationFrame(deferred)
+		ground()
+	})
 </script>
 
 <style scoped lang="scss">
+	@use '@/styles/mixins' as *;
+
 	.entry__sky-life {
 		position: absolute;
 		inset: 0;
@@ -225,57 +297,27 @@
 		}
 	}
 
-	// A flock crosses as one container; the birds are strung out inside it.
-	.entry__flock {
+	// A slab of the gulls' depth: it leans with the ranges either side of it and stacks over the ones
+	// it has passed; the birds inside are placed, sized and stepped through their sheet by the flight.
+	.entry__flight {
 		position: absolute;
-		top: var(--y);
-		left: var(--from);
-		opacity: 0;
-		animation: entry-flock var(--dur) linear forwards;
+		inset: 0;
+		z-index: var(--layer);
+		pointer-events: none;
+		@include lean;
 	}
 
-	@keyframes entry-flock {
-		0% {
-			transform: translate3d(0, 0, 0);
-			opacity: 0;
-		}
-		10% {
-			opacity: var(--peak);
-		}
-		88% {
-			opacity: var(--peak);
-		}
-		100% {
-			transform: translate3d(var(--travel), var(--drift), 0);
-			opacity: 0;
-		}
-	}
-
-	// Wingbeats are on their own clock, so they are stepped by background-position.
 	.entry__bird {
 		position: absolute;
+		top: 0;
+		left: 0;
 		background-repeat: no-repeat;
 		image-rendering: pixelated;
-		animation-name: entry-flap;
-		// the step count is the sprite's frame count, so the sheet stays the only place that knows it
-		animation-timing-function: steps(var(--frames), end);
-		animation-iteration-count: infinite;
-	}
-
-	@keyframes entry-flap {
-		from {
-			background-position: 0 0;
-		}
-		to {
-			background-position: var(--sheet) 0;
-		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.entry__twinkle,
-		.entry__meteor,
-		.entry__flock,
-		.entry__bird {
+		.entry__meteor {
 			animation: none;
 		}
 	}
