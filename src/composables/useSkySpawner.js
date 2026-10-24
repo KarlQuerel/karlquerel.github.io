@@ -4,21 +4,25 @@ import { randIn } from '@/js/math'
 
 // Occasional decorative elements crossing a sky. Exists for two failures: a hidden tab never fires
 // `animationend`, so spawns pile up and arrive together; and a timer outliving the component.
-// `firstGapMs` puts the first spawn on its own fuse.
+// `firstGapMs` puts the first spawn on its own fuse; `spawn` lets the owner call one up off the clock,
+// with a `plan` for `make`.
 export function useSkySpawner({ gapMs, firstGapMs = gapMs, make, active = () => true }) {
 	const items = ref([])
 	let nextId = 0
 	let timer = 0
 
 	function schedule(gap = gapMs) {
-		timer = window.setTimeout(spawn, randIn(gap))
+		timer = window.setTimeout(tick, randIn(gap))
 	}
 
-	function spawn() {
+	function spawn(plan) {
 		// skip while hidden or off stage, or they pile up behind a paused animation
-		if (document.visibilityState === 'visible' && active()) {
-			items.value.push({ id: nextId++, ...make() })
-		}
+		if (prefersReducedMotion() || document.visibilityState !== 'visible' || !active()) return
+		items.value.push({ id: nextId++, ...make(plan) })
+	}
+
+	function tick() {
+		spawn()
 		schedule()
 	}
 
@@ -39,5 +43,5 @@ export function useSkySpawner({ gapMs, firstGapMs = gapMs, make, active = () => 
 	onDeactivated(stop)
 	onBeforeUnmount(stop)
 
-	return { items, remove }
+	return { items, remove, spawn }
 }
