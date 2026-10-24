@@ -1,6 +1,22 @@
 <template>
-	<!-- The name discovered plate by plate, then held with its glint. Plays once. -->
-	<canvas ref="el" class="plating" :style="sizeStyle" aria-hidden="true" />
+	<!-- The name discovered plate by plate, then held with its glint. Plays once. With `lit`, the cut
+	     lights up around the cursor. -->
+	<canvas
+		ref="el"
+		class="plating"
+		:style="sizeStyle"
+		aria-hidden="true"
+		v-on="
+			lit
+				? {
+						pointermove: aim,
+						pointerdown: aim,
+						pointerleave: release,
+						pointercancel: release,
+					}
+				: {}
+		"
+	/>
 </template>
 
 <script setup>
@@ -16,6 +32,8 @@
 		build: { type: Boolean, default: true },
 		// the most CSS px a cell may take on this page; unset, the plating's own cap
 		cellMax: { type: Number, default: 0 },
+		// the cut answers the cursor
+		lit: { type: Boolean, default: false },
 	})
 	const emit = defineEmits(['built'])
 	const P = GAME_WORDMARK.plating
@@ -43,6 +61,39 @@
 	function paint() {
 		const ctx = el.value.getContext('2d')
 		paintPlating(ctx, layout, plates, GAME_WORDMARK, GAME_WORDMARK.weld, state, P.pad, P.pad)
+	}
+
+	// The seam's light: the cursor's column in the layout's cells, then a tone at a time out once it leaves.
+	const S = GAME_WORDMARK.seam
+	let aimed = false
+	let leftAt = 0
+	function aim(event) {
+		const box = el.value.getBoundingClientRect()
+		state.beam = { x: ((event.clientX - box.left) / box.width) * cols - P.pad, ebb: 0 }
+		leftAt = 0
+		aimed = true
+		if (!frame) paint()
+	}
+	function release() {
+		if (!state.beam) return
+		leftAt = performance.now()
+		// no loop under reduced motion: out at once
+		if (!frame) {
+			state.beam = null
+			paint()
+		}
+	}
+	function ebbing(now) {
+		if (!leftAt) return false
+		const ebb = Math.max(0, Math.floor((now - leftAt) / S.ebbMs))
+		if (ebb >= S.tones.length) {
+			state.beam = null
+			leftAt = 0
+			return true
+		}
+		if (ebb === state.beam.ebb) return false
+		state.beam.ebb = ebb
+		return true
 	}
 
 	// each plate that lands throws sparks off its centre, one heading each
@@ -103,7 +154,10 @@
 	const phases = { build: landing, hold }
 	function tick(now) {
 		if (!phaseAt) phaseAt = now
-		if (phases[phase](now)) paint()
+		const moved = phases[phase](now)
+		const ebbed = ebbing(now)
+		if (moved || ebbed || aimed) paint()
+		aimed = false
 		frame = requestAnimationFrame(tick)
 	}
 
