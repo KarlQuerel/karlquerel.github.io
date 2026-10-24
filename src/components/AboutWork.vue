@@ -8,7 +8,8 @@
 			:data-current="item.current || null"
 		>
 			<p v-if="item.chapter" class="ztl-chapter">{{ item.chapter }}</p>
-			<div class="ztl-row">
+			<!-- a row with a site is one link: the name's, stretched over badge, years and card -->
+			<div class="ztl-row" :data-linked="item.url ? '' : null">
 				<!-- emblem = the timeline node -->
 				<div class="ztl-art">
 					<span class="ztl-tick ztl-tick--start">{{ item.from }}</span>
@@ -216,6 +217,7 @@
 	}
 
 	// The hover lands on the ROW, not the badge: the badge is aria-hidden, and a 2.6rem target is small.
+	// Only rows that open something light up, so the glow always means a click.
 	@mixin node-lit($c, $k: 1) {
 		border-color: rgba($c, 0.6 + 0.35 * $k);
 		box-shadow:
@@ -237,7 +239,7 @@
 		}
 
 		// off its ghost and up to full ink, so the sprite reads as switched on
-		.ztl-row:hover .ztl-emblem {
+		.ztl-row[data-linked]:is(:hover, :focus-within) .ztl-emblem {
 			opacity: 1;
 		}
 
@@ -246,20 +248,20 @@
 			transition: color 0.2s steps(3, end);
 		}
 
-		.ztl-row:hover .ztl-tick {
+		.ztl-row[data-linked]:is(:hover, :focus-within) .ztl-tick {
 			color: $yellow;
 		}
 
-		.ztl-row:hover .ztl-badge--study {
+		.ztl-row[data-linked]:is(:hover, :focus-within) .ztl-badge--study {
 			@include node-lit($tag-education);
 		}
 
-		.ztl-row:hover .ztl-badge--job {
+		.ztl-row[data-linked]:is(:hover, :focus-within) .ztl-badge--job {
 			@include node-lit($tag-experience);
 		}
 
 		// the current post already wears the yellow; hovering it just turns it up
-		[data-current] .ztl-row:hover .ztl-badge {
+		[data-current] .ztl-row[data-linked]:is(:hover, :focus-within) .ztl-badge {
 			@include node-lit($yellow);
 		}
 
@@ -342,7 +344,14 @@
 		text-decoration: none;
 	}
 
-	a.ztl-school:hover,
+	// stretched over the whole row, which is its positioned ancestor
+	a.ztl-school::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+	}
+
+	.ztl-row:hover a.ztl-school,
 	a.ztl-school:focus-visible {
 		text-decoration: underline;
 		text-underline-offset: 0.2em;
