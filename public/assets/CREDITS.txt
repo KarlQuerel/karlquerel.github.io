@@ -35,8 +35,8 @@ released under the SIL Open Font License 1.1, self-hosted as woff2.
 
 Music
 -----
-Files: audio/northcape.mp3
+Files: audio/charon-loop.opus, audio/charon-loop.flac
 
-"Northcape" by Meltwater, used on the game's title screen with the
-rights holder's permission (from 0:21, re-encoded at 128 kbps). Not covered by the
-CC0 dedication above.
+A 33-second loop from "Charon", from the IXION soundtrack, used on the
+game's title screen with permission (Opus, with a lossless FLAC fallback;
+both loop sample-exact). Not covered by the CC0 dedication above.
