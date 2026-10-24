@@ -44,7 +44,7 @@ export const BUG_REPORT = {
 	// terse chip label; the icon carries the rest, the aria label keeps it explicit
 	label: 'BUG?',
 	ariaLabel: 'Report a bug',
-	icon: '/assets/contact/bug.png',
+	icon: '/assets/contact/bug-small.png',
 	issueUrl: `https://github.com/KarlQuerel/karlquerel.github.io/issues/new?labels=bug&title=${encodeURIComponent(
 		'Bug report'
 	)}&body=${encodeURIComponent(ISSUE_BODY)}`,
