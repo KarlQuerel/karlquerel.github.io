@@ -1,19 +1,35 @@
 // A shaded wordmark from plain glyph masks. Light, depth, outline, plating and wear are all derived
-// here, so the constants hold nothing but the letter shapes.
+// here, so the constants hold nothing but the letter shapes, drawn coarse and doubled up to `scale`.
 
 import { paletteRgb } from '@/constants/palette'
 import { ramp } from './math.js'
 import { ditherThreshold, hash1, hash2 } from './pixelNoise.js'
+import { scaleMask } from './pixelScale.js'
 
 const NEIGHBOURS = [-1, 0, 1]
 const LIT = new Set(['specular', 'light', 'face', 'brushed', 'shade'])
 const FACE = new Set(['face', 'shade'])
 
+// Each glyph of the text, `scale` cells per drawn cell, set on one line `gap` cells apart: where it
+// starts, and the line's size. A `cut` is one line of void through every letter: `rows` rows of the
+// glyphs from `at` are emptied.
+function glyphRun({ text, glyphs, gap, cut, scale }) {
+	const inCut = y => cut && y >= cut.at && y < cut.at + cut.rows
+	const run = []
+	let x = 0
+	for (const ch of text) {
+		const glyph = scaleMask(glyphs[ch], scale).map((row, y) =>
+			inCut(y) ? row.replaceAll('#', '.') : row
+		)
+		run.push({ glyph, x })
+		x += glyph[0].length + gap
+	}
+	return { run, width: x - gap, height: run[0].glyph.length }
+}
+
 // Lays the mark's text out on one grid and names each cell's role.
 export function layoutWordmark(mark) {
-	const glyphs = [...mark.text].map(ch => mark.glyphs[ch])
-	const height = glyphs[0].length
-	const width = glyphs.reduce((sum, g) => sum + g[0].length, 0) + mark.gap * (glyphs.length - 1)
+	const { run: line, width, height } = glyphRun(mark)
 	// one cell of outline all round, plus the depth the letters cast down and to the right
 	const cols = width + 2 + mark.depth
 	const rows = height + 2 + mark.depth
@@ -21,8 +37,8 @@ export function layoutWordmark(mark) {
 	const mask = Array.from({ length: rows }, () => new Array(cols).fill(false))
 	const owner = Array.from({ length: rows }, () => new Array(cols).fill(-1))
 	const boxes = []
-	let x = 1
-	glyphs.forEach((glyph, index) => {
+	line.forEach(({ glyph, x: start }, index) => {
+		const x = start + 1
 		glyph.forEach((row, y) => {
 			for (let i = 0; i < row.length; i++) {
 				if (row[i] !== '#') continue
@@ -31,7 +47,6 @@ export function layoutWordmark(mark) {
 			}
 		})
 		boxes.push({ x, y: 1, w: glyph[0].length, h: height })
-		x += glyph[0].length + mark.gap
 	})
 
 	const at = (cx, cy) => cy >= 0 && cy < rows && cx >= 0 && cx < cols && mask[cy][cx]
@@ -43,15 +58,20 @@ export function layoutWordmark(mark) {
 	const near = (cx, cy, test) =>
 		NEIGHBOURS.some(dy => NEIGHBOURS.some(dx => test(cx + dx, cy + dy)))
 
-	// Key light from the upper left, two cells deep: caps and left edges lit, feet and right edges
+	// Key light from the upper left, `bevel` cells deep: caps and left edges lit, feet and right edges
 	// shaded, with a thin rim light along the very bottom.
+	const b = mark.bevel
+	const open = (cx, cy, dx, dy, n) => {
+		for (let d = 1; d <= n; d++) if (!at(cx + dx * d, cy + dy * d)) return true
+		return false
+	}
 	const lit = (cx, cy) => {
 		if (!at(cx, cy - 1)) return 'specular'
 		if (!at(cx, cy + 1)) return 'rim'
-		if (!at(cx, cy - 2) || !at(cx - 1, cy)) return 'light'
-		if (!at(cx, cy + 2) || !at(cx + 1, cy)) return 'dark'
-		if (!at(cx - 2, cy)) return 'light'
-		if (!at(cx + 2, cy)) return 'dark'
+		if (open(cx, cy, 0, -1, b) || open(cx, cy, -1, 0, b - 1)) return 'light'
+		if (open(cx, cy, 0, 1, b) || open(cx, cy, 1, 0, b - 1)) return 'dark'
+		if (open(cx, cy, -1, 0, b)) return 'light'
+		if (open(cx, cy, 1, 0, b)) return 'dark'
 		return 'face'
 	}
 
@@ -63,6 +83,10 @@ export function layoutWordmark(mark) {
 			return near(cx, cy, solid) ? 'outline' : null
 		})
 	)
+	// the cut is a saw through the whole letter, depth and outline included: its rows stay void
+	if (mark.cut)
+		for (let cy = mark.cut.at + 1; cy < mark.cut.at + 1 + mark.cut.rows; cy++)
+			roles[cy].fill(null)
 
 	// Per letter: the face falls off toward the lower right.
 	boxes.forEach(({ x: bx, y: by, w, h }) => {
