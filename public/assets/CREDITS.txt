@@ -32,3 +32,11 @@ Files: fonts/press-start-2p-latin.woff2, fonts/departure-mono.woff2
 
 "Departure Mono" copyright 2022-2024 Helena Zhang (helenazhang.com),
 released under the SIL Open Font License 1.1, self-hosted as woff2.
+
+Music
+-----
+Files: audio/northcape.mp3
+
+"Northcape" by Meltwater, used on the game's title screen with the
+rights holder's permission (re-encoded at 128 kbps). Not covered by the
+CC0 dedication above.
