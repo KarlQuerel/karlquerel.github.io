@@ -622,7 +622,9 @@ export const ENTRY = {
 
 	// The chimney's smoke, DOM over the near band — the one moving thing on a static cut. A puff is a
 	// sheet of frames drawn on the grid (drawPuff), one per cell of width from `cellsFrom` to `cellsTo`,
-	// and grows by stepping frames: scaled, its four cells became blocks three cells wide.
+	// and grows by stepping frames: scaled, its four cells became blocks three cells wide. Flown by
+	// js/plume.js: `riseCells` a life straight up in still air, `driftCells` a life sideways per unit
+	// of wind, and `cool` of its climb gone by the top, so under wind the plume curves over.
 	smoke: {
 		puffs: 10,
 		periodMs: 7000,
@@ -634,14 +636,26 @@ export const ENTRY = {
 		driftCells: 8,
 		// each puff's own share of the wind rolls between this and 2 minus it
 		driftMin: 0.45,
+		// the share of the climb a full gust flattens away: bent over, the plume hugs the dome
+		bend: 0.35,
+		cool: 0.5,
 		// lit side toward the sun, body, shaded side; the night set takes over with the habitat's lamp
 		shades: ['linen', 'cream', 'chalk'],
 		nightShades: ['stone', 'ash', 'shale'],
 		peak: 0.55,
+		// up to `peak` over the first `in` of a life, held to `hold`, gone by the top, in `levels` steps
+		fade: { in: 0.1, hold: 0.55, levels: 8 },
 	},
+
+	// The surface's wind (js/wind.js): a strength between `lull` and `gust`, rolled over `gustMs`; noise
+	// under `calm` is a lull, over `blow` a gust. Smoke scales its drift by it and bends lower under it.
+	wind: { lull: 0.35, gust: 2.2, gustMs: 6000, calm: 0.35, blow: 0.75 },
 
 	// Mouse parallax on the surface, as the starfield does it: px of travel per layer.
 	parallax: { cloud: 16, distant: 5, far: 11, near: 22 },
+	// How the ranges stack: `range` of z-index a band, and a flight of gulls `flight` over the last
+	// band it has passed, so a slab of birds can sit between two ranges.
+	stacking: { range: 10, flight: 5 },
 
 	// The dusk sky, dark top to bright horizon, dithered onto the same grid the ranges are cut on.
 	// `haze` is the mauve belt the glare passes through on its way out from the disc.
@@ -806,80 +820,101 @@ export const ENTRY = {
 	},
 	// Flying things as authored frames — '#' is a cell. At this size a bird is a silhouette.
 	bird: {
-		w: 13,
-		h: 9,
-		// A gull, four frames: high, level, arched, level, so the cycle is one beat and does not snap back.
-		frames: [
-			[
-				'..##.....##..',
-				'...##...##...',
-				'....##.##....',
-				'.....###.....',
-				'....######...',
-				'......###....',
-				'.............',
-				'.............',
-				'.............',
-			],
-			[
-				'.............',
-				'.............',
-				'.##.......##.',
-				'..###...###..',
-				'....######...',
-				'......###....',
-				'.............',
-				'.............',
-				'.............',
-			],
-			[
-				'.............',
-				'.............',
-				'.............',
-				'.............',
-				'....######...',
-				'..###...###..',
-				'.##.......##.',
-				'.............',
-				'.............',
-			],
-			[
-				'.............',
-				'.............',
-				'.##.......##.',
-				'..###...###..',
-				'....######...',
-				'......###....',
-				'.............',
-				'.............',
-				'.............',
-			],
-		],
-		// One tone on purpose: at this size a second shade reads as noise, not form.
-		colour: 'void',
+		// A gull as a small model in the air (js/gullArt.js), in cells of the sprite: the sprite's box,
+		// the short core of body the wings meet at (half-length and girth), and each wing: the shoulder
+		// it beats about, its chord, the inner panel out to the wrist, the outer panel out to the tip
+		// and how far the tip trails. All wing, as a gull is from below. A beat of `phases` sprites
+		// lifts the wing `lift` degrees either side of level, flexes the hand `flex` under it on the way
+		// up and sweeps it `sweepBack` cells; the glide holds `lift` of dihedral with the tips drooped
+		// `droop`. Sheets hold the yaws from `from` to `to` every `step` degrees; the far side mirrors.
+		w: 25,
+		h: 15,
+		body: { len: 1.3, girth: 0.7 },
+		wing: { shoulder: [0.4, 0.2, 0.7], chord: 1.9, inner: 4.8, outer: 5.9, tipBack: 1.4 },
+		flap: { phases: 8, lift: 38, flex: 30, sweepBack: 1.2 },
+		glide: { lift: 10, droop: 8 },
+		yaw: { from: 20, to: 160, step: 10 },
 	},
 	// A flock crosses rarely and slowly, low enough to be silhouetted against the bright band.
 	flock: {
-		// Small and frequent: a lone gull or a pair, not a migration. Spawn to spawn; a crossing is 16-27s.
-		gapMs: [14000, 30000],
+		// Small and occasional, day and night: a lone gull or a pair, not a migration. Spawn to spawn;
+		// and `arrive` flocks the moment the visitor reaches the scene, one a slab and one each way.
+		gapMs: [12000, 24000],
+		arrive: 2,
 		// Inclusive, and picked as a flat integer rather than by rounding a float.
 		count: [1, 2],
-		// The band matters more than the size: higher up, a dark silhouette has nothing to sit against.
-		y: [50, 66],
-		durMs: [16000, 27000],
-		travelVw: [112, 128],
-		driftVh: [-5, 3],
-		// Sprite magnification, whole steps only — a fractional scale lands cells on half pixels.
-		scale: [3, 5],
-		// Clear air between wingtips, in sprite cells so spacing grows with scale. Rolled per bird.
+		// in the air at once, at most: two depths showing against each other is the point
+		atOnce: 2,
+		// A flock flies a straight line in front of the ranges in true perspective (js/gulls.js): its
+		// place and size on screen divide by its depth, about an eye line `horizonVh` down the frame.
+		// A tier is a slab of that depth: `z` it flies within, `over` how many ranges it passes in
+		// front of, `depth` its pointer lean beside theirs (parallax), `yVh` where it starts down the
+		// frame (the band matters more than the size: higher up, a silhouette has nothing to sit
+		// against), `pitch` the degrees the viewer looks up at it from under, `tone` the one tone the
+		// haze leaves it by day and the paler one it catches by night (a second shade at this size
+		// reads as noise, not form), `odds` its share. The sheet is drawn in the night tone and dimmed
+		// to the day tone's light while the sun is up, walking between the two in `duskSteps` as the
+		// disc goes behind the ranges, so the tone never jumps with the lamp.
+		// `fovDeg` is half the frame's width as an angle: a bird's place across it says where the
+		// viewer stands to it, which is the yaw it is drawn at.
+		horizonVh: 78,
+		fovDeg: 48,
+		duskSteps: 8,
+		tiers: [
+			{
+				z: [2.4, 4],
+				over: 0,
+				depth: 3,
+				yVh: [48, 60],
+				pitch: 20,
+				tone: { day: 'shale', night: 'ash' },
+				odds: 0.5,
+			},
+			{
+				z: [1.5, 2.4],
+				over: 1,
+				depth: 8,
+				yVh: [50, 64],
+				pitch: 26,
+				tone: { day: 'ink', night: 'ash' },
+				odds: 0.35,
+			},
+			{
+				z: [1, 1.5],
+				over: 2,
+				depth: 16,
+				yVh: [52, 66],
+				pitch: 34,
+				tone: { day: 'void', night: 'stone' },
+				odds: 0.15,
+			},
+		],
+		// sprite magnification at a depth of 1, whole steps only, and the least it shrinks to
+		sizeAt1: 5,
+		sizeMin: 2,
+		// where a crossing starts, off the left edge heading right and off the right heading left,
+		// and how far past the far edge it has gone when it is over
+		enterVw: { rightward: -14, leftward: 114 },
+		exitVw: 14,
+		// its pace at the depth it starts at, in vw a second; nearer it hurries, farther it slows
+		paceVw: [4.5, 7.5],
+		// how far across its slab its depth would move over a level crossing: positive nears
+		approach: [-0.6, 0.6],
+		// Clear air between wingtips, in sprite cells so spacing grows with size. Rolled per bird.
 		gapCells: [10, 32],
 		// Vertical scatter, also per bird and in cells, so no two ride at the same height.
 		jitterCells: [-6, 6],
-		// wingbeat; each bird takes its own phase so the flock never flaps in unison
-		flapMs: [420, 700],
+		// A bird's own wingbeat, and how far each beat strays from it either side, so no two beats
+		// are the same and the flock never flaps in unison.
+		flapMs: [560, 900],
+		flapVary: 0.25,
+		// A gull flaps `beats` cycles, then glides `glideMs` on the level frame. The wind carries the
+		// crossing: `tail` faster downwind and `head` slower into it per unit of wind (0 a lull, 1 a
+		// gust), and downwind it glides `tailGlide` longer per unit, upwind `headGlide` shorter.
+		beats: [1, 6],
+		glideMs: [700, 2400],
+		wind: { tail: 0.5, head: 1, tailGlide: 1, headGlide: 0.6 },
 		peak: [0.72, 0.92],
-		// where a crossing starts, off the left edge heading right and off the right heading left
-		enterVw: { rightward: -14, leftward: 114 },
 	},
 
 	// Procedural ridgelines: grid and world are at fixed scale, so `ridgeCellPx` sets a cell on screen.
