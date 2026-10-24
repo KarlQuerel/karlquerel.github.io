@@ -17,6 +17,8 @@ $azure: #007fff;
 
 // Fonts
 $font-pixel: 'Press Start 2P', ui-monospace, monospace;
+// One glyph pixel of Press Start 2P at any size: the face is drawn on an 8px grid.
+$font-pixel-unit: 0.125em;
 // Departure Mono — bitmap console font carrying every bit of prose on the site.
 $font-terminal: 'Departure Mono', ui-monospace, 'Cascadia Mono', 'DejaVu Sans Mono', monospace;
 // Whole multiples of Departure Mono's 11px grid — the only crisp prose sizes.
