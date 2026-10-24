@@ -1,5 +1,6 @@
 // The earth shot's layers, painted once per grid into one atlas: the globe at (0, 0), the Moon beside
 // it. The stars are the intro's shared tile (js/intro/sky.js). The shader only slides them, so every pixel stays where it was put.
+// The holding screen paints the same globe and Moon on their own (paintGlobe, paintMoon).
 
 import { EARTH } from '../../constants/intro/earth.js'
 import { PALETTE } from '../../constants/palette.js'
@@ -9,10 +10,13 @@ import { MOON } from '../../constants/intro/moon.js'
 import { clamp01, ramp, smoothstep } from '../math.js'
 import { ditherThreshold, fbm1, fbm2, seamIndex } from '../pixelNoise.js'
 import { tidySprite } from '../ridge.js'
+import { norm } from '../vec3.js'
 
 const DEG = Math.PI / 180
 const even = v => 2 * Math.ceil(v / 2)
 const dz = d2 => Math.sqrt(1 - d2)
+// a sprite's whole square, as a window of it
+const whole = res => ({ x0: 0, y0: 0, w: res, h: res })
 
 // the sprites' sides in cells for this grid; the shader is handed the same numbers
 export function earthSizes(grid) {
@@ -39,16 +43,16 @@ function toPlanet(dx, dy, dz, { cosT, sinT }, { cosS, sinS }) {
 }
 
 // The night side's cities: the globe's own elevation says where land is, a second world's where it is built.
-function paintCities(d, res, ground, frame) {
+function paintCities(d, res, ground, frame, { x0, y0, w, h }) {
 	const disc = planetDisc(res)
 	const { radius, center } = disc
 	const { light } = frame
 	const c = EARTH.cities
 	const { hash3 } = planetWorld(EARTH.planet.seed + 1)
 	const built = createPlanetShader({ res, seed: EARTH.planet.seed + 2 })
-	for (let y = 0; y < res; y++) {
+	for (let y = y0; y < y0 + h; y++) {
 		const dy = (y + 0.5 - center) / radius
-		for (let x = 0; x < res; x++) {
+		for (let x = x0; x < x0 + w; x++) {
 			const dx = (x + 0.5 - center) / radius
 			const d2 = dx * dx + dy * dy
 			if (d2 >= 1) continue
@@ -68,7 +72,7 @@ function paintCities(d, res, ground, frame) {
 			if (h > odds) continue
 			put(
 				d,
-				(y * res + x) * 4,
+				((y - y0) * w + (x - x0)) * 4,
 				h < odds * 0.12 ? 'glow' : h < odds * 0.45 ? 'ember' : 'amber'
 			)
 		}
@@ -85,8 +89,7 @@ const CLOUD = RAMPS.length
 const SPACE = CLOUD + 1
 
 // The air past the limb: as deep as the sun's side of the globe is lit, inner band out, thinning to a checker.
-function paintAir(d, i, x, y, dx, dy, d2, radius, light) {
-	const A = EARTH.air
+function paintAir(d, i, x, y, dx, dy, d2, radius, light, A) {
 	const out = (Math.sqrt(d2) - 1) * radius
 	const toward =
 		(dx * light[0] + dy * light[1]) / (Math.hypot(light[0], light[1]) * Math.sqrt(d2))
@@ -102,6 +105,15 @@ function paintAir(d, i, x, y, dx, dy, d2, radius, light) {
 	if (band === A.ramp.length - 1 && ditherThreshold(x, y) > 0.5) d[i + 3] = 0
 }
 
+// The frame under another key light, `light` a unit vector x right, y down, z toward the viewer: the
+// sea glint's half-vector turns with it.
+export function lightFrame(frame, light) {
+	const [lx, ly, lz] = light
+	const hz = lz + 1
+	const hl = Math.hypot(lx, ly, hz)
+	return { ...frame, light, half: [lx / hl, ly / hl, hz / hl] }
+}
+
 // The key light turned about the view axis to come from where the sun stands over the globe on this
 // grid with `lightAt` of the earth shot's pan still to go, so the lit limb faces the sun.
 function aimLight(frame, grid) {
@@ -113,25 +125,22 @@ function aimLight(frame, grid) {
 	const a = Math.atan2(along(1, grid.height), along(0, grid.width))
 	const [lx, ly, lz] = frame.light
 	const m = Math.hypot(lx, ly)
-	const light = [m * Math.cos(a), m * Math.sin(a), lz]
-	const hz = lz + 1
-	const hl = Math.hypot(light[0], light[1], hz)
-	return { ...frame, light, half: [light[0] / hl, light[1] / hl, hz / hl] }
+	return lightFrame(frame, [m * Math.cos(a), m * Math.sin(a), lz])
 }
 
-// The globe, backlit. Two passes: what each cell is made of (tidied, so coasts stay clean), then the
-// light over it, dithered through every ramp step so the crescent fades instead of stacking bands.
-function paintPlanet(res, grid) {
-	const d = new Uint8ClampedArray(res * res * 4)
+// The globe under `frame`'s light with the air `A` round it and the surface's detail `D`, the window
+// `win` of its sprite (in the sprite's cells). Two passes: what each cell is made of (tidied, so
+// coasts stay clean), then the light over it, dithered through every ramp step so the crescent fades
+// instead of stacking bands.
+function paintPlanet(res, frame, win = whole(res), A = EARTH.air, D = EARTH.detail) {
+	const { x0, y0, w, h } = win
+	const d = new Uint8ClampedArray(w * h * 4)
 	const shader = createPlanetShader({ res, seed: EARTH.planet.seed })
 	const sky = createPlanetShader({ res, seed: EARTH.planet.seed + 3 })
-	const frame = aimLight(planetFrame(EARTH.planet.spin, EARTH.planet.lightYawDeg * DEG), grid)
 	const { light } = frame
 	const [lx, ly, lz] = light
 	const disc = planetDisc(res)
 	const { radius, center } = disc
-	const A = EARTH.air
-	const D = EARTH.detail
 	const sun = toPlanet(lx, ly, lz, disc, frame)
 	// fine octaves over the renderer's continents: ragged coasts, islands, cloud wisps
 	const ground = (x, y, z) =>
@@ -142,37 +151,39 @@ function paintPlanet(res, grid) {
 		D.wisp * (sky.fbm(z * D.scale, y * D.scale * 1.6, -x * D.scale, D.octaves) - 0.5)
 	const eps = D.slopeCells / radius
 
-	const material = new Uint32Array(res * res).fill(SPACE)
-	const elev = new Float32Array(res * res)
-	const cloudK = new Float32Array(res * res)
-	for (let y = 0; y < res; y++) {
+	const material = new Uint32Array(w * h).fill(SPACE)
+	// what each lit cell shows, for the coast pass: open sea or bare ground
+	const shown = new Uint8Array(w * h)
+	const elev = new Float32Array(w * h)
+	const cloudK = new Float32Array(w * h)
+	for (let y = y0; y < y0 + h; y++) {
 		const dy = (y + 0.5 - center) / radius
-		for (let x = 0; x < res; x++) {
+		for (let x = x0; x < x0 + w; x++) {
 			const dx = (x + 0.5 - center) / radius
 			const d2 = dx * dx + dy * dy
 			if (d2 >= 1) continue
 			const [sx, ny, sz] = toPlanet(dx, dy, dz(d2), disc, frame)
-			const j = y * res + x
+			const j = (y - y0) * w + (x - x0)
 			const n = ground(sx, ny, sz)
-			const c = (cover(sx, ny, sz) - EARTH.cloud) / D.cloudEdge
+			const c = (cover(sx, ny, sz) - D.cloud) / D.cloudEdge
 			elev[j] = n
 			cloudK[j] = c
 			material[j] = c > 0 ? CLOUD : bandOf(n)
 		}
 	}
-	tidySprite({ data: material }, res, res, EARTH.tidyPasses)
+	tidySprite({ data: material }, w, h, EARTH.tidyPasses)
 
-	for (let y = 0; y < res; y++) {
+	for (let y = y0; y < y0 + h; y++) {
 		const dy = (y + 0.5 - center) / radius
-		for (let x = 0; x < res; x++) {
+		for (let x = x0; x < x0 + w; x++) {
 			const dx = (x + 0.5 - center) / radius
 			const d2 = dx * dx + dy * dy
-			const i = (y * res + x) * 4
+			const j = (y - y0) * w + (x - x0)
+			const i = j * 4
 			if (d2 >= 1) {
-				paintAir(d, i, x, y, dx, dy, d2, radius, light)
+				paintAir(d, i, x, y, dx, dy, d2, radius, light, A)
 				continue
 			}
-			const j = y * res + x
 			const z = dz(d2)
 			const diff = dx * lx + dy * ly + z * lz
 			const n = elev[j]
@@ -202,7 +213,7 @@ function paintPlanet(res, grid) {
 						eps
 				// a deck up-sun shades the ground under it
 				const o = D.shadowOffset
-				if (cover(sx + sun[0] * o, ny + sun[1] * o, sz + sun[2] * o) > EARTH.cloud)
+				if (cover(sx + sun[0] * o, ny + sun[1] * o, sz + sun[2] * o) > D.cloud)
 					v -= D.shadowDrop
 				// sunlight glancing off open water near the bright limb
 				if (sea) {
@@ -212,12 +223,62 @@ function paintPlanet(res, grid) {
 						Math.pow(Math.max(0, dx * h[0] + dy * h[1] + z * h[2]), D.glintPower)
 				}
 			}
-			const step = seamIndex(v, ramp.length, x, y, EARTH.seam)
+			const step = seamIndex(v, ramp.length, x, y, D.seam)
 			put(d, i, step > 0 ? ramp[step] : foot)
+			if (!cloud) shown[j] = sea ? SHOWS_SEA : SHOWS_LAND
 		}
 	}
-	paintCities(d, res, ground, frame)
+	paintCities(d, res, ground, frame, win)
+	if (D.coastLine) paintCoast(d, shown, w, h, D.coastLine)
+	if (A.rim) paintRim(d, disc, light, win, A.rim)
 	return d
+}
+
+const SHOWS_SEA = 1
+const SHOWS_LAND = 2
+const SIDES = [
+	[1, 0],
+	[-1, 0],
+	[0, 1],
+	[0, -1],
+]
+
+// One cell of `tone` on the sea side of every lit coast: the map's own coastline.
+function paintCoast(d, shown, w, h, tone) {
+	for (let y = 1; y < h - 1; y++)
+		for (let x = 1; x < w - 1; x++) {
+			const j = y * w + x
+			if (shown[j] !== SHOWS_SEA) continue
+			if (SIDES.some(([dx, dy]) => shown[j + dy * w + dx] === SHOWS_LAND)) put(d, j * 4, tone)
+		}
+}
+
+// A line of light `cells` deep just inside the limb where it faces the sun: `tones[0]` past `from`
+// along the light, `tones[1]` past `bright`.
+function paintRim(
+	d,
+	{ radius, center },
+	[lx, ly],
+	{ x0, y0, w, h },
+	{ cells, from, bright, tones }
+) {
+	const inner = (1 - cells / radius) ** 2
+	for (let y = 0; y < h; y++) {
+		const dy = (y0 + y + 0.5 - center) / radius
+		for (let x = 0; x < w; x++) {
+			const dx = (x0 + x + 0.5 - center) / radius
+			const d2 = dx * dx + dy * dy
+			if (d2 >= 1 || d2 < inner) continue
+			const lit = dx * lx + dy * ly
+			if (lit > from) put(d, (y * w + x) * 4, tones[lit > bright ? 1 : 0])
+		}
+	}
+}
+
+// The globe on its own, turned to `spin` under `light` (x right, y down, z toward the viewer) with its
+// own `air` and `detail`, cut to the window `win` of its sprite: the holding screen's Earth.
+export function paintGlobe(res, { spin, light, air, detail }, win) {
+	return paintPlanet(res, lightFrame(planetFrame(spin, 0), norm(light)), win, air, detail)
 }
 
 // The Moon's own near side (constants/intro/moon.js): highland and mare albedo, Tycho's rays, a crisp
@@ -246,7 +307,7 @@ function rayLight(p, crater, k) {
 	return Math.max(halo, streak > 0.64 ? fade : 0)
 }
 
-function paintMoon(res) {
+export function paintMoon(res) {
 	const d = new Uint8ClampedArray(res * res * 4)
 	const M = MOON
 	const [lx, ly, lz] = EARTH.moon.light
@@ -298,7 +359,8 @@ export function paintEarthAtlas(grid) {
 	const width = P + M
 	const height = Math.max(P, M)
 	const data = new Uint8ClampedArray(width * height * 4)
-	blit(data, width, paintPlanet(P, grid), P, 0, 0)
+	const frame = aimLight(planetFrame(EARTH.planet.spin, EARTH.planet.lightYawDeg * DEG), grid)
+	blit(data, width, paintPlanet(P, frame), P, 0, 0)
 	blit(data, width, paintMoon(M), M, P, 0)
 	return { data, width, height, sizes }
 }
