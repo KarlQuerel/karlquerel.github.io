@@ -761,6 +761,10 @@ export const ENTRY = {
 		// the fewer cells change at once; below a frame's worth the frame rate is the ceiling.
 		night: 4,
 		notch: 1 / 256,
+		// How much blue noise is folded into the order the cells go over in (pixelNoise.fallThreshold):
+		// 0 is Bayer order, whose lattice reads as a screen a quarter of the way in; 1 is blue noise,
+		// where a band's two tones blur together and the sky's layers bleed into each other.
+		grain: 0.35,
 		// it only runs once the ground is under the visitor, in approach progress
 		sinkFrom: 0.6,
 		r: 13,
