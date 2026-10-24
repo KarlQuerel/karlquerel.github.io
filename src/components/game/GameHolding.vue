@@ -3,7 +3,8 @@
 	     Earth, the ship's status typed under it. -->
 	<div class="content holding" :style="parallaxStyle">
 		<HomeChip :class="{ 'holding__chip--wait': !shown }" />
-		<SoundChip :class="{ 'holding__chip--wait': !shown }" />
+		<!-- the music comes in with the name -->
+		<SoundChip :class="{ 'holding__chip--wait': !shown }" :cue="risen" :entrance="T" />
 		<h1 class="sr-only">{{ GAME_WORDMARK.text }}</h1>
 		<!-- the entrance: the world rises, then the name rises and fades in, then the status types -->
 		<HoldingEarth @risen="risen = true" />
@@ -15,7 +16,12 @@
 			@transitionend.self="onTitleIn"
 		>
 			<!-- mounted on the rise: its glint repaints the canvas, which would cost the rise frames -->
-			<PlatingWordmark v-if="risen" :build="false" :cell-max="GAME_HOLDING.title.cellMax" />
+			<PlatingWordmark
+				v-if="risen"
+				:build="false"
+				:cell-max="GAME_HOLDING.title.cellMax"
+				lit
+			/>
 			<TypedReadout :line="GAME_HOLDING.readout" :start="shown" pixel />
 		</div>
 	</div>
