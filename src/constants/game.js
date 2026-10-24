@@ -270,7 +270,7 @@ export const GAME_WORDMARK = {
 // The holding screen (GameHolding.vue): the plated name over the Earth's limb, a status line typed
 // under it.
 export const GAME_HOLDING = {
-	// The line under the name, typed in once the page is up. It has one job: nobody should think there
+	// The line under the name, brought in once the name is up. It has one job: nobody should think there
 	// is a game to play yet.
 	readout: { lead: 'UNDER', accent: 'CONSTRUCTION', delayMs: 500, charMs: 55 },
 	// the name takes no more than cellMax CSS px per cell here (bigger than in the intro, where it is a
@@ -317,21 +317,26 @@ export const GAME_HOLDING = {
 	},
 	// The entrance: the Earth and the Moon rise into place over `ms`, from `earth` and `moon` frame heights
 	// below it, the nearer Moon further and so faster, fading in from space. `title.delayMs` later the
-	// name rises `title.from` frame heights and fades in over `title.ms`, and the status types.
-	rise: { ms: 3500, earth: 0.14, moon: 0.24, title: { delayMs: 700, ms: 1800, from: 0.04 } },
+	// name rises `title.from` frame heights and fades in over `title.ms`. Once it is in, the status line
+	// does the same after `status.delayMs`.
+	rise: {
+		ms: 3500,
+		earth: 0.14,
+		moon: 0.24,
+		title: { delayMs: 700, ms: 1800, from: 0.04 },
+		status: { delayMs: 750, ms: 1400, from: 0.03 },
+	},
 	// The title screen's music (js/ambient.js): a 33 s loop of "Charon" from the IXION soundtrack, Opus
 	// where the browser decodes it (a seventh of the size) and lossless FLAC elsewhere; both keep the
-	// loop's exact length, so it wraps sample-exact. It opens quietly, `arrival.share` of `volume` over `arrival.ms` (the world's
-	// rise, so it is still climbing as the name comes), and swells to full with the name's fade.
-	// Otherwise it eases in over `fadeInMs` and out over `fadeOutMs`.
+	// loop's exact length, so it wraps sample-exact. It starts with the page, eased in over `fadeInMs`,
+	// and eases out over `fadeOutMs`.
 	ambient: {
 		sources: [
 			{ src: '/assets/audio/charon-loop.opus', type: 'audio/ogg; codecs=opus' },
 			{ src: '/assets/audio/charon-loop.flac', type: 'audio/flac' },
 		],
 		volume: 0.27,
-		arrival: { share: 0.25, ms: 3500 },
-		fadeInMs: 600,
+		fadeInMs: 1500,
 		fadeOutMs: 3000,
 	},
 	// the Moon risen over the night limb, `radius` a share of the frame's short side
