@@ -117,3 +117,8 @@ $text-caption: #e9e1cf;
 // Breakpoints, from constants/viewport.js so the scripts' media queries read the same widths
 $breakpoint-mobile: breakpoints.$mobile;
 $breakpoint-desktop: breakpoints.$desktop;
+
+// A layer coming to rest in world space: quick off the mark, long settle, no overshoot.
+$ease-settle: cubic-bezier(0.2, 0.7, 0.2, 1);
+// A heavy body drifting into place: eases in from rest and settles long, so neither end jolts.
+$ease-drift: cubic-bezier(0.4, 0, 0.15, 1);
