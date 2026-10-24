@@ -3,7 +3,7 @@
 // own `loop` leaves a gap). Fades run through gains, which work where a media element's volume is
 // fixed (iOS).
 
-export function createAmbient({ src, volume, fadeMs, crossfadeMs }) {
+export function createAmbient({ src, volume, fadeInMs, fadeOutMs, crossfadeMs }) {
 	const ctx = new AudioContext()
 	const level = ctx.createGain()
 	level.gain.value = 0
@@ -42,7 +42,8 @@ export function createAmbient({ src, volume, fadeMs, crossfadeMs }) {
 		deck.audio.addEventListener('timeupdate', () => deck === decks[live] && turn())
 	)
 
-	const fade = to => level.gain.setTargetAtTime(to, ctx.currentTime, fadeMs / 3000)
+	// a time constant a third of the fade, so it has all but arrived by the end
+	const fade = (to, ms) => level.gain.setTargetAtTime(to, ctx.currentTime, ms / 3000)
 	// the tracks stop once faded out, unless played again meanwhile
 	let hush = 0
 
@@ -51,7 +52,7 @@ export function createAmbient({ src, volume, fadeMs, crossfadeMs }) {
 		play() {
 			clearTimeout(hush)
 			ctx.resume()
-			fade(volume)
+			fade(volume, fadeInMs)
 			return decks[live].audio.play().then(
 				() => true,
 				() => false
@@ -61,9 +62,9 @@ export function createAmbient({ src, volume, fadeMs, crossfadeMs }) {
 			return !decks[live].audio.paused && ctx.state === 'running'
 		},
 		pause() {
-			fade(0)
+			fade(0, fadeOutMs)
 			clearTimeout(hush)
-			hush = setTimeout(() => decks.forEach(({ audio }) => audio.pause()), fadeMs)
+			hush = setTimeout(() => decks.forEach(({ audio }) => audio.pause()), fadeOutMs)
 		},
 		close() {
 			clearTimeout(hush)
