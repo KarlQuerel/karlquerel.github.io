@@ -43,12 +43,22 @@
 	// One 8px step. Press Start 2P is drawn at 8px, so this is its native size, not a shrunk 16.
 	$portal-label-size-mobile: px8(1);
 	$rim-colour: rgba($yellow, 0.85);
+	$glow-colour: rgba($yellow, 0.45);
 
 	// The resting rim: one art pixel on every side, so it reads as part of the sprite. Four hard
-	// offsets and no blur: the scene bands its colour, it does not glow.
-	@mixin rim-lit($px) {
-		filter: drop-shadow($px 0 0 $rim-colour) drop-shadow(-$px 0 0 $rim-colour)
+	// offsets and no blur: the scene bands its colour, it does not glow. `$outer` adds a second ring
+	// a pixel further out: chained, each shadow dilates what the last one left, so it lands outside.
+	@mixin rim-lit($px, $outer: null) {
+		$rings: drop-shadow($px 0 0 $rim-colour) drop-shadow(-$px 0 0 $rim-colour)
 			drop-shadow(0 $px 0 $rim-colour) drop-shadow(0 (-$px) 0 $rim-colour);
+		@if $outer {
+			$rings: $rings
+				drop-shadow($px 0 0 $outer)
+				drop-shadow(-$px 0 0 $outer)
+				drop-shadow(0 $px 0 $outer)
+				drop-shadow(0 (-$px) 0 $outer);
+		}
+		filter: $rings;
 	}
 
 	.portal {
@@ -79,17 +89,15 @@
 		transform: none;
 	}
 
-	// The bloom lives on the wrapper and the keyline on the sprite, so hover adds to the rest state
-	// instead of replacing it: one filter cannot do both, and swapping them made the rim blink out.
+	// The lift lives on the wrapper and the rings on the sprite: the hover filter restates the rim
+	// before adding its ring, so swapping filters never blinks the rim out.
 	.portal__icon {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		width: $portal-icon-size;
 		height: auto;
-		transition:
-			transform 0.35s ease,
-			filter 0.35s ease;
+		transition: transform 0.35s steps(2, end);
 	}
 
 	.portal__img {
@@ -109,20 +117,12 @@
 	.portal:hover .portal__icon,
 	.portal:focus-visible .portal__icon {
 		transform: translateY(-2 * $portal-art-px);
-		filter: drop-shadow(0 0 10px rgba($yellow, 0.8)) drop-shadow(0 0 24px rgba($yellow, 0.4));
-		animation: icon-bloom 1.8s ease-in-out infinite;
 	}
 
-	@keyframes icon-bloom {
-		0%,
-		100% {
-			filter: drop-shadow(0 0 8px rgba($yellow, 0.55))
-				drop-shadow(0 0 18px rgba($yellow, 0.28));
-		}
-		50% {
-			filter: drop-shadow(0 0 13px rgba($yellow, 0.9))
-				drop-shadow(0 0 30px rgba($yellow, 0.5));
-		}
+	// The glow is a second ring one art pixel outside the rim, not a blur: it steps like the rest of the art.
+	.portal:hover .portal__img,
+	.portal:focus-visible .portal__img {
+		@include rim-lit($portal-art-px, $glow-colour);
 	}
 
 	.portal__label {
@@ -132,23 +132,19 @@
 		font-size: $portal-label-size;
 		letter-spacing: 1px;
 		color: $text-interactive;
-		transition:
-			color 0.35s ease,
-			text-shadow 0.35s ease;
+		transition: color 0.35s ease;
 	}
 
 	.portal:hover .portal__label,
 	.portal:focus-visible .portal__label {
 		color: $yellow;
-		text-shadow: 0 0 12px rgba($yellow, 0.6);
 	}
 
-	// Reduced-motion: drop the icon scale and the hover pulse; the resting rim and the gold label read.
+	// Reduced-motion: drop the lift; the rings and the gold label read.
 	@media (prefers-reduced-motion: reduce) {
 		.portal:hover .portal__icon,
 		.portal:focus-visible .portal__icon {
 			transform: none;
-			animation: none;
 		}
 	}
 
@@ -169,6 +165,11 @@
 
 		.portal__img {
 			@include rim-lit($portal-art-px-mobile);
+		}
+
+		.portal:hover .portal__img,
+		.portal:focus-visible .portal__img {
+			@include rim-lit($portal-art-px-mobile, $glow-colour);
 		}
 
 		.portal__label {
