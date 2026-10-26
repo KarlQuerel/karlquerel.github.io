@@ -30,7 +30,7 @@
 	const moonEl = ref(null)
 	const earthStyle = ref({})
 	const moonStyle = ref({})
-	const riseStyle = { '--rise-ms': `${R.ms}ms` }
+	const riseStyle = { '--rise-ms': `${R.ms}ms`, '--cover-ms': `${R.coverMs}ms` }
 
 	// The rise starts on the first paint, two frames on so the layers are laid out below first.
 	const up = ref(false)
@@ -170,22 +170,25 @@
 	}
 
 	// The rise rides `transform`, the lean `translate`, so the two compose. Each canvas gets its own
-	// compositor layer, so the move never repaints the art. The fade is over by 60%: the Moon starts in
+	// compositor layer, so the move never repaints the art. The light is up by 60%: the Moon starts in
 	// frame and would otherwise pop in.
 	.orbit__layer {
 		position: absolute;
 		image-rendering: pixelated;
 		opacity: 0;
+		filter: brightness(0);
 		transform: translateY(var(--rise, 0));
 		transition:
 			transform var(--rise-ms) $ease-drift,
-			opacity calc(var(--rise-ms) * 0.6) linear;
+			opacity var(--cover-ms) linear,
+			filter calc(var(--rise-ms) * 0.6) linear;
 		will-change: transform, translate;
 		@include lean;
 	}
 
 	.orbit--up .orbit__layer {
 		opacity: 1;
+		filter: none;
 		transform: none;
 	}
 

@@ -316,11 +316,13 @@ export const GAME_HOLDING = {
 		depth: 3,
 	},
 	// The entrance: the Earth and the Moon rise into place over `ms`, from `earth` and `moon` frame heights
-	// below it, the nearer Moon further and so faster, fading in from space. `title.delayMs` later the
+	// below it, the nearer Moon further and so faster, lighting up from black: they turn opaque over the
+	// first `coverMs`, still dark, so no star ever shows through them. `title.delayMs` later the
 	// name rises `title.from` frame heights and fades in over `title.ms`. Once it is in, the status line
 	// does the same after `status.delayMs`.
 	rise: {
 		ms: 3500,
+		coverMs: 300,
 		earth: 0.14,
 		moon: 0.24,
 		title: { delayMs: 700, ms: 1800, from: 0.04 },
