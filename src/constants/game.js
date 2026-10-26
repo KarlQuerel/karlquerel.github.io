@@ -281,8 +281,8 @@ export const GAME_HOLDING = {
 	// `light` is the sun's direction (x right, y down, z toward the viewer): high off the frame to the
 	// right, so the limb is in day and the night with its cities only reaches the left foot; a sun
 	// level with the limb walled the cap off with a vertical terminator. The air is the intro's,
-	// deepened to four bands: this close, the glow is most of what says "atmosphere", and a line of light
-	// rides the lit limb inside it. Bands meet on one-cell seams, coasts carry a foam line, decks have
+	// deepened to four bands and opaque, so no star shows through it: this close, the glow is most of what
+	// says "atmosphere", and a line of light rides the lit limb inside it. Bands meet on one-cell seams, coasts carry a foam line, decks have
 	// hard edges and the sea catches the sun: flat shapes with edges, the pixel-art way.
 	earth: {
 		x: 0.38,
@@ -298,6 +298,7 @@ export const GAME_HOLDING = {
 			night: 3,
 			limbLift: 0,
 			ramp: ['sand', 'haze', 'rust', 'basalt'],
+			alpha: 255,
 			rim: { cells: 1.2, from: -0.15, bright: 0.6, tones: ['sand', 'linen'] },
 		},
 		detail: {
