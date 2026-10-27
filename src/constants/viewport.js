@@ -1,6 +1,6 @@
 // The site's two breakpoints, in px. The stylesheets read the same pair as `@use 'breakpoints:'`
 // (a Sass importer in vite.config.js), so SCSS and JS cannot drift apart.
-export const BREAKPOINTS = { mobile: 640, desktop: 1024 }
+const BREAKPOINTS = { mobile: 640, desktop: 1024 }
 
 export const MOBILE_VIEWPORT_QUERY = `(max-width: ${BREAKPOINTS.mobile}px)`
 
