@@ -13,7 +13,7 @@ const DIRT = ['void', 'basalt', 'rust', 'brick', 'clay', 'flare', 'amber', 'dune
 const SLAB = ['basalt', 'ash', 'stone', 'bone']
 
 // the margin a layer needs past each side of the frame: the furthest any layer slides, plus the pointer
-export function fieldsMargin(grid) {
+function fieldsMargin(grid) {
 	const deepest = Math.max(FIELDS.ground.near, FIELDS.tree.depth)
 	return Math.ceil(
 		deepest * ((FIELDS.truck / 2 + FIELDS.carry) * grid.height + FIELDS.lookCells) + 4
