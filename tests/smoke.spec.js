@@ -10,9 +10,6 @@ const ROUTES = [
 	{ path: '/about', title: 'Karl Querel • Software Engineer', lands: '/#work' },
 	{ path: '/contact', title: 'Karl Querel • Software Engineer', lands: '/#contact' },
 	{ path: '/sport', title: 'Sport • Karl Querel' },
-	// the WebGL flyby — its shaders only ever compile at runtime, so this is what
-	// catches a GLSL error (the renderer logs compile failures to the console)
-	{ path: '/lab', title: 'Lab • Karl Querel' },
 	{ path: '/terminal', title: 'Terminal • Karl Querel' },
 	{ path: '/under-construction', title: 'Under Construction • Karl Querel' },
 	// until it ships, the game's URL lands on the holding screen
