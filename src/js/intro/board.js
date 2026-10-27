@@ -36,10 +36,10 @@ function chartLayout(aspect) {
 }
 
 // ship i's destination in chart space: an angle in the fan and a reach out from Sol
-export function reachOf(i) {
+function reachOf(i) {
 	return C.near + (C.far - C.near) * Math.sqrt(frac(i * C.reachStep))
 }
-export function angleOf(i) {
+function angleOf(i) {
 	return (frac(i * C.angleStep) * 2 - 1) * C.spread
 }
 
