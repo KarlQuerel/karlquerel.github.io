@@ -67,7 +67,6 @@
 
 <style scoped lang="scss">
 	@use 'sass:color';
-	@use '@/styles/mixins' as *;
 
 	$row-gap: 0.3rem;
 	$badge: clamp(2.6rem, 6.5vw, 3.4rem);
@@ -169,7 +168,6 @@
 	}
 
 	.ztl-badge {
-		@include void-panel(rgba(0, 0, 0, 0.55));
 		display: block;
 		width: $badge;
 		height: $badge;
@@ -281,7 +279,7 @@
 		padding: 0.75rem 1rem;
 		text-align: left;
 		// a borderless dark wash, so the card reads over the world without a frame
-		background: rgba(0, 0, 0, 0.3);
+		background: rgba(0, 0, 0, 0.15);
 		border-radius: 30px;
 	}
 
@@ -426,11 +424,6 @@
 	@media (max-width: $breakpoint-mobile) {
 		.ztl {
 			--rail-center: 1.6rem;
-		}
-
-		.ztl-badge {
-			width: 2.6rem;
-			height: 2.6rem;
 		}
 
 		// 22px wrapped long degrees onto three lines; 16px is the only other size this face reads at
