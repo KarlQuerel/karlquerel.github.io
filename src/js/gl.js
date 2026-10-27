@@ -1,8 +1,7 @@
 // WebGL1 plumbing shared by every art-grid renderer. Nothing here knows about a scene.
 
-// Two triangles over clip space, and the same pair in 0..1 for a quad that carries its own UVs.
+// Two triangles over clip space.
 export const FULLSCREEN_QUAD = new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1])
-export const UNIT_QUAD = new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
 export const QUAD_VERTICES = 6
 
 // Starts a compile and link and hands back the wait on it. Where the driver links in the background
