@@ -80,7 +80,7 @@ export const HERO_FLYBY = {
 	// `stepEm` of offset (nearest first), grown and taken back a step every `stepMs`. It holds through
 	// the opening of the zoom, while the words still read as words, and lets go past `maxScale`.
 	hover: {
-		shadow: [paletteRgb('brick'), paletteRgb('rust')],
+		shadow: [paletteRgb('frost'), paletteRgb('steel')],
 		stepEm: 1 / 16,
 		stepMs: 60,
 		maxScale: 1.75,
