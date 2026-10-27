@@ -12,12 +12,6 @@ const routes = [
 		component: () => import('./components/HomeJourney.vue'),
 	},
 	{
-		// the WebGL landing flyby, in development. Unlisted: reachable by URL, never linked, not prerendered.
-		path: '/lab',
-		component: () => import('./components/lab/LabPage.vue'),
-		meta: { title: 'Lab' },
-	},
-	{
 		path: '/terminal',
 		component: () => import('./components/Terminal.vue'),
 		meta: { title: 'Terminal' },
