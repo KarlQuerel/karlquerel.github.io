@@ -6,7 +6,7 @@ import { smoothstep } from './math.js'
 import { ditherIndex, ditherThreshold } from './pixelNoise.js'
 
 // dependency-free 3D hash, seeded per visit so no two planets are alike
-export const seededHash3 = seed => (ix, iy, iz) => {
+const seededHash3 = seed => (ix, iy, iz) => {
 	let n = Math.imul(ix, 374761393)
 	n = (n + Math.imul(iy, 668265263)) | 0
 	n = (n + Math.imul(iz, 1274126177)) | 0
