@@ -278,9 +278,6 @@
 		gap: $row-gap;
 		padding: 0.75rem 1rem;
 		text-align: left;
-		// a borderless dark wash, so the card reads over the world without a frame
-		background: rgba(0, 0, 0, 0.15);
-		border-radius: 30px;
 	}
 
 	.ztl-kind {
