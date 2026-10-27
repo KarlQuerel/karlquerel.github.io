@@ -369,7 +369,7 @@ void main(){
     // sun glints off the dishes
     vec3 hv = normalize(SUN - rd);
     lit += SUNLIGHT*pow(max(dot(n, hv), 0.0), 60.0)*sh*(m > 4.5 && m < 5.5 ? 1.2 : 0.35);
-    // distance falls into the void, like the lab's farOff
+    // distance falls into the void
     float haze = smoothstep(18.0, 150.0, hitT)*0.92;
     col = mix(lit, mix(IRON, RUST*0.5, 0.3), haze);
   }
