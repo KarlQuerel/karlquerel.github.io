@@ -195,8 +195,8 @@
 		)
 	}
 
-	// The sharp layer: keylines, the hover's shadows deepest first (over the keyline, which is wider than
-	// a step), then the ink.
+	// The sharp layer: keylines (stretched round a raised glyph's shadow), the hover's shadows deepest
+	// first, then the ink.
 	function drawInk(ctx = canvasEl.value.getContext('2d')) {
 		const { runs, dpr } = plate
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
@@ -206,9 +206,29 @@
 				drawRun(ctx, run, dpr, HERO_FLYBY.plateKeyline, dx * off, dy * off)
 			}
 		}
-		for (const [key, depth] of raised) {
+		const lifted = [...raised].map(([key, depth]) => {
 			const [r, i] = key.split(':').map(Number)
-			const run = runs[r]
+			return { run: runs[r], i, depth }
+		})
+		// an outlined glyph keeps its keyline round the whole raised block, shadow included
+		for (const { run, i, depth } of lifted.filter(g => g.run.keyline)) {
+			const off = HERO_FLYBY.plateKeylineEm * run.size * dpr
+			for (let s = 1; s <= depth; s++) {
+				const step = s * H.stepEm * run.size * dpr
+				for (const [dx, dy] of RING) {
+					drawGlyph(
+						ctx,
+						run,
+						i,
+						dpr,
+						HERO_FLYBY.plateKeyline,
+						step + dx * off,
+						step + dy * off
+					)
+				}
+			}
+		}
+		for (const { run, i, depth } of lifted) {
 			for (let s = depth; s >= 1; s--) {
 				const off = s * H.stepEm * run.size * dpr
 				drawGlyph(ctx, run, i, dpr, H.shadow[s - 1], off, off)
