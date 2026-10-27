@@ -19,7 +19,7 @@ const dz = d2 => Math.sqrt(1 - d2)
 const whole = res => ({ x0: 0, y0: 0, w: res, h: res })
 
 // the sprites' sides in cells for this grid; the shader is handed the same numbers
-export function earthSizes(grid) {
+function earthSizes(grid) {
 	const short = Math.min(grid.width, grid.height)
 	return {
 		planet: even((EARTH.planet.radius * short) / PLANET.discRadius),
@@ -107,7 +107,7 @@ function paintAir(d, i, x, y, dx, dy, d2, radius, light, A) {
 
 // The frame under another key light, `light` a unit vector x right, y down, z toward the viewer: the
 // sea glint's half-vector turns with it.
-export function lightFrame(frame, light) {
+function lightFrame(frame, light) {
 	const [lx, ly, lz] = light
 	const hz = lz + 1
 	const hl = Math.hypot(lx, ly, hz)
