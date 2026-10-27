@@ -5,7 +5,7 @@
 			<SpaceBackground v-if="showChrome" />
 			<!-- The landing's boot (useBoot): up from the shell's first frame, above the
 			     starfield and the chrome, until the departure has cut its ground. Painted
-			     the site's black, not the lab's ground. -->
+			     the site's black. -->
 			<div v-if="active" class="app-boot">
 				<BootCover :progress="progress" :ceiling="ceiling" :done="done" @gone="dismiss" />
 			</div>
@@ -28,10 +28,10 @@
 	import BootCover from './components/BootCover.vue'
 	import SpaceBackground from './components/SpaceBackground.vue'
 
-	const SCROLLABLE_PATHS = ['/', '/sport', '/lab']
+	const SCROLLABLE_PATHS = ['/', '/sport']
 
 	// Unlisted pages with no site chrome at all — no drifting starfield behind the text.
-	const BARE_PATHS = ['/sport', '/lab', '/game']
+	const BARE_PATHS = ['/sport', '/game']
 
 	// Component names (see defineOptions) kept mounted across navigation.
 	const KEPT_ALIVE_VIEWS = ['HomeJourney']
