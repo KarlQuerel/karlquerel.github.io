@@ -21,7 +21,7 @@ export function putRgb(L, x, y, [r, g, b]) {
 	L.data[i + 3] = 255
 }
 
-export const filled = (L, x, y) =>
+const filled = (L, x, y) =>
 	x >= 0 && y >= 0 && x < L.w && y < L.h && L.data[(y * L.w + x) * 4 + 3] > 0
 
 export function rect(L, x0, y0, x1, y1, name) {
