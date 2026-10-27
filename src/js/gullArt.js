@@ -60,7 +60,7 @@ function viewer(thetaDeg, alphaDeg) {
 const apply = (R, [x, y, z]) => R.map(row => row[0] * x + row[1] * y + row[2] * z)
 
 // One sprite: the cells a gull covers seen from `theta` and `alpha`, mid-beat or gliding.
-export function gullCells(spec, thetaDeg, alphaDeg, phase) {
+function gullCells(spec, thetaDeg, alphaDeg, phase) {
 	const { w, h, body } = spec
 	const cells = new Uint8Array(w * h)
 	const R = viewer(thetaDeg, alphaDeg)
