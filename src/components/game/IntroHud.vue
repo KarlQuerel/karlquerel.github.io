@@ -14,9 +14,6 @@
 </script>
 
 <style scoped lang="scss">
-	@use '@/styles/flyby' as *;
-	@use '@/styles/mixins' as *;
-
 	.hud {
 		position: fixed;
 		inset: 0;
