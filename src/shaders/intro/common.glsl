@@ -4,7 +4,7 @@ precision highp float;
 precision mediump float;
 #endif
 // Prepended to every intro shot: the uniform contract (see js/intro/introPass.js), the noise the
-// lab's scene is built from, and the same pixel-art finish, so every shot lands on one grid.
+// shots are built from, and the same pixel-art finish, so every shot lands on one grid.
 uniform vec2  uRes;
 uniform float uTime;   // seconds into this shot
 uniform vec2  uLook;   // pointer deflection, -1..1, +y down the screen
@@ -96,7 +96,7 @@ vec3 stars(vec3 rd){
   return col;
 }
 
-// the frame's uv: y spans -0.5..0.5, x by aspect; the look tilts it a hair, like the lab's camera
+// the frame's uv: y spans -0.5..0.5, x by aspect; the look tilts it a hair
 vec2 frameUV(vec2 frag){ return (frag - 0.5*uRes)/uRes.y; }
 
 // gentle lift, ordered dither, then the palette's worth of levels: the pixel-art finish
