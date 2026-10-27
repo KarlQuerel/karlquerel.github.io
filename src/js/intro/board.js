@@ -20,7 +20,7 @@ const daysAt = t => smoothstep(ramp(t, BOARD.daysFrom, BOARD.daysTo))
 
 // Where the chart sits in frame uv (y -0.5..0.5, x by aspect). The shader rebuilds the same frame
 // from uH, so the DOM labels land on the stars they name.
-export function chartLayout(aspect) {
+function chartLayout(aspect) {
 	if (aspect < 1) {
 		const P = C.portrait
 		return { portrait: true, sol: [0, P.solY], spanX: aspect * 0.5 - P.sidePad, spanY: P.spanY }
