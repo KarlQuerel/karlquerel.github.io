@@ -2,7 +2,7 @@
 // declared at the top of shaders/intro/common.glsl. The program links in the background from start():
 // ready() polls it and finish() takes it up, before the first draw.
 
-import quadVert from '../../shaders/flyby/scene.vert.glsl?raw'
+import quadVert from '../../shaders/intro/quad.vert.glsl?raw'
 import blackFrag from '../../shaders/intro/black.frag.glsl?raw'
 import common from '../../shaders/intro/common.glsl?raw'
 import {

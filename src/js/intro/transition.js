@@ -1,6 +1,6 @@
 // The transition between two shots: two render targets on the art grid and the pass that mixes them.
 
-import quadVert from '../../shaders/flyby/scene.vert.glsl?raw'
+import quadVert from '../../shaders/intro/quad.vert.glsl?raw'
 import common from '../../shaders/intro/common.glsl?raw'
 import frag from '../../shaders/intro/transition.frag.glsl?raw'
 import {
