@@ -3,7 +3,7 @@
 // uMask is the glass, 1 where it is still frosted. The hands go over the glass: the wipe is done
 // from inside the pod.
 
-const float FOCAL = 1.8;                                  // 58 degrees end to end, like the lab
+const float FOCAL = 1.8;                                  // 58 degrees end to end
 const vec3 SUN = vec3(-0.62, 0.50, -0.55);                // normalised in main
 const float R = 1.0;
 
