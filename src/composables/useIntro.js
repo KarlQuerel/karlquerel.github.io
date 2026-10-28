@@ -25,6 +25,8 @@ import {
 import { WALK_KEYS } from '../constants/intro/walk.js'
 
 const WALKING = new Set(Object.values(WALK_KEYS).flat())
+// where act I starts: SKIP INTRO lands there
+const ACT_AT = INTRO_SHOTS.findIndex(s => s.act)
 
 // On the dev server `?shot=key&t=seconds` opens the intro there, for tuning a shot in isolation.
 function opening(still) {
@@ -102,10 +104,13 @@ export function useIntro(canvasRef) {
 	// the last shot is where the intro rests: nothing to skip to
 	const last = computed(() => shot.value === INTRO_SHOTS[INTRO_SHOTS.length - 1])
 
+	// the intro proper, before act I: what SKIP INTRO skips
+	const inIntro = computed(() => !!shot.value && INTRO_SHOTS.indexOf(shot.value) < ACT_AT)
+
 	// `skipped` hurries the same transition rather than dropping it
-	function next(skipped = false) {
+	function next(skipped = false, to = index + 1) {
 		if (!shot.value || last.value) return
-		const into = INTRO_TRANSITIONS[INTRO_SHOTS[index + 1].key]
+		const into = INTRO_TRANSITIONS[INTRO_SHOTS[to].key]
 		// set before go(): a refit there resizes the shot being left as well as the one coming in
 		leaving =
 			into && !still
@@ -117,12 +122,16 @@ export function useIntro(canvasRef) {
 						t: 0,
 					}
 				: null
-		go(index + 1)
+		go(to)
 		if (leaving) settled.value = false
 	}
 
 	function skip() {
 		next(true)
+	}
+
+	function skipIntro() {
+		next(true, ACT_AT)
 	}
 
 	// a choice made in the overlays, for the shot waiting on it
@@ -350,7 +359,9 @@ export function useIntro(canvasRef) {
 		choice,
 		hint,
 		last,
+		inIntro,
 		skip,
+		skipIntro,
 		choose,
 		paused,
 		pausedAt,
