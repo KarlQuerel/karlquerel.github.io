@@ -13,7 +13,20 @@ import {
 	uniformLocations,
 } from '../gl.js'
 
-const UNIFORMS = ['uRes', 'uTime', 'uLook', 'uPtr', 'uP', 'uQ', 'uR', 'uS', 'uH', 'uMask', 'uSky']
+const UNIFORMS = [
+	'uRes',
+	'uTime',
+	'uLook',
+	'uPtr',
+	'uP',
+	'uQ',
+	'uR',
+	'uS',
+	'uH',
+	'uB[0]',
+	'uMask',
+	'uSky',
+]
 // past the transition's two units, so a shot's sky never collides with them
 const SKY_UNIT = 4
 const ZERO4 = [0, 0, 0, 0]
@@ -48,6 +61,7 @@ export function createIntroPass(gl, quad, { key, frag, chunks = [] }) {
 			r = ZERO4,
 			s = ZERO4,
 			h = ZERO4,
+			b = null,
 			mask = null,
 			sky = null,
 		}
@@ -63,6 +77,8 @@ export function createIntroPass(gl, quad, { key, frag, chunks = [] }) {
 		gl.uniform4fv(U.uR, r)
 		gl.uniform4fv(U.uS, s)
 		gl.uniform4fv(U.uH, h)
+		// a shot's own bodies, a vec4 array it declares itself
+		if (b) gl.uniform4fv(U.uB, b)
 		if (mask) {
 			gl.activeTexture(gl.TEXTURE0)
 			gl.bindTexture(gl.TEXTURE_2D, mask)
