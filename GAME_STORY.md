@@ -34,7 +34,7 @@ Ballpark, if built as specified here (S = an evening, M = a weekend, L = a week 
 ### Name: HERMES, for the game and the ship (decided)
 
 HERMES is the messenger, the mission is the Hermes Project, and the spine is one message getting
-home. The game is **HERMES**, the ship is **HERMES-9**, the player calls the ship's voice
+home. The game is **HERMES**, the ship is **HERMES-8**, the player calls the ship's voice
 "Hermes". ARGUS is dropped. `/game` stays as the path.
 
 ### Class system or inventory: inventory of flags, plus a role that is only a starting item
@@ -56,7 +56,7 @@ home. The game is **HERMES**, the ship is **HERMES-9**, the player calls the shi
 - Visor frame: a scoped SCSS overlay (vignette, two glass reflections, a scanline every few
   cells). No image.
 - Readouts in `$font-terminal` (Departure Mono), top corners. The copy already exists in git
-  history as `HERO_WAKE` (`886a840^:src/data/heroLines.js`): DAY 141,209, CREW 1/1, the alarm
+  history as `HERO_WAKE` (`886a840^:src/data/heroLines.js`): DAY 141,209, CREW 1/2, the alarm
   list. It was right the first time.
 - Hands: two legend grids, about 40 x 48 cells, bottom-left and bottom-right, drawn as
   legend grids (palette letters, `K` outline). Three states each: grip, reach, hold. The held item is
@@ -96,8 +96,12 @@ relentless, eating the sky. The harvests went first. Earth has decades, not cent
 
 The last telescopes flagged a handful of candidate worlds. A telescope cannot taste air or touch
 water; someone has to stand on the ground and confirm it. So the Earth Confederate voted the
-**Hermes Project** into existence: sixty ships, one envoy each, one per candidate world. Each ship
-carries just enough fuel to arrive, a cryo pod, and one tight-beam transmitter aimed at Earth.
+**Hermes Project** into existence: ten ships, one envoy each, one per candidate world. Each ship
+carries just enough fuel to arrive, two cryo pods (the envoy, and a second sleeper in case the
+first never wakes), and one tight-beam transmitter aimed at Earth.
+
+Ten launched. **HERMES-8 is the only one that survived, at least that anyone knows of**: the board
+in shot 8 watches the other nine go dark over the crossing.
 
 **Hermes does not come back. Hermes calls back.** When an envoy confirms a living world, they
 send one signal: **green**. Earth builds the arks only when a green arrives. One bit saves ten
@@ -178,16 +182,16 @@ motion jumps straight to shot 9.
 | 2 | **EARTH IS DYING.** | The Earth, small and centred, slow spin. Blue-green ramp already sick: browner land, thinner cloud. | `PixelPlanet` with a dried-out `EARTH_PALETTE` variant, `cloudThin` high, `lightYaw` so the sun side is over-lit. | none | S |
 | 3 | **THE SUN HAS BEEN GROWING RELENTLESSLY.** | Cut to the sun. It swells over the card, ramp sliding from `glow` through `ember` to `rust`, limb boiling. | New fragment shader on the art grid: banded disc + `fbm` limb, one uniform for age drives radius and ramp offset. Same pipeline as /lab's scene program. | none | M |
 | 4 | **BURNING EVERYTHING.** | Cracked flatland to the horizon, crop rows stubbled, red sky, the swollen sun sitting on the horizon behind heat bands. | `layers`: `drawDepartureSky` in a warm ramp, two `cutRidge`/`lightRidge` bands in the rock ramp for the dry ground, one small crop-row grid repeated, stepped crumble (3 frames). | pointer parallax | M |
-| 5 | **THE EARTH CONFEDERATE CHOSE TO LAUNCH THE HERMES PROJECT.** | A chamber in silhouette: tiers of seats, tall windows behind, the red sun the only light. Hands rise in stepped waves along the tiers. A tally board flips: `60 SHIPS · APPROVED`. | `layers`: window wall (sun shader or a gradient with the sun disc), seat tiers as 3 silhouette grids at increasing depth, hands as 1-cell nubs toggling on a `steps(4)` clock, board as DOM text. Silhouettes only, no faces: that is what keeps it at one weekend. | pointer parallax | M |
+| 5 | **THE EARTH CONFEDERATE CHOSE TO LAUNCH THE HERMES PROJECT.** | A chamber in silhouette: tiers of seats, tall windows behind, the red sun the only light. Hands rise in stepped waves along the tiers. A tally board flips: `10 SHIPS · APPROVED`. | `layers`: window wall (sun shader or a gradient with the sun disc), seat tiers as 3 silhouette grids at increasing depth, hands as 1-cell nubs toggling on a `steps(4)` clock, board as DOM text. Silhouettes only, no faces: that is what keeps it at one weekend. | pointer parallax | M |
 | 6 | **A TEAM OF HIGHLY TRAINED SCIENTISTS, DESTINED TO SCOUT DISTANT AND HABITABLE WORLDS.** | POV begins. The player walks a corridor toward a lit door, past side bays where other envoys suit up in silence, backlit. Looking down shows their own suit and boots. | Raymarched corridor on the contact scene's grid and palette, a sealed hatch behind the start. The role pick comes up when the player reaches the door: three lockers, ENGINEER / MEDIC / PILOT. | **walk** (WASD, mouse look), then **first choice**: pick a role (a starting item in the right hand) | L |
 | 7 | **YOU WERE CHOSEN.** | Into the tube. The hands reach forward and grip the rails (state: reach → grip). The lid closes over the lens, glass fogs from the edges in, `CRYOSTASIS ENGAGED`, the frame blinks shut like an eyelid. Black. | Tube interior as a `grid` with the lid as a layer sliding down; frost is a canvas alpha layer growing from the edges. Eyelid = two black bars closing with `steps(3)`. | none | M |
-| 8 | *(no card)* | Across the black, a board of sixty lights, one per ship. Yours is lit: `HERMES-9`. The lights go out one by one over the crossing: `HERMES-4: SIGNAL LOST` · `HERMES-31: SIGNAL LOST`. A day counter runs up to DAY 141,209. | DOM: a 6 x 10 grid of spans, stepped blink, counter text. Cheapest shot in the intro, and the one that makes the title land. You wake alone because everyone is alone. | none | S |
+| 8 | *(no card)* | Across the black, a board of ten lights, one per ship. Yours is lit: `HERMES-8`. The lights go out one by one over the crossing until yours is the last: `HERMES-4: SIGNAL LOST` · `HERMES-7: SIGNAL LOST`. A day counter runs up to DAY 141,209. | DOM: ten lights in a row, stepped blink, counter text. Cheapest shot in the intro, and the one that makes the title land. You wake alone because everyone is alone. | none | S |
 | 9 | **WARNING. WARNING. CRITICAL ERROR.** | Eyes open on the inside of a frosted lid. The HUD reboots: readouts stutter in like `BootCover`, then the `HERO_WAKE` alarms in red: HULL INTEGRITY 34%, O2 RESERVE LOW, NAV ARRAY OFFLINE, GRAVITY WELL DETECTED. The frost is everywhere; only light and a shape move behind it. | Frost is a full-frame canvas painted from `PALETTE.frost/rime` with dithered alpha over the scene behind it (the planet filling the glass: `PixelPlanet`, or the wreck). The alarm strip pulses with `steps(2)`. | none | M |
 | 10 | *(no card)* | **The player wipes the glass.** Wherever the pointer drags, the frost clears in chunky cells and the hand follows in `reach` state. Behind it: the planet, too close, filling the view. When enough glass is clear, the HUD reads PROXIMITY ALERT and the first in-game choice appears. | Pointer events erase cells from the frost canvas (`destination-out` at cell size). A cleared-fraction threshold triggers the alert. Works with touch as-is. | drag to wipe (the first thing the player *does*) | S |
 | 11 | *(no card)* | Crash. The frame shakes on a stepped offset, alarms saturate, cut to black. Fade up on the wreck bay. | CSS only. | none | S |
 
-Shot 8 (the board of sixty) is kept (decided). It costs nothing, covers the centuries in one
-image, and it is what makes "HERMES-9" mean something before the player ever hears it.
+Shot 8 (the board of ten) is kept (decided). It costs nothing, covers the centuries in one
+image, and it is what makes "HERMES-8" mean something before the player ever hears it.
 
 On shot 5: the parliament works if the room is lit by the sun and nothing else. Faces and
 podiums make it a bureaucracy; silhouettes against a red wall make it civilization's last vote.
@@ -201,7 +205,7 @@ them terminals or corridors.
 
 1. **THE WRECK.** Opens in the broken corridor, in zero-g (section 6). Get out of the pod, stop the bleeding of the ship. Learn the transmitter is
    broken. Meet the ship's voice. Items: wrench, med-kit, cutter. First moral beat: seal the aft section
-   with the second pod still in it (it failed mid-crossing; one wordless scene, crew stays 1/1).
+   with the second pod still in it (it failed mid-crossing; one wordless scene, the readout says CREW 1/2).
 2. **THE WORLD.** Outside, POV on the surface, in low gravity. Is this world green? Air (open the
    helmet), water (the seabed walk), ground (the scan). Every test costs O2. the ship's voice degrades (speech glitches, memory gaps) as the ship's power goes.
 3. **THE WORD.** Rebuild the transmitter from what is left. The signal needs power the life
@@ -238,37 +242,47 @@ Act I opens in the corridor the player walked in the intro, wrecked: dark, in ze
 panels torn, lamps dead or flickering on a stepped clock, debris turning in the air, emergency red
 the only light. The player knows the place, and that is the point.
 
-One wrinkle to settle: the intro corridor is the orbital yard's boarding deck (sixty envoys suit
-up there, Earth in its window), while the wreck is HERMES-9. Recommendation: **the sixty ships were
-built in that yard from the same modules**, so HERMES-9's spine is the same corridor make (ribs,
+One wrinkle to settle: the intro corridor is the orbital yard's boarding deck (ten envoys suit
+up there, Earth in its window), while the wreck is HERMES-8. Recommendation: **the ten ships were
+built in that yard from the same modules**, so HERMES-8's spine is the same corridor make (ribs,
 pipes, stencils, CRYO chevrons, lockers, door), shorter, its bays holding cargo and labs. The bays
 the envoys filled in the intro are empty here: the loneliness lands without a word.
 
-**One source, two states.** Fixes and changes made to the intro corridor must reach the broken one
-without copying, so when the wreck is built `corridor.frag.glsl` splits into a shared parts chunk
-(shell, ribs, pipes, deck, stencils, lamps, materials, the light and the palette snap) included by
-two scenes: the intro adds the bays, the people, the lockers and the lit door; the wreck adds the
-damage on top (holes cut from the shell, bent ribs, dead lamps, debris, the red light). A fix to a
-shared part lands in both. The split waits for the wreck: until then there is one corridor and
-nothing to share.
+**Where the wreck is (to confirm).** Zero-g needs the ship in orbit, but the storyboard's crash
+(shots 10 and 11) lands it. Recommendation: **HERMES-8 is wrecked in orbit round the world**: the
+PROXIMITY ALERT is the world's moon or a debris ring, the crash breaks the ship open, and act I is
+aboard the tumbling wreck in a decaying orbit, the world turning in the breach. Act I ends with the
+descent (the pod ridden down), so act II starts on the ground. A clock for act I comes free with it.
 
-**What drifts in it.** The ship carries one envoy, so a corridor of dead astronauts would break the
-premise. Instead:
+**One source, two states (built).** `corridor.frag.glsl` is compiled twice: as the intro corridor,
+and with `#define WRECK` as the wreck (`js/intro/wreck.js`). The intro-only parts (the people, the
+lockers' suits, the lit door and beacons, the yard in the window) sit under `#ifndef WRECK`; the
+damage (the breach, the drift, the debris, the red emergency lamps, the head lamp, the dead strips)
+under `#ifdef WRECK`. Everything else is shared, so a fix to the corridor lands in both.
 
-- **Empty suits that read as bodies.** The spare suits from the intro's lockers, torn loose and
-  drifting, helmets on, limbs spread. In the dark they are dead astronauts; push through the first
-  one and it is empty. The scare and the loneliness in one beat.
-- **One real body: the second pod's sleeper,** dead when the pod failed mid-crossing. Pushing them
-  aside to get through is the heavy version of act I's moral beat. One body weighs more than many.
+**The prototype.** The wreck is the shot after the title, `act: true`: **SKIP INTRO** (under SKIP,
+from any intro shot) lands there, and so does SKIP on the title card; `/game?shot=wreck` on the
+dev server. Walk it on mag boots, push the pod aside with E, look up under the breach at the world.
+Not yet: bent ribs and torn wall panels, free float with thrusters, an end to it (the far door is
+dead), the moral beat of sealing the aft section with the pod in it.
 
-**No physics engine.** Each drifting thing is one rigid object: a position, a velocity, a slow
-spin, a sphere that bounces off the corridor's box and off the player. No ragdoll either: a limp
-body in zero-g settles into the neutral body posture (arms floating forward, knees bent), so one
-frozen pose that drifts and turns is the realistic look. Walking into one shoves it; E pushes it
-along your view. On mag boots you stay put; free-floating you drift back from the push, so pushing
-off a body crosses a gap without spending propellant. A suit you pushed keeps drifting, and comes
-back down the corridor at you. In the shader the figures are one call in a loop over a uniform
-array, each behind a bounding sphere (a second inlined figure once cost Mesa over a minute).
+**What drifts in it: one body, in its pod (decided).** One body in an empty corridor is lonelier
+and worse than many, and a whole figure in the open reads as a mannequin under the head lamp
+(tried: five drifting bodies, all of them looked wrong). So the only body aboard stays in its pod.
+The second pod tore loose in the crash and drifts across the corridor, too long to slip past: the
+player has to push it aside to go on. Its sleeper never woke. The window is frosted from inside,
+their shape under it, and **one hand pressed flat to the glass**, the frost melted round it and
+smeared where it slid: the one sharp thing. A crack in the lid seeps frozen blood, dark red beads
+that catch the head lamp. It mirrors the wake (shot 10), where the player wipes their own glass
+clear. No severed limbs: the sleeper died of cold, and the game's tone is loneliness, not splatter.
+
+**No physics engine.** The pod is one rigid capsule along its length: a position, a velocity and a
+slow tumble (`js/intro/drift.js`). It knocks off the corridor's box end by end, so a wall met with
+one end sets it turning. It is far heavier than the player: walking into it stops you against it
+and moves it only as fast as you lean in; E pushes it where your view meets it, and a push near an
+end turns it. On mag boots you stay put; free-floating, a push would send you back the other way.
+The shader draws it from a uniform pair (centre and quaternion), behind a bounding sphere; the
+window's silhouette, hand, smear and crack are painted on the glass in the pod's own frame.
 
 ## 7. Endings
 
@@ -276,7 +290,7 @@ Read off the meters at the end of act 3:
 
 - **Green.** Signal sent, you don't survive it. Earth builds the arks.
 - **Green, alive.** Signal sent, you live — alone, on the world you saved.
-- **Silence.** You live, but the word never leaves. `HERMES-9: SIGNAL LOST` on the board.
+- **Silence.** You live, but the word never leaves. `HERMES-8: SIGNAL LOST` on the board.
 - **The lie.** You send green to a world that isn't. Ten billion people are coming.
 
 Each ending is a title card over one existing picture (the board, the planet, the sun) and a
