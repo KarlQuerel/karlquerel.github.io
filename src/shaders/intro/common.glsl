@@ -9,7 +9,7 @@ uniform vec2  uRes;
 uniform float uTime;   // seconds into this shot
 uniform vec2  uLook;   // pointer deflection, -1..1, +y down the screen
 uniform vec2  uPtr;    // pointer over the grid, 0..1, y up
-uniform vec4  uP, uQ;  // the shot's own parameters, set by its module
+uniform vec4  uP, uQ, uR, uS;  // the shot's own parameters, set by its module
 uniform vec4  uH;      // hands: x = state (0 grip, 1 reach, 2 hold), y = item, z = on, w = lift
 uniform sampler2D uMask;
 // the shared star tile (js/intro/sky.js), on its own unit
