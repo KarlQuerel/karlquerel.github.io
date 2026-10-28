@@ -64,19 +64,28 @@ home. The game is **HERMES**, the ship is **HERMES-9**, the player calls the shi
 - The hands lean with the pointer via the existing `--mx/--my/--depth` contract, at a shallow
   depth, so the head turns and the hands lag. That alone sells the POV.
 
-### Phones: do not block, design portrait-first
+### Phones: blocked (decided)
 
-Reasons not to block:
+The game is walked with a keyboard and mouse (WASD read as physical keys so ZQSD works on
+AZERTY, the mouse to look), and touch controls for free movement would be a second game's worth of work. `/game`'s
+route guard sends any device without a fine pointer (`FINE_POINTER_QUERY`) to the holding screen.
+What phones get instead is open: a game of their own is one idea. The rest of the site stays
+phone-first; that is what recruiters see.
 
-- The link will be opened from a phone far more often than not (recruiters, shares).
-- /lab already ships to phones: the art grid steps down (`ART_RUNGS`), the planet draws a
-  smaller sprite, and pointer-look is mouse-only by contract. The game inherits all of that.
-- Nothing in the design needs hover. Every hotspot is also a visible choice button; parallax is
-  garnish; the frost wipe is a pointer drag, which is a finger on a phone.
+### Pixel art: one grid, one palette (decided)
 
-What portrait costs: the hands sit naturally in the bottom corners of a tall frame, readouts
-stack instead of spreading, and each scene's art is cut for a `wide` and a `narrow` layout. Show a one-line hint on touch devices ("a mouse lets you
-look around"), never a wall.
+Every scene takes the contact scene's look: cells at `ENTRY.ridgeCellPx`, every colour snapped to
+`PALETTE` with the Bayer checker only in the seam between two colours (`ENTRY.ridgeSeam`). A GLSL
+scene gets it from `js/intro/paletteSnap.js`, generated from `PALETTE` so no hex is copied.
+
+- **3D for the space you walk in** (walls, deck, the ground near you), **2D for the rest**: people
+  and items as sprites facing the camera, the hands and HUD on the screen, far landscape as the
+  contact scene's ridge layers.
+- **One cell size and one palette for 2D and 3D alike.** A sprite at another pixel size than the
+  3D around it reads as cheap.
+- **Flat sprites only for what you never walk around.** Anything you circle (pods, consoles) is 3D.
+- A light source must land on the palette's lit end: dimmer, it snaps to tan and stops reading as
+  light.
 
 ---
 
@@ -108,7 +117,9 @@ The crash breaks the transmitter. Every choice bends around one question:
 
 ## 3. Gameplay
 
-**POV choice game, one scene at a time.** Every scene is one picture drawn in the site's
+**POV choice game, one scene at a time, some of them walked.** A walkable scene is a bounded
+space the player moves through (`js/intro/walk.js`); its choices come up when they reach the spot
+that holds them, as the role pick does at the corridor's lockers. Every scene is one picture drawn in the site's
 language, with the HUD over it, the ship's voice in a strip, and two to four choices. Some
 choices are directions (LEFT / RIGHT), some are verbs on a hotspot (TAKE THE WRENCH, READ THE
 TERMINAL), some are moral. Choices can be gated by an item, a meter, or a flag.
@@ -168,7 +179,7 @@ motion jumps straight to shot 9.
 | 3 | **THE SUN HAS BEEN GROWING RELENTLESSLY.** | Cut to the sun. It swells over the card, ramp sliding from `glow` through `ember` to `rust`, limb boiling. | New fragment shader on the art grid: banded disc + `fbm` limb, one uniform for age drives radius and ramp offset. Same pipeline as /lab's scene program. | none | M |
 | 4 | **BURNING EVERYTHING.** | Cracked flatland to the horizon, crop rows stubbled, red sky, the swollen sun sitting on the horizon behind heat bands. | `layers`: `drawDepartureSky` in a warm ramp, two `cutRidge`/`lightRidge` bands in the rock ramp for the dry ground, one small crop-row grid repeated, stepped crumble (3 frames). | pointer parallax | M |
 | 5 | **THE EARTH CONFEDERATE CHOSE TO LAUNCH THE HERMES PROJECT.** | A chamber in silhouette: tiers of seats, tall windows behind, the red sun the only light. Hands rise in stepped waves along the tiers. A tally board flips: `60 SHIPS · APPROVED`. | `layers`: window wall (sun shader or a gradient with the sun disc), seat tiers as 3 silhouette grids at increasing depth, hands as 1-cell nubs toggling on a `steps(4)` clock, board as DOM text. Silhouettes only, no faces: that is what keeps it at one weekend. | pointer parallax | M |
-| 6 | **A TEAM OF HIGHLY TRAINED SCIENTISTS, DESTINED TO SCOUT DISTANT AND HABITABLE WORLDS.** | POV begins. A corridor advancing toward a lit door. Through side bays, other envoys suit up in silence, backlit. **HUD boots here**: the visor frame fades in, the hands appear at the bottom, gripping nothing yet. | `layers` scaled toward the camera on a stepped walk bob (a Doom-style zoom, no 3D). Envoy silhouettes are 2 grids each, mirrored. The role pick happens at the door: three lockers, ENGINEER / MEDIC / PILOT. | **first choice**: pick a role (a starting item in the right hand) | L |
+| 6 | **A TEAM OF HIGHLY TRAINED SCIENTISTS, DESTINED TO SCOUT DISTANT AND HABITABLE WORLDS.** | POV begins. The player walks a corridor toward a lit door, past side bays where other envoys suit up in silence, backlit. Looking down shows their own suit and boots. | Raymarched corridor on the contact scene's grid and palette, a sealed hatch behind the start. The role pick comes up when the player reaches the door: three lockers, ENGINEER / MEDIC / PILOT. | **walk** (WASD, mouse look), then **first choice**: pick a role (a starting item in the right hand) | L |
 | 7 | **YOU WERE CHOSEN.** | Into the tube. The hands reach forward and grip the rails (state: reach → grip). The lid closes over the lens, glass fogs from the edges in, `CRYOSTASIS ENGAGED`, the frame blinks shut like an eyelid. Black. | Tube interior as a `grid` with the lid as a layer sliding down; frost is a canvas alpha layer growing from the edges. Eyelid = two black bars closing with `steps(3)`. | none | M |
 | 8 | *(no card)* | Across the black, a board of sixty lights, one per ship. Yours is lit: `HERMES-9`. The lights go out one by one over the crossing: `HERMES-4: SIGNAL LOST` · `HERMES-31: SIGNAL LOST`. A day counter runs up to DAY 141,209. | DOM: a 6 x 10 grid of spans, stepped blink, counter text. Cheapest shot in the intro, and the one that makes the title land. You wake alone because everyone is alone. | none | S |
 | 9 | **WARNING. WARNING. CRITICAL ERROR.** | Eyes open on the inside of a frosted lid. The HUD reboots: readouts stutter in like `BootCover`, then the `HERO_WAKE` alarms in red: HULL INTEGRITY 34%, O2 RESERVE LOW, NAV ARRAY OFFLINE, GRAVITY WELL DETECTED. The frost is everywhere; only light and a shape move behind it. | Frost is a full-frame canvas painted from `PALETTE.frost/rime` with dithered alpha over the scene behind it (the planet filling the glass: `PixelPlanet`, or the wreck). The alarm strip pulses with `steps(2)`. | none | M |
@@ -238,6 +249,15 @@ partner's arc mirrors the broken transmitter. It watches everything and can do n
 - Shot 8 stays.
 - Role pick at the door: decide after the intro exists.
 - No backend. `localStorage` only, if progress needs to survive a refresh.
+- Desktop only: phones and tablets land on the holding screen until they get something of their own.
+- Pixel art everywhere on the contact scene's grid and palette (section 1). The corridor is the
+  first scene on it; the other intro shots still use the finer grid and `finish()`.
+- The corridor is walked, not watched: WASD moves and strafes, a click takes the mouse to look
+  around (Esc gives it back, a choice releases it), the side arrows turn for keyboard-only players.
+  Looking down shows your own suit, legs and boots on the stride.
+- The visor overlay (`IntroHud`) is removed for now: it looked wrong over the pixel art. Cards
+  still read high in first-person shots (`pov`), clear of the hands. A HUD comes back redesigned,
+  or not at all.
 - **Next: build the intro.** Meanwhile `/under-construction` shows HERMES discovered plate by plate,
   once, then held with a glint (`PlatingWordmark.vue`, letters derived from the masks in
   `GAME_WORDMARK` by `js/wordmark.js`). No scene, no progress tracking: a neat animation.
