@@ -1,6 +1,6 @@
 // The storyboard in order (GAME_STORY.md section 4). Every shot is a module of one shape:
 //   key, frag (+ chunks), duration in s (0 waits on ready(t, io)), card { at, text },
-//   marks { name: seconds } the overlays key off, params(t, io, gl, grid) -> { p, q, h, mask },
+//   marks { name: seconds } the overlays key off, params(t, io, gl, grid) -> { p, q, r, s, h, mask },
 //   choice(clock, marks, choices) -> { key, options }, hint(clock, marks, choices) -> a line under
 //   the picture, cellPx (its own pixel size), pov (first person: cards read high, clear of the
 //   hands), walk (the player walks it: a click takes the mouse for looking),
