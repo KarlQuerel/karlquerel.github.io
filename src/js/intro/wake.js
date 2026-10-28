@@ -188,7 +188,7 @@ export const wake = {
 			mask: glass.texture,
 		}
 	},
-	hud: () => ({}),
+	pov: true,
 	choice: (_clock, marks, choices) =>
 		glass.alerted && !choices.responded
 			? { key: 'responded', options: [{ key: true, label: INTRO_HUD.respond }] }
