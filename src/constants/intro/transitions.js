@@ -25,6 +25,8 @@ export const INTRO_TRANSITIONS = {
 	wake: { kind: 'black', dur: 1.2 },
 	crash: { kind: 'flash', dur: 0.6 },
 	title: { kind: 'black', dur: 0.8 },
+	// act I: eyes open again, in the wreck
+	wreck: { kind: 'blink', dur: 1.3 },
 }
 
 // a skip takes the same transition, only this fast at most
