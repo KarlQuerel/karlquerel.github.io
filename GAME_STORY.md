@@ -254,7 +254,9 @@ partner's arc mirrors the broken transmitter. It watches everything and can do n
   first scene on it; the other intro shots still use the finer grid and `finish()`.
 - The corridor is walked, not watched: WASD moves and strafes, a click takes the mouse to look
   around (Esc gives it back, a choice releases it), the side arrows turn for keyboard-only players.
-  Looking down shows your own suit, legs and boots on the stride.
+  Looking down shows your own suit, legs and boots (`js/intro/gait.js`): each boot stays where it
+  lands, small head turns leave both planted, a bigger turn or a step away makes them step one at
+  a time, sideways for a strafe.
 - The visor overlay (`IntroHud`) is removed for now: it looked wrong over the pixel art. Cards
   still read high in first-person shots (`pov`), clear of the hands. A HUD comes back redesigned,
   or not at all.
