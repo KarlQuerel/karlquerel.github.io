@@ -18,6 +18,9 @@ export const INTRO_ROLES = [
 	{ key: 'pilot', label: 'PILOT', item: 'CUTTER' },
 ]
 
+// Under the corridor until the player first moves.
+export const INTRO_WALK_HINT = 'WASD TO MOVE, CLICK TO LOOK AROUND'
+
 // The visor's one button: the wake waits on it.
 export const INTRO_HUD = {
 	respond: 'RESPOND',
