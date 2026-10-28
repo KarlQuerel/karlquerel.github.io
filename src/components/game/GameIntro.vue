@@ -24,6 +24,14 @@
 		<button v-if="shot && !last" class="intro__skip" type="button" @click="skip">
 			{{ INTRO_SKIP }}
 		</button>
+		<button
+			v-if="inIntro"
+			class="intro__skip intro__skip--all"
+			type="button"
+			@click="skipIntro"
+		>
+			{{ INTRO_SKIP_INTRO }}
+		</button>
 		<p v-if="paused" class="intro__inspect">
 			{{ INTRO_INSPECT.label }} {{ shot?.key }} {{ pausedAt.toFixed(2) }}s
 			<span>{{ INTRO_INSPECT.hint }}</span>
@@ -41,7 +49,7 @@
 	import PlatingWordmark from './PlatingWordmark.vue'
 	import TypedReadout from './TypedReadout.vue'
 	import { INTRO_CRASH, INTRO_INSPECT } from '@/constants/intro/timeline'
-	import { INTRO_ACT, INTRO_SKIP } from '@/data/gameIntro'
+	import { INTRO_ACT, INTRO_SKIP, INTRO_SKIP_INTRO } from '@/data/gameIntro'
 
 	const canvas = ref(null)
 	const {
@@ -57,7 +65,9 @@
 		choice,
 		hint,
 		last,
+		inIntro,
 		skip,
+		skipIntro,
 		choose,
 		paused,
 		pausedAt,
@@ -170,6 +180,13 @@
 			top: 0.6rem;
 			right: 0.6rem;
 			bottom: auto;
+		}
+	}
+
+	// under the shot's own skip
+	.intro__skip--all {
+		& {
+			top: 3rem;
 		}
 	}
 
