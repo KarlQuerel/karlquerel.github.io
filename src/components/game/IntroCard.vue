@@ -1,6 +1,6 @@
 <template>
 	<!-- One declarative line per shot, typed in over the picture and held until the cut. -->
-	<p class="card" :class="{ 'card--visor': visor }" aria-live="polite">
+	<p class="card" :class="{ 'card--pov': pov }" aria-live="polite">
 		<span class="card__text">{{ text.slice(0, shown) }}</span
 		><span v-if="text && shown < text.length" class="card__cursor" aria-hidden="true">_</span>
 	</p>
@@ -14,8 +14,8 @@
 	const props = defineProps({
 		// '' between cards
 		text: { type: String, required: true },
-		// under the visor the card reads high, clear of the hands
-		visor: { type: Boolean, default: false },
+		// in first person the card reads high, clear of the hands
+		pov: { type: Boolean, default: false },
 	})
 
 	const { shown, start } = useTypewriter({ delayMs: 0, charMs: INTRO_CARD.charMs })
@@ -46,7 +46,7 @@
 		@include flyby-shadow(3px);
 	}
 
-	.card--visor {
+	.card--pov {
 		top: 27vh;
 		bottom: auto;
 	}
