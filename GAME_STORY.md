@@ -199,15 +199,78 @@ podiums make it a bureaucracy; silhouettes against a red wall make it civilizati
 Three acts, each ending on a choice that moves a meter hard. Scenes per act: 6 to 8, half of
 them terminals or corridors.
 
-1. **THE WRECK.** Get out of the pod, stop the bleeding of the ship. Learn the transmitter is
+1. **THE WRECK.** Opens in the broken corridor, in zero-g (section 6). Get out of the pod, stop the bleeding of the ship. Learn the transmitter is
    broken. Meet the ship's voice. Items: wrench, med-kit, cutter. First moral beat: seal the aft section
    with the second pod still in it (it failed mid-crossing; one wordless scene, crew stays 1/1).
-2. **THE WORLD.** Outside, POV on the surface. Is this world green? Air, water, ground. Every
-   test costs O2. the ship's voice degrades (speech glitches, memory gaps) as the ship's power goes.
+2. **THE WORLD.** Outside, POV on the surface, in low gravity. Is this world green? Air (open the
+   helmet), water (the seabed walk), ground (the scan). Every test costs O2. the ship's voice degrades (speech glitches, memory gaps) as the ship's power goes.
 3. **THE WORD.** Rebuild the transmitter from what is left. The signal needs power the life
    support is using. The player's last choice is the spine, stated plainly.
 
-## 6. Endings
+## 6. Movement and verbs
+
+The rule: **every move spends a meter.** A move that costs O2, HULL or SIGNAL is a choice on the
+spine; a free one is only a feature. No combat: the planet and the dying ship are the obstacles.
+
+| Verb | How | What it spends |
+|---|---|---|
+| **Walk** (built) | WASD, mouse look, boots planted under you (`js/intro/gait.js`) | nothing |
+| **Sprint** | hold Shift. The suit's servos make running possible, the lungs are the limit: audible breathing, the visor fogging in from the edges, shorter quicker steps and a bigger bob (`GAIT` tuning) | O2, fast |
+| **Wrist readout** | hold Tab: the left forearm comes up into view with O2, HULL and SIGNAL on its display. It replaces the visor HUD: the meters live on the suit, nowhere else | nothing |
+| **Low gravity** | the candidate world is smaller than Earth, about 0.6 g. Space jumps high and slow, and the walk becomes the Apollo lope: longer steps, higher lift, slower bob, all `GAIT` tuning | nothing |
+| **Zero-g** | the wreck's gravity fails after the crash. Mag boots for most of it (walls and ceiling become floors, the corridor turns under you); short stretches of free float on suit thruster puffs | propellant |
+| **Seabed walk** | no swimming: a heavy suit sinks. The water test is a walk along the bottom, the surface seen from below. Something waits down there: a sample, another Hermes ship, a life sign | HULL with depth, O2 with time |
+| **Scan** | hold the right mouse button: a pixel scanline sweeps what you aim at (plants, air, water, rock). Act II's core verb: it is how the world is judged green | SIGNAL power |
+| **Helmet lamp** | a light cone from your head in the dark wreck | its battery |
+| **Open the helmet** | the air test's one-way moment: the alien air saves O2 if it is good, ends the game if not | everything, once |
+| **High ground** | the tight beam needs Earth above the horizon and a clear sky: climbing a ridge at the right hour of the night is act II's navigation goal (`js/sun.js` already runs a day and a night) | O2 on the climb |
+| **Talk** (parked with the characters) | E near someone: radio lines typed in, they turn their head to you | nothing |
+
+The three tests of act II map onto the verbs: **air** is opening the helmet, **water** the seabed
+walk, **ground** the scan.
+
+Build order: the wrist readout with sprint on O2 (the meters become real, everything after leans on
+them), then the low-gravity lope, the broken corridor, the seabed walk, the scanner.
+
+### The broken corridor (act I opener)
+
+Act I opens in the corridor the player walked in the intro, wrecked: dark, in zero-g, ribs bent,
+panels torn, lamps dead or flickering on a stepped clock, debris turning in the air, emergency red
+the only light. The player knows the place, and that is the point.
+
+One wrinkle to settle: the intro corridor is the orbital yard's boarding deck (sixty envoys suit
+up there, Earth in its window), while the wreck is HERMES-9. Recommendation: **the sixty ships were
+built in that yard from the same modules**, so HERMES-9's spine is the same corridor make (ribs,
+pipes, stencils, CRYO chevrons, lockers, door), shorter, its bays holding cargo and labs. The bays
+the envoys filled in the intro are empty here: the loneliness lands without a word.
+
+**One source, two states.** Fixes and changes made to the intro corridor must reach the broken one
+without copying, so when the wreck is built `corridor.frag.glsl` splits into a shared parts chunk
+(shell, ribs, pipes, deck, stencils, lamps, materials, the light and the palette snap) included by
+two scenes: the intro adds the bays, the people, the lockers and the lit door; the wreck adds the
+damage on top (holes cut from the shell, bent ribs, dead lamps, debris, the red light). A fix to a
+shared part lands in both. The split waits for the wreck: until then there is one corridor and
+nothing to share.
+
+**What drifts in it.** The ship carries one envoy, so a corridor of dead astronauts would break the
+premise. Instead:
+
+- **Empty suits that read as bodies.** The spare suits from the intro's lockers, torn loose and
+  drifting, helmets on, limbs spread. In the dark they are dead astronauts; push through the first
+  one and it is empty. The scare and the loneliness in one beat.
+- **One real body: the second pod's sleeper,** dead when the pod failed mid-crossing. Pushing them
+  aside to get through is the heavy version of act I's moral beat. One body weighs more than many.
+
+**No physics engine.** Each drifting thing is one rigid object: a position, a velocity, a slow
+spin, a sphere that bounces off the corridor's box and off the player. No ragdoll either: a limp
+body in zero-g settles into the neutral body posture (arms floating forward, knees bent), so one
+frozen pose that drifts and turns is the realistic look. Walking into one shoves it; E pushes it
+along your view. On mag boots you stay put; free-floating you drift back from the push, so pushing
+off a body crosses a gap without spending propellant. A suit you pushed keeps drifting, and comes
+back down the corridor at you. In the shader the figures are one call in a loop over a uniform
+array, each behind a bounding sphere (a second inlined figure once cost Mesa over a minute).
+
+## 7. Endings
 
 Read off the meters at the end of act 3:
 
@@ -219,7 +282,7 @@ Read off the meters at the end of act 3:
 Each ending is a title card over one existing picture (the board, the planet, the sun) and a
 final HUD state. Cheap on purpose.
 
-## 7. The ship's voice
+## 8. The ship's voice
 
 The ship, a voice, not a person. A choice game needs someone to phrase choices against; the
 voice is always present, costs no character art, and degrades through the story so the dialogue
@@ -227,7 +290,7 @@ partner's arc mirrors the broken transmitter. It watches everything and can do n
 
 ---
 
-## 8. Practical notes
+## 9. Practical notes
 
 - `/game` is dev-only until `GAME_SHIPPED` flips (`src/constants/game.js`); a build redirects to
   `/under-construction`. Ship the intro alone behind the flag first: it is a complete thing.
@@ -243,7 +306,7 @@ partner's arc mirrors the broken transmitter. It watches everything and can do n
 - Every asset stays procedural or a legend grid. No PNG sprites: the palette is the design
   system, and a bitmap cannot be re-banded.
 
-## 9. Decided / deferred
+## 10. Decided / deferred
 
 - HERMES for the game and the ship. ARGUS dropped.
 - Shot 8 stays.
