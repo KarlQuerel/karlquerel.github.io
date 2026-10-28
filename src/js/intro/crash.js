@@ -25,5 +25,4 @@ export const crash = {
 			mask: glassTexture(),
 		}
 	},
-	hud: () => ({ hot: true }),
 }
