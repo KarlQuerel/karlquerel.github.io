@@ -1,46 +1,58 @@
 import frag from '../../shaders/intro/corridor.frag.glsl?raw'
 import hands from '../../shaders/intro/hands.glsl?raw'
 import human from '../../shaders/intro/human.glsl?raw'
-import { INTRO_CARDS, INTRO_ROLES } from '../../data/gameIntro.js'
+import { INTRO_CARDS, INTRO_ROLES, INTRO_WALK_HINT } from '../../data/gameIntro.js'
 import { itemOf } from './wake.js'
+import { paletteSnap } from './paletteSnap.js'
+import { createWalk, lookWalk, stepWalk } from './walk.js'
 import { CORRIDOR } from '../../constants/intro/corridor.js'
 import { ramp } from '../math.js'
 
 const C = CORRIDOR
-const TURN = Math.PI * 2
-// when the role was picked, so the cut can wait a beat after it
-const state = { pickedAt: 0 }
+// when the player reached the lockers and picked a role, the shot's clock at the last frame, and the walk
+const state = { arrivedAt: 0, pickedAt: 0, last: null, walk: createWalk(C.walk) }
 
 export const corridor = {
 	key: 'corridor',
 	frag,
-	chunks: [hands, human],
+	chunks: [hands, human, paletteSnap(C.palette, C.seam)],
+	cellPx: C.cellPx,
+	pov: true,
+	walk: true,
 	// blocks on the role pick at the door
 	duration: 0,
 	card: { at: C.cardAt, text: INTRO_CARDS.team },
-	marks: { hud: C.hudAt, lockers: C.arrival },
 	enter() {
+		state.arrivedAt = 0
 		state.pickedAt = 0
+		state.last = null
+		state.walk = createWalk(C.walk)
 	},
 	params(t, io) {
-		const x = ramp(t, 0, C.arrival)
-		// already moving at the start, easing to a stop at the door; the ease is part linear so the bays are seen
-		const walk = x + (1 - (1 - x) * (1 - x) - x) * C.walkEase
-		const pace = 1 - x
-		const glow = C.glowRest + (1 - C.glowRest) * ramp(t, C.glowFrom, C.arrival)
-		const lit = ramp(t, C.arrival, C.arrival + C.lockersRise)
+		const w = state.walk
+		const dt = state.last === null ? 0 : t - state.last
+		state.last = t
+		// the player's until the role is picked, then they stand while the hands come up
+		if (!state.pickedAt) {
+			lookWalk(w, io.turn)
+			if (dt > 0) stepWalk(w, io.keys, dt, C.walk)
+		}
+		io.turn[0] = io.turn[1] = 0
+		if (!state.arrivedAt && w.z >= C.walk.arrive) state.arrivedAt = t
+		const glow = C.glowRest + (1 - C.glowRest) * ramp(w.z, C.glowFrom, C.walk.arrive)
+		const lit = state.arrivedAt ? ramp(t, state.arrivedAt, state.arrivedAt + C.lockersRise) : 0
 		const item = itemOf(io)
 		if (item && !state.pickedAt) state.pickedAt = t
 		return {
-			p: [walk, t * C.bobHz * TURN, glow, lit],
-			q: [pace, 0, 0, 0],
+			p: [w.z, w.stride, glow, lit],
+			q: [io.still ? 0 : w.pace, w.x, w.heading, w.pitch],
 			// the hands stay down for the walk and come up with the picked tool
 			h: [2, item, item ? ramp(t, state.pickedAt, state.pickedAt + C.handsRise) : 0, 0],
 		}
 	},
-	hud: (_clock, marks) => (marks.hud ? {} : null),
-	choice: (_clock, marks, choices) =>
-		marks.lockers && !choices.role
+	hint: () => (state.walk.moved ? null : INTRO_WALK_HINT),
+	choice: (_clock, _marks, choices) =>
+		state.arrivedAt && !choices.role
 			? { key: 'role', options: INTRO_ROLES.map(({ key, label }) => ({ key, label })) }
 			: null,
 	ready: t => state.pickedAt > 0 && t >= state.pickedAt + C.handsRise + C.pickBeat,

@@ -1,15 +1,14 @@
-// Shot 6: the corridor walked in POV to the lit door, past the bays where the other envoys get
-// ready, to the three lockers beside it. Raymarched: the corridor is a box, the bays rooms off it.
-// uP = [walk 0..1, bob phase, door glow, lockers lit], uQ.x = pace (the bob dies as we stop).
+// Shot 6: the corridor the player walks in POV to the lit door, past the bays where the other envoys
+// get ready, to the three lockers beside it. Raymarched: the corridor is a box, the bays rooms off it.
+// uP = [z, stride phase, door glow, lockers lit], uQ = [pace (the bob dies as we stop), x, heading, pitch].
 // Bays, alternating left and right: suit-up, medical, mess, comms, and the window on the red Earth.
-// The people come from human.glsl.
+// The people come from human.glsl, the colours from the generated snapPalette.
 
 const float W = 1.6;             // half-width; the eye is at y = 0
 const float FLOOR = -1.6;
 const float CEIL = 1.0;
 const float DOOR_Z = 35.0;
-const float HOLD = 3.2;
-const float START_Z = -2.0;      // the walk begins this far short of the first bay; it ends HOLD short of the door
+const float BACK_Z = -3.5;       // the sealed hatch behind the walk's start
 const float RIB_EVERY = 2.0;
 const float RIB_IN = 0.08;
 const float BAY_FIRST = 5.0;
@@ -317,9 +316,34 @@ float shell(vec3 p){
   return min(d, dx);
 }
 
-// what stands in the corridor: the bays' contents, and the spare suits as a material of their own
+// The player's own body under the eye, seen by looking down: the suit's torso, legs on the stride,
+// boots on the deck. In its frame x runs to the right, y up from the deck, z the way they face.
+vec2 body(vec3 p){
+  vec2 d = p.xz - vec2(uQ.y, uP.x);
+  if (dot(d, d) > 0.64) return vec2(1e9, 0.0);
+  float s = sin(uQ.z), c = cos(uQ.z);
+  vec3 q = vec3(c*d.x - s*d.y, p.y - FLOOR, s*d.x + c*d.y);
+  float pace = uQ.x;
+  float bob = 0.04*sin(uP.y)*pace;
+  vec2 r = vec2(huBox(q - vec3(0.0, 1.13 + bob, -0.2), vec3(0.19, 0.27, 0.12), 0.08), 1.0);
+  for (int i = 0; i < 2; i++){
+    float sd = i == 0 ? -1.0 : 1.0;
+    // a stride is the left leg forward then the right; a foot lifts while it swings through
+    float reach = sin(uP.y*0.5)*pace*sd;
+    float lift = 0.07*max(cos(uP.y*0.5)*sd, 0.0)*pace;
+    vec3 hip = vec3(sd*0.1, 0.9 + bob, -0.16);
+    vec3 foot = vec3(sd*0.12, 0.09 + lift, 0.05 + 0.26*reach);
+    vec3 knee = mix(hip, foot, 0.5) + vec3(0.0, 0.0, 0.09);
+    float leg = min(huCone(q, hip, knee, 0.085, 0.07), huCone(q, knee, foot, 0.068, 0.055));
+    r = opU(r, vec2(leg, 1.0));
+    r = opU(r, vec2(huBox(q - foot - vec3(0.0, -0.03, 0.06), vec3(0.055, 0.05, 0.12), 0.03), 6.0));
+  }
+  return r;
+}
+
+// what stands in the corridor: the bays' contents, the spare suits as a material of their own, the player
 vec2 contents(vec3 p){
-  return opU(bayContents(p), vec2(lockerSuit(p), 18.0));
+  return opU(opU(bayContents(p), vec2(lockerSuit(p), 18.0)), body(p));
 }
 
 // a strip's state on a stepped clock: a few of them flicker, the rest hold
@@ -383,16 +407,16 @@ void main(){
   vec2 frag = gl_FragCoord.xy;
   vec2 uv = frameUV(frag);
 
-  // the walk: forward along the corridor with a stride bob that dies as we stop; the pointer turns the head
+  // the player's walk, with a stride bob that dies as they stop; the pointer turns the head on top
   float pace = uQ.x;
-  // a slower stride sways more from side to side; the rise and fall is twice per stride
-  vec3 ro = vec3(0.045*sin(uP.y*0.5)*pace, 0.04*sin(uP.y)*pace, mix(START_Z, DOOR_Z - HOLD, uP.x));
-  float yaw = uLook.x*0.11;
-  float pitch = -uLook.y*0.06 + 0.012*sin(uP.y*0.5)*pace;
-  vec3 fwd = normalize(vec3(sin(yaw), pitch, cos(yaw)));
+  float yaw = uQ.z + uLook.x*0.11;
+  float pitch = uQ.w - uLook.y*0.06 + 0.012*sin(uP.y*0.5)*pace;
+  vec3 fwd = vec3(sin(yaw)*cos(pitch), sin(pitch), cos(yaw)*cos(pitch));
   vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), fwd));
   vec3 up = cross(fwd, right);
   vec3 rd = normalize(uv.x*right + uv.y*up + FOCAL*fwd);
+  // a slower stride sways more from side to side; the rise and fall is twice per stride
+  vec3 ro = vec3(uQ.y, 0.04*sin(uP.y)*pace, uP.x) + right*0.045*sin(uP.y*0.5)*pace;
 
   // The march, and once it lands six more passes of the same loop for the taps the shading takes on
   // the contents: a normal's four, the occlusion along it, the deck's contact shadow. One loop, so
@@ -408,7 +432,7 @@ void main(){
     vec3 at = tap == 0 ? ro + rd*t : tap < 5 ? p + 0.004*e : tap == 5 ? p + normalize(cn)*0.06 : p + vec3(0.0, 0.08, 0.0);
     vec2 c = contents(at);
     if (tap == 0){
-      float d = min(min(shell(at), pipes(at)), min(DOOR_Z + recess(at) - at.z, c.x));
+      float d = min(min(shell(at), pipes(at)), min(min(DOOR_Z + recess(at) - at.z, at.z - BACK_Z), c.x));
       if (d < 0.002 + 0.0015*t || t > 45.0 || i == 95){ p = at; bc = c; tap = 1; }
       else t += d*0.72;
     }
@@ -429,7 +453,8 @@ void main(){
   float dSide = inRoom ? min(dz, CEIL - LINTEL - p.y) : 1e9;
   float dPipe = pipes(p);
   float dEnd = DOOR_Z + recess(p) - p.z;
-  float dm = min(min(min(dFloor, dCeil), min(dWall, dSide)), min(min(bc.x, dPipe), dEnd));
+  float dBack = p.z - BACK_Z;
+  float dm = min(min(min(dFloor, dCeil), min(dWall, dSide)), min(min(bc.x, dPipe), min(dEnd, dBack)));
   bool onSuit = dm == bc.x && bc.y > 17.5;
   bool onFig = dm == bc.x && !onSuit;
 
@@ -571,6 +596,14 @@ void main(){
       base = ZINC;
       emit = wall ? mix(mix(SILVER, STAR, 0.4), bayTint(k)*1.3, 0.35)*louvre*fall*bayPanel(k)*0.7 : mix(RIME, SILVER, 0.5)*0.7;
     }
+  } else if (dm == dBack){
+    // the bulkhead behind: the hatch we came in by, sealed, in the door's striped frame
+    n = vec3(0.0, 0.0, 1.0);
+    float seam = max(step(0.96, fract(p.x + 0.3)), step(0.95, fract(p.y*1.4 + 0.3)));
+    base = mix(GUN*0.6, STEEL*0.8, seam)*grime;
+    float hatch = max(abs(p.x) - 0.45, p.y - (FLOOR + 2.0));
+    if (hatch < 0.0) base = mix(GRAPHITE*0.8, STEEL, step(0.94, fract(p.y*2.5)))*grime;
+    else if (hatch < 0.1) base = mix(EMBER*0.75, PITCH, step(0.5, fract((p.x + p.y)*5.0)));
   } else if (onFig){
     n = normalize(cn);
     float mat = bc.y;
@@ -641,7 +674,8 @@ void main(){
       float core = smoothstep(0.55, 0.0, abs(p.x - 0.55)/0.4);
       float slat = 0.7 + 0.3*step(0.35, fract(p.y*5.0));
       float lift = 0.75 + 0.25*smoothstep(FLOOR, FLOOR + 2.1, p.y);
-      emit = GLOW*(0.35 + 0.5*core)*(0.6 + 0.5*uP.z)*slat*lift;
+      // bright enough to land on the palette's lit end: lower, it snaps to tan and stops reading as light
+      emit = GLOW*(0.7 + 0.5*core)*(0.6 + 0.5*uP.z)*slat*lift;
       base = GLOW*0.15;
     } else {
       float frame = step(0.0, 0.1 - max(max(0.15 - p.x, p.x - 0.95), p.y - (FLOOR + 2.1)));
@@ -682,7 +716,7 @@ void main(){
   for (int i = -1; i <= 1; i++){
     float kk = ks + float(i);
     float sz = kk*STRIP_EVERY + 1.5;
-    if (sz < START_Z - 2.0 || sz > DOOR_Z - 0.5) continue;
+    if (sz < BACK_Z || sz > DOOR_Z - 0.5) continue;
     vec3 c = vec3(0.0, CEIL - 0.03, sz + clamp(p.z - sz, -0.6, 0.6));
     vec3 L = c - p;
     float d2 = dot(L, L);
@@ -754,5 +788,5 @@ void main(){
 
   vec4 hd = hands(uv);
   col = mix(col, hd.rgb, hd.a);
-  gl_FragColor = vec4(finish(col, frag), 1.0);
+  gl_FragColor = vec4(snapPalette(col, frag), 1.0);
 }
