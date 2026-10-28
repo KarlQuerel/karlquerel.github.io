@@ -13,7 +13,8 @@ export const createWalk = ({ x, z }) => ({
 	ahead: 0,
 	side: 0,
 	turn: 0,
-	stride: 0,
+	vx: 0,
+	vz: 0,
 	pace: 0,
 	moved: false,
 })
@@ -40,10 +41,10 @@ export function stepWalk(w, keys, dt, box) {
 	const cos = Math.cos(w.heading)
 	const x = clamp(w.x + (sin * w.ahead + cos * w.side) * dt, -box.halfWidth, box.halfWidth)
 	const z = clamp(w.z + (cos * w.ahead - sin * w.side) * dt, box.back, box.front)
-	// pace from the ground covered, not the speed asked: pushing into a wall is standing still
-	const covered = Math.hypot(x - w.x, z - w.z)
-	w.stride += covered * WALK.strideRad
-	w.pace = Math.min(1, covered / dt / WALK.speed)
+	// what the walls let through: pushing into one is standing still
+	w.vx = (x - w.x) / dt
+	w.vz = (z - w.z) / dt
+	w.pace = Math.min(1, Math.hypot(w.vx, w.vz) / WALK.speed)
 	w.x = x
 	w.z = z
 }
