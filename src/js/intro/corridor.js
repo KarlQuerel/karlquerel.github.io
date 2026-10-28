@@ -5,12 +5,15 @@ import { INTRO_CARDS, INTRO_ROLES, INTRO_WALK_HINT } from '../../data/gameIntro.
 import { itemOf } from './wake.js'
 import { paletteSnap } from './paletteSnap.js'
 import { createWalk, lookWalk, stepWalk } from './walk.js'
+import { createGait, footFrame, gaitPhase, stepGait } from './gait.js'
 import { CORRIDOR } from '../../constants/intro/corridor.js'
 import { ramp } from '../math.js'
 
 const C = CORRIDOR
-// when the player reached the lockers and picked a role, the shot's clock at the last frame, and the walk
-const state = { arrivedAt: 0, pickedAt: 0, last: null, walk: createWalk(C.walk) }
+// when the player reached the lockers and picked a role, the shot's clock at the last frame, the walk
+// and the boots under it
+const walk = createWalk(C.walk)
+const state = { arrivedAt: 0, pickedAt: 0, last: null, walk, gait: createGait(walk) }
 
 export const corridor = {
 	key: 'corridor',
@@ -27,15 +30,20 @@ export const corridor = {
 		state.pickedAt = 0
 		state.last = null
 		state.walk = createWalk(C.walk)
+		state.gait = createGait(state.walk)
 	},
 	params(t, io) {
 		const w = state.walk
+		const g = state.gait
 		const dt = state.last === null ? 0 : t - state.last
 		state.last = t
 		// the player's until the role is picked, then they stand while the hands come up
 		if (!state.pickedAt) {
 			lookWalk(w, io.turn)
-			if (dt > 0) stepWalk(w, io.keys, dt, C.walk)
+			if (dt > 0) {
+				stepWalk(w, io.keys, dt, C.walk)
+				stepGait(g, w, dt)
+			}
 		}
 		io.turn[0] = io.turn[1] = 0
 		if (!state.arrivedAt && w.z >= C.walk.arrive) state.arrivedAt = t
@@ -44,8 +52,10 @@ export const corridor = {
 		const item = itemOf(io)
 		if (item && !state.pickedAt) state.pickedAt = t
 		return {
-			p: [w.z, w.stride, glow, lit],
+			p: [w.z, gaitPhase(g), glow, lit],
 			q: [io.still ? 0 : w.pace, w.x, w.heading, w.pitch],
+			r: footFrame(g.feet[0], w),
+			s: footFrame(g.feet[1], w),
 			// the hands stay down for the walk and come up with the picked tool
 			h: [2, item, item ? ramp(t, state.pickedAt, state.pickedAt + C.handsRise) : 0, 0],
 		}
