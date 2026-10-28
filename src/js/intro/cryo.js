@@ -14,7 +14,7 @@ export const cryo = {
 	chunks: [hands, human],
 	duration: CRYO.duration,
 	card: { at: CRYO.cardAt, text: INTRO_CARDS.chosen },
-	hud: () => ({}),
+	pov: true,
 	params(t, io) {
 		const reach = window(t, CRYO.reach)
 		const grip = window(t, CRYO.grip)
