@@ -9,6 +9,8 @@ export const WALK_KEYS = {
 	strafeRight: ['KeyD'],
 	turnLeft: ['ArrowLeft'],
 	turnRight: ['ArrowRight'],
+	// push, and later every other verb on what the view rests on
+	use: ['KeyE'],
 }
 
 export const WALK = {
