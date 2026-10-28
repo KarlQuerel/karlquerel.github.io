@@ -1,9 +1,11 @@
-// The storyboard in order (GAME_STORY.md section 4). Every shot is a module of one shape:
+// The storyboard in order (GAME_STORY.md section 4), then act I's opener. Every shot is a module of
+// one shape:
 //   key, frag (+ chunks), duration in s (0 waits on ready(t, io)), card { at, text },
-//   marks { name: seconds } the overlays key off, params(t, io, gl, grid) -> { p, q, r, s, h, mask },
-//   choice(clock, marks, choices) -> { key, options }, hint(clock, marks, choices) -> a line under
-//   the picture, cellPx (its own pixel size), pov (first person: cards read high, clear of the
-//   hands), walk (the player walks it: a click takes the mouse for looking),
+//   marks { name: seconds } the overlays key off, params(t, io, gl, grid) -> { p, q, r, s, h, b, mask }
+//   (b: a vec4 array for the shot's own uB), choice(clock, marks, choices) -> { key, options },
+//   hint(clock, marks, choices) -> a line under the picture, cellPx (its own pixel size), pov (first
+//   person: cards read high, clear of the hands), walk (the player walks it: a click takes the mouse
+//   for looking), act (act I opens here: SKIP INTRO lands on it),
 //   enter(io), setup(gl), resize(gl, grid), release(gl).
 import { year } from './year.js'
 import { earth } from './earth.js'
@@ -17,6 +19,7 @@ import { board } from './board.js'
 import { wake } from './wake.js'
 import { crash } from './crash.js'
 import { title } from './title.js'
+import { wreck } from './wreck.js'
 
 export const INTRO_SHOTS = [
 	year,
@@ -31,4 +34,5 @@ export const INTRO_SHOTS = [
 	wake,
 	crash,
 	title,
+	wreck,
 ]
