@@ -1,6 +1,6 @@
 // The intro's runtime: one art canvas, the storyboard's clock, and what the overlays need to know.
 
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { FULLSCREEN_QUAD, staticBuffer } from '../js/gl.js'
 import { INTRO_SHOTS } from '../js/intro/index.js'
 import { dropPainter } from '../js/intro/artWorker.js'
@@ -22,6 +22,9 @@ import {
 	INTRO_TRANSITIONS,
 	TRANSITION_KINDS,
 } from '../constants/intro/transitions.js'
+import { WALK_KEYS } from '../constants/intro/walk.js'
+
+const WALKING = new Set(Object.values(WALK_KEYS).flat())
 
 // On the dev server `?shot=key&t=seconds` opens the intro there, for tuning a shot in isolation.
 function opening(still) {
@@ -55,8 +58,18 @@ export function useIntro(canvasRef) {
 	const pausedAt = ref(0)
 	let stepBy = 0
 
-	// What the shots read and write: the pointer, and every choice the player has made.
-	const io = { look: [0, 0], ptr: [0.5, 0.5], down: false, still, role: null, responded: false }
+	// What the shots read and write: the pointer, the walk keys held, the mouse travel a walk has not
+	// taken up yet, and every choice the player has made.
+	const io = {
+		look: [0, 0],
+		ptr: [0.5, 0.5],
+		down: false,
+		keys: new Set(),
+		turn: [0, 0],
+		still,
+		role: null,
+		responded: false,
+	}
 	const look = { tx: 0, ty: 0 }
 	let index = -1
 	let local = 0
@@ -83,6 +96,7 @@ export function useIntro(canvasRef) {
 		marks.value = {}
 		clock.value = 0
 		shot.value?.enter?.(io)
+		if (!shot.value?.walk) release()
 	}
 
 	// the last shot is where the intro rests: nothing to skip to
@@ -117,11 +131,13 @@ export function useIntro(canvasRef) {
 		choices.value = { ...choices.value, [key]: value }
 	}
 
-	// what the visor shows and what the player is being asked, as the shot on screen defines them
-	const hud = computed(() => shot.value?.hud?.(clock.value, marks.value, choices.value) ?? null)
+	// what the player is being asked, and told, as the shot on screen defines it
 	const choice = computed(
 		() => shot.value?.choice?.(clock.value, marks.value, choices.value) ?? null
 	)
+	const hint = computed(() => shot.value?.hint?.(clock.value, marks.value, choices.value) ?? null)
+	// a choice needs the cursor back to be clicked
+	watch(choice, asked => asked && release())
 
 	async function build(glCtx, step) {
 		gl = glCtx
@@ -252,8 +268,25 @@ export function useIntro(canvasRef) {
 			},
 		})
 
+	// A walked shot takes the mouse on a click: its travel turns the head, the cursor hides, Esc gives it back.
+	const locked = () => !!canvasRef.value && document.pointerLockElement === canvasRef.value
+	function lock(e) {
+		if (!shot.value?.walk || choice.value || locked() || e.target !== canvasRef.value) return
+		// Chrome refuses a lock asked for just after Esc gave one up: the next click asks again
+		canvasRef.value.requestPointerLock()?.catch?.(() => {})
+	}
+	function release() {
+		if (locked()) document.exitPointerLock()
+	}
+
 	// The pointer over the frame: a look for the mouse, a position for whatever a shot lets you touch.
 	function track(e) {
+		if (locked()) {
+			io.turn[0] += e.movementX
+			io.turn[1] += e.movementY
+			look.tx = look.ty = 0
+			return
+		}
 		io.ptr[0] = e.clientX / window.innerWidth
 		io.ptr[1] = 1 - e.clientY / window.innerHeight
 		if (e.pointerType !== 'mouse' || still) return
@@ -262,6 +295,7 @@ export function useIntro(canvasRef) {
 	}
 	useWindowListener('pointermove', track)
 	useWindowListener('pointerdown', e => {
+		lock(e)
 		track(e)
 		io.down = true
 	})
@@ -271,6 +305,21 @@ export function useIntro(canvasRef) {
 	useWindowListener('pointercancel', () => {
 		io.down = false
 	})
+
+	// The walk keys held, by physical key; a frozen frame leaves the arrows to the inspector.
+	useWindowListener(
+		'keydown',
+		e => {
+			if (!WALKING.has(e.code) || paused.value) return
+			io.keys.add(e.code)
+			e.preventDefault()
+		},
+		// not passive: the arrows must not also scroll
+		{}
+	)
+	useWindowListener('keyup', e => io.keys.delete(e.code))
+	// a key released in another window never reports it here
+	useWindowListener('blur', () => io.keys.clear())
 
 	if (import.meta.env.DEV)
 		useWindowListener(
@@ -298,8 +347,8 @@ export function useIntro(canvasRef) {
 		marks,
 		clock,
 		settled,
-		hud,
 		choice,
+		hint,
 		last,
 		skip,
 		choose,
