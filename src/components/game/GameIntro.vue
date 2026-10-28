@@ -1,19 +1,19 @@
 <template>
-	<!-- The intro: the storyboard's shots on one art canvas, the typed cards and the visor over it.
-	     No other text on screen: the picture carries the world. -->
+	<!-- The intro: the storyboard's shots on one art canvas, the typed cards over it.
+	     No other text on screen but how to walk: the picture carries the world. -->
 	<div class="intro" :class="{ 'intro--flat': !supported, 'intro--shake': shaking }">
 		<canvas ref="canvas" class="intro__canvas" aria-hidden="true" />
 		<BootCover :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
 		<!-- the incoming shot's overlays wait until its picture has mostly taken the frame -->
 		<template v-if="settled">
-			<IntroCard :text="card" :visor="!!hud" />
-			<IntroHud v-if="hud" v-bind="hud" />
+			<IntroCard :text="card" :pov="!!shot?.pov" />
 			<IntroBoard v-if="shot?.key === 'board'" :clock="clock" />
 			<IntroChoice
 				v-if="choice"
 				:options="choice.options"
 				@pick="choose(choice.key, $event)"
 			/>
+			<p v-if="hint" class="intro__hint">{{ hint }}</p>
 			<div v-if="shot?.key === 'title'" class="intro__title">
 				<PlatingWordmark @built="built = true" />
 				<TypedReadout :line="INTRO_ACT" :start="built" />
@@ -38,7 +38,6 @@
 	import IntroBoard from './IntroBoard.vue'
 	import IntroCard from './IntroCard.vue'
 	import IntroChoice from './IntroChoice.vue'
-	import IntroHud from './IntroHud.vue'
 	import PlatingWordmark from './PlatingWordmark.vue'
 	import TypedReadout from './TypedReadout.vue'
 	import { INTRO_CRASH, INTRO_INSPECT } from '@/constants/intro/timeline'
@@ -55,8 +54,8 @@
 		marks,
 		clock,
 		settled,
-		hud,
 		choice,
+		hint,
 		last,
 		skip,
 		choose,
@@ -72,6 +71,7 @@
 
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
+	@use '@/styles/flyby' as *;
 
 	.intro {
 		position: fixed;
@@ -92,6 +92,30 @@
 
 	.intro--flat .intro__canvas {
 		display: none;
+	}
+
+	// between the hands, blinking like a title screen's prompt until the first step
+	.intro__hint {
+		position: fixed;
+		left: 50%;
+		bottom: 9vh;
+		z-index: 3;
+		margin: 0;
+		translate: -50% 0;
+		font-family: $font-pixel;
+		font-size: $type-prose-sm;
+		letter-spacing: 1px;
+		white-space: nowrap;
+		color: $flyby-ink;
+		pointer-events: none;
+		animation: intro-hint 1.2s step-end infinite;
+		@include flyby-shadow;
+	}
+
+	@keyframes intro-hint {
+		50% {
+			opacity: 0;
+		}
 	}
 
 	// impact: the frame thrown about on a stepped clock, never eased
@@ -171,7 +195,8 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.intro--shake {
+		.intro--shake,
+		.intro__hint {
 			animation: none;
 		}
 	}
