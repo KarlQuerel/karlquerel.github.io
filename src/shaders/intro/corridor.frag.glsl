@@ -316,27 +316,28 @@ float shell(vec3 p){
   return min(d, dx);
 }
 
-// The player's own body under the eye, seen by looking down: the suit's torso, legs on the stride,
-// boots on the deck. In its frame x runs to the right, y up from the deck, z the way they face.
+// The player's own body under the eye, seen by looking down: the suit's torso turned with the head,
+// legs from its hips to the boots where the walk set them down (uR left, uS right: across, ahead,
+// lift, yaw, in the torso's frame). In that frame x runs to the right, y up from the deck, z ahead.
 vec2 body(vec3 p){
   vec2 d = p.xz - vec2(uQ.y, uP.x);
-  if (dot(d, d) > 0.64) return vec2(1e9, 0.0);
+  if (dot(d, d) > 1.0) return vec2(1e9, 0.0);
   float s = sin(uQ.z), c = cos(uQ.z);
   vec3 q = vec3(c*d.x - s*d.y, p.y - FLOOR, s*d.x + c*d.y);
-  float pace = uQ.x;
-  float bob = 0.04*sin(uP.y)*pace;
+  float bob = 0.04*sin(uP.y)*uQ.x;
   vec2 r = vec2(huBox(q - vec3(0.0, 1.13 + bob, -0.2), vec3(0.19, 0.27, 0.12), 0.08), 1.0);
   for (int i = 0; i < 2; i++){
-    float sd = i == 0 ? -1.0 : 1.0;
-    // a stride is the left leg forward then the right; a foot lifts while it swings through
-    float reach = sin(uP.y*0.5)*pace*sd;
-    float lift = 0.07*max(cos(uP.y*0.5)*sd, 0.0)*pace;
-    vec3 hip = vec3(sd*0.1, 0.9 + bob, -0.16);
-    vec3 foot = vec3(sd*0.12, 0.09 + lift, 0.05 + 0.26*reach);
-    vec3 knee = mix(hip, foot, 0.5) + vec3(0.0, 0.0, 0.09);
+    vec4 f = i == 0 ? uR : uS;
+    vec3 foot = vec3(f.x, 0.09 + f.z, f.y);
+    vec3 hip = vec3(i == 0 ? -0.1 : 0.1, 0.9 + bob, -0.16);
+    // the knee bends out over the boot's toe, further while the boot is lifted
+    vec2 toe = vec2(sin(f.w), cos(f.w));
+    vec3 knee = mix(hip, foot, 0.5) + vec3(toe.x, 0.0, toe.y)*(0.09 + 0.8*f.z);
     float leg = min(huCone(q, hip, knee, 0.085, 0.07), huCone(q, knee, foot, 0.068, 0.055));
     r = opU(r, vec2(leg, 1.0));
-    r = opU(r, vec2(huBox(q - foot - vec3(0.0, -0.03, 0.06), vec3(0.055, 0.05, 0.12), 0.03), 6.0));
+    vec3 b = q - foot + vec3(0.0, 0.03, 0.0);
+    b = vec3(toe.y*b.x - toe.x*b.z, b.y, toe.x*b.x + toe.y*b.z) - vec3(0.0, 0.0, 0.06);
+    r = opU(r, vec2(huBox(b, vec3(0.055, 0.05, 0.12), 0.03), 6.0));
   }
   return r;
 }
