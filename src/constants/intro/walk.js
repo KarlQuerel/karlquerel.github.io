@@ -23,14 +23,14 @@ export const WALK = {
 	// radians per pixel of mouse travel, and how far the head tips: down far enough to see the boots
 	lookRad: 0.0022,
 	pitchUp: 0.9,
-	pitchDown: 1.2,
+	pitchDown: 1.3,
 }
 
 // The feet under the walk: each boot stays where it was set down until the body leaves it behind.
 export const GAIT = {
-	// where a boot stands from the body's centre: across, and ahead
+	// where a boot stands from the eye: across, and ahead (behind it, just in front of the hip)
 	side: 0.12,
-	ahead: 0.05,
+	ahead: -0.1,
 	// a boot steps once it is this far from where it should stand, walking or settling at rest,
 	// or turned this far from the body
 	reach: 0.3,
