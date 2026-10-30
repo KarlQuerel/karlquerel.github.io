@@ -1,6 +1,7 @@
 import frag from '../../shaders/intro/corridor.frag.glsl?raw'
 import hands from '../../shaders/intro/hands.glsl?raw'
 import human from '../../shaders/intro/human.glsl?raw'
+import edgeCells from '../../shaders/intro/edgeCells.glsl?raw'
 import { INTRO_PUSH_HINT, INTRO_WALK_HINT } from '../../data/gameIntro.js'
 import { paletteSnap } from './paletteSnap.js'
 import { createWalk, lookWalk, stepWalk } from './walk.js'
@@ -25,12 +26,14 @@ function fresh() {
 	}
 }
 let state = fresh()
+const palette = paletteSnap(WRECK.palette, CORRIDOR.seam)
 
 // Act I opens here: the corridor's own source drawn wrecked, so a change to the corridor lands in both.
 export const wreck = {
 	key: 'wreck',
 	frag,
-	chunks: [hands, human, paletteSnap(WRECK.palette, CORRIDOR.seam), '#define WRECK'],
+	chunks: [hands, human, palette, edgeCells, '#define WRECK'],
+	edges: palette,
 	cellPx: CORRIDOR.cellPx,
 	pov: true,
 	walk: true,

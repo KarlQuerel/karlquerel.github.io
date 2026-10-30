@@ -569,7 +569,7 @@ void main(){
   if (p.y > CEIL + HULL_T){
     vec3 sky = planetOver(stars(rd)*0.8, rd, normalize(vec3(-0.35, 0.8, 0.5)), 0.62, normalize(vec3(0.8, 0.3, -0.4)));
     vec4 hs = hands(uv);
-    gl_FragColor = vec4(snapPalette(mix(sky, hs.rgb, hs.a), frag), 1.0);
+    gl_FragColor = edgeCell(snapIndex(mix(sky, hs.rgb, hs.a), frag), CELL_FAR, vec3(0.0, -1.0, 0.0), hs.a < 0.5);
     return;
   }
   // the emergency lamps' pulse, on a stepped clock
@@ -1022,7 +1022,8 @@ void main(){
     }
   }
 
+  // what the edge pass needs of this cell: its colour, its depth and facing; the hands keep their own edges
   vec4 hd = hands(uv);
   col = mix(col, hd.rgb, hd.a);
-  gl_FragColor = vec4(snapPalette(col, frag), 1.0);
+  gl_FragColor = edgeCell(snapIndex(col, frag), t, n, hd.a < 0.5);
 }

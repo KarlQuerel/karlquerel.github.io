@@ -1,6 +1,7 @@
 import frag from '../../shaders/intro/corridor.frag.glsl?raw'
 import hands from '../../shaders/intro/hands.glsl?raw'
 import human from '../../shaders/intro/human.glsl?raw'
+import edgeCells from '../../shaders/intro/edgeCells.glsl?raw'
 import { INTRO_CARDS, INTRO_ROLES, INTRO_WALK_HINT } from '../../data/gameIntro.js'
 import { itemOf } from './wake.js'
 import { paletteSnap } from './paletteSnap.js'
@@ -10,6 +11,7 @@ import { CORRIDOR } from '../../constants/intro/corridor.js'
 import { ramp } from '../math.js'
 
 const C = CORRIDOR
+const palette = paletteSnap(C.palette, C.seam)
 // when the player reached the lockers and picked a role, the shot's clock at the last frame, the walk
 // and the boots under it
 const walk = createWalk(C.walk)
@@ -18,7 +20,9 @@ const state = { arrivedAt: 0, pickedAt: 0, last: null, walk, gait: createGait(wa
 export const corridor = {
 	key: 'corridor',
 	frag,
-	chunks: [hands, human, paletteSnap(C.palette, C.seam)],
+	chunks: [hands, human, palette, edgeCells],
+	// outlined and glinted by the edge pass
+	edges: palette,
 	cellPx: C.cellPx,
 	pov: true,
 	walk: true,
