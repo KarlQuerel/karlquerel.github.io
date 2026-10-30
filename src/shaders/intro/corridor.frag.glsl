@@ -28,6 +28,7 @@ const float SWAY = 0.02;         // and its lean over the boot that carries the 
 const float THIGH = 0.41;
 const float SHIN = 0.4;
 const float LEG = THIGH + SHIN - 0.002;   // as far as huIK reaches
+const float TOE_OUT = 0.1;       // how far each boot turns out from straight ahead
 const vec3 DOOR_POS = vec3(0.55, -0.5, DOOR_Z - 0.1);
 const vec3 VENT = vec3(W - 0.16, CEIL - 0.16, 7.3);
 const vec3 BEACON_L = vec3(0.07, FLOOR + 2.16, DOOR_Z - 0.02);
@@ -369,32 +370,50 @@ float shell(vec3 p){
 // over the boot on the deck (an even turn has the left one up). x across, y up.
 vec2 gaitLean(){ return vec2(SWAY*sin(0.5*uP.y), -BOB*cos(uP.y))*uQ.x; }
 
-// The player's own body under the eye, seen by looking down: the suit's torso turned with the head,
-// legs from its hips to the boots where the walk set them down (uR left, uS right: across, ahead,
-// lift, yaw, in the torso's frame). In that frame x runs to the right, y up from the deck, z ahead.
+// The player's own body under the eye, seen by looking down: hips turned the way the boots stand, the
+// torso halfway to where the head looks, legs from the hips to the boots where the walk set them down
+// (uR left, uS right: across, ahead, lift, yaw, in the head's frame). In that frame x runs to the
+// right, y up from the deck, z ahead.
 vec2 body(vec3 p){
   vec2 d = p.xz - vec2(uQ.y, uP.x);
   if (dot(d, d) > 1.0) return vec2(1e9, 0.0);
   float s = sin(uQ.z), c = cos(uQ.z);
   vec3 q = vec3(c*d.x - s*d.y, p.y - FLOOR, s*d.x + c*d.y);
   vec2 g = gaitLean();
-  vec2 r = vec2(huBox(q - vec3(g.x, 1.13 + g.y, -0.2), vec3(0.19, 0.27, 0.12), 0.08), 1.0);
+  float hipYaw = atan(sin(uR.w) + sin(uS.w), cos(uR.w) + cos(uS.w));
+  vec2 hipAhead = vec2(sin(hipYaw), cos(hipYaw));
+  vec3 tq = q - vec3(g.x, 1.13 + g.y, -0.2);
+  float ts = sin(0.5*hipYaw), tc = cos(0.5*hipYaw);
+  tq.xz = vec2(tc*tq.x - ts*tq.z, ts*tq.x + tc*tq.z);
+  vec2 r = vec2(huBox(tq, vec3(0.19, 0.27, 0.12), 0.08), 1.0);
   for (int i = 0; i < 2; i++){
     vec4 f = i == 0 ? uR : uS;
+    float sd = i == 0 ? -1.0 : 1.0;
+    vec3 hip = vec3(g.x + hipAhead.y*sd*0.1, 0.9 + g.y, -0.16 - hipAhead.x*sd*0.1);
+    // the boot points a little out and rolls: up on its toe as the body leaves it behind, heel first
+    // as it reaches ahead to land
+    float yaw = f.w + sd*TOE_OUT;
+    vec3 F = vec3(sin(yaw), 0.0, cos(yaw));
+    vec3 R = vec3(F.z, 0.0, -F.x);
     vec3 foot = vec3(f.x, 0.09 + f.z, f.y);
-    vec3 hip = vec3(g.x + (i == 0 ? -0.1 : 0.1), 0.9 + g.y, -0.16);
-    // a leg on the deck stays near straight, its hip dropping as far as the boot needs: only a lifted
-    // boot bends the knee, out over its toe
-    vec2 span = foot.xz - hip.xz;
-    hip.y = min(hip.y, foot.y + sqrt(max(LEG*LEG - dot(span, span), 0.0)));
-    vec2 toe = vec2(sin(f.w), cos(f.w));
+    float ahead = dot(foot.xz - hip.xz, hipAhead);
+    float roll = ahead < 0.0 ? clamp((-ahead - 0.12)*1.3, 0.0, 0.6) : -clamp((ahead - 0.18)*1.5, 0.0, 0.3);
+    vec3 pivot = foot + F*(roll > 0.0 ? 0.19 : -0.08) - vec3(0.0, 0.09, 0.0);
+    vec3 Fr = F*cos(roll) - vec3(0.0, sin(roll), 0.0);
+    vec3 Ur = vec3(0.0, cos(roll), 0.0) + F*sin(roll);
+    vec3 v = foot - pivot;
+    vec3 rolled = pivot + Fr*dot(v, F) + Ur*v.y + R*dot(v, R);
+    // a leg on the deck stays near straight, its hip dropping as far as the boot needs: a lifted boot
+    // bends the knee, out over its toe
+    vec2 span = rolled.xz - hip.xz;
+    hip.y = min(hip.y, rolled.y + sqrt(max(LEG*LEG - dot(span, span), 0.0)));
     vec3 ankle;
-    vec3 knee = huIK(hip, foot, THIGH, SHIN, vec3(toe.x, 0.0, toe.y), ankle);
+    vec3 knee = huIK(hip, rolled, THIGH, SHIN, F, ankle);
     float leg = min(huCone(q, hip, knee, 0.085, 0.07), huCone(q, knee, ankle, 0.068, 0.055));
     r = opU(r, vec2(leg, 1.0));
-    vec3 b = q - foot + vec3(0.0, 0.03, 0.0);
-    b = vec3(toe.y*b.x - toe.x*b.z, b.y, toe.x*b.x + toe.y*b.z) - vec3(0.0, 0.0, 0.06);
-    r = opU(r, vec2(huBox(b, vec3(0.055, 0.05, 0.12), 0.03), 6.0));
+    v = foot - vec3(0.0, 0.03, 0.0) + F*0.06 - pivot;
+    vec3 b = q - (pivot + Fr*dot(v, F) + Ur*v.y + R*dot(v, R));
+    r = opU(r, vec2(huBox(vec3(dot(b, R), dot(b, Ur), dot(b, Fr)), vec3(0.055, 0.05, 0.12), 0.03), 6.0));
   }
   return r;
 }
