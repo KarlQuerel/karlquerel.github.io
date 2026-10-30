@@ -158,6 +158,7 @@ vec2 opU(vec2 a, vec2 b){ return a.x < b.x ? a : b; }
 // Materials: 1 suit, 2 helmet shell, 3 pack, 4 skin, 5 coverall, 6 dark fittings, 7 visor,
 // 8 chest lamp, 9 belt, 10 mattress, 11 vitals monitor, 12 furniture, 13 brushed rail,
 // 14 medic's uniform, 15 console screen, 16 hair, 17 undersuit, 18 a spare suit in its locker.
+// The player's own suit: 19 its white plates, 26 its lines of light, 27 its dark weave, 28 its joints and soles.
 
 #ifndef WRECK
 // a figure's frame from the bay's (rx, y, z): standing at `at`, facing angle a (0 = into the room)
@@ -382,10 +383,21 @@ vec2 body(vec3 p){
   vec2 g = gaitLean();
   float hipYaw = atan(sin(uR.w) + sin(uS.w), cos(uR.w) + cos(uS.w));
   vec2 hipAhead = vec2(sin(hipYaw), cos(hipYaw));
-  vec3 tq = q - vec3(g.x, 1.13 + g.y, -0.2);
+  vec3 tq = q - vec3(g.x, g.y, -0.24);
   float ts = sin(0.5*hipYaw), tc = cos(0.5*hipYaw);
   tq.xz = vec2(tc*tq.x - ts*tq.z, ts*tq.x + tc*tq.z);
-  vec2 r = vec2(huBox(tq, vec3(0.19, 0.27, 0.12), 0.08), 1.0);
+  // the torso: dark weave under a chest plate, two dark armoured bands across the belly, a belt with
+  // its status light, and a plate over each hip; looking down, the white is all on the legs
+  vec2 r = vec2(min(huEll(tq - vec3(0.0, 1.29, 0.0), vec3(0.2, 0.17, 0.14)), huCone(tq, vec3(0.0, 0.92, 0.0), vec3(0.0, 1.22, 0.0), 0.15, 0.17)), 27.0);
+  r = opU(r, vec2(max(huEll(tq - vec3(0.0, 1.3, 0.015), vec3(0.205, 0.165, 0.135)), 0.02 - tq.z), 19.0));
+  for (int k = 0; k < 2; k++){
+    float fk = float(k);
+    r = opU(r, vec2(huBox(tq - vec3(0.0, 1.08 - fk*0.075, 0.135), vec3(0.11 - fk*0.012, 0.027, 0.025), 0.012), 28.0));
+  }
+  r = opU(r, vec2(huEll(tq - vec3(0.0, 0.93, 0.0), vec3(0.175, 0.035, 0.165)), 28.0));
+  r = opU(r, vec2(huBox(tq - vec3(0.0, 0.93, 0.165), vec3(0.05, 0.006, 0.012), 0.004), 26.0));
+  vec3 hq = vec3(abs(tq.x), tq.yz);
+  r = opU(r, vec2(max(huEll(hq - vec3(0.13, 0.84, 0.03), vec3(0.075, 0.085, 0.085)), 0.0 - tq.z*0.5 - (hq.x - 0.1)), 19.0));
   for (int i = 0; i < 2; i++){
     vec4 f = i == 0 ? uR : uS;
     float sd = i == 0 ? -1.0 : 1.0;
@@ -409,11 +421,26 @@ vec2 body(vec3 p){
     hip.y = min(hip.y, rolled.y + sqrt(max(LEG*LEG - dot(span, span), 0.0)));
     vec3 ankle;
     vec3 knee = huIK(hip, rolled, THIGH, SHIN, F, ankle);
-    float leg = min(huCone(q, hip, knee, 0.085, 0.07), huCone(q, knee, ankle, 0.068, 0.055));
-    r = opU(r, vec2(leg, 1.0));
+    // weave legs under white plates down the thigh and the shin, each turned the way the boot points
+    vec3 ut = normalize(knee - hip), us = normalize(ankle - knee);
+    vec3 ft = normalize(F - ut*dot(F, ut)), fs = normalize(F - us*dot(F, us));
+    r = opU(r, vec2(min(huCone(q, hip, knee, 0.08, 0.066), huCone(q, knee, ankle, 0.062, 0.05)), 27.0));
+    float plate = min(huCone(q, mix(hip, knee, 0.25) + ft*0.03, mix(hip, knee, 0.85) + ft*0.028, 0.07, 0.056),
+                      huCone(q, mix(knee, ankle, 0.12) + fs*0.026, mix(knee, ankle, 0.8) + fs*0.022, 0.054, 0.042));
+    r = opU(r, vec2(plate, 19.0));
+    // the knee: a dark joint under a white cap; a line of light down the shin guard
+    vec3 kf = normalize(ft + fs);
+    r = opU(r, vec2(length(q - knee) - 0.064, 28.0));
+    r = opU(r, vec2(length(q - knee - kf*0.035) - 0.045, 19.0));
+    r = opU(r, vec2(huCone(q, mix(knee, ankle, 0.2) + fs*0.072, mix(knee, ankle, 0.7) + fs*0.06, 0.009, 0.009), 26.0));
+    // the mag boot: a white shell on a dark sole with a line of light round it, a dark cuff at the ankle
+    r = opU(r, vec2(huCone(q, ankle, ankle - us*0.05, 0.062, 0.06), 28.0));
     v = foot - vec3(0.0, 0.03, 0.0) + F*0.06 - pivot;
     vec3 b = q - (pivot + Fr*dot(v, F) + Ur*v.y + R*dot(v, R));
-    r = opU(r, vec2(huBox(vec3(dot(b, R), dot(b, Ur), dot(b, Fr)), vec3(0.055, 0.05, 0.12), 0.03), 6.0));
+    b = vec3(dot(b, R), dot(b, Ur), dot(b, Fr));
+    r = opU(r, vec2(huBox(b - vec3(0.0, 0.015, 0.0), vec3(0.052, 0.042, 0.115), 0.03), 19.0));
+    r = opU(r, vec2(huBox(b - vec3(0.0, -0.04, 0.0), vec3(0.058, 0.016, 0.125), 0.008), 28.0));
+    r = opU(r, vec2(huBox(b - vec3(0.0, -0.04, 0.0), vec3(0.065, 0.005, 0.133), 0.002), 26.0));
   }
   return r;
 }
@@ -826,6 +853,15 @@ void main(){
       // the cooling undersuit: pale knit crossed by its dark tubing
       base = mix(BONE*0.85, mix(BONE*0.85, GRAPHITE, 0.6), step(0.9, fract(p.y*24.0 + 0.4*sin(p.x*26.0 + p.z*26.0))))*cloth;
     }
+    else if (mat < 19.5) base = mix(PEWTER, SILVER, 0.6);
+    else if (mat > 25.5 && mat < 26.5){
+      // the suit's own lights: they burn on its own power, in the wreck too
+      base = PITCH;
+      emit = mix(RIME, STAR, 0.6)*1.2;
+      rimK = 0.0;
+    }
+    else if (mat > 26.5 && mat < 27.5) base = mix(STEEL, GRAPHITE, 0.55);
+    else if (mat > 27.5 && mat < 28.5) base = GRAPHITE*0.45;
 #ifdef WRECK
     else if (mat < 20.5){
       // the pod's shell: brushed panels rimed with frost, CRYO 02 down its flank
