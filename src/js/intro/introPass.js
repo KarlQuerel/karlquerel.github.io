@@ -1,10 +1,12 @@
 // One intro shot: its fragment program over the art grid, drawn with the shared uniform contract
 // declared at the top of shaders/intro/common.glsl. The program links in the background from start():
-// ready() polls it and finish() takes it up, before the first draw.
+// ready() polls it and finish() takes it up, before the first draw. A shot with `edges` (its palette
+// chunk) writes cells instead of colours, and the edge pass draws them onto the frame.
 
 import quadVert from '../../shaders/intro/quad.vert.glsl?raw'
 import blackFrag from '../../shaders/intro/black.frag.glsl?raw'
 import common from '../../shaders/intro/common.glsl?raw'
+import { createEdgePass } from './edgePass.js'
 import {
 	QUAD_VERTICES,
 	bindAttribute,
@@ -31,20 +33,25 @@ const UNIFORMS = [
 const SKY_UNIT = 4
 const ZERO4 = [0, 0, 0, 0]
 
-export function createIntroPass(gl, quad, { key, frag, chunks = [] }) {
+export function createIntroPass(gl, quad, { key, frag, chunks = [], edges = null }) {
 	const src = [common, ...chunks, frag].join('\n')
 	let link = null
 	let program = null
 	let U = null
 	let aP = -1
+	let edgePass = edges && createEdgePass(gl, quad, edges)
 
-	// A shot whose shader fails on this GPU plays black rather than taking the intro down with it.
+	// A shot whose shader or edge pass fails on this GPU plays black rather than taking the intro down
+	// with it.
 	function finish() {
 		try {
 			program = link.finish()
+			edgePass?.finish()
 		} catch (err) {
 			console.error(`intro shot ${key}:`, err)
 			program = createProgram(gl, quadVert, `${common}\n${blackFrag}`)
+			edgePass?.release()
+			edgePass = null
 		}
 		U = uniformLocations(gl, program, UNIFORMS)
 		aP = gl.getAttribLocation(program, 'aP')
@@ -66,6 +73,7 @@ export function createIntroPass(gl, quad, { key, frag, chunks = [] }) {
 			sky = null,
 		}
 	) {
+		edgePass?.begin(grid)
 		gl.useProgram(program)
 		bindAttribute(gl, quad, aP, 2)
 		gl.uniform2f(U.uRes, grid.width, grid.height)
@@ -92,13 +100,20 @@ export function createIntroPass(gl, quad, { key, frag, chunks = [] }) {
 		}
 		gl.disable(gl.BLEND)
 		gl.drawArrays(gl.TRIANGLES, 0, QUAD_VERTICES)
+		edgePass?.end(grid)
 	}
 
 	return {
-		start: () => (link = compileProgram(gl, quadVert, src)),
-		ready: () => link.ready(),
+		start() {
+			link = compileProgram(gl, quadVert, src)
+			edgePass?.start()
+		},
+		ready: () => link.ready() && (edgePass?.ready() ?? true),
 		finish,
 		draw,
-		release: () => gl.deleteProgram(program),
+		release() {
+			gl.deleteProgram(program)
+			edgePass?.release()
+		},
 	}
 }
