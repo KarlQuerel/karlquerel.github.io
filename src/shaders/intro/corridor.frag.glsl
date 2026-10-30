@@ -1,6 +1,6 @@
 // Shot 6: the corridor the player walks in POV to the lit door, past the bays where the other envoys
 // get ready, to the three lockers beside it. Raymarched: the corridor is a box, the bays rooms off it.
-// uP = [z, stride phase, door glow, lockers lit], uQ = [pace (the bob dies as we stop), x, heading, pitch].
+// uP = [z, step phase, door glow, lockers lit], uQ = [pace (the bob dies as we stop), x, heading, pitch].
 // Bays, alternating left and right: suit-up, medical, mess, comms, and the window on the red Earth.
 // The people come from human.glsl, the colours from the generated snapPalette.
 // With WRECK defined the same source draws act I's opener (js/intro/wreck.js): HERMES-8's spine,
@@ -23,6 +23,11 @@ const float BAY_DEPTH = 1.5;
 const float LINTEL = 0.3;
 const float STRIP_EVERY = 3.0;
 const float FOCAL = 0.85;        // ~61 degrees tall: a helmet's view
+const float BOB = 0.025;         // the head's rise and fall over a step
+const float SWAY = 0.02;         // and its lean over the boot that carries the weight
+const float THIGH = 0.41;
+const float SHIN = 0.4;
+const float LEG = THIGH + SHIN - 0.002;   // as far as huIK reaches
 const vec3 DOOR_POS = vec3(0.55, -0.5, DOOR_Z - 0.1);
 const vec3 VENT = vec3(W - 0.16, CEIL - 0.16, 7.3);
 const vec3 BEACON_L = vec3(0.07, FLOOR + 2.16, DOOR_Z - 0.02);
@@ -360,6 +365,10 @@ float shell(vec3 p){
   return min(d, dx);
 }
 
+// The head and the body under it over a step (uP.y): lowest as a boot lands, highest mid-step, leaning
+// over the boot on the deck (an even turn has the left one up). x across, y up.
+vec2 gaitLean(){ return vec2(SWAY*sin(0.5*uP.y), -BOB*cos(uP.y))*uQ.x; }
+
 // The player's own body under the eye, seen by looking down: the suit's torso turned with the head,
 // legs from its hips to the boots where the walk set them down (uR left, uS right: across, ahead,
 // lift, yaw, in the torso's frame). In that frame x runs to the right, y up from the deck, z ahead.
@@ -368,16 +377,20 @@ vec2 body(vec3 p){
   if (dot(d, d) > 1.0) return vec2(1e9, 0.0);
   float s = sin(uQ.z), c = cos(uQ.z);
   vec3 q = vec3(c*d.x - s*d.y, p.y - FLOOR, s*d.x + c*d.y);
-  float bob = 0.04*sin(uP.y)*uQ.x;
-  vec2 r = vec2(huBox(q - vec3(0.0, 1.13 + bob, -0.2), vec3(0.19, 0.27, 0.12), 0.08), 1.0);
+  vec2 g = gaitLean();
+  vec2 r = vec2(huBox(q - vec3(g.x, 1.13 + g.y, -0.2), vec3(0.19, 0.27, 0.12), 0.08), 1.0);
   for (int i = 0; i < 2; i++){
     vec4 f = i == 0 ? uR : uS;
     vec3 foot = vec3(f.x, 0.09 + f.z, f.y);
-    vec3 hip = vec3(i == 0 ? -0.1 : 0.1, 0.9 + bob, -0.16);
-    // the knee bends out over the boot's toe, further while the boot is lifted
+    vec3 hip = vec3(g.x + (i == 0 ? -0.1 : 0.1), 0.9 + g.y, -0.16);
+    // a leg on the deck stays near straight, its hip dropping as far as the boot needs: only a lifted
+    // boot bends the knee, out over its toe
+    vec2 span = foot.xz - hip.xz;
+    hip.y = min(hip.y, foot.y + sqrt(max(LEG*LEG - dot(span, span), 0.0)));
     vec2 toe = vec2(sin(f.w), cos(f.w));
-    vec3 knee = mix(hip, foot, 0.5) + vec3(toe.x, 0.0, toe.y)*(0.09 + 0.8*f.z);
-    float leg = min(huCone(q, hip, knee, 0.085, 0.07), huCone(q, knee, foot, 0.068, 0.055));
+    vec3 ankle;
+    vec3 knee = huIK(hip, foot, THIGH, SHIN, vec3(toe.x, 0.0, toe.y), ankle);
+    float leg = min(huCone(q, hip, knee, 0.085, 0.07), huCone(q, knee, ankle, 0.068, 0.055));
     r = opU(r, vec2(leg, 1.0));
     vec3 b = q - foot + vec3(0.0, 0.03, 0.0);
     b = vec3(toe.y*b.x - toe.x*b.z, b.y, toe.x*b.x + toe.y*b.z) - vec3(0.0, 0.0, 0.06);
@@ -513,16 +526,16 @@ void main(){
   vec2 frag = gl_FragCoord.xy;
   vec2 uv = frameUV(frag);
 
-  // the player's walk, with a stride bob that dies as they stop; the pointer turns the head on top
-  float pace = uQ.x;
+  // the player's walk, the pointer turning the head on top; the eyes keep the view level, so the step
+  // only carries the head, never tips it
   float yaw = uQ.z + uLook.x*0.11;
-  float pitch = uQ.w - uLook.y*0.06 + 0.012*sin(uP.y*0.5)*pace;
+  float pitch = uQ.w - uLook.y*0.06;
   vec3 fwd = vec3(sin(yaw)*cos(pitch), sin(pitch), cos(yaw)*cos(pitch));
   vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), fwd));
   vec3 up = cross(fwd, right);
   vec3 rd = normalize(uv.x*right + uv.y*up + FOCAL*fwd);
-  // a slower stride sways more from side to side; the rise and fall is twice per stride
-  vec3 ro = vec3(uQ.y, 0.04*sin(uP.y)*pace, uP.x) + right*0.045*sin(uP.y*0.5)*pace;
+  vec2 lean = gaitLean();
+  vec3 ro = vec3(uQ.y, lean.y, uP.x) + right*lean.x;
 
   // The march, and once it lands six more passes of the same loop for the taps the shading takes on
   // the contents: a normal's four, the occlusion along it, the deck's contact shadow. One loop, so
