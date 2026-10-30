@@ -95,11 +95,12 @@ export function stepGait(g, w, dt) {
 	if (!worst) return
 	worst.from = { x: worst.x, z: worst.z, yaw: worst.yaw }
 	worst.t = 0
+	// the left boot steps on an even count, the right on an odd one, even when one steps twice
+	if (g.steps % 2 !== (worst.sd + 1) / 2) g.steps++
 }
 
-// a full turn a step, from a quarter back: the head is lowest as a boot lands, highest mid-step
-export const gaitPhase = g =>
-	2 * Math.PI * (g.steps + (g.feet.find(f => f.from)?.t ?? 0)) - Math.PI / 2
+// a full turn a step, a boot landing on each whole turn; the half turn says which boot is in the air
+export const gaitPhase = g => 2 * Math.PI * (g.steps + (g.feet.find(f => f.from)?.t ?? 0))
 
 // a boot in the frame of the body at the walk's spot facing the head: [across, ahead, lift, yaw]
 export function footFrame(f, w) {
