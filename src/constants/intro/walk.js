@@ -14,8 +14,8 @@ export const WALK_KEYS = {
 }
 
 export const WALK = {
-	// the old scripted walk's pace
-	speed: 2.2,
+	// a brisk walk: faster and the legs could only keep up at a run
+	speed: 1.6,
 	// radians per second at a full turn
 	turnRate: 1.9,
 	// how quickly the body answers the keys: a camera has mass
@@ -39,11 +39,13 @@ export const GAIT = {
 	// below this pace the body is standing: the head turns this far before the body follows it
 	walking: 0.15,
 	deadZone: 0.6,
-	// one step: how long, how high the boot lifts, how far ahead of the moving body it lands (s of travel)
-	stepS: 0.3,
-	lift: 0.08,
-	leadS: 0.15,
+	// one step: how long the boot is in the air, how high it peels up behind (a quarter into the swing),
+	// how long both boots stay down between steps, how far ahead of the moving body it lands (s of travel)
+	stepS: 0.36,
+	lift: 0.15,
+	dwellS: 0.1,
+	leadS: 0.21,
 	// two boots never come closer than this across; a planted boot no further than this from its spot
 	gap: 0.14,
-	stretch: 0.45,
+	stretch: 0.7,
 }
