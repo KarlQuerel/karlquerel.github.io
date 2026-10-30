@@ -7,7 +7,7 @@ import {
 	QUAD_VERTICES,
 	bindAttribute,
 	compileProgram,
-	pixelTexture,
+	renderTarget,
 	uniformLocations,
 } from '../gl.js'
 import { LAYERS_CHUNK } from './sky.js'
@@ -15,16 +15,6 @@ import { LAYERS_CHUNK } from './sky.js'
 // units 1 and 2: unit 0 belongs to a shot's own mask
 const UNIT_A = 1
 const UNIT_B = 2
-
-function target(gl, width, height) {
-	const tex = pixelTexture(gl)
-	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
-	const fbo = gl.createFramebuffer()
-	gl.bindFramebuffer(gl.FRAMEBUFFER, fbo)
-	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0)
-	gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-	return { tex, fbo }
-}
 
 export function createTransition(gl, quad) {
 	const src = `${common}\n${LAYERS_CHUNK}\n${frag}`
@@ -55,7 +45,7 @@ export function createTransition(gl, quad) {
 		if (size[0] === grid.width && size[1] === grid.height && targets.length) return
 		drop()
 		size = [grid.width, grid.height]
-		targets = [target(gl, ...size), target(gl, ...size)]
+		targets = [renderTarget(gl, ...size), renderTarget(gl, ...size)]
 	}
 
 	// draws `drawA` and `drawB` into the two targets, then mixes them onto the canvas
