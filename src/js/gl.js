@@ -69,5 +69,16 @@ export function pixelTexture(gl) {
 	return tex
 }
 
+// A texture on the art grid to draw into, and its framebuffer. Leaves the frame unbound.
+export function renderTarget(gl, width, height) {
+	const tex = pixelTexture(gl)
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
+	const fbo = gl.createFramebuffer()
+	gl.bindFramebuffer(gl.FRAMEBUFFER, fbo)
+	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0)
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+	return { tex, fbo }
+}
+
 // Browsers cap live contexts per tab, and a dropped canvas otherwise keeps its one.
 export const loseContext = gl => gl.getExtension('WEBGL_lose_context')?.loseContext()
