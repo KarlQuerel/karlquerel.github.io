@@ -86,6 +86,10 @@ scene gets it from `js/intro/paletteSnap.js`, generated from `PALETTE` so no hex
 - **Flat sprites only for what you never walk around.** Anything you circle (pods, consoles) is 3D.
 - A light source must land on the palette's lit end: dimmer, it snaps to tan and stops reading as
   light.
+- **Quality comes from edges, not from more cells.** The walked 3D writes each cell's palette index,
+  depth and facing, and an edge pass (`js/intro/edgePass.js`) draws it: a cell standing in front of
+  what lies beside it takes a darker palette colour (the outline), a crease between two flat faces
+  a lighter one (the glint). Curves get no glint; both fade out by 16 m, where the haze takes over.
 
 ---
 
