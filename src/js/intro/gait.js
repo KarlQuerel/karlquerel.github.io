@@ -6,6 +6,8 @@ import { smoothstep } from '../math.js'
 
 const SIDES = [-1, 1]
 const wrap = a => Math.atan2(Math.sin(a), Math.cos(a))
+// a swing's height curve t(1-t)^3 at its peak, a quarter in: the boot peels up behind and skims forward
+const SWING_PEAK = 0.25 * 0.75 ** 3
 
 // where the boot on side sd (-1 left) stands under a body at (x, z) facing yaw
 function standAt(x, z, yaw, sd) {
@@ -21,6 +23,8 @@ function standAt(x, z, yaw, sd) {
 export const createGait = w => ({
 	yaw: w.heading,
 	steps: 0,
+	// seconds since both boots were last on the deck together
+	down: 0,
 	feet: SIDES.map(sd => ({ sd, ...standAt(w.x, w.z, w.heading, sd), lift: 0, from: null, t: 0 })),
 })
 
@@ -64,13 +68,17 @@ export function stepGait(g, w, dt) {
 		lifted.x = lifted.from.x + (to.x - lifted.from.x) * e
 		lifted.z = lifted.from.z + (to.z - lifted.from.z) * e
 		lifted.yaw = lifted.from.yaw + wrap(to.yaw - lifted.from.yaw) * e
-		lifted.lift = GAIT.lift * Math.sin(Math.PI * lifted.t)
+		lifted.lift = (GAIT.lift * lifted.t * (1 - lifted.t) ** 3) / SWING_PEAK
 		if (lifted.t < 1) return
 		lifted.from = null
 		lifted.lift = 0
 		g.steps++
+		g.down = 0
 		return
 	}
+	// a walk keeps both boots down a moment between steps; only a run leaves the deck at once
+	g.down += dt
+	if (walking && g.down < GAIT.dwellS) return
 	// Both down: the boot furthest from where it would land steps, once it is far enough out. Measured
 	// against the landing, not the rest spot, or the boot just set down ahead counts as out and goes again.
 	const reach = walking ? GAIT.reach : GAIT.settle
