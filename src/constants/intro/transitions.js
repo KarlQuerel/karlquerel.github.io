@@ -27,6 +27,15 @@ export const INTRO_TRANSITIONS = {
 	title: { kind: 'black', dur: 0.8 },
 	// act I: eyes open again, in the wreck
 	wreck: { kind: 'blink', dur: 1.3 },
+	// act II: the drop goes to black, the title, then eyes open on the ground
+	worldTitle: { kind: 'black', dur: 0.8 },
+	surface: { kind: 'blink', dur: 1.3 },
+	// every ending fades to its card
+	'end-green': { kind: 'black', dur: 1.4 },
+	'end-green-alive': { kind: 'black', dur: 1.4 },
+	'end-silence': { kind: 'black', dur: 1.4 },
+	'end-lie': { kind: 'black', dur: 1.4 },
+	'end-dead': { kind: 'black', dur: 1.4 },
 }
 
 // a skip takes the same transition, only this fast at most
