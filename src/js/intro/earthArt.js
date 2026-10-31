@@ -1,6 +1,6 @@
 // The earth shot's layers, painted once per grid into one atlas: the globe at (0, 0), the Moon beside
 // it. The stars are the intro's shared tile (js/intro/sky.js). The shader only slides them, so every pixel stays where it was put.
-// The holding screen paints the same globe and Moon on their own (paintGlobe, paintMoon).
+// The holding screen paints the Moon on its own (paintMoon) beside its own Earth (earthMap.js).
 
 import { EARTH } from '../../constants/intro/earth.js'
 import { PALETTE } from '../../constants/palette.js'
@@ -10,7 +10,6 @@ import { MOON } from '../../constants/intro/moon.js'
 import { clamp01, ramp, smoothstep } from '../math.js'
 import { ditherThreshold, fbm1, fbm2, seamIndex } from '../pixelNoise.js'
 import { tidySprite } from '../ridge.js'
-import { norm } from '../vec3.js'
 
 const DEG = Math.PI / 180
 const even = v => 2 * Math.ceil(v / 2)
@@ -128,11 +127,13 @@ function aimLight(frame, grid) {
 	return lightFrame(frame, [m * Math.cos(a), m * Math.sin(a), lz])
 }
 
-// The globe under `frame`'s light with the air `A` round it and the surface's detail `D`, the window
-// `win` of its sprite (in the sprite's cells). Two passes: what each cell is made of (tidied, so
-// coasts stay clean), then the light over it, dithered through every ramp step so the crescent fades
-// instead of stacking bands.
-function paintPlanet(res, frame, win = whole(res), A = EARTH.air, D = EARTH.detail) {
+// The globe under `frame`'s light with the air round it. Two passes: what each cell is made of
+// (tidied, so coasts stay clean), then the light over it, dithered through every ramp step so the
+// crescent fades instead of stacking bands.
+function paintPlanet(res, frame) {
+	const win = whole(res)
+	const A = EARTH.air
+	const D = EARTH.detail
 	const { x0, y0, w, h } = win
 	const d = new Uint8ClampedArray(w * h * 4)
 	const shader = createPlanetShader({ res, seed: EARTH.planet.seed })
@@ -152,8 +153,6 @@ function paintPlanet(res, frame, win = whole(res), A = EARTH.air, D = EARTH.deta
 	const eps = D.slopeCells / radius
 
 	const material = new Uint32Array(w * h).fill(SPACE)
-	// what each lit cell shows, for the coast pass: open sea or bare ground
-	const shown = new Uint8Array(w * h)
 	const elev = new Float32Array(w * h)
 	const cloudK = new Float32Array(w * h)
 	for (let y = y0; y < y0 + h; y++) {
@@ -225,60 +224,10 @@ function paintPlanet(res, frame, win = whole(res), A = EARTH.air, D = EARTH.deta
 			}
 			const step = seamIndex(v, ramp.length, x, y, D.seam)
 			put(d, i, step > 0 ? ramp[step] : foot)
-			if (!cloud) shown[j] = sea ? SHOWS_SEA : SHOWS_LAND
 		}
 	}
 	paintCities(d, res, ground, frame, win)
-	if (D.coastLine) paintCoast(d, shown, w, h, D.coastLine)
-	if (A.rim) paintRim(d, disc, light, win, A.rim)
 	return d
-}
-
-const SHOWS_SEA = 1
-const SHOWS_LAND = 2
-const SIDES = [
-	[1, 0],
-	[-1, 0],
-	[0, 1],
-	[0, -1],
-]
-
-// One cell of `tone` on the sea side of every lit coast: the map's own coastline.
-function paintCoast(d, shown, w, h, tone) {
-	for (let y = 1; y < h - 1; y++)
-		for (let x = 1; x < w - 1; x++) {
-			const j = y * w + x
-			if (shown[j] !== SHOWS_SEA) continue
-			if (SIDES.some(([dx, dy]) => shown[j + dy * w + dx] === SHOWS_LAND)) put(d, j * 4, tone)
-		}
-}
-
-// A line of light `cells` deep just inside the limb where it faces the sun: `tones[0]` past `from`
-// along the light, `tones[1]` past `bright`.
-function paintRim(
-	d,
-	{ radius, center },
-	[lx, ly],
-	{ x0, y0, w, h },
-	{ cells, from, bright, tones }
-) {
-	const inner = (1 - cells / radius) ** 2
-	for (let y = 0; y < h; y++) {
-		const dy = (y0 + y + 0.5 - center) / radius
-		for (let x = 0; x < w; x++) {
-			const dx = (x0 + x + 0.5 - center) / radius
-			const d2 = dx * dx + dy * dy
-			if (d2 >= 1 || d2 < inner) continue
-			const lit = dx * lx + dy * ly
-			if (lit > from) put(d, (y * w + x) * 4, tones[lit > bright ? 1 : 0])
-		}
-	}
-}
-
-// The globe on its own, turned to `spin` under `light` (x right, y down, z toward the viewer) with its
-// own `air` and `detail`, cut to the window `win` of its sprite: the holding screen's Earth.
-export function paintGlobe(res, { spin, light, air, detail }, win) {
-	return paintPlanet(res, lightFrame(planetFrame(spin, 0), norm(light)), win, air, detail)
 }
 
 // The Moon's own near side (constants/intro/moon.js): highland and mare albedo, Tycho's rays, a crisp
@@ -307,14 +256,61 @@ function rayLight(p, crater, k) {
 	return Math.max(halo, streak > 0.64 ? fade : 0)
 }
 
-export function paintMoon(res) {
+// The map's big craters that this sprite can show, each `exaggerate` times its size: none on a
+// mare (the lava floors are young and flat), none under `minCells` across.
+function craterField(F, bowls, mareAt, cellsPerDeg) {
+	const field = []
+	for (const [lat, lon, radius] of bowls) {
+		const r = radius * F.exaggerate
+		if (r * cellsPerDeg < F.minCells) continue
+		const v = toVec([lat, lon])
+		if (mareAt(v, 0) > 0.5) continue
+		field.push({ v, r, reach: Math.cos(r * F.flank * DEG) })
+	}
+	return field
+}
+
+// The craters' relief at `p` under `sun` (unit vectors): a bowl's wall on the sun's side falls away
+// from the light and its far wall faces it, the outer flank the other way round. Measured along the
+// sun's run over the ground, so it fades to nothing under a high sun and bites at the terminator.
+function craterRelief(p, sun, field, F) {
+	const along = dot3(sun, p)
+	const sT = [sun[0] - along * p[0], sun[1] - along * p[1], sun[2] - along * p[2]]
+	let relief = 0
+	for (const c of field) {
+		const d = dot3(p, c.v)
+		if (d < c.reach) continue
+		const t = angleDeg(p, c.v) / c.r
+		// the way to the centre along the ground
+		const o = [c.v[0] - d * p[0], c.v[1] - d * p[1], c.v[2] - d * p[2]]
+		const facing = -dot3(o, sT) / (Math.hypot(o[0], o[1], o[2]) || 1)
+		relief +=
+			t < 1
+				? -F.bowl * facing * smoothstep(ramp(t, F.floor, 1))
+				: F.rim * facing * (1 - ramp(t, 1, F.flank))
+	}
+	return relief
+}
+
+// The Moon's near side from its map `M` (constants/intro/moon.js by default) under `light` (x right,
+// y down, z toward the viewer): highland and mare albedo, Tycho's rays, a crisp terminator, earthshine
+// keeping the night side's maria just visible, and a crater field's relief when the map has one.
+export function paintMoon(res, M = MOON, light = EARTH.moon.light) {
 	const d = new Uint8ClampedArray(res * res * 4)
-	const M = MOON
-	const [lx, ly, lz] = EARTH.moon.light
+	const [lx, ly, lz] = light
 	const ll = Math.hypot(lx, ly, lz)
+	// the sun in the map's frame, north up
+	const sun = [lx / ll, -ly / ll, lz / ll]
 	const maria = M.maria.map(m => [toVec(m), m[2]])
+	const mareAt = (p, rag) => {
+		let mare = 0
+		for (const [v, rad] of maria)
+			mare = Math.max(mare, 1 - smoothstep(ramp(angleDeg(p, v) + rag, rad - 2, rad + 2)))
+		return mare
+	}
 	const r = res / 2 - 1
 	const c = res / 2
+	const field = M.field ? craterField(M.field, M.bowls, mareAt, r * DEG) : []
 	for (let y = 0; y < res; y++) {
 		const dy = (y + 0.5 - c) / r
 		for (let x = 0; x < res; x++) {
@@ -327,9 +323,7 @@ export function paintMoon(res) {
 			const lat = Math.asin(p[1]) / DEG
 			const lon = Math.atan2(p[0], p[2]) / DEG
 			const rag = M.ragged * 2 * (fbm2(lon * M.raggedScale, lat * M.raggedScale, 7) - 0.5)
-			let mare = 0
-			for (const [v, rad] of maria)
-				mare = Math.max(mare, 1 - smoothstep(ramp(angleDeg(p, v) + rag, rad - 2, rad + 2)))
+			const mare = mareAt(p, rag)
 			let ray = 0
 			M.craters.forEach((cr, k) => (ray = Math.max(ray, rayLight(p, cr, k))))
 			const grain = M.grain * (fbm2(x * 0.7, y * 0.7, 31) - 0.5) * (1 - mare)
@@ -337,10 +331,11 @@ export function paintMoon(res) {
 				1,
 				M.highland + (M.mare - M.highland) * mare + grain + M.ray * ray
 			)
+			const relief = field.length ? craterRelief(p, sun, field, M.field) : 0
 			const lit = (dx * lx + dy * ly + z * lz) / ll
 			const day = smoothstep(ramp(lit, -0.02, M.terminator)) * (0.8 + 0.2 * Math.max(0, lit))
-			const v = albedo * Math.max(day, M.earthshine)
-			const step = seamIndex(v, M.ramp.length, x, y, M.seam)
+			const v = (albedo + relief) * Math.max(day, M.earthshine)
+			const step = seamIndex(clamp01(v), M.ramp.length, x, y, M.seam)
 			put(d, (y * res + x) * 4, M.ramp[step])
 		}
 	}
