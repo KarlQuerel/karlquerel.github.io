@@ -123,3 +123,6 @@ $breakpoint-desktop: breakpoints.$desktop;
 $ease-settle: cubic-bezier(0.2, 0.7, 0.2, 1);
 // A heavy body drifting into place: eases in from rest and settles long, so neither end jolts.
 $ease-drift: cubic-bezier(0.4, 0, 0.15, 1);
+
+// the game's endings: how far the picture darkens under the title
+$intro-veil: 0.55;
