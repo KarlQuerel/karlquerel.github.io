@@ -1,10 +1,9 @@
-// People, for the shots that show them: an articulated skeleton of tapered SDF parts, solved with
-// two-bone IK and blended with a smooth union. A figure stands in its own frame: x the way it faces,
-// y up from the deck, z to its right. Returns vec3(distance, material, -).
-// Outfits: 0 EVA suit, helmet on; 1 EVA suit, bare head; 2 coverall and cap; 3 medic;
-// 4 an empty suit on a hanger; 5 the cooling undersuit.
-// Materials: 1 suit, 2 helmet shell, 3 pack, 4 skin, 5 coverall, 6 dark fittings and boots,
-// 7 visor, 8 chest lamp, 9 belt, 14 medic's uniform, 16 hair, 17 undersuit.
+// The envoy suit's kit, for the shots that show it: the player's own legs and boots and the empty
+// suits hung in the lockers (corridor.frag.glsl), built from tapered SDF parts solved with two-bone
+// IK and blended with a smooth union. A suit hangs in its own frame: x the way it faces, y up from
+// the deck, z to its right. Materials: 27 its white second skin, 19 its hard white parts, 26 its
+// lines of cold light, 28 its dark seams and soles, 30 the helmet's visor. huWalker is the flat
+// profile figure the cryo shot's far catwalk uses.
 
 float huCone(vec3 p, vec3 a, vec3 b, float ra, float rb){
   vec3 pa = p - a, ba = b - a;
@@ -53,117 +52,128 @@ vec3 huYaw(vec3 q, float a){
   return vec3(c*q.x + s*q.z, q.y, -s*q.x + c*q.z);
 }
 
-// wl/wr: where each wrist reaches, in the figure's frame. pose = (weight shift -1..1 onto the left
-// or right leg, seat height (0 standing; for an empty suit, the pelvis height it hangs at), build
-// 0.85..1.15, head pitch). look = (head yaw, seed, -, -).
-vec3 huFigure(vec3 f, vec3 wl, vec3 wr, vec4 pose, vec4 look, float outfit){
-  bool eva = outfit < 1.5 || outfit > 3.5 && outfit < 4.5;
-  bool empty = outfit > 3.5 && outfit < 4.5;
-  float seat = pose.y;
-  float build = pose.z;
-  float s = empty ? 0.0 : pose.x;
-  float sat = (!empty && seat > 0.0) ? 1.0 : 0.0;
-  float pelvisY = empty ? seat : (sat > 0.5 ? seat + 0.08 : 0.95);
-  // the room the figure takes: nothing to evaluate until the ray is close
-  float bound = huBox(f - vec3(0.12, pelvisY*0.5 + 0.45, 0.0), vec3(0.62, pelvisY*0.5 + 0.55, 0.5), 0.05);
+// The helmet, shelved or set down: a white shell with a dark visor set back into a window cut in its
+// front. The face would look along +x.
+const float HU_VISOR = 30.0;
+// the ankle joint's height over the deck in a boot (GAIT.leg.boot in js/intro/walk.js keeps in step)
+const float HU_ANKLE = 0.08;
+vec2 helmetAt(vec3 h){
+  vec3 q = h - vec3(0.01, 0.02, 0.0);
+  float dome = huEll(q, vec3(0.19, 0.185, 0.175));
+  // the visor: a dark plate set back into a window cut in the front of the shell
+  float win = huBox(q - vec3(0.2, -0.01, 0.0), vec3(0.1, 0.075, 0.1), 0.035);
+  vec2 r = vec2(max(dome, -win), 19.0);
+  float visor = max(dome + 0.012, win);
+  if (visor < r.x) r = vec2(visor, HU_VISOR);
+  return r;
+}
+
+// a dark seam ring round a limb at c, the limb running along u
+float huSeam(vec3 q, vec3 c, vec3 u, float radius, float width){
+  vec3 d = q - c;
+  return max(length(d - u*dot(d, u)) - radius, abs(dot(d, u)) - width);
+}
+
+// A leg from the hip to the ankle in material m: a full thigh, the knee, a shin with its calf
+// behind, fullest a third of the way down; F is the way the foot points.
+void huLeg(inout vec3 r, vec3 q, vec3 hip, vec3 knee, vec3 ankle, vec3 F, float m){
+  vec3 us = normalize(ankle - knee);
+  vec3 mid = mix(hip, knee, 0.45);
+  huAdd(r, huCone(q, hip, mid, 0.088, 0.08), m, 0.05);
+  huAdd(r, huCone(q, mid, knee, 0.08, 0.058), m, 0.04);
+  huAdd(r, length(q - knee) - 0.058, m, 0.02);
+  vec3 back = -normalize(F - us*dot(F, us));
+  vec3 calf = mix(knee, ankle, 0.35) + back*0.012;
+  huAdd(r, huCone(q, knee + back*0.005, calf, 0.056, 0.062), m, 0.035);
+  huAdd(r, huCone(q, calf, ankle, 0.062, 0.036), m, 0.03);
+}
+
+// The leg in the suit: its skin over the leg, a seam round the knee, a line of light down the
+// outside of the leg (sd says which side); F is the way the boot points.
+void huLegSuit(inout vec3 r, vec3 q, vec3 hip, vec3 knee, vec3 ankle, vec3 F, float sd){
+  vec3 ut = normalize(knee - hip), us = normalize(ankle - knee);
+  huLeg(r, q, hip, knee, ankle, F, 27.0);
+  huPut(r, huSeam(q, knee, normalize(ut + us), 0.061, 0.006), 28.0);
+  vec3 st = -cross(ut, F)*sd, ss = -cross(us, F)*sd;
+  huPut(r, huCone(q, mix(hip, knee, 0.15) + st*0.083, mix(hip, knee, 0.88) + st*0.058, 0.007, 0.007), 26.0);
+  huPut(r, huCone(q, mix(knee, ankle, 0.15) + ss*0.056, mix(knee, ankle, 0.75) + ss*0.04, 0.006, 0.006), 26.0);
+}
+
+// The mag boot about the ankle: a solid foot block whose top slopes down to the toe, on a thick dark
+// sole with a heel, and a straight shaft up the shin to a dark cuff with a ring of light under it.
+// b is the point in the boot's frame (across, up, ahead) from the ankle joint.
+void huBoot(inout vec3 r, vec3 b){
+  float foot = huBox(b - vec3(0.0, -0.03, 0.045), vec3(0.028, 0.018, 0.11), 0.03);
+  foot = max(foot, b.y + 0.005 + 0.25*(b.z - 0.06));
+  huAdd(r, foot, 19.0, 0.01);
+  huAdd(r, max(length(b.xz - vec2(0.0, -0.012)) - 0.06, abs(b.y - 0.08) - 0.09), 19.0, 0.02);
+  huPut(r, huBox(b - vec3(0.0, 0.013 - HU_ANKLE, 0.045), vec3(0.046, 0.008, 0.128), 0.005), 28.0);
+  huPut(r, huBox(b - vec3(0.0, 0.022 - HU_ANKLE, -0.06), vec3(0.042, 0.012, 0.028), 0.006), 28.0);
+  huPut(r, huSeam(b, vec3(0.0, 0.165, -0.012), vec3(0.0, 1.0, 0.0), 0.061, 0.008), 28.0);
+  huPut(r, huSeam(b, vec3(0.0, 0.148, -0.012), vec3(0.0, 1.0, 0.0), 0.061, 0.003), 26.0);
+}
+
+// An empty envoy suit on a hanger, its pelvis hung at `hang`: the torso sagged flat, legs and arms
+// hanging straight, gloves on, no helmet (that sits on a shelf). Returns vec3(distance, material, -).
+vec3 huSuit(vec3 f, float hang){
+  // the room the suit takes: nothing to evaluate until the ray is close
+  float bound = huBox(f - vec3(0.12, hang*0.5 + 0.45, 0.0), vec3(0.62, hang*0.5 + 0.55, 0.5), 0.05);
   if (bound > 0.1) return vec3(bound, 0.0, bound);
-
-  float bulk = eva ? 0.03 : 0.0;
-  float breathe = empty ? 0.0 : 0.006*sin(uTime*1.7 + look.y*6.0);
-  vec3 P = vec3(0.0, pelvisY, 0.035*s);
-  vec3 C = vec3(-0.01, pelvisY + 0.38 + breathe, -0.015*s);
+  float build = 0.95, flatten = 0.78, kJ = 0.045;
+  vec3 P = vec3(0.0, hang, 0.0);
+  vec3 C = vec3(-0.01, hang + 0.38, 0.0);
   vec3 r = vec3(1e9, 0.0, 1e9);
-  float mBody = outfit < 1.5 || empty ? 1.0 : outfit < 2.5 ? 5.0 : outfit < 3.5 ? 14.0 : 17.0;
-  float kJ = 0.045;
-
-  // torso: pelvis, belly, a chest that is wider than it is deep; an empty suit sags flat
-  float flatten = empty ? 0.78 : 1.0;
-  huAdd(r, huEll(f - P - vec3(0.0, 0.03, 0.0), vec3(0.105 + bulk, 0.11, 0.155 + bulk)), mBody, kJ);
-  huAdd(r, huCone(f, P + vec3(0.0, 0.08, 0.0), C - vec3(0.0, 0.07, 0.0), 0.125 + bulk, 0.135 + bulk), mBody, kJ);
-  huAdd(r, huEll(f - C, vec3((0.112 + bulk)*flatten, 0.16, (0.165 + bulk)*build)), mBody, kJ);
-
-  // legs: thigh 0.45, shin 0.44, knees forward; the weight leg straight, the free one eased
+  // torso: the pelvis with the glutes behind it, a waist narrower than hips and chest, the ribcage
+  // flaring up into a chest that is wider than it is deep, all sagged flat
+  vec3 Wst = P + vec3(0.0, 0.18, 0.0);
+  huAdd(r, huEll(f - P - vec3(0.0, 0.03, 0.0), vec3(0.105, 0.11, 0.155)), 27.0, kJ);
+  huAdd(r, huEll(vec3(f.x, f.y, abs(f.z)) - P - vec3(-0.055, 0.0, 0.07), vec3(0.075, 0.085, 0.075)), 27.0, 0.04);
+  huAdd(r, huEll(f - Wst, vec3(0.1*flatten, 0.1, 0.13*build)), 27.0, 0.06);
+  huAdd(r, huCone(f, Wst, C - vec3(0.0, 0.06, 0.0), 0.09, 0.12), 27.0, 0.06);
+  huAdd(r, huEll(f - C, vec3(0.115*flatten, 0.15, 0.17*build)), 27.0, kJ);
+  // legs: thigh 0.45, shin 0.44, hanging straight to the boots, which point a little out
   for (int i = 0; i < 2; i++){
     float sg = i == 0 ? -1.0 : 1.0;
-    float w = clamp(s*sg, 0.0, 1.0);
-    vec3 hip = P + vec3(0.0, 0.02*s*sg, sg*0.092);
-    vec3 foot;
-    vec3 pole = vec3(1.0, 0.0, sg*0.08);
-    if (empty) foot = hip + vec3(0.04, -0.84, sg*0.01);
-    else if (sat > 0.5){ foot = vec3(0.4, 0.075, sg*0.13); pole = vec3(1.0, 1.0, 0.0); }
-    else foot = vec3(mix(0.075, 0.0, w), 0.075, sg*mix(0.15, 0.085, w) + 0.02*s);
+    vec3 hip = P + vec3(0.0, 0.0, sg*0.092);
     vec3 ankle;
-    vec3 knee = huIK(hip, foot, 0.45, 0.44, pole, ankle);
-    huAdd(r, huCone(f, hip, knee, 0.078 + bulk, 0.056 + bulk), mBody, kJ);
-    huAdd(r, huCone(f, knee, ankle, 0.056 + bulk, 0.04 + bulk*0.8), mBody, kJ*0.7);
-    // EVA bellows: a ring of bulk at the knee
-    if (eva) huAdd(r, length(f - knee) - (0.085 + 0.006*sin(dot(f - knee, normalize(ankle - hip))*90.0)), mBody, 0.02);
-    // the boot, toe forward and a little out
-    vec3 toe = ankle + vec3(0.1, -0.035, sg*0.02);
-    huPut(r, huCone(f, ankle + vec3(-0.02, -0.02, 0.0), toe, 0.048 + bulk*0.6, 0.038 + bulk*0.5) , empty ? mBody : 6.0);
+    vec3 knee = huIK(hip, hip + vec3(0.04, -0.84, sg*0.01), 0.45, 0.44, vec3(1.0, 0.0, sg*0.08), ankle);
+    vec3 bf = normalize(vec3(1.0, 0.0, sg*0.2));
+    huLegSuit(r, f, hip, knee, ankle, bf, sg);
+    vec3 d = f - ankle;
+    huBoot(r, vec3(dot(d, vec3(bf.z, 0.0, -bf.x)), d.y, dot(d, bf)));
   }
-
-  // arms: upper 0.29, forearm 0.26
+  // arms: upper 0.29, forearm 0.26, hanging at the sides; the trapezius down from the neck, the
+  // deltoid over the shoulder, a forearm fullest below the elbow, a flat glove with its thumb to
+  // the front, a seam round the elbow, a band of light round the wrist
   for (int i = 0; i < 2; i++){
     float sg = i == 0 ? -1.0 : 1.0;
-    vec3 sh = C + vec3(-0.012, 0.115 - 0.012*s*sg, sg*0.18*build);
-    vec3 target = i == 0 ? wl : wr;
-    if (empty) target = sh + vec3(0.03, -0.53, sg*0.05);
+    vec3 sh = C + vec3(-0.012, 0.115, sg*0.18*build);
     vec3 wrist;
-    // elbows hang down and a little out, the way arms rest against a body
-    vec3 elbow = huIK(sh, target, 0.29, 0.26, vec3(-0.3, -1.0, sg*0.6), wrist);
-    huAdd(r, length(f - sh) - (0.062 + bulk), mBody, kJ);
-    huAdd(r, huCone(f, sh, elbow, 0.052 + bulk, 0.042 + bulk), mBody, kJ*0.8);
-    huAdd(r, huCone(f, elbow, wrist, 0.042 + bulk, 0.032 + bulk*0.8), mBody, kJ*0.6);
-    if (eva) huAdd(r, length(f - elbow) - (0.066 + 0.005*sin(dot(f - elbow, normalize(wrist - sh))*100.0)), mBody, 0.018);
-    // the hand, a flattened mitt along the forearm; gloved on a suit, bare otherwise
+    vec3 elbow = huIK(sh, sh + vec3(0.03, -0.53, sg*0.05), 0.29, 0.26, vec3(-0.3, -1.0, sg*0.6), wrist);
+    huAdd(r, huCone(f, C + vec3(-0.015, 0.16, 0.0), sh + vec3(0.0, 0.025, -sg*0.02), 0.055, 0.04), 27.0, 0.05);
+    huAdd(r, huEll(f - sh - vec3(0.0, 0.0, sg*0.01), vec3(0.065, 0.075, 0.06)), 27.0, kJ);
+    huAdd(r, huCone(f, sh, elbow, 0.05, 0.042), 27.0, kJ*0.8);
+    vec3 fore = mix(elbow, wrist, 0.3);
+    huAdd(r, huCone(f, elbow, fore, 0.042, 0.047), 27.0, 0.03);
+    huAdd(r, huCone(f, fore, wrist, 0.047, 0.03), 27.0, 0.03);
     vec3 fd = normalize(wrist - elbow);
-    huAdd(r, huCone(f, wrist, wrist + fd*0.085, 0.034 + bulk*0.6, 0.026 + bulk*0.5), eva ? mBody : 4.0, 0.02);
+    vec3 hw = normalize(cross(fd, vec3(0.0, 0.0, sg)));
+    vec3 hn = cross(fd, hw);
+    vec3 hd = f - (wrist + fd*0.05);
+    huAdd(r, huEll(vec3(dot(hd, fd), dot(hd, hw), dot(hd, hn)), vec3(0.056, 0.042, 0.017)), 27.0, 0.015);
+    huAdd(r, huCone(f, wrist + fd*0.015 - hw*0.03, wrist + fd*0.05 - hw*0.058, 0.013, 0.01), 27.0, 0.012);
+    huPut(r, huSeam(f, elbow, normalize(normalize(elbow - sh) + fd), 0.045, 0.005), 28.0);
+    huPut(r, huSeam(f, wrist - fd*0.012, fd, 0.036, 0.006), 26.0);
   }
-
-  // neck and head: the head a seventh and a half of the body, turned and pitched on the neck
-  vec3 H = C + vec3(0.02, 0.325, 0.0);
-  if (!empty){
-    huAdd(r, huCone(f, C + vec3(0.0, 0.13, 0.0), H - vec3(0.005, 0.08, 0.0), 0.054, 0.046), eva ? 6.0 : 4.0, 0.03);
-    vec3 q = huYaw(f - H, look.x);
-    float cp = cos(pose.w), sp = sin(pose.w);
-    q.xy = vec2(cp*q.x + sp*q.y, -sp*q.x + cp*q.y);
-    if (outfit < 0.5){
-      // the helmet: a bubble on a neck ring, its visor facing the way the head does
-      float helm = length(q - vec3(0.01, 0.0, 0.0)) - 0.165;
-      bool visor = q.x > 0.05 && abs(q.y + 0.01) < 0.085 && abs(q.z) < 0.12;
-      huPut(r, helm, visor ? 7.0 : 2.0);
-    } else {
-      float head = huEll(q, vec3(0.098, 0.118, 0.082));
-      head = min(head, huEll(q - vec3(0.045, -0.07, 0.0), vec3(0.055, 0.05, 0.058)));
-      bool hair = q.y > 0.015 - 0.25*max(-q.x, 0.0) && q.x < 0.06;
-      huPut(r, head, hair ? 16.0 : 4.0);
-      if (outfit > 1.5 && outfit < 2.5){
-        // the cap and its brim
-        huPut(r, huEll(q - vec3(0.0, 0.07, 0.0), vec3(0.103, 0.06, 0.088)), 6.0);
-        huPut(r, huEll(q - vec3(0.085, 0.052, 0.0), vec3(0.07, 0.012, 0.075)), 6.0);
-      }
-    }
-  }
-
-  if (eva){
-    // the neck ring the helmet locks to, the pack, the chest box with its lamp, and the hose
-    huPut(r, huCone(f, C + vec3(0.0, 0.16, 0.0), C + vec3(0.0, 0.2, 0.0), 0.13, 0.13), 6.0);
-    if (!empty){
-      huPut(r, huBox(f - C - vec3(-0.215, -0.03, 0.0), vec3(0.085, 0.26, 0.17*build), 0.035), 3.0);
-      huPut(r, huBox(f - C - vec3(0.16, -0.09, 0.02), vec3(0.04, 0.06, 0.085), 0.015), 6.0);
-      huPut(r, huBox(f - C - vec3(0.2, -0.07, 0.07), vec3(0.008, 0.02, 0.02), 0.004), 8.0);
-      vec3 hp = C + vec3(-0.13, 0.05, 0.2*build);
-      vec3 hm = C + vec3(0.04, -0.02, 0.24*build);
-      huPut(r, min(huCone(f, hp, hm, 0.017, 0.017), huCone(f, hm, C + vec3(0.17, -0.1, 0.09), 0.017, 0.017)), 6.0);
-    }
-  } else if (outfit > 1.5 && outfit < 2.5){
-    // the coverall's belt
-    float belt = huEll(f - P - vec3(0.0, 0.09, 0.0), vec3(0.118, 0.022, 0.168));
-    huPut(r, belt, 9.0);
-  }
-  // cloth hangs in folds, heaviest on an empty suit
-  r.x += (empty ? 0.012 : 0.004)*(noise3(f*vec3(9.0, 22.0, 9.0)) - 0.5);
+  // a hard yoke over the upper chest with a line of light down the sternum, the collar the helmet
+  // locks to with its lit front rim, a slim dark belt with its status light
+  huPut(r, max(huEll(f - C - vec3(0.01, 0.08, 0.0), vec3(0.125, 0.1, 0.185*build)), 0.03 - (f.x - C.x)), 19.0);
+  huPut(r, huBox(f - C - vec3(0.136, 0.035, 0.0), vec3(0.005, 0.045, 0.004), 0.002), 26.0);
+  vec2 cr = vec2(length(f.xz - C.xz), f.y - C.y);
+  huPut(r, max(cr.x - 0.125, abs(cr.y - 0.18) - 0.02), 19.0);
+  huPut(r, max(max(abs(cr.x - 0.121) - 0.007, abs(cr.y - 0.198) - 0.004), C.x - f.x), 26.0);
+  huPut(r, huEll(f - P - vec3(0.0, 0.1, 0.0), vec3(0.126, 0.018, 0.168)), 28.0);
+  huPut(r, huBox(f - P - vec3(0.124, 0.1, 0.0), vec3(0.008, 0.005, 0.04), 0.003), 26.0);
   return r;
 }
 
@@ -202,4 +212,75 @@ float huWalker(vec2 b, float phase){
     d = min(d, sdSeg(b, elbow, hand, 0.038 - shade));
   }
   return d;
+}
+
+// --- the player's own body, for the shots walked in first person
+const float HU_THIGH = 0.41;
+const float HU_SHIN = 0.4;
+const float HU_TOE_OUT = 0.1;       // how far each boot turns out from straight ahead
+const float HU_STRIDE_TWIST = 0.15; // the pelvis swivels this far (rad per unit) to bring the leading boot's hip forward
+vec2 huU(vec2 a, vec2 b){ return a.x < b.x ? a : b; }
+
+// The player's own body under the eye, seen by looking down: hips turned the way the boots stand, the
+// torso halfway to where the head looks, legs from the hips to the boots where the walk set them down
+// (uR left, uS right: across, ahead, lift, yaw, in the head's frame). In that frame x runs to the
+// right, y up from the ground at floorY, z ahead. The head's lean is uQ.x across, uP.y up.
+vec2 huPlayer(vec3 p, float floorY){
+  vec2 d = p.xz - vec2(uQ.y, uP.x);
+  if (dot(d, d) > 1.0) return vec2(1e9, 0.0);
+  float s = sin(uQ.z), c = cos(uQ.z);
+  vec3 q = vec3(c*d.x - s*d.y, p.y - floorY, s*d.x + c*d.y);
+  vec2 g = vec2(uQ.x, uP.y);
+  // the pelvis faces between the boots and swivels with the stride, the leading boot's hip forward
+  float hipYaw = atan(sin(uR.w) + sin(uS.w), cos(uR.w) + cos(uS.w));
+  float pelvisYaw = hipYaw - HU_STRIDE_TWIST*(uS.y - uR.y);
+  vec2 hipAhead = vec2(sin(pelvisYaw), cos(pelvisYaw));
+  vec3 tq = q - vec3(g.x, g.y, -0.24);
+  float ts = sin(0.5*hipYaw), tc = cos(0.5*hipYaw);
+  tq.xz = vec2(tc*tq.x - ts*tq.z, ts*tq.x + tc*tq.z);
+  vec2 r = vec2(1e9, 0.0);
+  vec3 trunk = vec3(1e9, 0.0, 1e9);
+  for (int i = 0; i < 2; i++){
+    vec4 f = i == 0 ? uR : uS;
+    float sd = i == 0 ? -1.0 : 1.0;
+    vec3 hip = vec3(g.x + hipAhead.y*sd*0.1, 0.9 + g.y, -0.16 - hipAhead.x*sd*0.1);
+    // the boot points a little out and rolls: up on its toe as the body leaves it behind, heel first
+    // as it reaches ahead to land
+    float yaw = f.w + sd*HU_TOE_OUT;
+    vec3 F = vec3(sin(yaw), 0.0, cos(yaw));
+    vec3 R = vec3(F.z, 0.0, -F.x);
+    vec3 foot = vec3(f.x, HU_ANKLE + f.z, f.y);
+    float ahead = dot(foot.xz - hip.xz, hipAhead);
+    float roll = ahead < 0.0 ? clamp((-ahead - 0.12)*1.6, 0.0, 0.9) : -clamp((ahead - 0.18)*1.8, 0.0, 0.5);
+    vec3 pivot = foot + F*(roll > 0.0 ? 0.19 : -0.08) - vec3(0.0, HU_ANKLE, 0.0);
+    vec3 Fr = F*cos(roll) - vec3(0.0, sin(roll), 0.0);
+    vec3 Ur = vec3(0.0, cos(roll), 0.0) + F*sin(roll);
+    vec3 v = foot - pivot;
+    vec3 rolled = pivot + Fr*dot(v, F) + Ur*v.y + R*dot(v, R);
+    // the leg bears the weight on a soft knee (js/intro/gait.js sets the pelvis that much short of
+    // straight); a boot the leg can no longer reach, left behind, lifts off the deck with it
+    vec3 ankle;
+    vec3 knee = huIK(hip, rolled, HU_THIGH, HU_SHIN, F, ankle);
+    // the suit's leg and its mag boot (human.glsl), the plates turned the way the boot points
+    vec3 leg = vec3(1e9, 0.0, 1e9);
+    huLegSuit(leg, q, hip, knee, ankle, F, sd);
+    vec3 b = q - ankle;
+    huBoot(leg, vec3(dot(b, R), dot(b, Ur), dot(b, Fr)));
+    huAdd(trunk, leg.x, leg.y, 0.012);
+  }
+  // the trunk, wider than it is deep: the pelvis the legs hang from, a waist narrower than hips and
+  // chest, the ribcage flaring up into a chest that starts a hand under the chin; x right, z ahead
+  // the pelvis sits forward over the hips, so the thighs come out from under the belly, not ahead of it
+  vec3 Pv = vec3(0.0, 0.88, 0.075), Wst = vec3(0.0, 1.05, 0.03), Ch = vec3(0.0, 1.24, 0.0);
+  // the pelvis stays inside the span of the thighs: narrow at the sides, the belly in front
+  huAdd(trunk, huEll(tq - Pv - vec3(0.0, 0.03, 0.0), vec3(0.125, 0.115, 0.1)), 27.0, 0.035);
+  huAdd(trunk, huEll(tq - Wst, vec3(0.12, 0.1, 0.09)), 27.0, 0.05);
+  huAdd(trunk, huCone(tq, Wst, Ch - vec3(0.0, 0.06, 0.0), 0.1, 0.125), 27.0, 0.06);
+  huAdd(trunk, huEll(tq - Ch, vec3(0.17, 0.15, 0.115)), 27.0, 0.045);
+  r = huU(r, trunk.xy);
+  // the suit's hard parts: a yoke over the upper chest, a slim dark belt at the waist with its light
+  r = huU(r, vec2(max(huEll(tq - vec3(0.0, 1.32, 0.01), vec3(0.175, 0.09, 0.12)), 0.02 - tq.z), 19.0));
+  r = huU(r, vec2(huEll(tq - vec3(0.0, 0.99, 0.06), vec3(0.135, 0.018, 0.118)), 28.0));
+  r = huU(r, vec2(huBox(tq - vec3(0.0, 0.99, 0.182), vec3(0.04, 0.005, 0.01), 0.003), 26.0));
+  return r;
 }
