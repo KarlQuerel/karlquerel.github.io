@@ -5,8 +5,7 @@ export const INTRO_CARDS = {
 	dying: 'EARTH IS DYING.',
 	sun: 'THE SUN HAS BEEN GROWING RELENTLESSLY.',
 	burning: 'BURNING EVERYTHING.',
-	vote: 'THE EARTH CONFEDERATE CHOSE TO LAUNCH THE HERMES PROJECT.',
-	team: 'A TEAM OF HIGHLY TRAINED SCIENTISTS, DESTINED TO SCOUT DISTANT AND HABITABLE WORLDS.',
+	vote: 'THE EARTH CONFEDERATION CHOSE TO LAUNCH THE HERMES PROJECT.',
 	chosen: 'YOU WERE CHOSEN.',
 	warning: 'WARNING. WARNING. CRITICAL ERROR.',
 }
@@ -39,3 +38,4 @@ export const INTRO_SKIP_INTRO = 'SKIP INTRO >>|'
 
 // The title drop after the crash, and the act it opens on.
 export const INTRO_ACT = { lead: 'ACT I', accent: 'THE WRECK', delayMs: 600, charMs: 55 }
+export const INTRO_ACT_WORLD = { lead: 'ACT II', accent: 'THE WORLD', delayMs: 600, charMs: 55 }
