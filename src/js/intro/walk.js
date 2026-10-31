@@ -16,8 +16,12 @@ export const createWalk = ({ x, z }) => ({
 	vx: 0,
 	vz: 0,
 	pace: 0,
+	sprint: false,
 	moved: false,
 })
+
+// standing, the head rises and falls with the breath
+export const breathe = t => WALK.breathe * Math.sin((2 * Math.PI * t) / WALK.breathS)
 
 // [dx, dy]: mouse travel in px since the last frame
 export function lookWalk(w, [dx, dy]) {
@@ -31,10 +35,17 @@ export function stepWalk(w, keys, dt, box) {
 	const side = held(keys, WALK_KEYS.strafeRight) - held(keys, WALK_KEYS.strafeLeft)
 	const turn = held(keys, WALK_KEYS.turnRight) - held(keys, WALK_KEYS.turnLeft)
 	if (ahead || side || turn) w.moved = true
-	// a diagonal is no faster than a straight walk
-	const speed = ahead && side ? WALK.speed * Math.SQRT1_2 : WALK.speed
-	w.ahead = approach(w.ahead, ahead * speed, dt, WALK.easeS)
-	w.side = approach(w.side, side * speed, dt, WALK.easeS)
+	// a run: faster, and the suit pays for it in air (the shot spends it)
+	w.sprint = !!(ahead || side) && held(keys, WALK_KEYS.sprint) > 0
+	const speed = WALK.speed * (w.sprint ? WALK.sprint : 1)
+	// a stride forward, a shorter step back or to the side, and a diagonal between the two: the speed
+	// runs round an ellipse of the three
+	const share =
+		ahead || side
+			? speed / Math.hypot(ahead / (ahead < 0 ? WALK.back : 1), side / WALK.strafe)
+			: 0
+	w.ahead = approach(w.ahead, ahead * share, dt, WALK.easeS)
+	w.side = approach(w.side, side * share, dt, WALK.easeS)
 	w.turn = approach(w.turn, turn * WALK.turnRate, dt, WALK.easeS)
 	w.heading += w.turn * dt
 	const sin = Math.sin(w.heading)
@@ -44,7 +55,7 @@ export function stepWalk(w, keys, dt, box) {
 	// what the walls let through: pushing into one is standing still
 	w.vx = (x - w.x) / dt
 	w.vz = (z - w.z) / dt
-	w.pace = Math.min(1, Math.hypot(w.vx, w.vz) / WALK.speed)
+	w.pace = Math.min(WALK.sprint, Math.hypot(w.vx, w.vz) / WALK.speed)
 	w.x = x
 	w.z = z
 }
