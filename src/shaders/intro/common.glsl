@@ -11,6 +11,8 @@ uniform vec2  uLook;   // pointer deflection, -1..1, +y down the screen
 uniform vec2  uPtr;    // pointer over the grid, 0..1, y up
 uniform vec4  uP, uQ, uR, uS;  // the shot's own parameters, set by its module
 uniform vec4  uH;      // hands: x = state (0 grip, 1 reach, 2 hold), y = item, z = on, w = lift
+uniform vec4  uGame;      // the game: x O2, y HULL, z SIGNAL (0 to 100), w the wrist readout raised 0..1
+uniform vec4  uSuit;      // the suit: x the visor fogged 0..1 (breath after a run), y z w spare
 uniform sampler2D uMask;
 // the shared star tile (js/intro/sky.js), on its own unit
 uniform sampler2D uSky;
@@ -104,4 +106,22 @@ vec3 finish(vec3 col, vec2 frag){
   col = pow(clamp(col, 0.0, 1.0), vec3(0.92));
   float dth = (bayer8(frag) - 0.5)/LEVELS;
   return floor(clamp(col + dth, 0.0, 1.0)*(LEVELS-1.0) + 0.5)/(LEVELS-1.0);
+}
+
+// --- stencils: a 3x5 pixel font, each glyph fifteen bits read row by row from the top (bit y*3 + x)
+float glyphBit(float code, vec2 c){
+  if (c.x < 0.0 || c.x > 2.0 || c.y < 0.0 || c.y > 4.0) return 0.0;
+  return mod(floor(code/exp2(c.y*3.0 + c.x)), 2.0);
+}
+float digitCode(float d){
+  if (d < 0.5) return 31599.0;
+  if (d < 1.5) return 29850.0;
+  if (d < 2.5) return 29671.0;
+  if (d < 3.5) return 31207.0;
+  if (d < 4.5) return 18925.0;
+  if (d < 5.5) return 31183.0;
+  if (d < 6.5) return 31695.0;
+  if (d < 7.5) return 18727.0;
+  if (d < 8.5) return 31727.0;
+  return 31215.0;
 }
