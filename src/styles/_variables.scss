@@ -55,9 +55,10 @@ $terminal-text: #cfd2cf;
 $terminal-glass: rgba(8, 12, 8, 0.92);
 $terminal-titlebar: rgba(100, 100, 100, 0.5);
 
-// Cool phosphor hues, kept clear of the reserved gold so a category never reads as "current".
-$tag-education: $light-blue;
-$tag-experience: $purple;
+// The scene's own pair, kept clear of the reserved gold so a category never reads as "current":
+// frost off the starlit ridge, sand off the planet's lit ground.
+$tag-education: #9fb8e0;
+$tag-experience: #e0a070;
 
 // Top padding that clears the fixed star toggle + MENU hint. Used by every route-level page.
 $chrome-clearance: 3.6rem;
