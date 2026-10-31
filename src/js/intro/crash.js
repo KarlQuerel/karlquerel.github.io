@@ -8,6 +8,7 @@ export const crash = {
 	key: 'crash',
 	frag,
 	chunks: [hands],
+	shake: true,
 	duration: INTRO_CRASH.duration,
 	marks: { black: INTRO_CRASH.blackAt },
 	params(t) {
