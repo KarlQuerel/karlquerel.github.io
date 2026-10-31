@@ -1,7 +1,7 @@
 <template>
 	<!-- The world under the ship: the Earth's limb across the foot of the frame, the Moon up over its
-	     night side. Painted once per frame size off the main thread; each leans at its own depth and
-	     rises into place once first painted. -->
+	     night side, both under one sun. Painted once per frame size off the main thread; each leans at
+	     its own depth and rises into place once first painted. -->
 	<div class="orbit" :class="{ 'orbit--up': up }" :style="riseStyle" aria-hidden="true">
 		<canvas ref="moonEl" class="orbit__layer" :style="moonStyle" />
 		<canvas
@@ -19,8 +19,10 @@
 	import { snapCell } from '@/composables/usePixelCell'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { GAME_HOLDING } from '@/constants/game'
+	import { EARTH_MAP } from '@/constants/intro/earthMap'
 	import { PLANET } from '@/constants/planet'
-	import { paintGlobe, paintMoon } from '@/js/intro/earthArt'
+	import { paintMoon } from '@/js/intro/earthArt'
+	import { paintEarthMap } from '@/js/intro/earthMap'
 	import { planetDisc } from '@/js/planetShader'
 	import HoldingWorker from '@/js/holding.worker.js?worker'
 
@@ -63,7 +65,7 @@
 		const bleed = Math.ceil(E.depth / cell)
 		// the frame row the limb crests on, and the first row painted: the air above it
 		const crest = Math.round(E.top * rows)
-		const top = crest - E.air.depth - 1
+		const top = crest - EARTH_MAP.air.depth - 1
 		const win = {
 			x0: center - Math.round(E.x * cols) - bleed,
 			y0: Math.round(center - radius) - crest + top,
@@ -116,21 +118,15 @@
 		if (L.key === current?.key) return
 		current = L
 		place(L)
-		const earth = {
-			res: L.res,
-			spin: E.spin,
-			light: E.light,
-			air: E.air,
-			detail: E.detail,
-			win: L.win,
-		}
-		if (worker) worker.postMessage({ key: L.key, earth, moon: { res: L.moonRes } })
+		const earth = { res: L.res, light: E.light, view: E.view, win: L.win }
+		const moon = { res: L.moonRes, art: M.art, light: E.light }
+		if (worker) worker.postMessage({ key: L.key, earth, moon })
 		else
 			onPainted({
 				data: {
 					key: L.key,
-					globe: paintGlobe(L.res, earth, L.win),
-					disc: paintMoon(L.moonRes),
+					globe: paintEarthMap(L.res, earth, L.win),
+					disc: paintMoon(moon.res, moon.art, moon.light),
 				},
 			})
 	}
