@@ -8,8 +8,10 @@ const glsl = ([r, g, b]) => `vec3(${r}.0, ${g}.0, ${b}.0)/255.0`
 
 // GLSL for snapPalette(col, frag) over the named colours, and under it snapIndex(col, frag),
 // nearestIndex(col) and palColor(i); `seam` is the checker's half-width as a share of the way from
-// one colour to the next (ENTRY.ridgeSeam)
-export const paletteSnap = (names, seam) => `
+// one colour to the next (ENTRY.ridgeSeam). With `consts`, each colour is also a constant under its
+// own name in capitals (SAND, STONE...), so a shader never copies a palette value.
+export const paletteSnap = (names, seam, consts = false) => `
+${consts ? names.map(name => `const vec3 ${name.toUpperCase()} = ${glsl(PALETTE[name])};`).join('\n') : ''}
 const float PAL_SEAM = ${seam.toFixed(3)};
 // the channels weighted as the eye weighs them, or a dark blue passes for black
 const vec3 PAL_EYE = vec3(0.55, 0.77, 0.34);
