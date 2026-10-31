@@ -9,22 +9,15 @@ const vec3 HD_IRON = vec3(24.0, 29.0, 42.0)/255.0;
 const vec3 HD_STEEL = vec3(31.0, 38.0, 53.0)/255.0;
 const vec3 HD_ZINC = vec3(40.0, 48.0, 66.0)/255.0;
 const vec3 HD_FROST = vec3(66.0, 79.0, 102.0)/255.0;
-const vec3 HD_RIME = vec3(96.0, 112.0, 140.0)/255.0;
 const vec3 HD_GRAPHITE = vec3(58.0, 64.0, 78.0)/255.0;
 const vec3 HD_GUN = vec3(88.0, 96.0, 112.0)/255.0;
 const vec3 HD_PEWTER = vec3(140.0, 148.0, 162.0)/255.0;
 const vec3 HD_SILVER = vec3(200.0, 206.0, 216.0)/255.0;
 const vec3 HD_STAR = vec3(1.0);
-const vec3 HD_ASH = vec3(66.0, 58.0, 68.0)/255.0;
 const vec3 HD_STONE = vec3(110.0, 94.0, 90.0)/255.0;
-const vec3 HD_BONE = vec3(150.0, 132.0, 124.0)/255.0;
 const vec3 HD_CHALK = vec3(188.0, 170.0, 158.0)/255.0;
 const vec3 HD_CREAM = vec3(214.0, 200.0, 190.0)/255.0;
 const vec3 HD_LINEN = vec3(238.0, 230.0, 216.0)/255.0;
-const vec3 HD_RUST = vec3(84.0, 46.0, 44.0)/255.0;
-const vec3 HD_GARNET = vec3(104.0, 52.0, 66.0)/255.0;
-const vec3 HD_BRICK = vec3(141.0, 68.0, 51.0)/255.0;
-const vec3 HD_FLARE = vec3(174.0, 92.0, 62.0)/255.0;
 const vec3 HD_EMBER = vec3(255.0, 189.0, 46.0)/255.0;
 const vec3 HD_RED = vec3(255.0, 95.0, 86.0)/255.0;
 
@@ -139,9 +132,9 @@ float hdField(vec2 p, float curl, out float M, out float sil){
   return H;
 }
 
-// a ramp of up to six colours, indexed by a dithered light level
-vec3 hdFabric(float i){
-  return i < 0.5 ? HD_ASH : i < 1.5 ? HD_STONE : i < 2.5 ? HD_BONE : i < 3.5 ? HD_CHALK : i < 4.5 ? HD_CREAM : HD_LINEN;
+// a ramp of up to six colours, indexed by a dithered light level: the suit's white skin and plates
+vec3 hdPlate(float i){
+  return i < 0.5 ? HD_GUN : i < 1.5 ? HD_PEWTER : i < 2.5 ? HD_PEWTER : i < 3.5 ? HD_SILVER : i < 4.5 ? HD_SILVER : HD_STAR;
 }
 vec3 hdMetal(float i){
   return i < 0.5 ? HD_IRON : i < 1.5 ? HD_GRAPHITE : i < 2.5 ? HD_GUN : i < 3.5 ? HD_PEWTER : i < 4.5 ? HD_SILVER : HD_STAR;
@@ -149,11 +142,8 @@ vec3 hdMetal(float i){
 vec3 hdRubber(float i){
   return i < 1.5 ? HD_PITCH : i < 2.5 ? HD_IRON : i < 3.5 ? HD_GRAPHITE : i < 4.5 ? HD_GUN : HD_PEWTER;
 }
-// the anodised band: red on the right wrist, blue on the left, as a real suit tells them apart
-vec3 hdBand(float i, float mirror){
-  if (mirror > 0.0) return i < 1.5 ? HD_RUST : i < 2.5 ? HD_GARNET : i < 3.5 ? HD_BRICK : i < 4.5 ? HD_FLARE : HD_RED;
-  return i < 1.5 ? HD_IRON : i < 2.5 ? HD_STEEL : i < 3.5 ? HD_ZINC : i < 4.5 ? HD_FROST : HD_RIME;
-}
+// the suit's lines of cold light: the ring round the wrist, the seam up the sleeve
+const vec3 HD_LIGHT = vec3(0.86, 0.9, 1.0);
 
 // what the right hand holds: 1 wrench, 2 med-kit, 3 cutter; distance and colour
 float hdItem(vec2 p, float item, out vec3 col, out float glow){
@@ -197,9 +187,6 @@ float hdItem(vec2 p, float item, out vec3 col, out float glow){
 }
 
 // Stitching: a dotted line along the given distance field, a shade down from the cloth.
-float hdStitch(float d, float along, float cell){
-  return step(abs(d), 0.6*cell)*step(0.5, fract(along*140.0));
-}
 
 // One glove at p (hand space). mirror flips the light for the left hand. Returns rgb + coverage.
 vec4 hdDraw(vec2 p, float curl, float item, float mirror, float cell){
@@ -242,11 +229,11 @@ vec4 hdDraw(vec2 p, float curl, float item, float mirror, float cell){
   float dth = (bayer8(gl_FragCoord.xy) - 0.5)*0.6;
   vec3 col;
   if (M == HD_RING){
-    // machined steel, a hard specular line, the anodised band round its middle and three bolts
+    // machined steel, a hard specular line, the ring of light round its middle and three bolts
     float spec = pow(max(dot(reflect(-L, n), vec3(0.0, 0.0, 1.0)), 0.0), 18.0);
     float lv = clamp(floor((lit*0.9 + spec*0.9)*5.0 + dth), 0.0, 5.0);
     float band = abs(p.y + 0.050) - 0.0055;
-    col = band < 0.0 ? hdBand(lv, mirror) : hdMetal(lv);
+    col = band < 0.0 ? HD_LIGHT : hdMetal(lv);
     for (int b = 0; b < 3; b++){
       vec2 bolt = vec2(-0.052 + float(b)*0.052, -0.050 + 0.0115*(b == 1 ? 1.0 : -1.0));
       if (length(p - bolt) < 0.0048) col = length(p - bolt - vec2(-0.0015, 0.0015)) < 0.002 ? HD_SILVER : HD_GRAPHITE;
@@ -260,31 +247,13 @@ vec4 hdDraw(vec2 p, float curl, float item, float mirror, float cell){
     // the buckle, on the thumb side
     vec2 bq = p - vec2(-0.040, 0.058);
     if (abs(bq.x) < 0.009 && abs(bq.y - 0.16*bq.x) < 0.010) col = abs(bq.x) > 0.005 || abs(bq.y - 0.16*bq.x) > 0.006 ? HD_PEWTER : HD_GRAPHITE;
-  } else {
-    // the cloth: layered white fabric, the sleeve a shade down, grain in the weave
-    float lv = lit*6.0 + dth + grain*0.22 - (M == HD_SLEEVE ? 0.8 : 0.0);
-    lv = clamp(floor(lv), 0.0, 5.0);
-    float st = 0.0;
-    if (M == HD_GAUNT){
-      // quilting: two sets of diagonal stitched lines
-      float a = fract((p.x + p.y)*38.0) - 0.5;
-      float b = fract((p.x - p.y)*38.0) - 0.5;
-      st = max(hdStitch(a/38.0, p.x - p.y, cell), hdStitch(b/38.0, p.x + p.y, cell));
-    } else if (M == HD_BACK){
-      // seams running from the cuff to between the fingers
-      for (int s = 0; s < 3; s++){
-        float sx = -0.024 + float(s)*0.024;
-        float ds = sdSeg(p, vec2(sx*0.7, 0.036), vec2(sx, HD_KNUCKLE - 0.006), 0.0);
-        st = max(st, hdStitch(ds, p.y, cell));
-      }
-    } else if (M == HD_SLEEVE){
-      // a zip seam up the sleeve and the suit's patch on the left arm
-      st = hdStitch(p.x - 0.034 - 0.01*p.y, p.y, cell);
-    }
-    lv = max(0.0, lv - st*1.5);
-    col = hdFabric(lv);
+  } else if (M == HD_SLEEVE){
+    // the suit's skin, a shade down from the plates, a line of light up the sleeve
+    float lv = clamp(floor(lit*5.5 + dth + grain*0.3 - 0.7), 0.0, 4.0);
+    col = hdPlate(lv);
+    if (abs(p.x - 0.034 - 0.01*p.y) < 0.6*cell) col = HD_LIGHT;
     // the checklist on the left cuff: a small bound pad, pages lined
-    if (mirror < 0.0 && M == HD_SLEEVE){
+    if (mirror < 0.0){
       vec2 c = p - vec2(0.004, -0.112);
       if (abs(c.x) < 0.036 && abs(c.y) < 0.030){
         col = abs(c.x) > 0.032 || abs(c.y) > 0.026 ? HD_GRAPHITE
@@ -293,6 +262,20 @@ vec4 hdDraw(vec2 p, float curl, float item, float mirror, float cell){
             : lit > 0.6 ? HD_LINEN : HD_CREAM;
       }
     }
+  } else {
+    // the hard white plates over the cuff, the back of the hand and the fingers, a highlight on
+    // each, dark seams between the plates on the back
+    float spec = pow(max(dot(reflect(-L, n), vec3(0.0, 0.0, 1.0)), 0.0), 14.0);
+    float lv = clamp(floor((lit*0.85 + spec*0.6)*6.0 + dth), 0.0, 5.0);
+    float st = 0.0;
+    if (M == HD_BACK){
+      for (int s = 0; s < 3; s++){
+        float sx = -0.024 + float(s)*0.024;
+        float ds = sdSeg(p, vec2(sx*0.7, 0.036), vec2(sx, HD_KNUCKLE - 0.006), 0.0);
+        st = max(st, step(abs(ds), 0.6*cell));
+      }
+    }
+    col = st > 0.5 ? HD_GRAPHITE : hdPlate(lv);
   }
   // one cell of line on the outer silhouette only: the folds inside are drawn by the light
   if (sil > -cell) col = HD_PITCH;
@@ -304,7 +287,64 @@ vec2 hdRot(vec2 q, float a){
   return vec2(q.x*c + q.y*s, -q.x*s + q.y*c);
 }
 
+// The wrist readout: Tab brings the left forearm up across the lower left of the view, its display
+// showing the three meters (uGame.xyz, 0 to 100) as bars under their letters; uGame.w is how far it is up.
+// The meters live on the suit and nowhere else.
+vec4 hdWrist(vec2 uv, float A){
+  float up = uGame.w;
+  if (up <= 0.0) return vec4(0.0);
+  float sc = min(1.0, A/1.25);
+  // the forearm leans in from the lower left corner, rising with `up`
+  vec2 c = uv - vec2(-A*0.5 + 0.5*sc, -0.74 + 0.56*up*sc);
+  float ca = cos(0.5), sa = sin(0.5);
+  vec2 q = vec2(ca*c.x + sa*c.y, -sa*c.x + ca*c.y)/sc;
+  vec2 arm = abs(q) - vec2(0.34, 0.115);
+  float d = length(max(arm, 0.0)) + min(max(arm.x, arm.y), 0.0) - 0.05;
+  if (d > 0.0) return vec4(0.0);
+  // the sleeve: plate white, a shade down toward its edge, a dark seam line along it
+  vec3 col = d > -0.025 ? HD_PEWTER : HD_SILVER;
+  if (abs(q.y + 0.1) < 0.006) col = HD_GUN;
+  // the display: a dark glass panel set into the back of the forearm
+  vec2 pq = q - vec2(0.03, 0.01);
+  vec2 pb = abs(pq) - vec2(0.21, 0.07);
+  float pd = length(max(pb, 0.0)) + min(max(pb.x, pb.y), 0.0) - 0.012;
+  if (pd < 0.0){
+    col = pd > -0.008 ? HD_STEEL : HD_PITCH;
+    float cell = 0.008;
+    for (int i = 0; i < 3; i++){
+      float fi = float(i);
+      float m = i == 0 ? uGame.x : i == 1 ? uGame.y : uGame.z;
+      // a row: its letter at the left, the bar filling from the left with the meter
+      vec2 row = pq - vec2(-0.19, 0.046 - fi*0.046);
+      vec2 g = floor(vec2(row.x, 0.02 - row.y)/cell);
+      float ink = i == 0 ? max(glyphBit(31599.0, g), glyphBit(29671.0, g - vec2(4.0, 0.0)))
+                         : glyphBit(i == 1 ? 23533.0 : 31183.0, g);
+      float bx = row.x - 0.075;
+      float inBar = step(0.0, bx)*step(bx, 0.3)*step(abs(row.y), 0.009);
+      float fill = step(bx, 0.3*m/100.0);
+      // a meter under a quarter blinks on a stepped clock
+      float low = step(m, 25.0)*step(0.5, fract(uTime*1.5));
+      vec3 lit = m < 25.0 ? HD_RED : HD_SILVER;
+      col = mix(col, lit, inBar*(fill*(1.0 - 0.6*low) + 0.12*(1.0 - fill)));
+      col = mix(col, HD_LINEN, ink);
+    }
+  }
+  return vec4(col, 1.0);
+}
+
+// The visor: breath fogs the glass in from the edges after a run (uSuit.x), and clears again.
+vec3 hdVisor(vec3 col, vec2 uv){
+  float fog = uSuit.x;
+  if (fog <= 0.0) return col;
+  float edge = smoothstep(0.22, 0.62, length(uv*vec2(0.75, 1.0)));
+  // a grain of droplets, frozen in place on the glass
+  float drops = 0.93 + 0.07*step(0.5, hash12(floor(uv*uRes.y*0.5)));
+  return mix(col, mix(col, HD_SILVER, 0.6)*drops, fog*edge*0.85);
+}
+
 vec4 hands(vec2 uv){
+  vec4 wrist = hdWrist(uv, uRes.x/uRes.y);
+  if (wrist.a > 0.0) return wrist;
   if (uH.z <= 0.0) return vec4(0.0);
   float A = uRes.x/uRes.y;
   // a portrait frame gets smaller gloves tucked into its corners, so the two never meet
@@ -330,6 +370,8 @@ vec4 hands(vec2 uv){
   float cell = 1.0/(uRes.y*sc);
   // the right glove over the left, both through one call of hdDraw, so the glove is inlined once
   for (int side = 0; side < 2; side++){
+    // the left glove is the raised forearm's: it goes when the readout comes up
+    if (side == 1 && uGame.w > 0.5) break;
     vec2 q = side == 0 ? hdRot((uv - anchorR)/sc, tiltR) : hdRot((uv - anchorL)/sc*vec2(-1.0, 1.0), HD_TILT);
     vec4 r = hdDraw(q, curl, side == 0 ? uH.y : 0.0, side == 0 ? 1.0 : -1.0, cell);
     if (r.a > 0.0) return r;
