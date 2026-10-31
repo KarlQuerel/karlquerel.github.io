@@ -1,8 +1,10 @@
-// Shot 6: the corridor the player walks in POV to the lit door, past the bays where the other envoys
-// get ready, to the three lockers beside it. Raymarched: the corridor is a box, the bays rooms off it.
-// uP = [z, step phase, door glow, lockers lit], uQ = [pace (the bob dies as we stop), x, heading, pitch].
+// Shot 6: the corridor the player walks in POV to the lit door, past the bays the crew has just
+// left, to the three lockers beside it. Raymarched: the corridor is an octagon, its corners cut
+// top and bottom, four lines of light running its length (two in the upper cuts, two at the deck's
+// edge) that wake around the player; the bays are rooms off it, each framed in its own light.
+// uP = [z, head rise over the legs, door glow, lockers lit], uQ = [head sway across, x, heading, pitch].
 // Bays, alternating left and right: suit-up, medical, mess, comms, and the window on the red Earth.
-// The people come from human.glsl, the colours from the generated snapPalette.
+// The spare suits and the player's own legs come from human.glsl, the colours from the generated snapPalette.
 // With WRECK defined the same source draws act I's opener (js/intro/wreck.js): HERMES-8's spine,
 // the same corridor make, wrecked in orbit. The power is dead but for the red emergency lamps and the
 // head lamp, the bays are empty, the second pod drifts loose with its sleeper inside (uB), and a breach
@@ -20,25 +22,23 @@ const float BAY_EVERY = 6.0;
 const float BAYS = 5.0;
 const float BAY_HALF = 1.5;      // a wide opening onto a shallow room: its lit wall shows from afar
 const float BAY_DEPTH = 1.5;
-const float LINTEL = 0.3;
-const float STRIP_EVERY = 3.0;
+const float CHAMFER = 0.5;       // the octagon's cut, top and bottom corners; a bay's opening stops where the upper one begins
+const float LINTEL = CHAMFER;
+const float LINE_W = 0.045;      // the light lines' width
 const float FOCAL = 0.85;        // ~61 degrees tall: a helmet's view
-const float BOB = 0.025;         // the head's rise and fall over a step
-const float SWAY = 0.02;         // and its lean over the boot that carries the weight
-const float THIGH = 0.41;
-const float SHIN = 0.4;
-const float LEG = THIGH + SHIN - 0.002;   // as far as huIK reaches
-const float TOE_OUT = 0.1;       // how far each boot turns out from straight ahead
+const float ROLL = 0.2;          // the head rolls this far (rad per unit of sway) over the boot it leans on
+const float FIG_FACETS = 2.0;   // a figure's normal snaps to this many steps per axis: flat facets, not a gradient
 const vec3 DOOR_POS = vec3(0.55, -0.5, DOOR_Z - 0.1);
-const vec3 VENT = vec3(W - 0.16, CEIL - 0.16, 7.3);
-const vec3 BEACON_L = vec3(0.07, FLOOR + 2.16, DOOR_Z - 0.02);
-const vec3 BEACON_R = vec3(1.03, FLOOR + 2.16, DOOR_Z - 0.02);
+// the repair job: an open wall panel between the medical and mess bays (its centre, on the left wall,
+// between ribs), the opening's half height and half length, and where the drone's weld tip works
+const vec3 PANEL = vec3(-W, -0.3, 13.5);
+const vec2 PANEL_HALF = vec2(0.42, 0.3);
+const vec3 WELD_AT = PANEL + vec3(0.07, 0.11, -0.11);
+const vec3 SPARK = vec3(0.78, 0.88, 1.0);
+const float HOLO_S = 0.6;           // the crew profile over the comms plate stands this tall, as a share of a person
 #ifdef WRECK
-const float LAMP_REST = 0.0;     // what a ceiling lamp still glows when its strip is off
 const float HULL_T = 0.12;       // the hull plate the breach is torn through
 const vec4 BREACH = vec4(-0.15, 14.6, 0.85, 1.25);   // its centre (x, z) and half-size across the ceiling
-#else
-const float LAMP_REST = 0.14;
 #endif
 
 // PALETTE, the ship's cold metal and the two lights it is lit by
@@ -65,28 +65,12 @@ const vec3 AMBER = vec3(190.0, 108.0, 70.0)/255.0;
 const vec3 TIDE = vec3(76.0, 48.0, 58.0)/255.0;
 #ifdef WRECK
 // the emergency lamps' red, and the head lamp's cold white
-const vec3 ALARM = vec3(174.0, 72.0, 52.0)/255.0;
 const vec3 LAMP = vec3(214.0, 214.0, 212.0)/255.0;
+const vec3 ALARM = vec3(174.0, 72.0, 52.0)/255.0;
 const vec3 GARNET = vec3(104.0, 52.0, 66.0)/255.0;
 #endif
 
-// --- stencils: a 3x5 pixel font, each glyph fifteen bits read row by row from the top
-float glyphBit(float code, vec2 c){
-  if (c.x < 0.0 || c.x > 2.0 || c.y < 0.0 || c.y > 4.0) return 0.0;
-  return mod(floor(code/exp2(c.y*3.0 + c.x)), 2.0);
-}
-float digitCode(float d){
-  if (d < 0.5) return 31599.0;
-  if (d < 1.5) return 29850.0;
-  if (d < 2.5) return 29671.0;
-  if (d < 3.5) return 31207.0;
-  if (d < 4.5) return 18925.0;
-  if (d < 5.5) return 31183.0;
-  if (d < 6.5) return 31695.0;
-  if (d < 7.5) return 18727.0;
-  if (d < 8.5) return 31727.0;
-  return 31215.0;
-}
+// --- stencils, in the 3x5 font common.glsl declares
 float charCode(float s, float i){
   if (s < 0.5){
     if (i < 0.5) return 15211.0;
@@ -155,70 +139,35 @@ float number2(float n, vec2 q){
 
 vec2 opU(vec2 a, vec2 b){ return a.x < b.x ? a : b; }
 
-// Materials: 1 suit, 2 helmet shell, 3 pack, 4 skin, 5 coverall, 6 dark fittings, 7 visor,
-// 8 chest lamp, 9 belt, 10 mattress, 11 vitals monitor, 12 furniture, 13 brushed rail,
-// 14 medic's uniform, 15 console screen, 16 hair, 17 undersuit, 18 a spare suit in its locker.
-// The player's own suit: 19 its white plates, 26 its lines of light, 27 its dark weave, 28 its joints and soles.
+// the lines of light: cold white; they burn brightest round the player and a few metres ahead, dim
+// with distance, and settle again behind
+const vec3 LINE = mix(RIME, STAR, 0.75);
+float lineWake(float z){ return 0.3 + 0.7*smoothstep(7.0, 0.0, abs(z - (uP.x + 2.5)) - 2.5); }
+// a line segment between two ribs: in the wreck all but one are dead, and that one buzzes back now and then
+float lineOn(float k){
+#ifdef WRECK
+  if (abs(k - 7.0) > 0.5) return 0.0;
+  return step(0.55, hash11(floor(uTime*11.0)))*step(0.4, hash11(floor(uTime*0.9) + 7.0));
+#else
+  if (hash11(k*7.31 + 0.5) > 0.08) return 1.0;
+  return step(0.2, hash11(k*3.7 + floor(uTime*9.0)));
+#endif
+}
+// where the upper lines run: the middle of each upper cut, on this side of the corridor
+vec3 lineAt(float sd, float z){ return vec3(sd*(W - 0.25*CHAMFER), CEIL - 0.75*CHAMFER, z); }
+
+// Materials: the envoy suit's from human.glsl (27 white skin, 19 hard white parts, 26 lines of cold
+// light, 28 dark seams and soles, 30 the helmet's visor), the bays' own: 6 dark fittings,
+// 10 mattress, 11 vitals monitor, 12 furniture, 13 brushed rail, 15 console screen, 32 the world
+// hologram, 34 the crew hologram, 35 its projector's ring and the relay light; the repair job's 36 open
+// cavity and 37 weld spark.
 
 #ifndef WRECK
-// a figure's frame from the bay's (rx, y, z): standing at `at`, facing angle a (0 = into the room)
+// a suit's frame from the bay's (rx, y, z): hung at `at`, facing angle a (0 = into the room)
 vec3 huAt(vec3 q, vec2 at, float a){
   vec2 d = vec2(q.x - at.x, q.z - at.y);
   vec2 fw = vec2(cos(a), sin(a));
   return vec3(dot(d, fw), q.y, dot(d, vec2(-fw.y, fw.x)));
-}
-// the idle drift every person has: a slow weight shift, a turn of the head
-float idle(float seed, float rate){ return sin(uTime*rate + seed*5.1); }
-vec3 relaxed(float sg){ return vec3(0.05, 0.86, sg*0.23); }
-#endif
-// a helmet set down or carried: the bubble, its visor facing +x
-vec2 helmetAt(vec3 h){
-  return vec2(length(h) - 0.165, h.x > 0.05 && abs(h.y + 0.01) < 0.085 && abs(h.z) < 0.12 ? 7.0 : 2.0);
-}
-
-#ifndef WRECK
-// Who stands in the bays, j-th of bay k: a table, so huFigure is called once, in bayContents' loop
-// (inlined at every figure it took Mesa over a minute, then failed to link). `at` is (rx, z) in the
-// bay's frame, `face` the way they face, `held` what they hold: a kind for heldBy, then its place in
-// their frame. An outfit below zero ends the bay.
-struct Person { vec2 at; float face; vec3 wl; vec3 wr; vec4 pose; vec4 look; float outfit; vec4 held; };
-const vec4 NOTHING = vec4(0.0);
-Person person(float k, int j){
-  if (k < 0.5){
-    // suit-up: one with the helmet under an arm, one being fitted by a technician, spare suits racked
-    if (j == 0) return Person(vec2(0.5, -0.2), PI - 0.5, relaxed(-1.0), vec3(0.13, 1.03, 0.27), vec4(0.6 + 0.15*idle(1.0, 0.4), 0.0, 1.05, 0.0), vec4(-0.25 + 0.3*idle(1.0, 0.23), 1.0, 0.0, 0.0), 1.0, vec4(1.0, 0.13, 1.14, 0.36));
-    if (j == 1) return Person(vec2(0.72, 0.75), PI, vec3(0.05, 1.0, -0.36), vec3(0.05, 1.0, 0.36), vec4(-0.3, 0.0, 1.0, 0.0), vec4(0.1*idle(2.0, 0.3), 2.0, 0.0, 0.0), 0.0, NOTHING);
-    if (j == 2) return Person(vec2(1.12, 1.35), -2.3, vec3(0.34, 1.22, -0.08), vec3(0.36, 1.3, 0.08), vec4(0.4, 0.0, 0.95, -0.15), vec4(0.0, 3.0, 0.0, 0.0), 2.0, NOTHING);
-    if (j < 6) return Person(vec2(1.36, -0.45 - float(j - 3)*0.48), PI, vec3(0.0), vec3(0.0), vec4(0.0, 1.02, 0.95, 0.0), vec4(0.0, float(j - 3), 0.0, 0.0), 4.0, vec4(2.0, 0.0, 1.58, 0.0));
-  } else if (k < 1.5){
-    // medical: an envoy sat on the edge of the bed being checked, the medic with a tablet
-    if (j == 0) return Person(vec2(0.98, 0.25), PI, vec3(0.3, 0.8, -0.13), vec3(0.28, 0.82, 0.14), vec4(0.0, 0.69, 1.0, -0.18), vec4(0.15*idle(4.0, 0.2), 4.0, 0.0, 0.0), 1.0, NOTHING);
-    if (j == 1) return Person(vec2(0.5, 0.9), -0.93, vec3(0.3, 1.08, -0.06), vec3(0.3, 1.1, 0.08), vec4(0.5 + 0.2*idle(5.0, 0.35), 0.0, 0.92, -0.25), vec4(0.0, 5.0, 0.0, 0.0), 3.0, vec4(4.0, 0.36, 1.13, 0.01));
-  } else if (k < 2.5){
-    // the mess: two at the table with their cups, a technician on a break by the wall
-    if (j == 0) return Person(vec2(0.36, -0.25), 0.0, vec3(0.33, 0.8, -0.12), vec3(0.14, 1.12 + 0.03*idle(6.0, 0.5), 0.1), vec4(0.0, 0.45, 1.05, 0.05), vec4(0.2*idle(6.0, 0.25), 6.0, 0.0, 0.0), 5.0, vec4(3.0, 0.2, 1.14, 0.06));
-    if (j == 1) return Person(vec2(1.32, 0.3), PI, vec3(0.3, 0.8, -0.13), vec3(0.3, 0.8, 0.13), vec4(0.0, 0.45, 0.88, 0.0), vec4(0.3 + 0.25*idle(7.0, 0.3), 7.0, 0.0, 0.0), 5.0, NOTHING);
-    if (j == 2) return Person(vec2(1.2, -1.0), PI - 0.7, relaxed(-1.0), vec3(0.22, 1.12, 0.1), vec4(0.8 + 0.1*idle(8.0, 0.3), 0.0, 1.0, 0.0), vec4(-0.3*idle(8.0, 0.2), 8.0, 0.0, 0.0), 2.0, vec4(3.0, 0.28, 1.13, 0.1));
-  } else if (k < 3.5){
-    // comms: a technician at the console with a hand to the headset, an envoy reading over the shoulder
-    if (j == 0) return Person(vec2(0.8, -0.3), 0.0, vec3(0.42, 0.8, -0.12), vec3(0.0, 1.28, 0.16), vec4(0.0, 0.5, 0.95, 0.1), vec4(0.1*idle(9.0, 0.3), 9.0, 0.0, 0.0), 2.0, NOTHING);
-    if (j == 1) return Person(vec2(0.45, 0.55), 0.15, vec3(0.16, 1.18, 0.1), vec3(0.15, 1.2, -0.08), vec4(0.5 + 0.15*idle(10.0, 0.3), 0.0, 1.05, 0.0), vec4(-0.2 + 0.2*idle(10.0, 0.2), 10.0, 0.0, 0.0), 0.0, NOTHING);
-  } else {
-    // the window: two at the glass, looking out at what they are leaving
-    if (j == 0) return Person(vec2(0.95, -0.35), 0.0, relaxed(-1.0), vec3(0.43, 1.03, 0.18), vec4(-0.6, 0.0, 1.0, 0.0), vec4(0.0, 11.0, 0.0, 0.0), 0.0, NOTHING);
-    if (j == 1) return Person(vec2(0.7, 0.75), -0.25, relaxed(-1.0), relaxed(1.0), vec4(0.5 + 0.1*idle(12.0, 0.25), 0.0, 0.92, 0.05), vec4(-0.35 + 0.1*idle(12.0, 0.2), 12.0, 0.0, 0.0), 1.0, NOTHING);
-  }
-  return Person(vec2(0.0), 0.0, vec3(0.0), vec3(0.0), vec4(0.0), vec4(0.0), -1.0, NOTHING);
-}
-// what a person holds, in their frame: 1 a helmet under the arm, 2 the hanger an empty suit is on,
-// 3 a cup, 4 a tablet
-vec2 heldBy(vec3 f, vec4 held){
-  vec3 h = f - held.yzw;
-  if (held.x < 0.5) return vec2(1e9, 0.0);
-  if (held.x < 1.5) return helmetAt(h);
-  if (held.x < 2.5) return vec2(huCone(h, vec3(0.0), vec3(0.0, 0.44, 0.0), 0.012, 0.012), 6.0);
-  if (held.x < 3.5) return vec2(huCone(h, vec3(0.0), vec3(0.0, 0.08, 0.0), 0.03, 0.028), 13.0);
-  return vec2(huBox(h, vec3(0.012, 0.085, 0.12), 0.006), h.x < 0.0 ? 15.0 : 6.0);
 }
 #endif
 
@@ -234,7 +183,7 @@ vec3 bayTint(float k){
   return mix(BRICK, AMBER, 0.6)*0.75;
 }
 // how bright its lit panel wall burns
-float bayPanel(float k){ return k < 0.5 ? 1.35 : k < 1.5 ? 0.95 : k < 2.5 ? 1.0 : 0.5; }
+float bayPanel(float k){ return k < 0.5 ? 1.0 : k < 1.5 ? 0.95 : k < 2.5 ? 1.0 : 0.5; }
 float ribAt(float z){ return step(abs(fract(z/RIB_EVERY) - 0.5)*RIB_EVERY, 0.07); }
 
 // everything standing in the bay nearest p, in the bay's own frame: rx 0 at the opening, 1.5 at
@@ -251,13 +200,11 @@ vec2 bayContents(vec3 p){
   vec2 r = vec2(1e9, 0.0);
   vec3 q = vec3(rx, y, z);
 #ifndef WRECK
-  // the people, and what they hold: the one call of huFigure in the shader
-  for (int j = 0; j < 6; j++){
-    Person who = person(k, j);
-    if (who.outfit < 0.0) break;
-    vec3 f = huAt(q, who.at, who.face);
-    r = opU(r, huFigure(f, who.wl, who.wr, who.pose, who.look, who.outfit).xy);
-    r = opU(r, heldBy(f, who.held));
+  // the spare suits racked in the suit-up bay, hung from the rail by their rods
+  if (k < 0.5) for (int j = 0; j < 3; j++){
+    vec3 f = huAt(q, vec2(1.36, -0.45 - float(j)*0.48), PI);
+    r = opU(r, huSuit(f, 1.02).xy);
+    r = opU(r, vec2(huCone(f - vec3(0.0, 1.58, 0.0), vec3(0.0), vec3(0.0, 0.44, 0.0), 0.012, 0.012), 6.0));
   }
 #endif
   // the furniture
@@ -281,11 +228,25 @@ vec2 bayContents(vec3 p){
     r = opU(r, vec2(min(huBox(q - vec3(0.38, 0.43, 0.0), vec3(0.11, 0.025, 0.62), 0.01), huBox(q - vec3(1.3, 0.43, 0.0), vec3(0.11, 0.025, 0.62), 0.01)), 12.0));
     r = opU(r, vec2(huCone(q, vec3(1.0, 0.765, 0.38), vec3(1.0, 0.85, 0.38), 0.03, 0.028), 13.0));
   } else if (k < 3.5){
-    // the console and its screen, a stool
+    // the console and its screen, a stool; the candidate world turning above the console as a
+    // hologram, drawn on every other row of the grid so it stays two colours deep
     r = opU(r, vec2(huBox(q - vec3(1.32, 0.38, -0.1), vec3(0.18, 0.38, 0.9), 0.02), 12.0));
+    if (mod(floor(gl_FragCoord.y), 2.0) < 0.5) r = opU(r, vec2(length(q - vec3(1.1, 1.4, -0.1)) - 0.2, 32.0));
     vec3 sc = q - vec3(1.43, 1.12, -0.1);
     r = opU(r, vec2(huBox(sc, vec3(0.04, 0.3, 0.85), 0.01), sc.x < -0.02 ? 15.0 : 6.0));
     r = opU(r, vec2(min(huCone(q, vec3(0.8, 0.0, -0.3), vec3(0.8, 0.46, -0.3), 0.03, 0.03), huBox(q - vec3(0.8, 0.48, -0.3), vec3(0.14, 0.02, 0.14), 0.02)), 6.0));
+    // a crew profile turning over the projector plate by the console, a recording on its own clock,
+    // drawn on every other row like the world above the console
+    vec2 pl = q.xz - vec2(0.6, 0.65);
+    r = opU(r, vec2(max(length(pl) - 0.22, abs(q.y - 0.02) - 0.02), 6.0));
+    r = opU(r, vec2(max(abs(length(pl) - 0.2) - 0.01, abs(q.y - 0.045) - 0.004), 35.0));
+    if (mod(floor(gl_FragCoord.y), 2.0) < 0.5){
+      vec3 f = huYaw(q - vec3(0.6, 0.05, 0.65), floor(uTime*4.0)*0.1)/HOLO_S;
+      vec3 h = huSuit(f, 0.95);
+      h.x = min(h.x, huCone(f, vec3(-0.01, 1.46, 0.0), vec3(0.005, 1.575, 0.0), 0.06, 0.05));
+      h.x = min(h.x, length(f - vec3(0.01, 1.655, 0.0)) - 0.105);
+      r = opU(r, vec2(h.x*HOLO_S, 34.0));
+    }
   } else {
     // the rail along the glass
     r = opU(r, vec2(max(length(vec2(rx - 1.38, y - 1.02)) - 0.028, abs(z) - 1.4), 13.0));
@@ -293,32 +254,63 @@ vec2 bayContents(vec3 p){
   return r;
 }
 
-// pipes and a cable tray along the top of both walls
-float pipes(vec3 p){
-  float ax = abs(p.x);
-  float a = length(vec2(ax - (W - 0.16), p.y - (CEIL - 0.16))) - 0.065;
-  float b = length(vec2(ax - (W - 0.36), p.y - (CEIL - 0.1))) - 0.04;
-  float c = sdBox(vec2(ax - (W - 0.62), p.y - (CEIL - 0.07)), vec2(0.13, 0.022));
-  return min(min(a, b), c);
-}
-
 #ifndef WRECK
 // the suits hanging in the lockers, one per role, each helmet on the shelf above it
-float lockerSuit(vec3 p){
-  if (p.z < DOOR_Z - 1.0) return 1e9;
+vec2 lockerSuit(vec3 p){
+  if (p.z < DOOR_Z - 1.0) return vec2(1e9, 0.0);
   const float S = 1.2;
-  float d = 1e9;
+  vec2 d = vec2(1e9, 0.0);
   for (int i = 0; i < 3; i++){
     vec3 f = vec3(DOOR_Z + 0.32 - p.z, p.y - FLOOR, p.x + 1.21 - float(i)*0.5)*S;
-    float suit = huFigure(f, vec3(0.0), vec3(0.0), vec4(0.0, 0.95, 0.95, 0.0), vec4(0.0, float(i), 0.0, 0.0), 4.0).x;
-    suit = min(suit, huCone(f, vec3(0.0, 1.5, 0.0), vec3(0.0, 1.9, 0.0), 0.012, 0.012));
-    suit = min(suit, length(f - vec3(0.02, 2.07, 0.0)) - 0.165);
-    suit = min(suit, huBox(f - vec3(0.0, 1.89, 0.0), vec3(0.2, 0.015, 0.22), 0.005));
-    d = min(d, suit/S);
+    vec2 suit = huSuit(f, 0.95).xy;
+    suit = opU(suit, vec2(huCone(f, vec3(0.0, 1.5, 0.0), vec3(0.0, 1.9, 0.0), 0.012, 0.012), 6.0));
+    suit = opU(suit, helmetAt(f - vec3(0.02, 2.07, 0.0)));
+    suit = opU(suit, vec2(huBox(f - vec3(0.0, 1.89, 0.0), vec3(0.2, 0.015, 0.22), 0.005), 6.0));
+    suit.x /= S;
+    d = opU(d, suit);
   }
   return d;
 }
 #endif
+
+// The repair job: the panel off the wall and leaning beside the opening, the cable guts and a relay
+// behind, the drone hovering at the opening with its tool on a jointed arm, its weld tip sparking on
+// its own clock. In the wreck the panel is still open and the drone lies on the deck beneath it.
+vec2 repair(vec3 p){
+  vec3 q = (p - PANEL)*vec3(-sign(PANEL.x), 1.0, 1.0);   // x into the corridor, y up, z along
+  float bound = huBox(q - vec3(0.45, -0.4, 0.3), vec3(0.6, 1.1, 1.0), 0.0);
+  if (bound > 0.1) return vec2(bound, 0.0);
+  vec2 r = vec2(huBox(q - vec3(0.005, 0.0, 0.0), vec3(0.012, PANEL_HALF.x, PANEL_HALF.y), 0.003), 36.0);
+  for (int i = 0; i < 4; i++){
+    float fi = float(i);
+    float y = -0.3 + fi*0.18;
+    r = opU(r, vec2(huCone(q, vec3(0.03, y, -0.28), vec3(0.03, y + 0.03*sin(fi*1.7), 0.28), 0.012, 0.012), i == 1 ? 13.0 : 28.0));
+  }
+  r = opU(r, vec2(huBox(q - vec3(0.03, 0.12, 0.12), vec3(0.025, 0.05, 0.07), 0.005), 6.0));
+  r = opU(r, vec2(huBox(q - vec3(0.055, 0.14, 0.14), vec3(0.004, 0.006, 0.006), 0.002), 35.0));
+  // the panel, leaning on the wall beside the opening, its foot on the deck's chamfer
+  vec3 lq = q - vec3(0.16, -0.85, 0.9);
+  lq.xy = vec2(0.93*lq.x + 0.36*lq.y, -0.36*lq.x + 0.93*lq.y);
+  r = opU(r, vec2(huBox(lq, vec3(0.012, PANEL_HALF.x, PANEL_HALF.y), 0.004), 12.0));
+#ifdef WRECK
+  // down on the deck, on its side, the arm limp
+  vec3 bq = q - vec3(0.7, -1.22, 0.15);
+  bq.xy = vec2(0.95*bq.x - 0.3*bq.y, 0.3*bq.x + 0.95*bq.y);
+  r = opU(r, vec2(huBox(bq, vec3(0.1, 0.06, 0.09), 0.025), 19.0));
+  r = opU(r, vec2(huBox(bq - vec3(0.0, -0.045, 0.0), vec3(0.102, 0.012, 0.092), 0.004), 28.0));
+  r = opU(r, vec2(huCone(q, vec3(0.6, -1.2, 0.15), vec3(0.35, -1.29, 0.0), 0.02, 0.012), 28.0));
+  r = opU(r, vec2(length(q - vec3(0.33, -1.29, -0.01)) - 0.015, 37.0));
+#else
+  // hovering at the opening, a slight bob on a stepped clock
+  vec3 bq = q - vec3(0.45, 0.05 + 0.012*sin(floor(uTime*6.0)*0.42), 0.0);
+  r = opU(r, vec2(huBox(bq, vec3(0.1, 0.06, 0.09), 0.025), 19.0));
+  r = opU(r, vec2(huBox(bq - vec3(0.0, -0.045, 0.0), vec3(0.102, 0.012, 0.092), 0.004), 28.0));
+  r = opU(r, vec2(huBox(bq - vec3(-0.06, 0.065, -0.05), vec3(0.012, 0.006, 0.012), 0.003), 26.0));
+  r = opU(r, vec2(huCone(q, bq + vec3(-0.1, -0.03, -0.02), vec3(0.09, 0.1, -0.1), 0.02, 0.012), 28.0));
+  r = opU(r, vec2(length(q - (WELD_AT - PANEL)*vec3(-sign(PANEL.x), 1.0, 1.0)) - 0.02, 37.0));
+#endif
+  return r;
+}
 
 // three locker cells left of the door, the door's own threshold right of centre
 float lockerCell(vec3 p){
@@ -364,86 +356,18 @@ float shell(vec3 p){
     float gap = W - abs(p.x);
     dx = min(dx, min(length(vec2(gap, max(dz, 0.0))), length(vec2(gap, CEIL - LINTEL - p.y))));
   }
+  // the octagon: the upper corners are cut all along (a bay's opening stops where the cut begins),
+  // the lower ones outside the openings, where the deck runs on into the room
+  if (abs(p.x) <= W){
+    d = min(d, (W + CEIL - CHAMFER - abs(p.x) - p.y)*0.7071 - inset);
+    if (!slot) d = min(d, (W - FLOOR - CHAMFER - abs(p.x) + p.y)*0.7071 - inset);
+  }
   return min(d, dx);
 }
 
-// The head and the body under it over a step (uP.y): lowest as a boot lands, highest mid-step, leaning
-// over the boot on the deck (an even turn has the left one up). x across, y up.
-vec2 gaitLean(){ return vec2(SWAY*sin(0.5*uP.y), -BOB*cos(uP.y))*uQ.x; }
-
-// The player's own body under the eye, seen by looking down: hips turned the way the boots stand, the
-// torso halfway to where the head looks, legs from the hips to the boots where the walk set them down
-// (uR left, uS right: across, ahead, lift, yaw, in the head's frame). In that frame x runs to the
-// right, y up from the deck, z ahead.
-vec2 body(vec3 p){
-  vec2 d = p.xz - vec2(uQ.y, uP.x);
-  if (dot(d, d) > 1.0) return vec2(1e9, 0.0);
-  float s = sin(uQ.z), c = cos(uQ.z);
-  vec3 q = vec3(c*d.x - s*d.y, p.y - FLOOR, s*d.x + c*d.y);
-  vec2 g = gaitLean();
-  float hipYaw = atan(sin(uR.w) + sin(uS.w), cos(uR.w) + cos(uS.w));
-  vec2 hipAhead = vec2(sin(hipYaw), cos(hipYaw));
-  vec3 tq = q - vec3(g.x, g.y, -0.24);
-  float ts = sin(0.5*hipYaw), tc = cos(0.5*hipYaw);
-  tq.xz = vec2(tc*tq.x - ts*tq.z, ts*tq.x + tc*tq.z);
-  // the torso: dark weave under a chest plate, two dark armoured bands across the belly, a belt with
-  // its status light, and a plate over each hip; looking down, the white is all on the legs
-  vec2 r = vec2(min(huEll(tq - vec3(0.0, 1.29, 0.0), vec3(0.2, 0.17, 0.14)), huCone(tq, vec3(0.0, 0.92, 0.0), vec3(0.0, 1.22, 0.0), 0.15, 0.17)), 27.0);
-  r = opU(r, vec2(max(huEll(tq - vec3(0.0, 1.3, 0.015), vec3(0.205, 0.165, 0.135)), 0.02 - tq.z), 19.0));
-  for (int k = 0; k < 2; k++){
-    float fk = float(k);
-    r = opU(r, vec2(huBox(tq - vec3(0.0, 1.08 - fk*0.075, 0.135), vec3(0.11 - fk*0.012, 0.027, 0.025), 0.012), 28.0));
-  }
-  r = opU(r, vec2(huEll(tq - vec3(0.0, 0.93, 0.0), vec3(0.175, 0.035, 0.165)), 28.0));
-  r = opU(r, vec2(huBox(tq - vec3(0.0, 0.93, 0.165), vec3(0.05, 0.006, 0.012), 0.004), 26.0));
-  vec3 hq = vec3(abs(tq.x), tq.yz);
-  r = opU(r, vec2(max(huEll(hq - vec3(0.13, 0.84, 0.03), vec3(0.075, 0.085, 0.085)), 0.0 - tq.z*0.5 - (hq.x - 0.1)), 19.0));
-  for (int i = 0; i < 2; i++){
-    vec4 f = i == 0 ? uR : uS;
-    float sd = i == 0 ? -1.0 : 1.0;
-    vec3 hip = vec3(g.x + hipAhead.y*sd*0.1, 0.9 + g.y, -0.16 - hipAhead.x*sd*0.1);
-    // the boot points a little out and rolls: up on its toe as the body leaves it behind, heel first
-    // as it reaches ahead to land
-    float yaw = f.w + sd*TOE_OUT;
-    vec3 F = vec3(sin(yaw), 0.0, cos(yaw));
-    vec3 R = vec3(F.z, 0.0, -F.x);
-    vec3 foot = vec3(f.x, 0.09 + f.z, f.y);
-    float ahead = dot(foot.xz - hip.xz, hipAhead);
-    float roll = ahead < 0.0 ? clamp((-ahead - 0.12)*1.3, 0.0, 0.6) : -clamp((ahead - 0.18)*1.5, 0.0, 0.3);
-    vec3 pivot = foot + F*(roll > 0.0 ? 0.19 : -0.08) - vec3(0.0, 0.09, 0.0);
-    vec3 Fr = F*cos(roll) - vec3(0.0, sin(roll), 0.0);
-    vec3 Ur = vec3(0.0, cos(roll), 0.0) + F*sin(roll);
-    vec3 v = foot - pivot;
-    vec3 rolled = pivot + Fr*dot(v, F) + Ur*v.y + R*dot(v, R);
-    // a leg on the deck stays near straight, its hip dropping as far as the boot needs: a lifted boot
-    // bends the knee, out over its toe
-    vec2 span = rolled.xz - hip.xz;
-    hip.y = min(hip.y, rolled.y + sqrt(max(LEG*LEG - dot(span, span), 0.0)));
-    vec3 ankle;
-    vec3 knee = huIK(hip, rolled, THIGH, SHIN, F, ankle);
-    // weave legs under white plates down the thigh and the shin, each turned the way the boot points
-    vec3 ut = normalize(knee - hip), us = normalize(ankle - knee);
-    vec3 ft = normalize(F - ut*dot(F, ut)), fs = normalize(F - us*dot(F, us));
-    r = opU(r, vec2(min(huCone(q, hip, knee, 0.08, 0.066), huCone(q, knee, ankle, 0.062, 0.05)), 27.0));
-    float plate = min(huCone(q, mix(hip, knee, 0.25) + ft*0.03, mix(hip, knee, 0.85) + ft*0.028, 0.07, 0.056),
-                      huCone(q, mix(knee, ankle, 0.12) + fs*0.026, mix(knee, ankle, 0.8) + fs*0.022, 0.054, 0.042));
-    r = opU(r, vec2(plate, 19.0));
-    // the knee: a dark joint under a white cap; a line of light down the shin guard
-    vec3 kf = normalize(ft + fs);
-    r = opU(r, vec2(length(q - knee) - 0.064, 28.0));
-    r = opU(r, vec2(length(q - knee - kf*0.035) - 0.045, 19.0));
-    r = opU(r, vec2(huCone(q, mix(knee, ankle, 0.2) + fs*0.072, mix(knee, ankle, 0.7) + fs*0.06, 0.009, 0.009), 26.0));
-    // the mag boot: a white shell on a dark sole with a line of light round it, a dark cuff at the ankle
-    r = opU(r, vec2(huCone(q, ankle, ankle - us*0.05, 0.062, 0.06), 28.0));
-    v = foot - vec3(0.0, 0.03, 0.0) + F*0.06 - pivot;
-    vec3 b = q - (pivot + Fr*dot(v, F) + Ur*v.y + R*dot(v, R));
-    b = vec3(dot(b, R), dot(b, Ur), dot(b, Fr));
-    r = opU(r, vec2(huBox(b - vec3(0.0, 0.015, 0.0), vec3(0.052, 0.042, 0.115), 0.03), 19.0));
-    r = opU(r, vec2(huBox(b - vec3(0.0, -0.04, 0.0), vec3(0.058, 0.016, 0.125), 0.008), 28.0));
-    r = opU(r, vec2(huBox(b - vec3(0.0, -0.04, 0.0), vec3(0.065, 0.005, 0.133), 0.002), 26.0));
-  }
-  return r;
-}
+// The head's lean across (uQ.x, over the boot bearing the weight) and its rise (uP.y) from the eye's
+// rest, as js/intro/gait.js rides the stance leg. x across, y up. The body under it is huPlayer.
+vec2 gaitLean(){ return vec2(uQ.x, uP.y); }
 
 #ifdef WRECK
 // The second pod, torn from its mounts (js/intro/drift.js): uB[0].xyz its centre, uB[1] its turn as a
@@ -493,23 +417,12 @@ vec2 debris(vec3 p){
 #endif
 
 // what stands in the corridor: the bays' contents, the spare suits as a material of their own, the player
+// what stands in the corridor: the bays' contents, the spare suits in the lockers, the player
 vec2 contents(vec3 p){
 #ifdef WRECK
-  return opU(opU(bayContents(p), pod(p)), opU(debris(p), body(p)));
+  return opU(opU(bayContents(p), pod(p)), opU(opU(debris(p), repair(p)), huPlayer(p, FLOOR)));
 #else
-  return opU(opU(bayContents(p), vec2(lockerSuit(p), 18.0)), body(p));
-#endif
-}
-
-// a strip's state on a stepped clock: a few of them flicker, the rest hold; in the wreck one buzzes
-// back on now and then and the rest are dead
-float stripOn(float k){
-#ifdef WRECK
-  if (abs(k - 4.0) > 0.5) return 0.0;
-  return step(0.55, hash11(floor(uTime*11.0)))*step(0.4, hash11(floor(uTime*0.9) + 7.0));
-#else
-  if (hash11(k*7.31 + 0.5) > 0.2) return 1.0;
-  return step(0.3, hash11(k*3.7 + floor(uTime*9.0)));
+  return opU(opU(bayContents(p), lockerSuit(p)), opU(repair(p), huPlayer(p, FLOOR)));
 #endif
 }
 
@@ -536,10 +449,14 @@ vec3 planetOver(vec3 col, vec3 rd, vec3 C, float RR, vec3 L){
   return col;
 }
 
+// the weld's spark, in bursts on its own clock
+float weld(){ return step(0.55, hash11(floor(uTime*24.0))); }
+// the one direction the observation bay's glass looks out along, whichever pane: the same sky through both
+vec3 outboard(float side){ return normalize(vec3(side, 0.0, 0.45)); }
 vec3 outside(vec3 rd, vec3 A){
   vec3 U = vec3(0.0, 1.0, 0.0);
   vec3 Rt = normalize(cross(A, U));
-  vec3 col = planetOver(stars(rd)*0.8, rd, normalize(A - U*0.72 + Rt*0.25), 0.7, normalize(U*0.75 - A*0.35 - Rt*0.3));
+  vec3 col = planetOver(stars(rd)*0.8, rd, normalize(A - U*0.72), 0.7, normalize(U*0.75 - A*0.35 - Rt*0.3));
 #ifndef WRECK
   // the yard: a sagging string of work lights and two hulls in their frames
   vec3 base = normalize(A + U*0.1);
@@ -579,8 +496,13 @@ void main(){
   vec3 fwd = vec3(sin(yaw)*cos(pitch), sin(pitch), cos(yaw)*cos(pitch));
   vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), fwd));
   vec3 up = cross(fwd, right);
-  vec3 rd = normalize(uv.x*right + uv.y*up + FOCAL*fwd);
+  // the head rolls a hair toward the boot it leans over
   vec2 lean = gaitLean();
+  float cr = cos(lean.x*ROLL), sr = sin(lean.x*ROLL);
+  vec3 rr = right*cr - up*sr;
+  up = up*cr + right*sr;
+  right = rr;
+  vec3 rd = normalize(uv.x*right + uv.y*up + FOCAL*fwd);
   vec3 ro = vec3(uQ.y, lean.y, uP.x) + right*lean.x;
 
   // The march, and once it lands six more passes of the same loop for the taps the shading takes on
@@ -597,7 +519,7 @@ void main(){
     vec3 at = tap == 0 ? ro + rd*t : tap < 5 ? p + 0.004*e : tap == 5 ? p + normalize(cn)*0.06 : p + vec3(0.0, 0.08, 0.0);
     vec2 c = contents(at);
     if (tap == 0){
-      float d = min(min(shell(at), pipes(at)), min(min(DOOR_Z + recess(at) - at.z, at.z - BACK_Z), c.x));
+      float d = min(shell(at), min(min(DOOR_Z + recess(at) - at.z, at.z - BACK_Z), c.x));
 #ifdef WRECK
       // out through the breach there is nothing left to hit
       if (at.y > CEIL + HULL_T) d = 0.5 + 0.3*t;
@@ -618,8 +540,6 @@ void main(){
     gl_FragColor = edgeCell(snapIndex(mix(sky, hs.rgb, hs.a), frag), CELL_FAR, vec3(0.0, -1.0, 0.0), hs.a < 0.5);
     return;
   }
-  // the emergency lamps' pulse, on a stepped clock
-  float alarm = 0.3 + 0.7*step(0.5, fract(uTime*0.6));
 #endif
 
   // --- which surface: the same terms as the march, at the hit
@@ -632,102 +552,110 @@ void main(){
   float dCeil = CEIL - inset - p.y;
   float dWall = (inRoom ? W + BAY_DEPTH : W - inset) - abs(p.x);
   float dSide = inRoom ? min(dz, CEIL - LINTEL - p.y) : 1e9;
-  float dPipe = pipes(p);
+  bool slotHit = dz > 0.0 && p.y < CEIL - LINTEL && p.x*side > 0.0;
+  float dChamU = inRoom ? 1e9 : (W + CEIL - CHAMFER - abs(p.x) - p.y)*0.7071 - inset;
+  float dChamL = inRoom || slotHit ? 1e9 : (W - FLOOR - CHAMFER - abs(p.x) + p.y)*0.7071 - inset;
   float dEnd = DOOR_Z + recess(p) - p.z;
   float dBack = p.z - BACK_Z;
-  float dm = min(min(min(dFloor, dCeil), min(dWall, dSide)), min(min(bc.x, dPipe), min(dEnd, dBack)));
-  bool onSuit = dm == bc.x && bc.y > 17.5 && bc.y < 18.5;
-  bool onFig = dm == bc.x && !onSuit;
+  float dm = min(min(min(dFloor, dCeil), min(dWall, dSide)), min(min(bc.x, min(dChamU, dChamL)), min(dEnd, dBack)));
+  bool onFig = dm == bc.x;
+  // the spare suits in the lockers wait in the dark until the lockers come up
+  bool inLocker = onFig && p.z > DOOR_Z - 1.0;
 
   vec3 n = vec3(0.0, 1.0, 0.0);
   vec3 base = GUN;
   vec3 emit = vec3(0.0);
   float rimK = 0.0;      // silhouettes: a backlit edge instead of a lit face
+  float gloss = 0.0;     // hard shells: the lights' highlights on them
   vec3 col_suitLight = vec3(0.0);
   float rib = ribAt(p.z);
-  float grime = 0.8 + 0.4*fbm3(p*1.7);
-  // worn paint: stencils flake where the deck is walked and the walls are scuffed
+  float grime = 0.85 + 0.3*fbm3(p*1.7);
+  // worn paint: what is still painted flakes where the deck is walked and the walls are scuffed
   float wear = 0.35 + 0.65*smoothstep(0.3, 0.45, fbm3(p*9.0));
+  // the line segment between ribs this point is in, and how awake the lines are here
+  float seg = floor(p.z/RIB_EVERY);
+  float wake = lineWake(p.z);
+#ifdef WRECK
+  float alarm = 0.3 + 0.7*step(0.5, fract(uTime*0.6));
+#endif
 
   if (dm == dFloor){
     n = vec3(0.0, 1.0, 0.0);
-    // grating either side of a plated walkway, with cross bars
+    // a flush plated deck: a walkway plate down the middle, panels either side, fine seams between
     float walkway = step(abs(p.x), 0.55);
-    float slots = step(fract(p.z*7.0), 0.42);
-    float bars = step(0.93, fract(p.x*1.25 + 0.5));
-    base = mix(mix(GRAPHITE*0.7, SOOT*0.8, slots), GUN, bars*(1.0 - slots));
-    base = mix(base, mix(GRAPHITE, STEEL, step(0.95, fract(p.z*0.5))), walkway);
-    base *= grime;
-    // CRYO and a chevron painted on the walkway, twice; read walking forward
-    float paint = 0.0;
+    float seam = max(step(0.96, fract(p.z)), step(abs(abs(p.x) - 0.55), 0.02));
+    base = mix(mix(GRAPHITE*0.72, GUN*0.8, walkway), STEEL*0.7, seam)*grime;
+    // CRYO written on the walkway in light, and three chevrons after it that light one after the
+    // other toward the door; read walking forward
+    float word = 0.0, chev = 0.0;
+    float beat = mod(floor(uTime*2.5), 3.0);
     for (int j = 0; j < 4; j++){
       float z0 = 4.6 + float(j)*7.8;
-      paint = max(paint, stencil(3.0, 4.0, vec2((p.x + 0.45)/0.06, (z0 + 0.45 - p.z)/0.09)));
-      float cz = p.z - (z0 + 0.62);
-      paint = max(paint, step(abs(cz - (0.28 - abs(p.x)*0.7)), 0.06)*step(abs(p.x), 0.38)*step(-0.3, cz));
-    }
-    base = mix(base, EMBER*0.55*grime, paint*wear);
-    // contact shadow: the deck darkens under feet, benches and beds
-    base *= shade;
-    // hazard stripes across the threshold of the door
-    if (p.z > DOOR_Z - 0.75 && p.z < DOOR_Z - 0.3){
-      base = mix(PITCH, EMBER*0.6, step(0.5, fract((p.x + p.z)*2.2)))*grime;
-    }
-  } else if (dm == dCeil){
-    n = vec3(0.0, -1.0, 0.0);
-    base = mix(GRAPHITE*0.55, SOOT, max(step(abs(abs(p.x) - 1.02), 0.08), step(abs(p.x), 0.3)))*grime;
-    // the lamps: a housing, a diffuser behind a grille, on their stepped clocks
-    float ks = floor((p.z - 1.5)/STRIP_EVERY + 0.5);
-    float sz = ks*STRIP_EVERY + 1.5;
-    vec2 lq = vec2(abs(p.x), abs(p.z - sz));
-    if (lq.x < 0.27 && lq.y < 0.7 && rib < 0.5){
-      base = GRAPHITE*0.8;
-      if (lq.x < 0.19 && lq.y < 0.6){
-        float on = stripOn(ks);
-        float grille = step(0.3, fract(p.z*9.0))*step(0.02, 0.19 - lq.x);
-        float spine = step(lq.x, 0.018);
-        emit = mix(RIME, STAR, 0.45)*(LAMP_REST + 0.62*on)*grille*(1.0 - spine);
-        base = mix(STEEL, GUN, grille);
+      word = max(word, stencil(3.0, 4.0, vec2((p.x + 0.45)/0.06, (z0 + 0.45 - p.z)/0.09)));
+      for (int i = 0; i < 3; i++){
+        float cz = p.z - (z0 + 0.62 + float(i)*0.26);
+        float on = step(abs(cz - (0.2 - abs(p.x)*0.6)), 0.045)*step(abs(p.x), 0.34)*step(-0.22, cz);
+        chev = max(chev, on*(0.35 + 0.65*step(abs(beat - float(i)), 0.5)));
       }
     }
-  } else if (dm == dPipe){
-    float ax = abs(p.x);
-    vec2 c1 = vec2(W - 0.16, CEIL - 0.16), c2 = vec2(W - 0.36, CEIL - 0.1);
-    vec2 q = vec2(ax, p.y);
-    float which = length(q - c1) < 0.075 ? 1.0 : length(q - c2) < 0.05 ? 2.0 : 3.0;
-    vec2 nn2 = which == 1.0 ? normalize(q - c1) : which == 2.0 ? normalize(q - c2) : vec2(0.0, -1.0);
-    n = normalize(vec3(nn2.x*sign(p.x), nn2.y, 0.0));
-    base = which == 1.0 ? GUN*0.8 : which == 2.0 ? mix(EMBER*0.35, GRAPHITE, 0.5) : SOOT*1.4;
-    // clamps at every frame, and the cables in the tray
-    if (abs(fract(p.z/RIB_EVERY) - 0.5)*RIB_EVERY < 0.05) base = GRAPHITE*0.6;
-    if (which == 3.0) base = mix(base, mix(STEEL, GRAPHITE, step(0.5, fract(ax*40.0))), 0.5);
-    base *= grime;
+#ifdef WRECK
+    base = mix(base, GRAPHITE*0.5, max(word, chev));
+#else
+    base = mix(base, PITCH, max(word, step(0.01, chev)));
+    emit += LINE*(0.8*word + chev)*wake;
+    // a line of the door's light across the deck at the threshold
+    emit += GLOW*(0.5 + 0.5*uP.z)*step(abs(p.z - (DOOR_Z - 0.55)), 0.025)*step(abs(p.x - 0.55), 0.48);
+#endif
+    // contact shadow: the deck darkens under feet, benches and beds
+    base *= shade;
+  } else if (dm == dCeil){
+    n = vec3(0.0, -1.0, 0.0);
+    // flush panels, a spine seam down the middle
+    base = mix(GRAPHITE*0.55, SOOT, max(step(abs(abs(p.x) - 0.6), 0.02), step(abs(p.x), 0.03)))*grime;
+  } else if (dm == dChamU || dm == dChamL){
+    // the octagon's cuts, and the lines of light along them: the upper ones mid-face, the lower ones at
+    // the deck's edge, both broken at every rib; the top of a bay's jamb light sits on the upper cut
+    bool upper = dm == dChamU;
+    n = normalize(vec3(-sign(p.x), upper ? -1.0 : 1.0, 0.0));
+    float along = (upper ? p.y - (CEIL - CHAMFER) : (FLOOR + CHAMFER) - p.y)*1.4142;
+    float panel = 0.8 + 0.4*hash12(vec2(seg, sign(p.x)*(upper ? 3.0 : 5.0)));
+    base = mix(GUN*0.55*panel, GRAPHITE*0.7, rib)*grime;
+    float line = step(abs(along - (upper ? 0.5*CHAMFER*1.4142 : 0.85*CHAMFER*1.4142)), 0.5*LINE_W)*(1.0 - rib);
+    float on = lineOn(seg);
+#ifdef WRECK
+    if (upper) emit += LINE*on*line;
+    else emit += ALARM*1.3*alarm*line;
+    base = mix(base, upper ? GRAPHITE*0.6 : ALARM*0.3, line);
+#else
+    emit += LINE*(0.25 + 1.1*on*wake)*line;
+    base = mix(base, PITCH, line);
+    float jamb = step(abs(p.z - bz), BAY_HALF + 0.06)*step(0.0, p.x*side)*step(along, 0.06)*float(upper);
+    emit += bayTint(k)*1.3*jamb;
+    base = mix(base, bayTint(k)*0.4, jamb);
+#endif
   } else if (dm == dWall && !inRoom){
     n = vec3(-sign(p.x), 0.0, 0.0);
     vec2 panel = floor(vec2(p.z, (p.y + 0.3)*1.4));
     float seam = max(step(0.95, fract(p.z)), step(0.94, fract((p.y + 0.3)*1.4)));
     float tone = 0.8 + 0.4*hash12(panel + sign(p.x)*7.0);
     base = mix(GUN*0.6*tone, STEEL*0.8, seam)*grime;
-    base = mix(base, STEEL*0.9*grime, step(p.y, FLOOR + 0.35));
-    float pipe = step(abs(p.y - 0.62), 0.06);
-    base = mix(base, mix(GRAPHITE, PEWTER, step(0.62, p.y))*0.9, pipe);
     float edge = step(abs(fract(p.z/RIB_EVERY) - 0.5)*RIB_EVERY, 0.03);
     base = mix(base, mix(GRAPHITE*0.7, BRUSHED*0.8, edge)*(0.85 + 0.3*fbm3(p*6.0)), rib);
     // wall stencils, read facing the wall: +z runs to the right on the left wall, to the left on the right
     bool left = p.x < 0.0;
     float along = left ? p.z : -p.z;
-    float paint = 0.0;
+    // the words are light: the deck's signs, the bay's number in the bay's own colour, the frame
+    // number on its plate after every rib; in the wreck they are dark paint
+    float paint = 0.0, bayPaint = 0.0;
     if (rib < 0.5){
       float z0 = left ? 7.2 : -4.58;
       paint = stencil(0.0, 6.0, vec2((along - z0)/0.06, (0.35 - p.y)/0.06));
       float z1 = left ? 10.6 : -14.68;
       paint = max(paint, stencil(left ? 1.0 : 2.0, 6.0, vec2((along - z1)/0.06, (0.35 - p.y)/0.06)));
-      // the bay's number, just short of its opening
       if (side*p.x > 0.0){
         float zl = left ? bz - 2.25 : -(bz - 1.585);
-        paint = max(paint, stencil(5.0 + k, 5.0, vec2((along - zl)/0.035, (0.5 - p.y)/0.035)));
+        bayPaint = stencil(5.0 + k, 5.0, vec2((along - zl)/0.035, (0.5 - p.y)/0.035));
       }
-      // the frame number on a plate after every rib
       float fr = floor(p.z/RIB_EVERY);
       float fz = p.z - fr*RIB_EVERY;
       if (fz > 0.1 && fz < 0.34 && p.y > -0.38 && p.y < -0.22){
@@ -736,19 +664,19 @@ void main(){
         paint = max(paint, number2(fr + 10.0, vec2(fx, (-0.24 - p.y)/0.024)));
       }
     }
-    base = mix(base, SILVER*0.62*grime, paint*wear);
-    float panelLight = step(abs(p.z - (bz - BAY_HALF - 0.4)), 0.07)*step(abs(p.y - 0.22), 0.11)*step(0.0, p.x*side);
+    // the jamb: a line of the bay's light down each side of its opening
+    float jamb = step(0.0, p.x*side)*step(abs(abs(p.z - bz) - BAY_HALF - 0.03), 0.03)*step(p.y, CEIL - LINTEL);
 #ifdef WRECK
-    // on the emergency circuit now: red, pulsing
-    emit += ALARM*1.4*alarm*panelLight;
-    base = mix(base, ALARM*0.5, panelLight);
+    base = mix(base, GRAPHITE*0.7*grime, max(paint, bayPaint)*wear);
+    // the jamb on the emergency circuit now: red, pulsing
+    emit += ALARM*1.4*alarm*jamb;
+    base = mix(base, ALARM*0.5, jamb);
 #else
-    emit += EMBER*0.7*panelLight;
-    base = mix(base, EMBER*0.5, panelLight);
+    base = mix(base, PITCH, max(paint, bayPaint));
+    emit += LINE*0.9*paint*wake + bayTint(k)*1.3*bayPaint;
+    emit += bayTint(k)*1.3*jamb;
+    base = mix(base, bayTint(k)*0.4, jamb);
 #endif
-    float stripe = step(abs(p.y + 0.55), 0.028)*(1.0 - rib);
-    base = mix(base, EMBER*0.45, stripe);
-    emit += EMBER*0.08*stripe;
   } else if (dm == dWall && inRoom){
     n = vec3(-side, 0.0, 0.0);
     if (k > 3.5){
@@ -757,7 +685,7 @@ void main(){
       float mull = step(abs(abs(p.z - bz) - 0.42), 0.035);
       if (pane && mull < 0.5){
         base = vec3(0.0);
-        emit = outside(rd, vec3(side, 0.0, 0.0))*0.95 + SILVER*0.04;
+        emit = outside(rd, outboard(side))*0.95 + SILVER*0.04;
       } else {
         base = GRAPHITE*0.45*grime;
       }
@@ -779,7 +707,7 @@ void main(){
     float rx = side*p.x - W;
     if (k > 3.5 && wall && p.z > bz && rx > 0.12 && rx < 1.38 && p.y > FLOOR + 0.5 && p.y < CEIL - LINTEL - 0.12 && step(abs(rx - 0.75), 0.035) < 0.5){
       base = vec3(0.0);
-      emit = outside(rd, normalize(vec3(side*0.6, 0.0, 0.8)))*0.95 + SILVER*0.04;
+      emit = outside(rd, outboard(side))*0.95 + SILVER*0.04;
     } else if (k > 3.5){
       base = GRAPHITE*0.4*grime;
     } else {
@@ -801,29 +729,10 @@ void main(){
     if (hatch < 0.0) base = mix(GRAPHITE*0.8, STEEL, step(0.94, fract(p.y*2.5)))*grime;
     else if (hatch < 0.1) base = mix(EMBER*0.75, PITCH, step(0.5, fract((p.x + p.y)*5.0)));
   } else if (onFig){
-    n = normalize(cn);
+    n = normalize(floor(normalize(cn)*FIG_FACETS + 0.5));
     float mat = bc.y;
     rimK = 1.0;
-#ifdef WRECK
-    // seen from a hand's width away the weave's blotches read as a pattern: only a hint of it
-    float cloth = 0.95 + 0.1*noise3(p*40.0);
-#else
-    float cloth = 0.85 + 0.3*noise3(p*40.0);
-#endif
-    if (mat < 1.5) base = mix(BONE, SILVER, 0.45)*0.8*cloth;
-    else if (mat < 2.5) base = BRUSHED*0.62;
-    else if (mat < 3.5) base = mix(GRAPHITE, BONE*0.7, 0.35);
-    else if (mat < 4.5) base = mix(STONE, AMBER, 0.25)*0.85;
-    else if (mat < 5.5) base = mix(STEEL, ZINC, 0.5)*1.6*cloth;
-    else if (mat < 6.5) base = GRAPHITE*0.7;
-    else if (mat < 7.5){
-      // the visor's gold film: the room's light in a streak, a glint of the corridor
-      base = PITCH*0.6;
-      emit = EMBER*0.07 + GLOW*0.7*pow(max(dot(reflect(rd, n), vec3(0.0, 0.6, 0.8)), 0.0), 12.0);
-      rimK = 0.0;
-    }
-    else if (mat < 8.5){ base = GRAPHITE; emit = EMBER*0.55*step(0.5, fract(uTime*1.5)); }
-    else if (mat < 9.5){ base = mix(RUST, GRAPHITE, 0.3); }
+    if (mat < 6.5) base = GRAPHITE*0.7;
     else if (mat < 10.5) base = SILVER*0.5;
     else if (mat < 11.5){
       // the vitals monitor: a trace stepping across, two bars under it
@@ -839,7 +748,6 @@ void main(){
     }
     else if (mat < 12.5) base = GRAPHITE*0.9*grime;
     else if (mat < 13.5) base = BRUSHED*0.7;
-    else if (mat < 14.5) base = mix(RIME, SILVER, 0.55)*cloth;
     else if (mat < 15.5){
       // a screen: lines of text scrolling up on a stepped clock, a cursor row lit amber
       float row = floor(p.y*34.0 + floor(uTime*3.0));
@@ -848,20 +756,56 @@ void main(){
       emit = FROSTC*0.25 + mix(RIME, SILVER, 0.5)*line*0.7 + EMBER*0.5*line*step(0.9, hash11(row*5.3));
       rimK = 0.0;
     }
-    else if (mat < 16.5) base = mix(PITCH, RUST, 0.35 + 0.3*hash11(floor(p.z*3.0)));
-    else if (mat < 17.5){
-      // the cooling undersuit: pale knit crossed by its dark tubing
-      base = mix(BONE*0.85, mix(BONE*0.85, GRAPHITE, 0.6), step(0.9, fract(p.y*24.0 + 0.4*sin(p.x*26.0 + p.z*26.0))))*cloth;
-    }
-    else if (mat < 19.5) base = mix(PEWTER, SILVER, 0.6);
+    else if (mat < 19.5){ base = mix(SILVER, STAR, 0.55); gloss = 0.7; }
     else if (mat > 25.5 && mat < 26.5){
       // the suit's own lights: they burn on its own power, in the wreck too
       base = PITCH;
-      emit = mix(RIME, STAR, 0.6)*1.2;
+      emit = mix(RIME, STAR, 0.75)*1.4;
       rimK = 0.0;
     }
-    else if (mat > 26.5 && mat < 27.5) base = mix(STEEL, GRAPHITE, 0.55);
-    else if (mat > 27.5 && mat < 28.5) base = GRAPHITE*0.45;
+    else if (mat > 26.5 && mat < 27.5){ base = mix(SILVER, STAR, 0.3); gloss = 0.3; }
+    else if (mat > 27.5 && mat < 28.5) base = GRAPHITE*0.5;
+    else if (mat > 29.5 && mat < 30.5){ base = GRAPHITE*0.4; gloss = 1.2; }
+    else if (mat > 31.5 && mat < 32.5){
+      // the comms hologram: the candidate world, its land lit, turning in steps on its own clock
+      vec3 N = normalize(p - vec3(side*(W + 1.1), FLOOR + 1.4, bz - 0.1));
+      float land = smoothstep(0.48, 0.56, fbm3(huYaw(N, floor(uTime*5.0)*0.09)*4.0 + 3.0));
+      base = vec3(0.0);
+      emit = mix(RIME, STAR, 0.5)*(0.35 + 0.75*land)*(0.6 + 0.4*max(N.x*side, 0.0));
+      rimK = 0.0;
+    }
+    else if (mat > 33.5 && mat < 34.5){
+      // the crew profile over the comms plate: flat light, flickering on a stepped clock; in the wreck
+      // the projector only manages a burst now and then
+      base = vec3(0.0);
+#ifdef WRECK
+      emit = mix(RIME, STAR, 0.5)*1.4*step(0.93, hash11(floor(uTime*7.0)));
+#else
+      emit = mix(RIME, STAR, 0.5)*(1.4 + 0.3*step(0.6, hash11(floor(uTime*9.0))));
+#endif
+      rimK = 0.0;
+    }
+    else if (mat > 34.5 && mat < 35.5){
+      // the projector's ring and the relay's light: lit on the ship's power, dead in the wreck
+      base = PITCH;
+#ifndef WRECK
+      emit = mix(RIME, STAR, 0.5)*1.4;
+#endif
+      rimK = 0.0;
+    }
+    else if (mat > 35.5 && mat < 36.5){
+      // the open panel's cavity: black behind the guts
+      base = PITCH*0.5;
+      rimK = 0.0;
+    }
+    else if (mat > 36.5 && mat < 37.5){
+      // the weld tip: a hot white spark in bursts on its own clock, cold in the wreck
+      base = PITCH;
+#ifndef WRECK
+      emit = SPARK*3.0*weld();
+#endif
+      rimK = 0.0;
+    }
 #ifdef WRECK
     else if (mat < 20.5){
       // the pod's shell: brushed panels rimed with frost, CRYO 02 down its flank
@@ -910,13 +854,15 @@ void main(){
       rimK = 0.0;
     }
 #endif
-    base *= ao;
-  } else if (onSuit){
-    n = normalize(cn);
-    // the spare suits, lit from inside their lockers once the lockers come up
-    base = mix(BONE, SILVER, 0.45)*mix(0.12, 0.55, uP.w)*(0.85 + 0.3*noise3(p*40.0));
-    col_suitLight = mix(RIME, SILVER, 0.6)*uP.w*(0.35 + 0.65*max(n.y, 0.0))*0.6;
-    rimK = 2.0;
+    // two tones of occlusion, not a gradient
+    base *= ao < 0.75 ? 0.6 : 1.0;
+    if (inLocker){
+      // lit from inside the locker once it comes up
+      base *= mix(0.2, 1.0, uP.w);
+      emit *= mix(0.25, 1.0, uP.w);
+      col_suitLight = mix(RIME, SILVER, 0.6)*uP.w*(0.35 + 0.65*max(n.y, 0.0))*0.6;
+      rimK = 2.0;
+    }
   } else {
     // the end wall: the lockers, the door in its striped frame, the mission's patch and its name
     n = vec3(0.0, 0.0, -1.0);
@@ -941,9 +887,14 @@ void main(){
       base = GLOW*0.15;
 #endif
     } else {
+      // the door's frame, a band of its own warm light
       float frame = step(0.0, 0.1 - max(max(0.15 - p.x, p.x - 0.95), p.y - (FLOOR + 2.1)));
-      float chev = step(0.5, fract((p.x + p.y)*5.0));
-      base = mix(base, mix(EMBER*0.75, PITCH, chev), frame);
+#ifdef WRECK
+      base = mix(base, STEEL*0.8, frame);
+#else
+      emit += GLOW*(0.45 + 0.5*uP.z)*frame;
+      base = mix(base, GLOW*0.2, frame);
+#endif
       // the patch: a world, its orbit and a ship on it, in a gold ring
       vec2 pc = p.xy - vec2(-0.7, 0.71);
       float r = length(pc);
@@ -959,46 +910,47 @@ void main(){
         }
         base *= 0.6 + 0.4*wear;
       }
-      // HERMES over the door
+      // HERMES over the door, in light
       float name = stencil(4.0, 6.0, vec2((p.x - 0.16)/0.034, (0.86 - p.y)/0.034));
-      base = mix(base, SILVER*0.7, name*(0.6 + 0.4*wear));
-#ifndef WRECK
-      // the beacons on the frame's top corners, turning on a stepped clock
-      float bl = length(p.xy - BEACON_L.xy), br = length(p.xy - BEACON_R.xy);
-      if (min(bl, br) < 0.05){
-        float ph = fract(uTime*0.8 + (bl < br ? 0.0 : 0.5));
-        base = EMBER*0.3;
-        emit = EMBER*(0.25 + 1.1*step(ph, 0.25));
-      }
+#ifdef WRECK
+      base = mix(base, GRAPHITE*0.7, name);
+#else
+      base = mix(base, PITCH, name);
+      emit += GLOW*0.9*name;
 #endif
     }
   }
 
-  // --- light: the strips overhead, the door ahead, and the bays' spill
+  // --- light: the upper lines, a segment between each pair of ribs on both sides, the door ahead,
+  // and the bays' spill
   vec3 col = base*0.03*vec3(0.9, 1.0, 1.2);
-  vec3 stripCol = mix(RIME, STAR, 0.7);
-  float ks = floor((p.z - 1.5)/STRIP_EVERY + 0.5);
   for (int i = -1; i <= 1; i++){
-    float kk = ks + float(i);
-    float sz = kk*STRIP_EVERY + 1.5;
-    if (sz < BACK_Z || sz > DOOR_Z - 0.5) continue;
-    vec3 c = vec3(0.0, CEIL - 0.03, sz + clamp(p.z - sz, -0.6, 0.6));
-    vec3 L = c - p;
-    float d2 = dot(L, L);
-    L *= inversesqrt(d2);
-    col += base*stripCol*stripOn(kk)*(max(dot(n, L), 0.0) + 0.12)*2.2/(1.0 + 1.6*d2);
+    float kk = seg + float(i);
+    float z0 = kk*RIB_EVERY + 0.1, z1 = z0 + RIB_EVERY - 0.2;
+    if (z1 < BACK_Z || z0 > DOOR_Z) continue;
+    float on = lineOn(kk)*lineWake(clamp(p.z, z0, z1));
+    for (int j = 0; j < 2; j++){
+      vec3 L = lineAt(j == 0 ? -1.0 : 1.0, clamp(p.z, z0, z1)) - p;
+      float d2 = dot(L, L);
+      L *= inversesqrt(d2);
+      col += base*LINE*on*(max(dot(n, L), 0.0) + 0.12)*1.5/(1.0 + 1.4*d2);
+      col += gloss*LINE*on*pow(max(dot(reflect(rd, n), L), 0.0), 40.0)*1.0/(1.0 + 1.4*d2);
+    }
   }
   vec3 Ld = DOOR_POS - p;
   float dd2 = dot(Ld, Ld);
   Ld *= inversesqrt(dd2);
   col += base*GLOW*uP.z*max(dot(n, Ld), 0.0)*2.6/(1.0 + 0.06*dd2);
+  col += gloss*GLOW*uP.z*pow(max(dot(reflect(rd, n), Ld), 0.0), 40.0)*0.8/(1.0 + 0.06*dd2);
   if (dm == dFloor) col += GLOW*uP.z*pow(max(dot(reflect(rd, n), Ld), 0.0), 14.0)*0.25/(1.0 + 0.03*dd2);
 #ifdef WRECK
   {
     // the head lamp: a cone from the eye, the only white light left
     float cone = smoothstep(0.82, 0.96, dot(rd, fwd));
     // held below white at arm's length, or the frost and the hand on the glass burn out
-    col += base*LAMP*(0.15 + 0.85*cone)*max(dot(n, -rd), 0.0)*1.4/(1.0 + 0.05*t*t);
+    // on its battery (uP.w): full when the envoy wakes, a glow once it is spent
+    col += base*LAMP*uP.w*(0.15 + 0.85*cone)*max(dot(n, -rd), 0.0)*1.4/(1.0 + 0.05*t*t);
+    col += gloss*LAMP*uP.w*cone*pow(max(dot(reflect(rd, n), -rd), 0.0), 40.0)*0.8/(1.0 + 0.05*t*t);
     // the nearest emergency lamp, beside its bay's opening
     vec3 La = vec3(side*(W - 0.05), 0.22, bz - BAY_HALF - 0.4) - p;
     float da2 = dot(La, La);
@@ -1011,6 +963,13 @@ void main(){
     col += base*mix(BONE, AMBER, 0.4)*max(dot(n, Lw), 0.0)*6.0/(1.0 + 0.15*dw2);
   }
 #else
+  // the weld's spark: a hard little light that throws the drone's shadow and flickers the wall
+  {
+    vec3 Ls = WELD_AT - p;
+    float ds2 = dot(Ls, Ls);
+    Ls *= inversesqrt(ds2);
+    col += base*SPARK*weld()*max(dot(n, Ls), 0.0)*12.0/(1.0 + 20.0*ds2);
+  }
   // the bay's light: white rooms, and the red Earth's light in the observation bay
   {
     vec3 bp = vec3(side*(W + BAY_DEPTH - 0.05), -0.3, bz);
@@ -1022,6 +981,7 @@ void main(){
     col += base*bayCol*max(dot(n, Lb), 0.0)*3.0/(1.0 + 0.3*db2)*vis;
     // what stands in a bay is bathed in its light from every side, not only from behind
     if (onFig) col += base*bayCol*(0.35 + 0.25*max(dot(n, vec3(-side, 0.3, -0.4)), 0.0));
+    col += gloss*bayCol*pow(max(dot(reflect(rd, n), Lb), 0.0), 30.0)*1.2*vis;
     if (rimK > 0.0){
       float rim = pow(1.0 - max(dot(n, -rd), 0.0), 2.0);
       vec3 from = rimK > 1.5 ? vec3(0.0, 0.0, 1.0) : vec3(side, 0.0, 0.0);
@@ -1045,40 +1005,8 @@ void main(){
 #endif
   col = mix(col, hazeCol, hz*0.85);
   col += GLOW*pow(dd, 90.0)*uP.z*0.35*smoothstep(2.0, 8.0, t);
-#ifndef WRECK
-  // the beacons' flash hanging in the air
-  for (int j = 0; j < 2; j++){
-    vec3 B = j == 0 ? BEACON_L : BEACON_R;
-    float on = step(fract(uTime*0.8 + float(j)*0.5), 0.25);
-    float a = max(dot(rd, normalize(B - ro)), 0.0);
-    col += EMBER*on*(pow(a, 900.0)*0.6 + pow(a, 120.0)*0.08);
-  }
-#endif
-
-  // steam from a pipe joint, in bursts on a stepped clock
-  {
-    float burst = step(0.4, hash11(floor(uTime*0.8) + 3.0));
-    if (burst > 0.0){
-      float puff = floor(uTime*6.0)/6.0;
-      vec3 dir = normalize(vec3(-0.45, -1.0, 0.2));
-      float dens = 0.0;
-      for (int j = 0; j < 6; j++){
-        float s = (float(j) + 0.5)/6.0;
-        vec3 A = VENT + dir*s*1.1 + vec3(0.0, 0.0, 0.08*sin(puff*7.0 + s*5.0));
-        float ta = dot(A - ro, rd);
-        if (ta > 0.0 && ta < t){
-          float r = 0.05 + 0.2*s;
-          float dist = length(ro + rd*ta - A);
-          dens += exp(-dist*dist/(r*r))*(1.0 - s*0.8);
-        }
-      }
-      float grain = 0.6 + 0.8*noise3(vec3(uv*40.0, puff*3.0));
-      col = mix(col, mix(RIME, SILVER, 0.6), clamp(dens*0.28*grain, 0.0, 0.6));
-    }
-  }
-
   // what the edge pass needs of this cell: its colour, its depth and facing; the hands keep their own edges
   vec4 hd = hands(uv);
-  col = mix(col, hd.rgb, hd.a);
+  col = hdVisor(mix(col, hd.rgb, hd.a), uv);
   gl_FragColor = edgeCell(snapIndex(col, frag), t, n, hd.a < 0.5);
 }
