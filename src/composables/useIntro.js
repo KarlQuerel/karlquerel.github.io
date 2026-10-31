@@ -3,6 +3,8 @@
 import { computed, ref, shallowRef, watch } from 'vue'
 import { FULLSCREEN_QUAD, staticBuffer } from '../js/gl.js'
 import { INTRO_SHOTS } from '../js/intro/index.js'
+import { createGame } from '../js/game/state.js'
+import { clearSave, loadSave, writeSave } from '../js/game/save.js'
 import { dropPainter } from '../js/intro/artWorker.js'
 import { createIntroPass } from '../js/intro/introPass.js'
 import { sky } from '../js/intro/sky.js'
@@ -28,17 +30,23 @@ const WALKING = new Set(Object.values(WALK_KEYS).flat())
 // where act I starts: SKIP INTRO lands there
 const ACT_AT = INTRO_SHOTS.findIndex(s => s.act)
 
+// a shot's place in the order, by key
+const at = key =>
+	Math.max(
+		0,
+		INTRO_SHOTS.findIndex(s => s.key === key)
+	)
+
 // On the dev server `?shot=key&t=seconds` opens the intro there, for tuning a shot in isolation.
+// A run with a checkpoint resumes at the act it reached, with the meters it had on reaching it.
 function opening(still) {
-	const at = key =>
-		Math.max(
-			0,
-			INTRO_SHOTS.findIndex(s => s.key === key)
-		)
 	if (import.meta.env.DEV) {
 		const q = new URLSearchParams(window.location.search)
 		if (q.has('shot')) return { index: at(q.get('shot')), t: Number(q.get('t')) || 0 }
 	}
+	const save = loadSave()
+	if (save && INTRO_SHOTS.some(s => s.key === save.key && s.checkpoint))
+		return { index: at(save.key), t: 0, resume: save.game }
 	return { index: still ? at(INTRO_STILL_START) : 0, t: 0 }
 }
 
@@ -71,6 +79,9 @@ export function useIntro(canvasRef) {
 		still,
 		role: null,
 		responded: false,
+		// the right button held: the scanner
+		scan: false,
+		game: createGame(),
 	}
 	const look = { tx: 0, ty: 0 }
 	let index = -1
@@ -84,7 +95,7 @@ export function useIntro(canvasRef) {
 	// the shot being left, still running under the transition: { shot, local, kind, dur, t }
 	let leaving = null
 
-	function go(i, t = 0) {
+	function go(i, t = 0, resume = null) {
 		const px = shot.value?.cellPx
 		index = i
 		shot.value = INTRO_SHOTS[i] ?? null
@@ -98,18 +109,22 @@ export function useIntro(canvasRef) {
 		marks.value = {}
 		clock.value = 0
 		shot.value?.enter?.(io)
+		if (resume) io.game.restore(resume)
+		// an act reached is a checkpoint; an ending clears the run
+		if (shot.value?.checkpoint) writeSave({ key: shot.value.key, game: io.game.snapshot() })
+		if (shot.value?.end) clearSave()
 		if (!shot.value?.walk) release()
 	}
 
-	// the last shot is where the intro rests: nothing to skip to
-	const last = computed(() => shot.value === INTRO_SHOTS[INTRO_SHOTS.length - 1])
+	// an ending is where the game rests: nothing to skip to
+	const last = computed(() => !!shot.value?.end)
 
 	// the intro proper, before act I: what SKIP INTRO skips
 	const inIntro = computed(() => !!shot.value && INTRO_SHOTS.indexOf(shot.value) < ACT_AT)
 
 	// `skipped` hurries the same transition rather than dropping it
 	function next(skipped = false, to = index + 1) {
-		if (!shot.value || last.value) return
+		if (!shot.value || !INTRO_SHOTS[to]) return
 		const into = INTRO_TRANSITIONS[INTRO_SHOTS[to].key]
 		// set before go(): a refit there resizes the shot being left as well as the one coming in
 		leaving =
@@ -127,7 +142,7 @@ export function useIntro(canvasRef) {
 	}
 
 	function skip() {
-		next(true)
+		if (!last.value) next(true)
 	}
 
 	function skipIntro() {
@@ -191,8 +206,8 @@ export function useIntro(canvasRef) {
 			await paint
 			await step('art', (i + 1) / painting.length)
 		}
-		const { index: i, t } = opening(still)
-		go(i, t)
+		const { index: i, t, resume } = opening(still)
+		go(i, t, resume)
 	}
 
 	function frame(dt) {
@@ -210,8 +225,11 @@ export function useIntro(canvasRef) {
 			card.value = s.card.text
 			cardShown = true
 		}
-		// a choice takes the frame: the card has had its turn by then
-		if (card.value && choice.value) card.value = ''
+		// a choice takes the frame: the card has had its turn by then. A shot with a voice of its own
+		// (caption) keeps its line up beside the choice it phrases.
+		if (s.card && card.value && choice.value) card.value = ''
+		const line = s.caption?.(local, io)
+		if (line !== undefined && line !== card.value) card.value = line
 		if (s.marks)
 			for (const [k, at] of Object.entries(s.marks))
 				if (!marks.value[k] && local >= at) marks.value = { ...marks.value, [k]: true }
@@ -232,7 +250,9 @@ export function useIntro(canvasRef) {
 			)
 			if (progress >= 1) leaving = null
 		} else paint(s, local)
-		if (s.duration ? local >= s.duration : s.ready?.(local, io)) next()
+		// a shot ends on its clock or on ready(); ready() may name the shot that follows (the acts branch)
+		const done = s.duration ? local >= s.duration : s.ready?.(local, io)
+		if (done) next(false, typeof done === 'string' ? at(done) : index + 1)
 		if (!paused.value) return true
 		hold()
 		// a frozen frame keeps drawing until the loop parks, so a resize never leaves it blank
@@ -304,16 +324,29 @@ export function useIntro(canvasRef) {
 	}
 	useWindowListener('pointermove', track)
 	useWindowListener('pointerdown', e => {
+		if (e.button === 2) {
+			io.scan = true
+			return
+		}
 		lock(e)
 		track(e)
 		io.down = true
 	})
-	useWindowListener('pointerup', () => {
-		io.down = false
+	useWindowListener('pointerup', e => {
+		if (e.button === 2) io.scan = false
+		else io.down = false
 	})
 	useWindowListener('pointercancel', () => {
 		io.down = false
+		io.scan = false
 	})
+	// the right button is a verb in the walked shots, not a menu
+	useWindowListener(
+		'contextmenu',
+		e => shot.value?.walk && e.preventDefault(),
+		// not passive: the menu must not open
+		{}
+	)
 
 	// The walk keys held, by physical key; a frozen frame leaves the arrows to the inspector.
 	useWindowListener(
