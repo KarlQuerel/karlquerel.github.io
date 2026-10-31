@@ -1,4 +1,4 @@
-import { EARTH } from './intro/earth.js'
+import { MOON } from './intro/moon.js'
 
 // Ships when GAME_SHIPPED flips; until then /game is dev-only and builds redirect (src/main.js).
 export const GAME_SHIPPED = false
@@ -276,44 +276,20 @@ export const GAME_HOLDING = {
 	// the name takes no more than cellMax CSS px per cell here (bigger than in the intro, where it is a
 	// card) and leans `depth` px with the cursor: the nearest layer
 	title: { cellMax: 3, depth: 9 },
-	// The Earth under the ship, the intro's world turned to `spin`: its centre `x` across the frame, its
-	// limb cresting `top` down it, `radius` frame widths round, painted at `cellPx` CSS px per cell.
-	// `light` is the sun's direction (x right, y down, z toward the viewer): high off the frame to the
-	// right, so the limb is in day and the night with its cities only reaches the left foot; a sun
-	// level with the limb walled the cap off with a vertical terminator. The air is the intro's,
-	// deepened to four bands and opaque, so no star shows through it: this close, the glow is most of what
-	// says "atmosphere", and a line of light rides the lit limb inside it. Bands meet on one-cell seams, coasts carry a foam line, decks have
-	// hard edges and the sea catches the sun: flat shapes with edges, the pixel-art way.
+	// The Earth under the ship, the Earth of 3812 painted from its map (js/intro/earthMap.js): its
+	// centre `x` across the frame, its limb cresting `top` down it, `radius` frame widths round,
+	// painted at `cellPx` CSS px per cell. `view` is the place the limb crests on and the heading
+	// down the frame from it: Europe at the crest, the Sahara at the foot, the drained Atlantic to the
+	// left. `light` is the sun's direction (x right, y down, z toward the viewer): high off the frame
+	// to the right, so the limb is in day and the night with its fires only reaches the left foot; a
+	// sun level with the limb walled the cap off with a vertical terminator.
 	earth: {
 		x: 0.38,
 		top: 0.7,
 		radius: 1,
 		cellPx: 3,
-		spin: 2.1,
+		view: { lat: 55, lon: 5, heading: 180 },
 		light: [0.87, -0.18, 0.44],
-		air: {
-			...EARTH.air,
-			depth: 22,
-			wrap: 0.9,
-			night: 3,
-			limbLift: 0,
-			ramp: ['sand', 'haze', 'rust', 'basalt'],
-			alpha: 255,
-			rim: { cells: 1.2, from: -0.15, bright: 0.6, tones: ['sand', 'linen'] },
-		},
-		detail: {
-			...EARTH.detail,
-			gain: 1.5,
-			seam: 0.06,
-			hillshade: 0.15,
-			cloud: 0.55,
-			cloudEdge: 0.02,
-			shadowDrop: 0.3,
-			shadowOffset: 0.04,
-			glint: 1.2,
-			glintPower: 12,
-			coastLine: 'foam',
-		},
 		depth: 3,
 	},
 	// The entrance: the Earth and the Moon rise into place over `ms`, from `earth` and `moon` frame heights
@@ -342,6 +318,17 @@ export const GAME_HOLDING = {
 		fadeInMs: 1500,
 		fadeOutMs: 3000,
 	},
-	// the Moon risen over the night limb, `radius` a share of the frame's short side
-	moon: { at: [0.13, 0.58], radius: 0.045, depth: 5 },
+	// The Moon risen over the night limb, `radius` a share of the frame's short side, lit by the
+	// Earth's sun. `art` is its map (constants/intro/moon.js) on a grey ramp with its big craters in
+	// relief: each `exaggerate` times its size, those at least `minCells` across, walls lit and shadowed.
+	moon: {
+		at: [0.13, 0.58],
+		radius: 0.045,
+		depth: 5,
+		art: {
+			...MOON,
+			ramp: ['void', 'pitch', 'iron', 'graphite', 'gun', 'pewter', 'brushed', 'silver'],
+			field: { exaggerate: 2, minCells: 1.5, flank: 1.4, floor: 0.35, bowl: 0.32, rim: 0.2 },
+		},
+	},
 }
