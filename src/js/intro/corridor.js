@@ -2,11 +2,11 @@ import frag from '../../shaders/intro/corridor.frag.glsl?raw'
 import hands from '../../shaders/intro/hands.glsl?raw'
 import human from '../../shaders/intro/human.glsl?raw'
 import edgeCells from '../../shaders/intro/edgeCells.glsl?raw'
-import { INTRO_CARDS, INTRO_ROLES, INTRO_WALK_HINT } from '../../data/gameIntro.js'
+import { INTRO_ROLES, INTRO_WALK_HINT } from '../../data/gameIntro.js'
 import { itemOf } from './wake.js'
 import { paletteSnap } from './paletteSnap.js'
-import { createWalk, lookWalk, stepWalk } from './walk.js'
-import { createGait, footFrame, gaitPhase, stepGait } from './gait.js'
+import { breathe, createWalk, lookWalk, stepWalk } from './walk.js'
+import { createGait, footFrame, stepGait } from './gait.js'
 import { CORRIDOR } from '../../constants/intro/corridor.js'
 import { ramp } from '../math.js'
 
@@ -28,7 +28,6 @@ export const corridor = {
 	walk: true,
 	// blocks on the role pick at the door
 	duration: 0,
-	card: { at: C.cardAt, text: INTRO_CARDS.team },
 	enter() {
 		state.arrivedAt = 0
 		state.pickedAt = 0
@@ -56,8 +55,8 @@ export const corridor = {
 		const item = itemOf(io)
 		if (item && !state.pickedAt) state.pickedAt = t
 		return {
-			p: [w.z, gaitPhase(g), glow, lit],
-			q: [io.still ? 0 : w.pace, w.x, w.heading, w.pitch],
+			p: [w.z, io.still ? 0 : g.rise + breathe(t), glow, lit],
+			q: [io.still ? 0 : g.sway, w.x, w.heading, w.pitch],
 			r: footFrame(g.feet[0], w),
 			s: footFrame(g.feet[1], w),
 			// the hands stay down for the walk and come up with the picked tool
