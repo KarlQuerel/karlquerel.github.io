@@ -28,7 +28,7 @@ const float WIN_PITCH = 0.2;
 const float MULLION = 0.0045;
 const float COL_W = 0.03;
 const int   RAY_STEPS = 24;
-// the emblem: a round oculus over the middle arch, its grille the Confederate's globe and laurel
+// the emblem: a round oculus over the middle arch, its grille the Confederation's globe and laurel
 const vec2  OC = vec2(0.0, 0.365);
 const float OC_R = 0.05;
 // eye level: the far tiers' heads converge on it, so they stand against the glass
@@ -450,7 +450,7 @@ void main(){
       float bx = (pb.x - (xi + 0.5)*WIN_PITCH)/0.017;
       float fold = 0.75 + 0.35*step(0.0, sin(bx*6.0 + 1.0));
       vec3 cloth = GARNET*0.5*fold;
-      // the Confederate disc and a gold band near the tail
+      // the Confederation disc and a gold band near the tail
       vec2 dq = pb - vec2((xi + 0.5)*WIN_PITCH, 0.08);
       float ring = step(abs(length(dq) - 0.0085), 0.0018);
       cloth = mix(cloth, AMBER*0.8, ring + step(abs(pb.y - 0.035), 0.002)*0.8);
