@@ -14,14 +14,19 @@
 				@pick="choose(choice.key, $event)"
 			/>
 			<p v-if="hint" class="intro__hint">{{ hint }}</p>
-			<div v-if="shot?.key === 'title'" class="intro__title">
+			<div v-if="shot?.title" class="intro__title">
 				<PlatingWordmark @built="built = true" />
-				<TypedReadout :line="INTRO_ACT" :start="built" />
+				<TypedReadout :line="shot.title" :start="built" />
 			</div>
 		</template>
-		<!-- the black a cut goes through, over everything but the chrome -->
-		<div class="intro__cut" :class="{ 'intro__cut--on': marks.black }" aria-hidden="true" />
-		<button v-if="shot && !last" class="intro__skip" type="button" @click="skip">
+		<!-- the black a cut goes through, over everything but the chrome; an ending rests behind a veil -->
+		<div
+			class="intro__cut"
+			:class="{ 'intro__cut--on': marks.black, 'intro__cut--veil': shot?.end }"
+			aria-hidden="true"
+		/>
+		<!-- the intro and the titles skip; a scene the player walks is played -->
+		<button v-if="shot && !last && !shot.walk" class="intro__skip" type="button" @click="skip">
 			{{ INTRO_SKIP }}
 		</button>
 		<button
@@ -49,7 +54,7 @@
 	import PlatingWordmark from './PlatingWordmark.vue'
 	import TypedReadout from './TypedReadout.vue'
 	import { INTRO_CRASH, INTRO_INSPECT } from '@/constants/intro/timeline'
-	import { INTRO_ACT, INTRO_SKIP, INTRO_SKIP_INTRO } from '@/data/gameIntro'
+	import { INTRO_SKIP, INTRO_SKIP_INTRO } from '@/data/gameIntro'
 
 	const canvas = ref(null)
 	const {
@@ -73,8 +78,8 @@
 		pausedAt,
 	} = useIntro(canvas)
 
-	// the crash shakes the whole frame until the cut to black
-	const shaking = computed(() => shot.value?.key === 'crash' && !marks.value.black)
+	// a crash, a descent: the whole frame shakes until the cut to black
+	const shaking = computed(() => !!shot.value?.shake && !marks.value.black)
 	const shakePx = `${INTRO_CRASH.shakePx}px`
 	const built = ref(false)
 </script>
@@ -170,6 +175,11 @@
 
 	.intro__cut--on {
 		opacity: 1;
+	}
+
+	// an ending's picture, darkened so the title and the last line read over it
+	.intro__cut--veil {
+		opacity: $intro-veil;
 	}
 
 	// top right, opposite the way home: the bottom corners belong to the hands
