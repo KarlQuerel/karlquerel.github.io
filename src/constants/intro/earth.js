@@ -46,8 +46,7 @@ export const EARTH = {
 	star: { at: [0.74, 0.26], radius: 0.045, depth: 0.12, age: 0.3 },
 	// The surface's finer life. `coast`/`wisp` are how far fine octaves at `scale` push the ground and the
 	// cloud cover; clouds sit where a second world's elevation passes `cloud`, and `cloudEdge` is how far
-	// past it a deck takes to go solid. `coastLine`, when set, rims every lit coast in that tone. The light: `gain` spreads
-	// it over the ramp, `hillshade` tips it by the slope toward the sun (measured over `slopeCells`), a
+	// past it a deck takes to go solid. The light: `gain` spreads it over the ramp, `hillshade` tips it by the slope toward the sun (measured over `slopeCells`), a
 	// deck's shadow falls `shadowOffset` down-sun and drops `shadowDrop`, the sea glints by `glint`.
 	// `seam` is the half-width of the dither at each seam of the light, in ramp steps: 0.5 dithers all
 	// the way.
@@ -70,8 +69,7 @@ export const EARTH = {
 	// The air past the limb, in cells: `depth` toward the sun, `night` away from it, `wrap` how far the
 	// glow reaches round toward the night side; inner band out, each seam dithered over `seam` of a
 	// band; painted at `alpha`, so the shader can tell it from the ground. `twilight` is how deep past
-	// the terminator the red ground fades out, `limb` where the lit edge catches `limbLift` more. `rim`,
-	// when set, is a line of light just inside the lit limb.
+	// the terminator the red ground fades out, `limb` where the lit edge catches `limbLift` more.
 	air: {
 		depth: 9,
 		night: 1,
