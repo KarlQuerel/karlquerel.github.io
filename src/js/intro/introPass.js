@@ -25,6 +25,8 @@ const UNIFORMS = [
 	'uR',
 	'uS',
 	'uH',
+	'uGame',
+	'uSuit',
 	'uB[0]',
 	'uMask',
 	'uSky',
@@ -68,6 +70,8 @@ export function createIntroPass(gl, quad, { key, frag, chunks = [], edges = null
 			r = ZERO4,
 			s = ZERO4,
 			h = ZERO4,
+			g = ZERO4,
+			suit = ZERO4,
 			b = null,
 			mask = null,
 			sky = null,
@@ -85,6 +89,8 @@ export function createIntroPass(gl, quad, { key, frag, chunks = [], edges = null
 		gl.uniform4fv(U.uR, r)
 		gl.uniform4fv(U.uS, s)
 		gl.uniform4fv(U.uH, h)
+		gl.uniform4fv(U.uGame, g)
+		gl.uniform4fv(U.uSuit, suit)
 		// a shot's own bodies, a vec4 array it declares itself
 		if (b) gl.uniform4fv(U.uB, b)
 		if (mask) {
