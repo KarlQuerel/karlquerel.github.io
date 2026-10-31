@@ -66,8 +66,6 @@
 </script>
 
 <style scoped lang="scss">
-	@use 'sass:color';
-
 	$row-gap: 0.3rem;
 	$badge: clamp(2.6rem, 6.5vw, 3.4rem);
 	$emblem-ghost: 0.88;
@@ -187,19 +185,18 @@
 			0 2px 4px rgba(0, 0, 0, 0.9);
 	}
 
-	// type-tinted frame doubles as the education / experience signal
+	// type-tinted frame doubles as the education / experience signal: the ring is the label's own colour
+	@mixin badge-tint($c) {
+		border: 2px solid $c;
+		background: linear-gradient(0deg, rgba($c, 0.16), rgba($c, 0.16)), rgba(0, 0, 0, 0.6);
+	}
+
 	.ztl-badge--study {
-		border: 2px solid rgba($tag-education, 0.6);
-		background:
-			linear-gradient(0deg, rgba($tag-education, 0.16), rgba($tag-education, 0.16)),
-			rgba(0, 0, 0, 0.6);
+		@include badge-tint($tag-education);
 	}
 
 	.ztl-badge--job {
-		border: 2px solid rgba($tag-experience, 0.6);
-		background:
-			linear-gradient(0deg, rgba($tag-experience, 0.16), rgba($tag-experience, 0.16)),
-			rgba(0, 0, 0, 0.6);
+		@include badge-tint($tag-experience);
 	}
 
 	// contain via SVG preserveAspectRatio so every sprite fits the same square
@@ -293,11 +290,13 @@
 		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 	}
 
-	.ztl-kind--study {
+	.ztl-kind--study,
+	.ztl-school--study {
 		color: $tag-education;
 	}
 
-	.ztl-kind--job {
+	.ztl-kind--job,
+	.ztl-school--job {
 		color: $tag-experience;
 	}
 
@@ -323,15 +322,6 @@
 		font-size: $type-prose-md;
 		line-height: 1.5;
 		text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
-	}
-
-	.ztl-school--study {
-		color: $tag-education;
-	}
-
-	.ztl-school--job {
-		// lifted off $tag-experience: the raw purple is too dark for a whole line of type
-		color: color.scale($tag-experience, $lightness: 38%);
 	}
 
 	// linked institutions keep their tint; the underline only appears in hand
@@ -382,9 +372,7 @@
 	}
 
 	[data-current] .ztl-badge {
-		border: 2px solid;
-		background:
-			linear-gradient(0deg, rgba($yellow, 0.16), rgba($yellow, 0.16)), rgba(0, 0, 0, 0.6);
+		@include badge-tint($yellow);
 		// rings, not a 12px bloom: it was the one blurred glow in a scene that quantises everything else
 		@include node-lit($yellow, 0.45);
 	}
