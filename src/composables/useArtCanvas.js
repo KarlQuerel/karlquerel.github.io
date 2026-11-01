@@ -1,6 +1,7 @@
 // One WebGL context on the art grid: sizing, the perf ladder, the boot, the frame loop and its losses.
 // build(gl, step) reruns after a context restore: step(key) lands a checkpoint of bootWeights, step(key, part)
 // reports it part-way there; the last key is the first frame, reported here.
+// webgl2: a scene drawn by three.js, which needs it.
 // frame(dt) returns whether it drew: a run of empty frames parks the loop, and wake() restarts it.
 
 import { onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
@@ -31,7 +32,7 @@ const paint = () => new Promise(r => requestAnimationFrame(() => requestAnimatio
 
 export function useArtCanvas(
 	canvasRef,
-	{ bootWeights = { frame: 1 }, build, frame, resize, release, cellPx }
+	{ bootWeights = { frame: 1 }, build, frame, resize, release, cellPx, webgl2 = false }
 ) {
 	const order = Object.keys(bootWeights)
 	const supported = ref(true)
@@ -238,7 +239,7 @@ export function useArtCanvas(
 
 	onMounted(() => {
 		canvas = canvasRef.value
-		gl = canvas?.getContext('webgl', CONTEXT_ATTRIBUTES)
+		gl = canvas?.getContext(webgl2 ? 'webgl2' : 'webgl', CONTEXT_ATTRIBUTES)
 		if (!gl) {
 			fail()
 			return
