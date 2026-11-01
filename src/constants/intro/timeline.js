@@ -28,3 +28,12 @@ export const INTRO_INSPECT = {
 	label: 'PAUSED',
 	hint: 'SPACE RESUME · ←/→ FRAME · SHIFT 1S',
 }
+
+// Dev server only: the scene menu on /game, every shot grouped by where the story is.
+export const SCENE_MENU = {
+	label: 'Scenes',
+	groups: { intro: 'Intro', acts: 'Acts', endings: 'Endings' },
+	holding: { to: '/under-construction', label: 'Holding screen' },
+	// the three.js pilot, opened in the intro's place
+	pilot: { group: 'Pilots', param: 'pilot', label: 'corridor (three.js)' },
+}
