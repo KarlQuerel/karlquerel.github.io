@@ -11,8 +11,12 @@ export const PILOT = {
 	seam: CORRIDOR.seam,
 	palette: CORRIDOR.palette,
 	walk: CORRIDOR.walk,
-	// eye height over the deck, and the head's bob per stride at a full walk
-	eye: 1.6,
+	// eye height over the deck (the crew model's own eyes), where the eye sits from the neck it tips
+	// about (ahead, up), how far the head can tip down and up (rad), and the head's bob per
+	// stride at a full walk
+	eye: 1.58,
+	neck: [0.09, 0.12],
+	tilt: { down: 1.05, up: 0.9 },
 	bob: { height: 0.035, strideS: 0.55 },
 	fovDeg: 70,
 	near: 0.05,
@@ -38,24 +42,61 @@ export const PILOT = {
 	edges: { step: 0.08, turn: 0.35, ink: 0.42, glint: 1.5, far: 16 },
 }
 
-// The crew: a model, how tall it stands, which way its front faces at rest (rad about y), and what it
-// does. `patrol` walks between two z marks at `x`, resting between legs; `greet` idles at a spot and
-// plays `react` (if it has one) when the player comes within `reach`; `suit` dresses it as the astronaut.
+// The crew: a model, how tall it stands, which way its front faces at rest (rad about y), its clips
+// by role, how fast its walk clip covers the deck (m/s, so the feet keep their grip), and what it does.
+// `patrol` walks between two z marks at `x`, resting between legs; `greet` idles at a spot and plays
+// `react` (if it has one) when the player comes within `reach`.
+const ASTRA = { url: '/assets/game/models/Astra.glb', height: 1.7, facing: 0, walkSpeed: 1.45 }
+// Mixamo's Ely by K. Atienza on Astra's clips; his longer legs carry the same walk further
+const ELY = { url: '/assets/game/models/Ely.glb', height: 1.79, facing: 0, walkSpeed: 1.53 }
+
+// The crew never show a face: the head's skin (eyes too) goes and the helmet, its origin at its rim's
+// centre and its face down +z, takes its place sized to that head: `fit` times its width, the rim `seat`
+// of its height under the chin, centred `ahead` of its depth forward; tipped back `tipBack` rad against
+// the idle's bowed head.
+// "Sci-Fi Helmet" by Udon-San, CC BY 4.0 (sketchfab.com/3d-models/sci-fi-helmet-785f5cfd848940b1a4a0b8ddeefc9ef1):
+// merged and rescaled, its visor's triangle removed.
+const HELMET = {
+	url: '/assets/game/models/HelmetUdon.glb',
+	bone: 'mixamorig1Head',
+	drop: /Head|Eye/,
+	fit: 1.15,
+	seat: 0.2,
+	ahead: 0.1,
+	tipBack: 0.12,
+	// the undersuit's fabric from the base of the neck (`from`) up `reach` of the head's height over the
+	// chin; `base` then `top` its half-width and half-depth as shares of the head's, widening as `flare`
+	// (an exponent: under 1, early) to fill the helmet's slanted back; `rings` by `sides`
+	seal: {
+		from: 'mixamorig1Neck',
+		color: 'steel',
+		reach: 0.25,
+		base: [0.36, 0.3],
+		top: [0.46, 0.5],
+		flare: 0.5,
+		rings: 6,
+		sides: 20,
+	},
+}
+
 export const PILOT_CREW = [
 	{
-		url: '/assets/game/models/Soldier.glb',
-		height: 1.78,
-		facing: Math.PI,
-		patrol: { x: -0.75, from: 6, to: 28, speed: 1.25, restS: 2 },
+		...ASTRA,
+		helmet: HELMET,
 		clips: { walk: 'Walk', rest: 'Idle' },
+		patrol: { x: -0.75, from: 6, to: 21, speed: 1.25, restS: 2 },
 	},
 	{
-		url: '/assets/game/models/Soldier.glb',
-		suit: true,
-		height: 1.82,
-		facing: Math.PI,
+		...ASTRA,
+		helmet: HELMET,
+		clips: { rest: 'Idle2', react: 'Talk' },
 		greet: { x: -0.8, z: 24, reach: 3.5 },
-		clips: { rest: 'Idle' },
+	},
+	{
+		...ELY,
+		helmet: HELMET,
+		clips: { rest: 'Idle', react: 'Talk' },
+		greet: { x: 0.8, z: 9, reach: 3.5 },
 	},
 	{
 		url: '/assets/game/models/RobotExpressive.glb',
@@ -66,29 +107,19 @@ export const PILOT_CREW = [
 	},
 ]
 
-// The astronaut's suit over the Vanguard rig: what its texture's colours become, picked out by hue
-// (deg), saturation and value bands; the visor; the life-support pack on the upper spine (metres, in
-// the bone's own axes: x across, y up the spine, z out of the chest) with a status light on it.
-export const PILOT_SUIT = {
-	plate: ['chalk', 'linen'],
-	cloth: ['graphite', 'pewter'],
-	stripe: 'ember',
-	// the texture's brightness multiplied: a white suit has to read white under the corridor's cool lamps
-	gain: 1.4,
-	bands: {
-		red: { s: 0.45, below: 15, above: 340 },
-		tan: { from: 15, to: 50, s: 0.15, v: 0.45 },
-		green: { from: 50, to: 160, s: 0.12, gain: 2 },
-	},
-	visor: { color: 'ochre', glow: 'amber', intensity: 0.35 },
-	pack: {
-		bone: 'mixamorigSpine2',
-		size: [0.4, 0.5, 0.2],
-		offset: [0, 0.02, -0.2],
-		color: 'bone',
-		light: { size: [0.06, 0.03, 0.02], offset: [0.12, 0.18, -0.31], color: 'ember' },
-	},
+// The player's own body, worn by the camera and seen looking down: the crew model without the skin
+// the `drop` bones carry (the head), standing `back` m behind the eye, which puts the eye where the
+// face was and the neck behind the view; walking above `walking` pace.
+export const PILOT_BODY = {
+	...ASTRA,
+	drop: /Head/,
+	back: 0.1,
+	walking: 0.15,
 }
+
+// A patrol eases to its pace over easeS s, brakes over the last `brake` m of each leg (never slower
+// than `creep` of its pace until it gets there), and counts as walking above `walking` m/s.
+export const PILOT_PATROL = { easeS: 0.35, brake: 0.9, creep: 0.15, walking: 0.1 }
 
 // seconds to blend one animation into the next
 export const PILOT_FADE_S = 0.35
