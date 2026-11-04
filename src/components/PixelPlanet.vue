@@ -22,7 +22,6 @@
 		onMounted,
 		onBeforeUnmount,
 	} from 'vue'
-	import { useWindowListener } from '@/composables/useWindowListener'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { createPlanetGpu } from '@/js/planetGpu'
 	import { createPlanetShader } from '@/js/planetShader'
@@ -58,7 +57,8 @@
 
 	// Device px each cell covers on screen: the dither aliases into checkers unless it is filtered to that.
 	const boxCss = ref(0)
-	const measureBox = () => (boxCss.value = canvasEl.value?.clientWidth ?? 0)
+	// Observed, not read on events: the stage hides the globe at the arrival, and a box read there is 0.
+	const boxObserver = new ResizeObserver(([entry]) => (boxCss.value = entry.contentRect.width))
 	const cellPx = computed(() => (boxCss.value * window.devicePixelRatio * props.scale) / res)
 	const smooth = computed(() => cellPx.value < PLANET.crispFrom)
 	// Shrunk, bilinear still skips cells, so blur away what the screen cannot hold; applied before the scale.
@@ -68,7 +68,6 @@
 		const blur = Math.round((boxCss.value / res) * (1 / q - 1)) / 2
 		return blur > 0 ? { filter: `blur(${blur}px)` } : null
 	})
-	useWindowListener('resize', measureBox)
 	// this visit's world, fixed here so every renderer rolls the same terrain
 	const seed = Math.floor(Math.random() * 1e5) + 1
 
@@ -203,7 +202,9 @@
 
 	function start() {
 		const el = canvasEl.value
-		measureBox()
+		// a lost context swaps the canvas, and the old one would report its removal as a 0 box
+		boxObserver.disconnect()
+		boxObserver.observe(el)
 		el.width = res
 		el.height = res
 		heldSpin = props.spin
@@ -232,13 +233,13 @@
 	})
 	onActivated(() => {
 		parked = false
-		measureBox()
 		scheduleDraw()
 	})
 
 	onBeforeUnmount(() => {
 		parked = true
 		stopLoop()
+		boxObserver.disconnect()
 		gpu?.release()
 		if (worker) worker.terminate()
 	})
