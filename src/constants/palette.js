@@ -52,6 +52,8 @@ export const PALETTE = {
 	// Air and light. `ember` is the site's accent, so chrome and world share one yellow.
 	haze: [172, 120, 104],
 	ember: [255, 189, 46],
+	// ember turned down: a suit light dimmed, which would otherwise fall to amber, an orange
+	brass: [176, 136, 40],
 	glow: [255, 231, 196],
 	star: [255, 255, 255],
 }
