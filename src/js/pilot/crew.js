@@ -17,7 +17,8 @@ const turnToward = (from, to, rate) => {
 	return from + Math.sign(d) * Math.min(Math.abs(d), rate)
 }
 
-// a rigged model playing its clips by role; a walk plays as fast as the body moves
+// a rigged model playing its clips by role; a walk plays as fast as the body moves, its stride as long
+// as the body is tall; the first clip starts anywhere in its cycle so no two crew move in step
 async function clipRig(spec) {
 	const { body, clips } = await loadRigged(spec)
 	if (spec.helmet) await wearHelmet(body, spec.helmet)
@@ -36,12 +37,14 @@ async function clipRig(spec) {
 				.setLoop(once ? LoopOnce : LoopRepeat, once ? 1 : Infinity)
 				.play()
 			if (playing) next.crossFadeFrom(playing, PILOT_FADE_S, true)
+			else next.time = Math.random() * next.getClip().duration
 			playing = next
 		},
 		// a clip played once is still running
 		busy: () => playing?.loop === LoopOnce && playing.isRunning(),
 		pace(speed) {
-			if (spec.walkSpeed) actions.walk.timeScale = speed / spec.walkSpeed
+			if (spec.walkSpeed)
+				actions.walk.timeScale = speed / (spec.walkSpeed * (spec.scale ?? 1))
 		},
 		update: dt => mixer.update(dt),
 	}
@@ -73,6 +76,14 @@ function patrol(npc, dt) {
 	face(npc, s.dir > 0 ? 0 : Math.PI, dt)
 }
 
+// stands its post, never turning
+function guard(npc) {
+	const { x, z, heading } = npc.spec.guard
+	npc.body.position.set(x, 0, z)
+	npc.body.rotation.y = heading + npc.spec.facing
+	npc.rig.play('rest')
+}
+
 // idles facing the player; reacts (a wave, a word) once each time they come within reach
 function greet(npc, dt, player) {
 	const { x, z, reach } = npc.spec.greet
@@ -100,6 +111,7 @@ export async function addCrew(scene, onLoaded) {
 	return (dt, player) => {
 		for (const npc of crew) {
 			if (npc.spec.patrol) patrol(npc, dt)
+			else if (npc.spec.guard) guard(npc)
 			else greet(npc, dt, player)
 			npc.rig.update(dt)
 		}
