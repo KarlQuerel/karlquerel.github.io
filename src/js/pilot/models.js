@@ -8,6 +8,7 @@ import {
 	Float32BufferAttribute,
 	Matrix4,
 	MeshStandardMaterial,
+	Quaternion,
 	SkinnedMesh,
 	Uint16BufferAttribute,
 	Vector3,
@@ -15,6 +16,7 @@ import {
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { clone } from 'three/addons/utils/SkeletonUtils.js'
 import { paletteHex } from '../../constants/palette.js'
+import { PILOT_GLOW } from '../../constants/game/pilot.js'
 
 const loader = new GLTFLoader()
 const loading = new Map()
@@ -24,13 +26,77 @@ function fetchOnce(url) {
 	return loading.get(url)
 }
 
-// spec: { url, height }; the clips come back by name
-export async function loadRigged({ url, height }) {
+// a Mixamo bone's name without its export's numbered prefix (mixamorig1Hips → Hips)
+const mixamoBone = name => name.replace(/^mixamorig\d*/, '')
+
+// a rig's bones by Mixamo name; by name, not isBone, since a clips-only file has no skin to make them bones
+function mixamoBones(scene) {
+	const bones = {}
+	scene.traverse(o => {
+		if (/^mixamorig/.test(o.name)) bones[mixamoBone(o.name)] ??= o
+	})
+	return bones
+}
+
+// each bone's rest turn in the world, and its parent's, as the file left them
+function restTurns(scene, bones) {
+	scene.updateMatrixWorld(true)
+	const turns = {}
+	for (const [name, bone] of Object.entries(bones))
+		turns[name] = {
+			own: bone.getWorldQuaternion(new Quaternion()),
+			parent: bone.parent.getWorldQuaternion(new Quaternion()),
+		}
+	return turns
+}
+
+// another Mixamo rig's clips retargeted onto this one: each bone turns in the world as the donor's does
+// from its own rest, so rigs whose bones' axes differ still pose alike; the hips' travel scaled by how
+// much longer this rig's legs are
+function borrowClips(scene, donor) {
+	const bones = mixamoBones(scene)
+	const from = mixamoBones(donor.scene)
+	const ours = restTurns(scene, bones)
+	const theirs = restTurns(donor.scene, from)
+	const legs = bones.Hips.position.y / from.Hips.position.y
+	const q = new Quaternion()
+	return donor.animations.map(source => {
+		const clip = source.clone()
+		clip.tracks = clip.tracks.filter(track => {
+			const [bone, property] = track.name.split('.')
+			const name = mixamoBone(bone)
+			if (!(name in bones) || !(name in from)) return false
+			track.name = `${bones[name].name}.${property}`
+			if (property === 'position') track.values = track.values.map(v => v * legs)
+			if (property !== 'quaternion') return true
+			// ours⁻¹·theirs at the parent, the donor's turn, theirs⁻¹·ours at the bone
+			const before = ours[name].parent.clone().invert().multiply(theirs[name].parent)
+			const after = theirs[name].own.clone().invert().multiply(ours[name].own)
+			// a copy: a cloned track can share the donor's arrays, and other rigs borrow them too
+			const v = (track.values = track.values.slice())
+			for (let i = 0; i < v.length; i += 4) {
+				q.fromArray(v, i).premultiply(before).multiply(after).toArray(v, i)
+			}
+			return true
+		})
+		return clip
+	})
+}
+
+// spec: { url, height, scale?, clipsFrom?, glow? }: stood `scale` times its height, lit by `glow`; the
+// clips, its own or borrowed from the `clipsFrom` rig, by name
+export async function loadRigged({ url, height, scale = 1, clipsFrom, glow }) {
 	const gltf = await fetchOnce(url)
 	const body = clone(gltf.scene)
+	// a skinned box is measured on its bones, which need their world matrices first
+	body.updateMatrixWorld(true)
 	const size = new Box3().setFromObject(body).getSize(new Vector3())
-	body.scale.setScalar(height / size.y)
-	const clips = Object.fromEntries(gltf.animations.map(clip => [clip.name, clip]))
+	body.scale.setScalar((height * scale) / size.y)
+	if (glow) addGlow(body, glow)
+	const animations = clipsFrom
+		? borrowClips(gltf.scene, await fetchOnce(clipsFrom))
+		: gltf.animations
+	const clips = Object.fromEntries(animations.map(clip => [clip.name, clip]))
 	return { body, clips }
 }
 
@@ -136,11 +202,82 @@ function addNeckSeal(body, head, spec) {
 	body.add(seal)
 }
 
-// spec: { url, bone, drop, fit, seat, ahead, tipBack, seal }: the helmet sized to the head whose skin it
+// one mip level down by vote: a texel stays lit, as bright as its brightest, only where at least `votes`
+// of the four under it are lit; otherwise it goes dark. A light far off then shrinks and drops out, the
+// way a lamp mesh does, and never dims to an orange or swells over the suit.
+function halve({ width, height, data }, floor, votes) {
+	const w = Math.max(1, width >> 1)
+	const h = Math.max(1, height >> 1)
+	const out = new ImageData(w, h)
+	for (let y = 0; y < h; y++)
+		for (let x = 0; x < w; x++) {
+			let lit = 0
+			let best = 0
+			for (let k = 0; k < 4; k++) {
+				const sx = Math.min(width - 1, 2 * x + (k & 1))
+				const sy = Math.min(height - 1, 2 * y + (k >> 1))
+				const i = (sy * width + sx) * 4
+				const v = Math.max(data[i], data[i + 1], data[i + 2])
+				if (v >= floor) lit++
+				if (v > Math.max(data[best], data[best + 1], data[best + 2])) best = i
+			}
+			const o = (y * w + x) * 4
+			for (let c = 0; c < 3; c++) out.data[o + c] = lit >= votes ? data[best + c] : 0
+			out.data[o + 3] = 255
+		}
+	return out
+}
+
+// an emissive map with its own mips: only texels brighter than `floor` count as light (a faint wash
+// stays dark), and each level halves by vote: the first `keep` levels hold any lit texel, so a light
+// holds up close, and the rest need two, so it fades out far off; built once per map
+const keptLit = new Map()
+function keepLit(map) {
+	if (!keptLit.has(map)) {
+		const { width, height } = map.image
+		const canvas = new OffscreenCanvas(width, height)
+		const ctx = canvas.getContext('2d')
+		ctx.drawImage(map.image, 0, 0)
+		const full = ctx.getImageData(0, 0, width, height)
+		const floor = PILOT_GLOW.floor * 255
+		const { data } = full
+		for (let i = 0; i < data.length; i += 4)
+			if (Math.max(data[i], data[i + 1], data[i + 2]) < floor)
+				data[i] = data[i + 1] = data[i + 2] = 0
+		const mipmaps = [full]
+		while (mipmaps.at(-1).width > 1 || mipmaps.at(-1).height > 1)
+			mipmaps.push(halve(mipmaps.at(-1), floor, mipmaps.length > PILOT_GLOW.keep ? 2 : 1))
+		const lit = map.clone()
+		lit.mipmaps = mipmaps
+		lit.generateMipmaps = false
+		lit.needsUpdate = true
+		keptLit.set(map, lit)
+	}
+	return keptLit.get(map)
+}
+
+// spec: { materials, color, intensity }: every material whose name `materials` matches lit from within
+function addGlow(body, { materials, color, intensity }) {
+	body.traverse(mesh => {
+		if (!mesh.isMesh) return
+		mesh.material = [mesh.material].flat().map(material => {
+			if (!materials.test(material.name)) return material
+			const lit = material.clone()
+			lit.emissive.set(paletteHex(color))
+			lit.emissiveIntensity = intensity
+			if (lit.emissiveMap) lit.emissiveMap = keepLit(lit.emissiveMap)
+			return lit
+		})
+		if (mesh.material.length === 1) mesh.material = mesh.material[0]
+	})
+}
+
+// spec: { url, bone, drop, fit, seat, ahead, tipBack, seal, glow? }: the helmet sized to the head whose skin it
 // replaces, `fit` times its width, the rim `seat` of its height under the chin, the middle `ahead` of
 // its depth forward of the head's; hung on its bone and tipped back `tipBack` rad, the `seal` under it
 export async function wearHelmet(body, spec) {
 	const helmet = (await fetchOnce(spec.url)).scene.clone()
+	if (spec.glow) addGlow(helmet, spec.glow)
 	const head = skinBox(body, spec.drop)
 	dropSkin(body, spec.drop)
 	addNeckSeal(body, head, spec)
