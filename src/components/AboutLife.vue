@@ -38,21 +38,11 @@
 					<span class="life-card__dot" aria-hidden="true" />{{ section.title }}
 				</h3>
 				<template v-for="(line, i) in section.lines" :key="i">
-					<picture v-if="section.media?.beforeLine === i" class="life-card__media">
-						<source
-							:srcset="section.media.still"
-							media="(prefers-reduced-motion: reduce)"
-						/>
-						<!-- loading before src: Vue sets attributes in order, and a src set first fetches eagerly -->
-						<img
-							loading="lazy"
-							decoding="async"
-							:src="section.media.src"
-							:alt="section.media.alt"
-							:width="section.media.width"
-							:height="section.media.height"
-						/>
-					</picture>
+					<PlayOnceArt
+						v-if="section.media?.beforeLine === i"
+						class="life-card__media"
+						:media="section.media"
+					/>
 					<p class="life-card__line" :class="{ 'life-card__lede': i === 0 }">
 						{{ line }}
 					</p>
@@ -66,6 +56,7 @@
 	import { ABOUT_ME, DOG_LINES, LIFE_SECTIONS, LIFE_TITLES } from '@/data/aboutLife'
 	import { reveal as vReveal } from '@/directives/reveal'
 	import DogDeck from './DogDeck.vue'
+	import PlayOnceArt from './PlayOnceArt.vue'
 </script>
 
 <style scoped lang="scss">
@@ -166,25 +157,12 @@
 		box-shadow: 0 0 8px 1px rgba($light-gray, 0.5);
 	}
 
-	// section art floated into the prose, so the paragraphs after it wrap alongside.
+	// section art floated into the prose, so the paragraphs after it wrap alongside; no frame, the
+	// art is cut out so it sits in the scene like the prose does
 	.life-card__media {
-		// <picture> is inline by default, so width would be ignored once the float drops
-		display: block;
 		float: right;
 		width: min(15rem, 34%);
 		margin: 0.2rem 0 0.6rem 1.4rem;
-		background: rgba(255, 255, 255, 0.06);
-		border-radius: 30px;
-		// the art fills the frame edge to edge, so the curve has to clip it
-		overflow: hidden;
-	}
-
-	.life-card__media img {
-		display: block;
-		width: 100%;
-		height: auto;
-		// pixel art: never let the browser smooth it when it scales
-		image-rendering: pixelated;
 	}
 
 	// per-section accents from the shared palette so LIFE stays in the site's system
