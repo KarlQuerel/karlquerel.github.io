@@ -77,12 +77,14 @@ export const LIFE_SECTIONS = [
 		title: 'VIDEO GAMES',
 		// `beforeLine` renders the art ahead of that paragraph so the prose wraps around it
 		media: {
-			src: '/assets/about/ps1.gif',
-			// a GIF can't be paused from CSS, so reduced motion gets the first frame
-			still: '/assets/about/ps1-still.png',
+			// the boot plays once when seen (PlayOnceArt); poster and still are its first and last frames
+			src: '/assets/about/ps1.webp',
+			poster: '/assets/about/ps1-off.webp',
+			still: '/assets/about/ps1-still.webp',
 			alt: 'Pixel-art CRT television wired to a PlayStation 1',
+			replayLabel: 'Boot the PlayStation again',
 			// the file's own pixels, so the box is laid out before the lazy load lands
-			width: 640,
+			width: 480,
 			height: 705,
 			beforeLine: 1,
 		},
