@@ -1232,6 +1232,9 @@ export const ROUTE = {
 	crossChamferNarrowPx: 44,
 	// where in the viewport the tip diamond rides
 	tipFrac: 0.55,
+	// Inside a turn the reveal stops at the tip's x as well as its height; this much spare covers the
+	// casing and the waypoint glyph past the cut.
+	turnClipPadPx: 6,
 	// How far into the arrival runway the line runs, and the share kept above the arrival.
 	endRunFrac: 0.17,
 	endLeadVh: 0.15,
