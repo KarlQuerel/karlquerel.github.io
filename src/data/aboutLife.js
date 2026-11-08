@@ -19,17 +19,20 @@ export const DOG_LINES = [
 	"To me, a home isn't a home without an animal. And dogs hold the values that speak to me most: loyalty, playfulness, and living in the present (alongside a bottomless stomach).",
 ]
 
-// What a screen reader hears for a deck's button and its showing photo.
+// What a screen reader hears for a deck's button, its showing photo and its pager squares.
 export const DOG_DECK_LABELS = {
 	next: name => `Next photo of ${name}`,
 	photo: name => `Photo of ${name}`,
+	page: (name, n, count) => `${name}, photo ${n} of ${count}`,
 }
 
-// Photo decks (public/assets/about/) — 800×800 webp squares cropped around each dog.
+// Photo decks (public/assets/about/) — 800×800 webp squares cropped around each dog. `beforeLine`
+// floats the deck beside that DOG_LINES paragraph, the first about that dog.
 export const DOGS = [
 	{
 		name: 'Lesko',
 		years: '2014 – 2017',
+		beforeLine: 1,
 		photos: [
 			'/assets/about/L1.webp',
 			'/assets/about/L2.webp',
@@ -41,6 +44,7 @@ export const DOGS = [
 	{
 		name: 'Yako',
 		years: '2017 – Today',
+		beforeLine: 3,
 		photos: [
 			'/assets/about/Y1.webp',
 			'/assets/about/Y2.webp',
