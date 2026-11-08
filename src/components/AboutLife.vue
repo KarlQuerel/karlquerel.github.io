@@ -20,15 +20,12 @@
 				<h3 class="life-card__title">
 					<span class="life-card__dot" aria-hidden="true" />{{ LIFE_TITLES.dogs }}
 				</h3>
-				<p
-					v-for="(line, i) in DOG_LINES"
-					:key="i"
-					class="life-card__line"
-					:class="{ 'life-card__lede': i === 0 }"
-				>
-					{{ line }}
-				</p>
-				<DogDeck />
+				<template v-for="(line, i) in DOG_LINES" :key="i">
+					<DogDeck v-if="deckAt[i]" class="life-card__deck" :dog="deckAt[i]" />
+					<p class="life-card__line" :class="{ 'life-card__lede': i === 0 }">
+						{{ line }}
+					</p>
+				</template>
 			</section>
 		</div>
 
@@ -53,10 +50,13 @@
 </template>
 
 <script setup>
-	import { ABOUT_ME, DOG_LINES, LIFE_SECTIONS, LIFE_TITLES } from '@/data/aboutLife'
+	import { ABOUT_ME, DOG_LINES, DOGS, LIFE_SECTIONS, LIFE_TITLES } from '@/data/aboutLife'
 	import { reveal as vReveal } from '@/directives/reveal'
 	import DogDeck from './DogDeck.vue'
 	import PlayOnceArt from './PlayOnceArt.vue'
+
+	// each dog's deck, keyed by the paragraph it floats beside
+	const deckAt = Object.fromEntries(DOGS.map(dog => [dog.beforeLine, dog]))
 </script>
 
 <style scoped lang="scss">
@@ -159,10 +159,16 @@
 
 	// section art floated into the prose, so the paragraphs after it wrap alongside; no frame, the
 	// art is cut out so it sits in the scene like the prose does
-	.life-card__media {
+	.life-card__media,
+	.life-card__deck {
 		float: right;
 		width: min(15rem, 34%);
 		margin: 0.2rem 0 0.6rem 1.4rem;
+	}
+
+	// a short story can end before its deck does: the next dog's deck starts below, not beside it
+	.life-card__deck {
+		clear: right;
 	}
 
 	// per-section accents from the shared palette so LIFE stays in the site's system
@@ -229,6 +235,13 @@
 			float: none;
 			width: min(13rem, 60%);
 			margin: 0 auto 1rem;
+		}
+
+		// photos need more room than the art; each heads the paragraphs about its dog
+		.life-card__deck {
+			float: none;
+			width: min(17rem, 85%);
+			margin: 0.6rem auto 1.4rem;
 		}
 
 		// Stacked, the art would split the opener from the paragraph it illustrates.
