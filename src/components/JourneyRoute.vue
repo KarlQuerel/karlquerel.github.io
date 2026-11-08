@@ -1,7 +1,8 @@
 <template>
 	<!-- The route: the journey's own line, drawn in the page rather than the chrome. -->
 	<!-- The line only ever runs downward, so the flown stretch is everything above the tip: a clip at
-	     that height reveals it, and the drawing itself never repaints as you scroll. -->
+	     that height reveals it, and the drawing itself never repaints as you scroll. Inside a turn the
+	     clip also stops at the tip's x, or a LIFE crossing's flat run would show all at once. -->
 	<div v-if="geo" class="route route--flown" :style="[frameStyle, flownStyle]" aria-hidden="true">
 		<svg v-bind="frame" class="route__art">
 			<path class="route__casing" :d="geo.d" />
@@ -83,9 +84,13 @@
 	const TIP_R = Math.max(ROUTE.tipNosePx, ROUTE.tipTailPx, ROUTE.tipHalfPx)
 	const TIP_BOX = `${-TIP_R} ${-TIP_R} ${TIP_R * 2} ${TIP_R * 2}`
 
+	// the L-shaped reveal while the tip is inside a turn, else none
+	const turnClip = ref(null)
+
 	const flownStyle = computed(() => ({
 		width: `${geo.value.w}px`,
 		height: `${flownY.value.toFixed(1)}px`,
+		clipPath: turnClip.value,
 	}))
 	const cursorStyle = computed(() => ({
 		width: `${TIP_R * 2}px`,
@@ -258,7 +263,22 @@
 		const yT = window.scrollY + vh * ROUTE.tipFrac
 		const { pos, on } = walkRoute(segs, total, yT)
 		heading.value = +((Math.atan2(on.y2 - on.y1, on.x2 - on.x1) * 180) / Math.PI).toFixed(1)
-		flownY.value = clamp(yT, 0, geo.value.h)
+		// A turn runs one way across and only down, so its flown part is the box from where it began
+		// to the tip; everything above the turn is flown whole.
+		const turn = on.turn && yT < on.yb ? on.turn : null
+		const pad = ROUTE.turnClipPadPx
+		const cut = turn ? Math.max(yT, pos[1] + pad) : yT
+		flownY.value = clamp(cut, 0, geo.value.h)
+		if (turn) {
+			const w = geo.value.w
+			const xa = Math.min(pos[0], turn.x - pad).toFixed(1)
+			const xb = Math.max(pos[0], turn.x + pad).toFixed(1)
+			const yt = turn.y.toFixed(1)
+			const yc = cut.toFixed(1)
+			turnClip.value = `polygon(0 0, ${w}px 0, ${w}px ${yt}px, ${xb}px ${yt}px, ${xb}px ${yc}px, ${xa}px ${yc}px, ${xa}px ${yt}px, 0 ${yt}px)`
+		} else {
+			turnClip.value = null
+		}
 		const orbited = smoothstep(
 			clamp(
 				(window.scrollY - orbit[0]) / orbit[1] - ROUTE.orbitOutAt,
