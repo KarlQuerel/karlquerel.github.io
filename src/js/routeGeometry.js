@@ -64,6 +64,7 @@ export function flyCorners(subpaths) {
 }
 
 // The tip crosses a turn at constant path speed: a turn group's y-extent is dealt out by arc length.
+// Each of its segments keeps where the turn began, so the reveal can follow the tip across it.
 function evenTurns(segs) {
 	const turning = s => s.y2 - s.y1 < s.len * ROUTE.straightAt
 	let gi = 0
@@ -81,10 +82,12 @@ function evenTurns(segs) {
 			gj++
 		}
 		let y = segs[gi].y1
+		const turn = { x: segs[gi].x1, y: segs[gi].y1 }
 		for (let k = gi; k < gj; k++) {
 			segs[k].ya = y
 			y += (dy * segs[k].len) / len
 			segs[k].yb = y
+			segs[k].turn = turn
 		}
 		gi = gj
 	}
