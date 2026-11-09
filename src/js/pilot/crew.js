@@ -23,7 +23,7 @@ const turnToward = (from, to, rate) => {
 // a rigged model playing its clips by role; a walk plays as fast as the body moves, its stride as long
 // as the body is tall; a turn (any role named turn…) hands its yaw to the body; the first clip starts
 // anywhere in its cycle so no two crew move in step
-async function clipRig(spec) {
+export async function clipRig(spec) {
 	const { body, clips } = await loadRigged(spec)
 	if (spec.helmet) await wearHelmet(body, spec.helmet)
 	const mixer = new AnimationMixer(body)
