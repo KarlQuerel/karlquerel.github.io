@@ -120,9 +120,10 @@ function guard(npc, dt) {
 	npc.rig.idle(dt)
 }
 
-// idles facing the player; reacts (a wave, a word) once each time they come within reach
+// idles facing the player (or its watch till they come near); reacts (a wave, a word) once each time
+// they come within reach
 function greet(npc, dt, player) {
-	const { x, z, reach } = npc.spec.greet
+	const { x, z, reach, watch } = npc.spec.greet
 	const s = (npc.state ??= { near: false })
 	npc.body.position.set(x, 0, z)
 	const dx = player.x - x
@@ -131,7 +132,7 @@ function greet(npc, dt, player) {
 	if (near && !s.near && npc.rig.can('react')) npc.rig.play('react', true)
 	npc.rig.idle(dt)
 	s.near = near
-	face(npc, Math.atan2(dx, dz), dt)
+	face(npc, near || watch === undefined ? Math.atan2(dx, dz) : watch, dt)
 }
 
 export async function addCrew(scene, onLoaded) {
