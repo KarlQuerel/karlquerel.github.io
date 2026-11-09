@@ -11,6 +11,7 @@ import {
 	ShaderMaterial,
 	Vector2,
 	Vector3,
+	Vector4,
 } from 'three'
 import common from '../../shaders/intro/common.glsl?raw'
 import light from '../../shaders/pilot/corridorLight.glsl?raw'
@@ -25,10 +26,12 @@ import {
 	PILOT_EXACT_ALPHA,
 	PILOT_MATS,
 	PILOT_BOARD,
+	PILOT_DRONE,
 	PILOT_OUTSIDE,
 	PILOT_REPAIR,
 	PILOT_SET,
 	PILOT_SHADOW,
+	PILOT_SPACE,
 	PILOT_SUN,
 	PILOT_VAULT,
 	PILOT_WINDOW,
@@ -72,15 +75,9 @@ const DEFINES = {
 		frame([(doorway.x[0] + doorway.x[1]) / 2, doorway.glow, PILOT_SET.door - doorway.ahead])
 	),
 	CR_WELD: vec3(frame(panelPoint(panel.weld))),
-	// the drone's thruster ring, under its body
+	// the drone's eye, on the wall it works at
 	CR_DRONE_LAMP: vec3(
-		frame(
-			panelPoint(
-				PILOT_REPAIR.drone.at.map((v, i) =>
-					i === 1 ? v - PILOT_REPAIR.drone.h / 2 - PILOT_REPAIR.ring.below : v
-				)
-			)
-		)
+		frame(panelPoint(PILOT_REPAIR.drone.at.map((v, i) => (i ? v : v - PILOT_DRONE.body[2]))))
 	),
 	CR_LOCKER_EDGE: num(lockers.edge),
 	CR_LOCKER_PITCH: num(lockers.pitch),
@@ -122,6 +119,12 @@ const DEFINES = {
 	CR_FEET: `${underfoot.feet}`,
 	CR_FOOT_RADIUS: num(underfoot.radius),
 	CR_FOOT_DARK: num(underfoot.dark),
+	CR_SPACE_SUN: num(PILOT_SPACE.light.sun),
+	CR_SPACE_EARTH: num(PILOT_SPACE.light.earth),
+	CR_SPACE_AMBIENT: num(PILOT_SPACE.light.ambient),
+	CR_SPACE_RIM: num(PILOT_SPACE.light.rim),
+	CR_SPACE_LAMP_FALL: num(PILOT_SPACE.light.lampFall),
+	CR_SPACE_LAMP_CLEAR: num(PILOT_SPACE.light.lampClear),
 	CR_VAULT_CELL: vec2(PILOT_VAULT.cell),
 	CR_VAULT_SEAM: num(PILOT_VAULT.seam),
 	CR_VAULT_Y0: num(PILOT_VAULT.rows[0]),
@@ -179,6 +182,10 @@ const shared = {
 	uSunShadow: { value: null },
 	uSunShadowMatrix: { value: new Matrix4() },
 	uCrFeet: { value: Array.from({ length: underfoot.feet }, () => new Vector2()) },
+	// what hangs outside the hull, drawn on its own pass; the escort drone's eye lighting it (three's frame
+	// turned to the shader's, and how bright)
+	uOutside: { value: null },
+	uSpaceLamp: { value: new Vector4() },
 }
 
 // the sun as the window's Earth sees it, in its painter's frame (x right, y down, z toward the viewer) laid
@@ -229,6 +236,14 @@ export function shadeCorridor(map, matrix) {
 // where the characters stand, three's frame; an empty place stands far off
 export function standCorridor(feet) {
 	shared.uCrFeet.value.forEach((v, i) => v.set(feet[i]?.x ?? 1e4, feet[i]?.z ?? 1e4))
+}
+// the space layer's picture, for the glass to show
+export function seeSpace(map) {
+	shared.uOutside.value = map
+}
+// the escort drone's eye at `at` (three's frame), lighting what hangs outside `bright`
+export function lampSpace(at, bright) {
+	shared.uSpaceLamp.value.set(...frame(at.toArray()), bright)
 }
 export function sizeCorridor(width, height) {
 	shared.uRes.value.set(width, height)
@@ -291,6 +306,7 @@ export const KIND = {
 	pane: 16,
 	beam: 17,
 	shell: 18,
+	spaceThing: 19,
 }
 
 // own: uniforms of its own (uBase, uEmit, uGloss, uRim for a thing; uCenter, uHalf for what draws about
@@ -319,13 +335,16 @@ function paint(spec) {
 	const [ca, cb] = [PALETTE[a], PALETTE[b]]
 	return new Vector3(...ca.map((v, i) => ((v + (cb[i] - v) * t) * k) / 255))
 }
+// what stands in the bays (`thing`), or hangs outside the hull lit by the sun alone (`spaceThing`), in a
+// PILOT_MATS paint, one material a paint and kind
 const things = new Map()
-export function thingMaterial(key) {
-	if (!things.has(key)) {
+function paintedMaterial(kind, key) {
+	const name = `${kind}:${key}`
+	if (!things.has(name)) {
 		const { base, emit, gloss = 0, rim = 1 } = PILOT_MATS[key]
 		things.set(
-			key,
-			surfaceMaterial('thing', {
+			name,
+			surfaceMaterial(kind, {
 				uBase: { value: paint(base) },
 				uEmit: { value: emit ? paint(emit) : new Vector3() },
 				uGloss: { value: gloss },
@@ -333,8 +352,10 @@ export function thingMaterial(key) {
 			})
 		)
 	}
-	return things.get(key)
+	return things.get(name)
 }
+export const thingMaterial = key => paintedMaterial('thing', key)
+export const spaceThingMaterial = key => paintedMaterial('spaceThing', key)
 
 // a model's own material lit as the corridor lights: its albedo and glow taken back to the shader's
 // colours, bathed and rimmed like everything standing in the bays
@@ -350,7 +371,14 @@ vec3 crN = crTurn(inverseTransformDirection(normal, viewMatrix));
 vec3 crCol = crLight(crFrame(vCrWorld), crN, crToSrgb(diffuseColor.rgb), crToSrgb(totalEmissiveRadiance), 0.0, 1.0, 1.0);
 gl_FragColor = vec4(crToLinear(crCol), diffuseColor.a);
 `
-export function takeCorridorLight(material) {
+// outside the hull, the sun alone (crSpaceLight)
+const SPACE_FRAGMENT = `
+vec3 crN = crTurn(inverseTransformDirection(normal, viewMatrix));
+vec3 crCol = crSpaceLight(crFrame(vCrWorld), crN, crToSrgb(diffuseColor.rgb), crToSrgb(totalEmissiveRadiance));
+gl_FragColor = vec4(crToLinear(crCol), diffuseColor.a);
+`
+// `key` keeps the two patches' programs apart: three would otherwise take them for one
+function patchLight(material, fragment, key) {
 	if (material.isShaderMaterial || material.userData.corridorLit) return
 	material.userData.corridorLit = true
 	material.onBeforeCompile = shader => {
@@ -362,7 +390,10 @@ export function takeCorridorLight(material) {
 		shader.fragmentShader =
 			`${DEFINE_GLSL}\n${PALETTE_GLSL}\n${light}\n${shader.fragmentShader}`.replace(
 				'#include <opaque_fragment>',
-				LIT_FRAGMENT
+				fragment
 			)
 	}
+	material.customProgramCacheKey = () => key
 }
+export const takeCorridorLight = material => patchLight(material, LIT_FRAGMENT, 'corridor')
+export const takeSpaceLight = material => patchLight(material, SPACE_FRAGMENT, 'space')
