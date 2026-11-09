@@ -1,5 +1,5 @@
 // The corridor pilot in three.js: the walk the shader corridor uses, a first-person camera on it and
-// the player's body under it, the corridor's meshes, the crew, and the pixel pass over it all.
+// the player's body under it, the corridor's meshes, the crew, their shadows, and the pixel pass over it all.
 
 import { PerspectiveCamera, Scene, WebGLRenderer } from 'three'
 import { PILOT } from '../../constants/game/pilot.js'
@@ -9,10 +9,12 @@ import { addCorridor, lightModels, sizeCorridor } from './corridorSet.js'
 import { addCrew } from './crew.js'
 import { createPixelPost } from './pixelPost.js'
 import { addPlayerBody } from './playerBody.js'
+import { createSunShadow } from './sunShadow.js'
 
 export function createCorridorPilot() {
 	let renderer = null
 	let post = null
+	let shadow = null
 	let set = null
 	let crew = null
 	let body = null
@@ -27,10 +29,12 @@ export function createCorridorPilot() {
 		renderer = new WebGLRenderer({ canvas: gl.canvas, context: gl, antialias: false })
 		renderer.setPixelRatio(1)
 		post = createPixelPost(renderer, camera)
+		shadow = createSunShadow(renderer)
 		await step('context')
 		set = await addCorridor(scene)
 		crew = await addCrew(scene, part => step('models', part))
 		body = await addPlayerBody(scene)
+		for (const caster of [...crew.bodies, body.body]) shadow.cast(caster)
 		lightModels(scene)
 		// compile every program now, not on the first frame the player sees
 		renderer.compile(scene, camera)
@@ -67,13 +71,15 @@ export function createCorridorPilot() {
 		)
 		camera.rotation.set(walk.pitch, Math.PI - walk.heading, 0)
 		set.tick(dt, time, walk)
-		crew(dt, { x: -walk.x, z: walk.z })
-		body(dt, walk)
+		crew.update(dt, { x: -walk.x, z: walk.z })
+		body.update(dt, walk)
+		shadow.render(scene)
 		post.render(scene)
 		return true
 	}
 
 	function release() {
+		shadow?.dispose()
 		post?.dispose()
 		renderer?.dispose()
 	}
