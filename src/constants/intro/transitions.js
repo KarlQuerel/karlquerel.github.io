@@ -21,7 +21,6 @@ export const INTRO_TRANSITIONS = {
 	// POV begins: the first thing the envoy does is open their eyes
 	corridor: { kind: 'blink', dur: 1.3 },
 	cryo: { kind: 'dissolve', dur: 1.1 },
-	board: { kind: 'black', dur: 0.9 },
 	wake: { kind: 'black', dur: 1.2 },
 	crash: { kind: 'flash', dur: 0.6 },
 	title: { kind: 'black', dur: 0.8 },
