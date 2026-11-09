@@ -2,7 +2,7 @@ import './styles/main.scss'
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { prefersReducedMotion } from './composables/usePrefersReducedMotion.js'
-import { FINE_POINTER_QUERY } from './constants/viewport.js'
+import { mayBoard } from './js/game/boarding.js'
 import App from './App.vue'
 
 // every route is lazy so the Firebase-carrying pages stay out of the entry chunk
@@ -28,7 +28,7 @@ const routes = [
 		meta: { title: 'Sport' },
 	},
 	{
-		// the game's holding screen, until the game ships
+		// the game's holding screen until it ships, its title screen after
 		path: '/under-construction',
 		component: () => import('./components/game/GameHolding.vue'),
 		meta: { title: 'Under Construction' },
@@ -41,9 +41,8 @@ const routes = [
 			? {
 					component: () => import('./components/game/GamePage.vue'),
 					meta: { title: 'Game' },
-					// walked with a keyboard: phones and tablets get the holding screen until they have their own
-					beforeEnter: () =>
-						window.matchMedia(FINE_POINTER_QUERY).matches || '/under-construction',
+					// walked with a keyboard: without a mouse, only a key pressed on the title screen gets in
+					beforeEnter: () => mayBoard() || '/under-construction',
 				}
 			: { redirect: '/under-construction' }),
 	},
