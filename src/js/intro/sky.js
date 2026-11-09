@@ -2,6 +2,7 @@
 // star's alpha is the moment it rises (1..255), so a shot can bring the field up star by star.
 
 import layers from '../../shaders/intro/layers.glsl?raw'
+import star from '../../shaders/intro/star.glsl?raw'
 import { PALETTE } from '../../constants/palette.js'
 import { SKY } from '../../constants/intro/sky.js'
 import { STAR } from '../../constants/intro/star.js'
@@ -30,6 +31,9 @@ const skyConsts = [
 	`const float SKY_TILE = ${glslNum(SKY.tile)};`,
 	`const vec2 SKY_DEPTHS = ${glslVec(SKY.depths)};`,
 	`const float GALAXY_DEPTH = ${glslNum(SKY.galaxyDepth)};`,
+]
+// the Sun, star() with its constants, for any shader that draws it after common.glsl and the palette
+export const STAR_CHUNK = [
 	`const vec2 STAR_SPAN_YOUNG = ${glslVec(STAR.span.young)};`,
 	`const vec2 STAR_SPAN_GIANT = ${glslVec(STAR.span.giant)};`,
 	`const float STAR_CELLS = ${glslNum(STAR.cells)};`,
@@ -44,9 +48,10 @@ const skyConsts = [
 	`const vec3 STAR_CORONA = ${glslVec([STAR.flame, STAR.ray, STAR.spread])};`,
 	`const vec2 STAR_HEAT_K = ${glslVec([STAR.contrast, STAR.flood])};`,
 	`const float STAR_SEAM = ${glslNum(STAR.seam)};`,
-]
+	star,
+].join('\n')
 // the chunk a flat-layer shot puts before its own fragment source
-export const LAYERS_CHUNK = [...palette, ...snap, ...skyConsts, layers].join('\n')
+export const LAYERS_CHUNK = [...palette, ...snap, ...skyConsts, layers, STAR_CHUNK].join('\n')
 
 const STAR_TIERS = ['zinc', 'frost', 'rime', 'pewter', 'silver']
 
