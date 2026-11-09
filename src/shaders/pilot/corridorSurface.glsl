@@ -1,7 +1,8 @@
 // The corridor pilot's surfaces, the intro corridor's (shaders/intro/corridor.frag.glsl) carried over onto
 // meshes: each mesh knows which surface it is (CR_KIND), so where the shader asked which wall a ray hit,
 // this draws that wall's paint, words and light at the fragment's point in the shader's frame. Follows
-// common.glsl (hash, fbm, glyphs, stars) and corridorLight.glsl (the frame, the bays, crLight).
+// common.glsl (hash, fbm, glyphs, stars), the Sun (star.glsl) and corridorLight.glsl (the frame, the bays,
+// crLight).
 // Kinds: 0 deck, 1 ceiling, 2 upper cut, 3 lower cut, 4 wall, 5 a bay's back wall, 6 a bay's sides and
 // ceiling, 7 the bulkhead behind, 8 the door wall, 9 a thing standing about (uBase, uEmit, uGloss, uRim),
 // 10 the vitals monitor, 12 the mission table's world hologram, 13 a crew recording, 14 the weld tip, 15
@@ -101,32 +102,49 @@ float lockerCell(vec3 p){
 }
 float doorAt(vec3 p){ return (p.x > CR_DOOR_X0 && p.x < CR_DOOR_X1 && p.y < CR_FLOOR + CR_DOOR_TOP) ? 1.0 : 0.0; }
 
-// The Earth through the glass: the holding screen's Earth of 3812 painted as a disc (uEarth; its centre,
-// radius and side in cells in uEarthDisc), hung in the sky off the left hand along CR_EARTH_AIM (out, up,
-// along), each view ray read off the disc by its angle from the middle, so the globe holds still in the sky
-// as the walk goes by. Its own colour where its disc or air covers the ray (a = 1), the stars elsewhere.
-vec4 earthView(vec3 rd){
-  vec3 U = vec3(0.0, 1.0, 0.0);
-  vec3 C = normalize(vec3(-CR_EARTH_AIM.x, CR_EARTH_AIM.y, CR_EARTH_AIM.z));
-  vec3 Uc = normalize(U - C*dot(U, C));
-  vec3 Rc = cross(Uc, C);
+// where the view ray falls about a body hung along C: its angle off C's middle (rad), toward C's right and
+// down as the world's up stands over it, so the body holds still in the sky as the walk goes by
+vec2 skyOffset(vec3 rd, vec3 C){
+  vec3 Uc = normalize(vec3(0.0, 1.0, 0.0) - C*C.y);
   vec3 v = rd - C*dot(rd, C);
   float th = acos(clamp(dot(rd, C), -1.0, 1.0));
-  vec2 dir = vec2(dot(v, Rc), -dot(v, Uc))/max(length(v), 1e-5);
-  vec2 cell = floor(uEarthDisc.x + dir*th/CR_EARTH_RADIUS*uEarthDisc.y);
+  return vec2(dot(v, cross(Uc, C)), -dot(v, Uc))/max(length(v), 1e-5)*th;
+}
+// The Earth through the glass: the holding screen's Earth of 3812 painted as a disc (uEarth; its centre,
+// radius and side in cells in uEarthDisc), hung in the sky off the left hand along CR_EARTH_AIM (out, up,
+// along). Its own colour where its disc or air covers the ray (a = 1).
+vec4 earthView(vec3 rd){
+  vec3 C = normalize(vec3(-CR_EARTH_AIM.x, CR_EARTH_AIM.y, CR_EARTH_AIM.z));
+  vec2 cell = floor(uEarthDisc.x + skyOffset(rd, C)/CR_EARTH_RADIUS*uEarthDisc.y);
   if (uEarthDisc.z > 0.0 && min(cell.x, cell.y) >= 0.0 && max(cell.x, cell.y) < uEarthDisc.z){
     vec4 e = texture2D(uEarth, (cell + 0.5)/uEarthDisc.z);
     if (e.a > 0.5) return vec4(e.rgb, 1.0);
   }
-  return vec4(stars(rd)*0.8, 0.0);
+  return vec4(0.0);
 }
-// a pane onto space: the Earth's cells as painted (a = 1, written out untouched by the corridor's air and
-// palette), or the stars with a sheen that grows toward a grazing look, so glass seen edge-on still reads
+// The swollen sun along CR_SUN, the intro's star() on the art grid's own scale: its disc and corona in the
+// palette's colours (a = 1), nothing elsewhere. Its cells hold still in the sky, its dither on the screen;
+// its corona's dither thins out to nothing by CR_SUN_GLARE radii, so the sky past the glare stays black.
+vec4 sunView(vec3 rd){
+  float cells = uRes.y/CR_FOV;
+  float r = CR_SUN_RADIUS*cells;
+  vec2 cell = floor(gl_FragCoord.xy);
+  vec2 q = floor(skyOffset(rd, CR_SUN)*cells);
+  if (hash12(cell) < smoothstep(0.5*CR_SUN_GLARE, CR_SUN_GLARE, length(q)/r)) return vec4(0.0);
+  vec3 s = star(vec3(-1.0), cell, cell - q, r, CR_SUN_AGE, uCrClock, CR_SUN_CORONA);
+  return s.x < 0.0 ? vec4(0.0) : vec4(s, 1.0);
+}
+// a pane onto space: the Earth's and the sun's cells as painted (a = 1, written out untouched by the
+// corridor's air and palette), or the stars, drowned in the sun's glare round it, with a sheen that grows
+// toward a grazing look, so glass seen edge-on still reads
 vec4 outside(vec3 rd, vec3 n){
-  vec4 sky = earthView(rd);
-  if (sky.a > 0.5) return sky;
+  vec4 earth = earthView(rd);
+  if (earth.a > 0.5) return earth;
+  vec4 sun = sunView(rd);
+  if (sun.a > 0.5) return sun;
+  float glare = smoothstep(CR_SUN_RADIUS, CR_SUN_RADIUS*CR_SUN_GLARE, acos(clamp(dot(rd, CR_SUN), -1.0, 1.0)));
   float graze = pow(1.0 - abs(dot(n, rd)), 3.0);
-  return vec4(sky.rgb*0.95 + SILVER*0.04 + mix(FROST, RIME, 0.5)*0.45*graze, 0.0);
+  return vec4(stars(rd)*0.76*glare + SILVER*0.04 + mix(FROST, RIME, 0.5)*0.45*graze, 0.0);
 }
 // the blister's frames over a face `size` m: panes about CR_BLISTER_PITCH, framed at their edges
 float blisterFrame(vec2 q, vec2 size){
