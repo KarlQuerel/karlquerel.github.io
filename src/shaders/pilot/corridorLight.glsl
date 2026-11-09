@@ -1,8 +1,9 @@
 // The corridor pilot's light, the intro corridor's (shaders/intro/corridor.frag.glsl) carried over: the
 // upper lines of light (a segment each side between each pair of ribs, the three nearest the shaded point),
-// the door, the weld's spark, the drone's ring, the nearest bay's light, the Earth and the sun through the glass span, a rim
-// on what stands in the bays, then the haze. All
-// in the shader's frame (eye level y = 0, x mirrored from three's): crFrame() takes a world point there.
+// the door, the weld's spark, the drone's ring, the nearest bay's light, the Earth and the sun through the
+// glass span (the crew and the player shadowing the sun's), a rim on what stands in the bays, the dark
+// under their feet, then the haze. All in the shader's frame (eye level y = 0, x mirrored from three's):
+// crFrame() takes a world point there, crWorld() brings it back.
 // Colours as the shader used them, the palette's sRGB values unconverted; crToLinear() hands the result
 // back to three, whose pixel pass converts it again. Self-contained (no common.glsl), so a model's own
 // material can take it too. CR_* layout comes from PILOT_SET as defines, the palette as constants.
@@ -11,6 +12,9 @@ uniform float uCrPlayerZ;   // the lines wake round the player
 uniform float uCrClock;     // seconds, for the stepped clocks
 uniform float uCrDoor;      // the door's glow, 0..1
 uniform float uCrLit;       // the lockers lit, 0..1
+uniform sampler2D uSunShadow;   // the crew's and the player's depth seen from the sun
+uniform mat4 uSunShadowMatrix;  // three's world to that view
+uniform vec2 uCrFeet[CR_FEET];  // where each of them stands, three's x and z
 varying vec3 vCrWorld;
 
 const vec3 CR_LINE = mix(RIME, STAR, 0.75);
@@ -21,6 +25,7 @@ const vec3 CR_SUN_LIGHT = mix(GLOW, EMBER, 0.5)*CR_SUN_GAIN;
 const vec3 CR_SPARK = vec3(0.78, 0.88, 1.0);
 
 vec3 crFrame(vec3 w){ return vec3(-w.x, w.y + CR_FLOOR, w.z); }
+vec3 crWorld(vec3 p){ return vec3(-p.x, p.y - CR_FLOOR, p.z); }
 vec3 crTurn(vec3 v){ return vec3(-v.x, v.y, v.z); }
 float crHash(float p){ p = fract(p*0.1031); p *= p + 33.33; return fract(p*(p + p)); }
 vec3 crToLinear(vec3 c){
@@ -57,6 +62,24 @@ float crSunThrough(vec3 p){
   float rib = abs(fract(q.z/CR_RIB_EVERY) - 0.5)*CR_RIB_EVERY;
   return step(CR_FLOOR, q.y)*step(q.y, CR_CEIL - CR_SPAN_FRAME)*step(0.07 + CR_SPAN_FRAME, rib)
     *step(CR_SPAN_Z0, q.z)*step(q.z, CR_SPAN_Z1);
+}
+
+// whether the sun reaches p past the crew and the player, p looked up off its surface along n so a body
+// never shades itself where it faces the light
+float crSunShadow(vec3 p, vec3 n){
+  vec4 s = uSunShadowMatrix*vec4(crWorld(p + n*CR_SHADOW_LIFT), 1.0);
+  vec3 c = s.xyz/s.w*0.5 + 0.5;
+  if (any(lessThan(c, vec3(0.0))) || any(greaterThan(c, vec3(1.0)))) return 1.0;
+  return step(c.z - CR_SHADOW_BIAS, texture2D(uSunShadow, c.xy).x);
+}
+// the deck darkens round each one's feet, where the lamps hardly reach under them
+float crUnderfoot(vec3 p, vec3 n){
+  if (n.y < 0.5 || p.y > CR_FLOOR + 0.05) return 1.0;
+  vec2 w = crWorld(p).xz;
+  float lit = 1.0;
+  for (int i = 0; i < CR_FEET; i++)
+    lit *= 1.0 - CR_FOOT_DARK*smoothstep(CR_FOOT_RADIUS, 0.0, distance(w, uCrFeet[i]));
+  return lit;
 }
 
 float crBayZ(float k){ return CR_BAY_FIRST + k*CR_BAY_EVERY; }
@@ -139,7 +162,7 @@ vec3 crLight(vec3 p, vec3 n, vec3 base, vec3 emit, float gloss, float bath, floa
   float earthLit = smoothstep(CR_SPAN_Z0 - CR_EARTH_SPILL, CR_SPAN_Z0 + 0.5, p.z)*smoothstep(CR_SPAN_Z1 + CR_EARTH_SPILL, CR_SPAN_Z1 - 0.5, p.z);
   vec3 Le = normalize(vec3(-CR_EARTH_AIM.x, CR_EARTH_AIM.y, CR_EARTH_AIM.z));
   col += base*CR_EARTH_LIGHT*(max(dot(n, Le), 0.0) + 0.15)*earthLit*(inRoom ? 0.0 : 1.0);
-  col += base*CR_SUN_LIGHT*max(dot(n, CR_SUN), 0.0)*crSunThrough(p);
+  col += base*CR_SUN_LIGHT*max(dot(n, CR_SUN), 0.0)*crSunThrough(p)*crSunShadow(p, n);
   if (bath > 0.0){
     // what stands about is bathed in the bay's light from every side, not only from behind
     col += base*bayCol*(0.35 + 0.25*max(dot(n, vec3(-side, 0.3, -0.4)), 0.0))*bath;
@@ -151,7 +174,7 @@ vec3 crLight(vec3 p, vec3 n, vec3 base, vec3 emit, float gloss, float bath, floa
       col = mix(col, rimCol, edge*lit*rim*(0.4 + 0.6*max(dot(n, from), 0.0)));
     }
   }
-  col += emit + base*suitLight;
+  col = col*crUnderfoot(p, n) + emit + base*suitLight;
 
   // the air: haze with distance, warmed where the door's light hangs in it
   vec3 toDoor = normalize(CR_DOOR_POS - ro);
