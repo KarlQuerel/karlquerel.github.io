@@ -18,6 +18,7 @@ import { paletteSnap } from '../intro/paletteSnap.js'
 import { PILOT, PILOT_EXACT_ALPHA } from '../../constants/game/pilot.js'
 
 const { step, turn, ink, glint, far } = PILOT.edges
+const { from, to, sigma } = PILOT.distant
 
 const frag = `
 #include <packing>
@@ -36,13 +37,32 @@ vec3 toSrgb(vec3 c){
   return mix(c*12.92, 1.055*pow(c, vec3(1.0/2.4)) - 0.055, step(0.0031308, c));
 }
 
+float distant(float z){ return smoothstep(${from.toFixed(1)}, ${to.toFixed(1)}, z); }
+
+// what lies in front stays out of the mean, so a near silhouette keeps its edge over a soft far end
+vec3 farMean(vec2 frag){
+  vec3 sum = vec3(0.0);
+  float total = 0.0;
+  for (int y = -2; y <= 2; y++){
+    for (int x = -2; x <= 2; x++){
+      vec2 q = frag + vec2(x, y);
+      float k = exp(-float(x*x + y*y)/${(2 * sigma * sigma).toFixed(3)})*distant(depthAt(q));
+      sum += texture2D(tColor, q/uRes).rgb*k;
+      total += k;
+    }
+  }
+  return sum/max(total, 1e-4);
+}
+
 void main(){
   vec2 frag = gl_FragCoord.xy;
   vec4 cell = texture2D(tColor, frag/uRes);
-  // a cell drawn in the palette's colours already: as it is, no snap and no edges
-  if (cell.a < ${(PILOT_EXACT_ALPHA + 1) / 2}){ gl_FragColor = vec4(toSrgb(cell.rgb), 1.0); return; }
-  vec3 col = palColor(snapIndex(toSrgb(cell.rgb), frag));
   float z = depthAt(frag);
+  float soft = distant(z);
+  // a cell drawn in the palette's colours already: as it is, no snap and no edges
+  if (cell.a < ${(PILOT_EXACT_ALPHA + 1) / 2} && soft <= 0.0){ gl_FragColor = vec4(toSrgb(cell.rgb), 1.0); return; }
+  vec3 lin = soft > 0.0 ? mix(cell.rgb, farMean(frag), soft) : cell.rgb;
+  vec3 col = palColor(snapIndex(toSrgb(lin), frag));
   float near = smoothstep(${far.toFixed(1)}, ${(far / 2).toFixed(1)}, z);
   float w = 1.0/z;
   vec3 n = normalAt(frag);
