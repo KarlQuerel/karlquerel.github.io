@@ -50,17 +50,18 @@ function restTurns(scene, bones) {
 	return turns
 }
 
-// another Mixamo rig's clips retargeted onto this one: each bone turns in the world as the donor's does
-// from its own rest, so rigs whose bones' axes differ still pose alike; the hips' travel scaled by how
-// much longer this rig's legs are
-function borrowClips(scene, donor) {
+// another Mixamo rig's clips (those named in `only`, if given) retargeted onto this one: each bone turns
+// in the world as the donor's does from its own rest, so rigs whose bones' axes differ still pose alike;
+// the hips' travel scaled by how much longer this rig's legs are
+function borrowClips(scene, donor, only) {
 	const bones = mixamoBones(scene)
 	const from = mixamoBones(donor.scene)
 	const ours = restTurns(scene, bones)
 	const theirs = restTurns(donor.scene, from)
 	const legs = bones.Hips.position.y / from.Hips.position.y
 	const q = new Quaternion()
-	return donor.animations.map(source => {
+	const wanted = donor.animations.filter(clip => !only || only.includes(clip.name))
+	return wanted.map(source => {
 		const clip = source.clone()
 		clip.tracks = clip.tracks.filter(track => {
 			const [bone, property] = track.name.split('.')
@@ -83,9 +84,10 @@ function borrowClips(scene, donor) {
 	})
 }
 
-// spec: { url, height, scale?, clipsFrom?, glow? }: stood `scale` times its height, lit by `glow`; the
-// clips, its own or borrowed from the `clipsFrom` rig, by name
-export async function loadRigged({ url, height, scale = 1, clipsFrom, glow }) {
+// spec: { url, height, scale?, clipsFrom?, borrow?, glow? }: stood `scale` times its height, lit by
+// `glow`; the clips by name: its own, and those borrowed from the `clipsFrom` rig (only the `borrow`
+// names, if listed), a borrowed clip taking the place of its own of the same name
+export async function loadRigged({ url, height, scale = 1, clipsFrom, borrow, glow }) {
 	const gltf = await fetchOnce(url)
 	const body = clone(gltf.scene)
 	// a skinned box is measured on its bones, which need their world matrices first
@@ -93,10 +95,10 @@ export async function loadRigged({ url, height, scale = 1, clipsFrom, glow }) {
 	const size = new Box3().setFromObject(body).getSize(new Vector3())
 	body.scale.setScalar((height * scale) / size.y)
 	if (glow) addGlow(body, glow)
-	const animations = clipsFrom
-		? borrowClips(gltf.scene, await fetchOnce(clipsFrom))
-		: gltf.animations
-	const clips = Object.fromEntries(animations.map(clip => [clip.name, clip]))
+	const borrowed = clipsFrom ? borrowClips(gltf.scene, await fetchOnce(clipsFrom), borrow) : []
+	const clips = Object.fromEntries(
+		[...gltf.animations, ...borrowed].map(clip => [clip.name, clip])
+	)
 	return { body, clips }
 }
 
@@ -272,12 +274,18 @@ function addGlow(body, { materials, color, intensity }) {
 	})
 }
 
+// spec: { url, glow? }: an unrigged model, lit by `glow`
+export async function loadProp({ url, glow }) {
+	const prop = (await fetchOnce(url)).scene.clone()
+	if (glow) addGlow(prop, glow)
+	return prop
+}
+
 // spec: { url, bone, drop, fit, seat, ahead, tipBack, seal, glow? }: the helmet sized to the head whose skin it
 // replaces, `fit` times its width, the rim `seat` of its height under the chin, the middle `ahead` of
 // its depth forward of the head's; hung on its bone and tipped back `tipBack` rad, the `seal` under it
 export async function wearHelmet(body, spec) {
-	const helmet = (await fetchOnce(spec.url)).scene.clone()
-	if (spec.glow) addGlow(helmet, spec.glow)
+	const helmet = await loadProp(spec)
 	const head = skinBox(body, spec.drop)
 	dropSkin(body, spec.drop)
 	addNeckSeal(body, head, spec)
