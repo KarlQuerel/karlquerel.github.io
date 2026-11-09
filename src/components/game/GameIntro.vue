@@ -7,7 +7,6 @@
 		<!-- the incoming shot's overlays wait until its picture has mostly taken the frame -->
 		<template v-if="settled">
 			<IntroCard :text="card" :pov="!!shot?.pov" />
-			<IntroBoard v-if="shot?.key === 'board'" :clock="clock" />
 			<IntroChoice
 				v-if="choice"
 				:options="choice.options"
@@ -48,7 +47,6 @@
 	import { computed, ref } from 'vue'
 	import { useIntro } from '@/composables/useIntro'
 	import BootCover from '@/components/BootCover.vue'
-	import IntroBoard from './IntroBoard.vue'
 	import IntroCard from './IntroCard.vue'
 	import IntroChoice from './IntroChoice.vue'
 	import PlatingWordmark from './PlatingWordmark.vue'
@@ -65,7 +63,6 @@
 		shot,
 		card,
 		marks,
-		clock,
 		settled,
 		choice,
 		hint,
