@@ -23,6 +23,7 @@ const float PI = 3.14159265;
 
 // --- ordered dithering (8x8 bayer, no bit ops in GLSL ES 1.00)
 float bayer2(vec2 a){ a = floor(a); return fract(a.x/2.0 + a.y*a.y*0.75); }
+float bayer4(vec2 a){ return bayer2(0.5*a)*0.25 + bayer2(a); }
 float bayer8(vec2 a){ return bayer2(0.25*a)*0.0625 + bayer2(0.5*a)*0.25 + bayer2(a); }
 
 float hash11(float p){ p = fract(p*0.1031); p *= p + 33.33; return fract(p*(p + p)); }
