@@ -1,4 +1,4 @@
-// The storyboard in order (GAME_STORY.md section 4), then act I's opener. Every shot is a module of
+// The storyboard in order, then act I's opener. Every shot is a module of
 // one shape:
 //   key, frag (+ chunks), duration in s (0 waits on ready(t, io)), card { at, text },
 //   marks { name: seconds } the overlays key off, params(t, io, gl, grid) -> { p, q, r, s, h, b, mask }
@@ -18,7 +18,6 @@ import { chamber } from './chamber.js'
 import { shipyard } from './shipyard.js'
 import { corridor } from './corridor.js'
 import { cryo } from './cryo.js'
-import { board } from './board.js'
 import { wake } from './wake.js'
 import { crash } from './crash.js'
 import { title } from './title.js'
@@ -37,7 +36,6 @@ export const INTRO_SHOTS = [
 	shipyard,
 	corridor,
 	cryo,
-	board,
 	wake,
 	crash,
 	title,
