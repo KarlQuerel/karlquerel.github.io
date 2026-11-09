@@ -387,7 +387,6 @@ export function useIntro(canvasRef) {
 		shot,
 		card,
 		marks,
-		clock,
 		settled,
 		choice,
 		hint,
