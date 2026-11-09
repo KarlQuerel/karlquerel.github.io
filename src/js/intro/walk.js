@@ -29,7 +29,8 @@ export function lookWalk(w, [dx, dy]) {
 	w.pitch = clamp(w.pitch - dy * WALK.lookRad, -WALK.pitchDown, WALK.pitchUp)
 }
 
-// box: { halfWidth, back, front }, the deck's reach across x and along z
+// box: { halfWidth, back, front, open? }, the deck's reach across x and along z, and whether a spot
+// inside it can be stood on (any, if no `open`)
 export function stepWalk(w, keys, dt, box) {
 	const ahead = held(keys, WALK_KEYS.forward) - held(keys, WALK_KEYS.back)
 	const side = held(keys, WALK_KEYS.strafeRight) - held(keys, WALK_KEYS.strafeLeft)
@@ -50,8 +51,14 @@ export function stepWalk(w, keys, dt, box) {
 	w.heading += w.turn * dt
 	const sin = Math.sin(w.heading)
 	const cos = Math.cos(w.heading)
-	const x = clamp(w.x + (sin * w.ahead + cos * w.side) * dt, -box.halfWidth, box.halfWidth)
-	const z = clamp(w.z + (cos * w.ahead - sin * w.side) * dt, box.back, box.front)
+	let x = clamp(w.x + (sin * w.ahead + cos * w.side) * dt, -box.halfWidth, box.halfWidth)
+	let z = clamp(w.z + (cos * w.ahead - sin * w.side) * dt, box.back, box.front)
+	// a spot the box's `open` turns down: slide along whichever axis it allows, or stand
+	if (box.open && !box.open(x, z)) {
+		if (box.open(x, w.z)) z = w.z
+		else if (box.open(w.x, z)) x = w.x
+		else [x, z] = [w.x, w.z]
+	}
 	// what the walls let through: pushing into one is standing still
 	w.vx = (x - w.x) / dt
 	w.vz = (z - w.z) / dt
