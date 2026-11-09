@@ -1,9 +1,10 @@
 // The corridor pilot's light, the intro corridor's (shaders/intro/corridor.frag.glsl) carried over: the
 // upper lines of light (a segment each side between each pair of ribs, the three nearest the shaded point),
-// the door, the weld's spark, the drone's ring, the nearest bay's light, the Earth and the sun through the
+// the door, the weld's spark, the drone's eye, the nearest bay's light, the Earth and the sun through the
 // glass span (the crew and the player shadowing the sun's), a rim on what stands in the bays, the dark
-// under their feet, then the haze. All in the shader's frame (eye level y = 0, x mirrored from three's):
-// crFrame() takes a world point there, crWorld() brings it back.
+// under their feet, then the haze; and crSpaceLight() for what hangs outside the hull. All in the shader's
+// frame (eye level y = 0, x mirrored from three's): crFrame() takes a world point there, crWorld() brings it
+// back.
 // Colours as the shader used them, the palette's sRGB values unconverted; crToLinear() hands the result
 // back to three, whose pixel pass converts it again. Self-contained (no common.glsl), so a model's own
 // material can take it too. CR_* layout comes from PILOT_SET as defines, the palette as constants.
@@ -15,6 +16,7 @@ uniform float uCrLit;       // the lockers lit, 0..1
 uniform sampler2D uSunShadow;   // the crew's and the player's depth seen from the sun
 uniform mat4 uSunShadowMatrix;  // three's world to that view
 uniform vec2 uCrFeet[CR_FEET];  // where each of them stands, three's x and z
+uniform vec4 uSpaceLamp;        // a drone's eye outside the hull: where, in the shader's frame, and how bright
 varying vec3 vCrWorld;
 
 const vec3 CR_LINE = mix(RIME, STAR, 0.75);
@@ -144,7 +146,7 @@ vec3 crLight(vec3 p, vec3 n, vec3 base, vec3 emit, float gloss, float bath, floa
   float ds2 = dot(Ls, Ls);
   Ls *= inversesqrt(ds2);
   col += base*CR_SPARK*crWeld()*max(dot(n, Ls), 0.0)*12.0/(1.0 + 20.0*ds2);
-  // the drone's thruster ring: a soft cold pool on the wall and the cut under it
+  // the drone's eye: a soft cold pool on the wall it works at
   vec3 Lr = CR_DRONE_LAMP - p;
   float dr2 = dot(Lr, Lr);
   Lr *= inversesqrt(dr2);
@@ -183,4 +185,20 @@ vec3 crLight(vec3 p, vec3 n, vec3 base, vec3 emit, float gloss, float bath, floa
   col = mix(col, IRON*0.9 + GLOW*0.16*uCrDoor*pow(dd, 6.0), hz*0.85);
   col += GLOW*pow(dd, 90.0)*uCrDoor*0.35*smoothstep(2.0, 8.0, t);
   return col;
+}
+
+// What hangs outside the hull, lit as the shipyard shot lights its ships: the sun, the Earth's rust from
+// below, a cold whisper from the void, the escort drone's eye close by (but not on the drone round it), and
+// every edge turned to the sun catching it
+vec3 crSpaceLight(vec3 p, vec3 n, vec3 base, vec3 emit){
+  vec3 rd = normalize(p - crFrame(cameraPosition));
+  vec3 Le = normalize(vec3(-CR_EARTH_AIM.x, CR_EARTH_AIM.y, CR_EARTH_AIM.z));
+  vec3 Ll = uSpaceLamp.xyz - p;
+  float dl2 = dot(Ll, Ll);
+  vec3 col = base*(CR_SUN_LIGHT*CR_SPACE_SUN*max(dot(n, CR_SUN), 0.0)
+    + CR_EARTH_LIGHT*CR_SPACE_EARTH*max(dot(n, Le), 0.0) + mix(FROST, RIME, 0.5)*CR_SPACE_AMBIENT
+    + CR_LINE*uSpaceLamp.w*max(dot(n, Ll*inversesqrt(dl2)), 0.0)/(1.0 + CR_SPACE_LAMP_FALL*dl2)
+      *smoothstep(CR_SPACE_LAMP_CLEAR, 2.0*CR_SPACE_LAMP_CLEAR, sqrt(dl2)));
+  float rim = pow(1.0 - max(dot(n, -rd), 0.0), 3.0)*smoothstep(-0.15, 0.35, dot(n, CR_SUN));
+  return col + CR_SUN_LIGHT*CR_SPACE_RIM*rim + emit;
 }
