@@ -1,6 +1,7 @@
 // The corridor pilot's light, the intro corridor's (shaders/intro/corridor.frag.glsl) carried over: the
 // upper lines of light (a segment each side between each pair of ribs, the three nearest the shaded point),
-// the door, the weld's spark, the nearest bay's light, a rim on what stands in the bays, then the haze. All
+// the door, the weld's spark, the drone's ring, the nearest bay's light, the Earth and the sun through the glass span, a rim
+// on what stands in the bays, then the haze. All
 // in the shader's frame (eye level y = 0, x mirrored from three's): crFrame() takes a world point there.
 // Colours as the shader used them, the palette's sRGB values unconverted; crToLinear() hands the result
 // back to three, whose pixel pass converts it again. Self-contained (no common.glsl), so a model's own
@@ -13,6 +14,9 @@ uniform float uCrLit;       // the lockers lit, 0..1
 varying vec3 vCrWorld;
 
 const vec3 CR_LINE = mix(RIME, STAR, 0.75);
+// the light from outside: the dying Earth's rust, and the swollen sun's
+const vec3 CR_EARTH_LIGHT = mix(BRICK, AMBER, 0.55)*CR_EARTH_SHINE;
+const vec3 CR_SUN_LIGHT = mix(GLOW, EMBER, 0.5)*CR_SUN_GAIN;
 // the weld spark's hot white
 const vec3 CR_SPARK = vec3(0.78, 0.88, 1.0);
 
@@ -35,14 +39,33 @@ float crLineOn(float k){
   if (crHash(k*7.31 + 0.5) > 0.08) return 1.0;
   return step(0.2, crHash(k*3.7 + floor(uCrClock*9.0)));
 }
-// the middle of each upper cut, on this side of the corridor
-vec3 crLineAt(float sd, float z){ return vec3(sd*(CR_W - 0.25*CR_CHAMFER), CR_CEIL - 0.75*CR_CHAMFER, z); }
+bool crInSpan(float z){ return z > CR_SPAN_Z0 && z < CR_SPAN_Z1; }
+// bay k is the glass span: no room, no opening, no light of its own
+bool crIsSpan(float k){ return abs(k - CR_SPAN_BAY) < 0.5; }
+bool crIsBlister(float k){ return abs(k - CR_BLISTER_BAY) < 0.5; }
+float crBayDepth(float k){ return crIsBlister(k) ? CR_BLISTER_DEPTH : CR_BAY_DEPTH; }
+// the middle of each upper cut, on this side of the corridor; along the deck's edge in the glass span
+vec3 crLineAt(float sd, float z){
+  if (crInSpan(z)) return vec3(sd*(CR_W - CR_CHAMFER - CR_SPAN_LINE_INSET), CR_FLOOR + 0.02, z);
+  return vec3(sd*(CR_W - 0.25*CR_CHAMFER), CR_CEIL - 0.75*CR_CHAMFER, z);
+}
+// the sun through the span's left-hand panes: whether the ray from p toward it leaves by the glass, not
+// by a rib, the ceiling or the hull either side of the span
+float crSunThrough(vec3 p){
+  if (CR_SUN.x >= 0.0 || p.x <= -CR_W) return 0.0;
+  vec3 q = p + CR_SUN*(-CR_W - p.x)/CR_SUN.x;
+  float rib = abs(fract(q.z/CR_RIB_EVERY) - 0.5)*CR_RIB_EVERY;
+  return step(CR_FLOOR, q.y)*step(q.y, CR_CEIL - CR_SPAN_FRAME)*step(0.07 + CR_SPAN_FRAME, rib)
+    *step(CR_SPAN_Z0, q.z)*step(q.z, CR_SPAN_Z1);
+}
 
 float crBayZ(float k){ return CR_BAY_FIRST + k*CR_BAY_EVERY; }
 float crBaySide(float k){ return mod(k, 2.0) > 0.5 ? 1.0 : -1.0; }
 float crBayIndex(float z){ return clamp(floor((z - CR_BAY_FIRST)/CR_BAY_EVERY + 0.5), 0.0, CR_BAYS - 1.0); }
-// each bay's own light: white suit-up, cool medical, warm mess, a dim comms room, the red window
+// each bay's own light: white suit-up, cool medical, the Earth's in the glass span, a dim comms room, the
+// red window
 vec3 crBayTint(float k){
+  if (crIsSpan(k)) return CR_EARTH_LIGHT*0.3;
   if (k < 0.5) return mix(RIME, SILVER, 0.55);
   if (k < 1.5) return mix(RIME, SILVER, 0.4)*0.8;
   if (k < 2.5) return mix(SILVER, GLOW, 0.65)*0.85;
@@ -77,7 +100,7 @@ vec3 crLight(vec3 p, vec3 n, vec3 base, vec3 emit, float gloss, float bath, floa
     float kk = seg + float(i);
     float z0 = kk*CR_RIB_EVERY + 0.1, z1 = z0 + CR_RIB_EVERY - 0.2;
     if (z1 < CR_BACK_Z || z0 > CR_DOOR_Z) continue;
-    float on = crLineOn(kk)*crLineWake(clamp(p.z, z0, z1));
+    float on = crLineOn(kk)*crLineWake(clamp(p.z, z0, z1))*(crInSpan(clamp(p.z, z0, z1)) ? CR_SPAN_LINE_GAIN : 1.0);
     for (int j = 0; j < 2; j++){
       vec3 L = crLineAt(j == 0 ? -1.0 : 1.0, clamp(p.z, z0, z1)) - p;
       float d2 = dot(L, L);
@@ -98,14 +121,25 @@ vec3 crLight(vec3 p, vec3 n, vec3 base, vec3 emit, float gloss, float bath, floa
   float ds2 = dot(Ls, Ls);
   Ls *= inversesqrt(ds2);
   col += base*CR_SPARK*crWeld()*max(dot(n, Ls), 0.0)*12.0/(1.0 + 20.0*ds2);
+  // the drone's thruster ring: a soft cold pool on the wall and the cut under it
+  vec3 Lr = CR_DRONE_LAMP - p;
+  float dr2 = dot(Lr, Lr);
+  Lr *= inversesqrt(dr2);
+  col += base*CR_LINE*max(dot(n, Lr), 0.0)*0.8/(1.0 + 8.0*dr2);
   // the bay's light: white rooms, and the red Earth's in the observation bay
-  vec3 Lb = vec3(side*(CR_W + CR_BAY_DEPTH - 0.05), -0.3, bz) - p;
+  vec3 Lb = vec3(side*(CR_W + crBayDepth(k) - 0.05), -0.3, bz) - p;
   float db2 = dot(Lb, Lb);
   Lb *= inversesqrt(db2);
-  float vis = inRoom ? 1.0 : 0.4*smoothstep(CR_BAY_HALF + 1.2, CR_BAY_HALF, abs(p.z - bz));
+  float vis = crIsSpan(k) ? 0.0 : inRoom ? 1.0 : 0.4*smoothstep(CR_BAY_HALF + 1.2, CR_BAY_HALF, abs(p.z - bz));
   vec3 bayCol = crBayTint(k);
   col += base*bayCol*max(dot(n, Lb), 0.0)*3.0/(1.0 + 0.3*db2)*vis;
   col += gloss*bayCol*pow(max(dot(reflect(rd, n), Lb), 0.0), 30.0)*1.2*vis;
+  // through the glass span: the Earth's light from below the left hand on what faces it, glowing a little
+  // past the span's ends, and the sun's in hard patches wherever its rays come in through the panes
+  float earthLit = smoothstep(CR_SPAN_Z0 - CR_EARTH_SPILL, CR_SPAN_Z0 + 0.5, p.z)*smoothstep(CR_SPAN_Z1 + CR_EARTH_SPILL, CR_SPAN_Z1 - 0.5, p.z);
+  vec3 Le = normalize(vec3(-CR_EARTH_AIM.x, CR_EARTH_AIM.y, CR_EARTH_AIM.z));
+  col += base*CR_EARTH_LIGHT*(max(dot(n, Le), 0.0) + 0.15)*earthLit*(inRoom ? 0.0 : 1.0);
+  col += base*CR_SUN_LIGHT*max(dot(n, CR_SUN), 0.0)*crSunThrough(p);
   if (bath > 0.0){
     // what stands about is bathed in the bay's light from every side, not only from behind
     col += base*bayCol*(0.35 + 0.25*max(dot(n, vec3(-side, 0.3, -0.4)), 0.0))*bath;
