@@ -6,7 +6,8 @@
 // Kinds: 0 deck, 1 ceiling, 2 upper cut, 3 lower cut, 4 wall, 5 a bay's back wall, 6 a bay's sides and
 // ceiling, 7 the bulkhead behind, 8 the door wall, 9 a thing standing about (uBase, uEmit, uGloss, uRim),
 // 10 the vitals monitor, 12 the mission table's world hologram, 13 a crew recording, 14 the weld tip, 15
-// the glass span's panes, 16 a floating glass pane, 17 a projector's beam, 18 a glass canopy. uCenter/uHalf place what draws about its own middle; uEarth is the
+// the glass span's panes, 16 a floating glass pane, 17 a projector's beam, 18 a glass canopy, 19 a thing
+// outside the hull, lit by the sun alone (crSpaceLight). uCenter/uHalf place what draws about its own middle; uEarth is the
 // Earth through the glass.
 
 varying vec3 vCrNormal;
@@ -18,6 +19,7 @@ uniform vec3 uCenter;
 uniform vec2 uHalf;
 uniform sampler2D uEarth;
 uniform vec3 uEarthDisc;
+uniform sampler2D uOutside;  // what hangs outside the hull, drawn on its own pass
 
 const float CR_LINTEL = CR_CHAMFER;
 
@@ -134,10 +136,18 @@ vec4 sunView(vec3 rd){
   vec3 s = star(vec3(-1.0), cell, cell - q, r, CR_SUN_AGE, uCrClock, CR_SUN_CORONA);
   return s.x < 0.0 ? vec4(0.0) : vec4(s, 1.0);
 }
-// a pane onto space: the Earth's and the sun's cells as painted (a = 1, written out untouched by the
-// corridor's air and palette), or the stars, drowned in the sun's glare round it, with a sheen that grows
-// toward a grazing look, so glass seen edge-on still reads
+// what hangs outside the hull at this cell, as its own pass lit it
+vec4 spaceView(){
+  vec4 o = texture2D(uOutside, (floor(gl_FragCoord.xy) + 0.5)/uRes);
+  return o.a < 0.5 ? vec4(0.0) : vec4(crToSrgb(o.rgb), 1.0);
+}
+// a pane onto space: what hangs outside the hull, lit (a = 0) like the corridor round it; the Earth's and
+// the sun's cells as painted (a = 1, written out untouched by the corridor's air and palette); or the stars,
+// drowned in the sun's glare round it, with a sheen that grows toward a grazing look, so glass seen edge-on
+// still reads
 vec4 outside(vec3 rd, vec3 n){
+  vec4 near = spaceView();
+  if (near.a > 0.5) return vec4(near.rgb, 0.0);
   vec4 earth = earthView(rd);
   if (earth.a > 0.5) return earth;
   vec4 sun = sunView(rd);
@@ -373,7 +383,7 @@ void main(){
     base = mix(base, PITCH, name);
     emit += GLOW*0.9*name;
   }
-#elif CR_KIND == 9
+#elif CR_KIND == 9 || CR_KIND == 19
   base = uBase;
   emit = uEmit;
   gloss = uGloss;
@@ -441,6 +451,9 @@ void main(){
   base = vec3(0.0);
   emit = mix(FROST, RIME, 0.5)*(0.3 + 0.7*pow(1.0 - abs(dot(n, rd)), 2.0));
 #endif
+#if CR_KIND == 19
+  gl_FragColor = vec4(crToLinear(crSpaceLight(p, n, base, emit)), 1.0);
+#else
   if (glass){
     vec4 sky = outside(rd, n);
     if (sky.a > 0.5){ gl_FragColor = vec4(crToLinear(sky.rgb), CR_EXACT); return; }
@@ -448,4 +461,5 @@ void main(){
     emit = sky.rgb;
   }
   gl_FragColor = vec4(crToLinear(crLight(p, n, base, emit, gloss, bath, rim)), 1.0);
+#endif
 }
