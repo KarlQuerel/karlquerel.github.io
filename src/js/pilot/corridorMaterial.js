@@ -15,16 +15,22 @@ import {
 	PILOT,
 	PILOT_EXACT_ALPHA,
 	PILOT_MATS,
+	PILOT_BOARD,
+	PILOT_OUTSIDE,
+	PILOT_REPAIR,
 	PILOT_SET,
+	PILOT_VAULT,
 	PILOT_WINDOW,
 } from '../../constants/game/pilot.js'
 
-const { panel, doorway, lockers, bays, ribs } = PILOT_SET
+const { panel, doorway, lockers, bays, ribs, span, blister, ports } = PILOT_SET
 
 // a GLSL float, and three's frame to the shader's (x mirrored, y from the eye)
 const num = v => (Number.isInteger(v) ? `${v}.0` : `${v}`)
+const vec2 = ([x, y]) => `vec2(${num(x)}, ${num(y)})`
 const vec3 = ([x, y, z]) => `vec3(${num(x)}, ${num(y)}, ${num(z)})`
 const frame = ([x, y, z]) => [-x, y - PILOT_SET.eye, z]
+const unit = v => v.map(c => c / Math.hypot(...v))
 
 // a point in the repair panel's frame (out from its wall, up, along) in three's
 export const panelPoint = ([x, y, z]) => {
@@ -50,6 +56,16 @@ const DEFINES = {
 		frame([(doorway.x[0] + doorway.x[1]) / 2, doorway.glow, PILOT_SET.door - doorway.ahead])
 	),
 	CR_WELD: vec3(frame(panelPoint(panel.weld))),
+	// the drone's thruster ring, under its body
+	CR_DRONE_LAMP: vec3(
+		frame(
+			panelPoint(
+				PILOT_REPAIR.drone.at.map((v, i) =>
+					i === 1 ? v - PILOT_REPAIR.drone.h / 2 - PILOT_REPAIR.ring.below : v
+				)
+			)
+		)
+	),
 	CR_LOCKER_EDGE: num(lockers.edge),
 	CR_LOCKER_PITCH: num(lockers.pitch),
 	CR_LOCKER_COUNT: num(lockers.count),
@@ -62,6 +78,37 @@ const DEFINES = {
 	CR_EARTH_AIM: vec3(PILOT_WINDOW.aim),
 	CR_EARTH_RADIUS: num(PILOT_WINDOW.radius),
 	CR_EXACT: num(PILOT_EXACT_ALPHA),
+	CR_SPAN_BAY: num(span.bay),
+	CR_SPAN_Z0: num(span.from),
+	CR_SPAN_Z1: num(span.to),
+	CR_SPAN_FRAME: num(span.frame),
+	CR_SPAN_LINE_INSET: num(span.lineInset),
+	CR_SPAN_LINE_GAIN: num(span.lineGain),
+	CR_BLISTER_BAY: num(blister.bay),
+	CR_BLISTER_DEPTH: num(blister.depth),
+	CR_BLISTER_PITCH: num(blister.pitch),
+	CR_BLISTER_FRAME: num(blister.frame),
+	CR_BLISTER_FLOOR: num(blister.floor),
+	CR_PORT_ALONG: vec2(ports.along),
+	CR_PORT_INSET: num(ports.inset),
+	CR_EARTH_SHINE: num(PILOT_OUTSIDE.earth),
+	CR_EARTH_SPILL: num(PILOT_OUTSIDE.spill),
+	// toward the sun, in the shader's frame (x mirrored)
+	CR_SUN: vec3(unit(PILOT_OUTSIDE.sun).map((c, i) => (i ? c : -c))),
+	CR_SUN_GAIN: num(PILOT_OUTSIDE.sunGain),
+	CR_VAULT_CELL: vec2(PILOT_VAULT.cell),
+	CR_VAULT_SEAM: num(PILOT_VAULT.seam),
+	CR_VAULT_Y0: num(PILOT_VAULT.rows[0]),
+	CR_VAULT_Y1: num(PILOT_VAULT.rows[1]),
+	CR_VAULT_ALONG: num(PILOT_VAULT.along),
+	CR_VAULT_LIT: num(PILOT_VAULT.lit),
+	CR_VAULT_PULLED: vec2([PILOT_VAULT.pulled.col, PILOT_VAULT.pulled.row]),
+	CR_BOARD_Z0: num(PILOT_BOARD.z[0]),
+	CR_BOARD_Z1: num(PILOT_BOARD.z[1]),
+	CR_BOARD_TOP: num(PILOT_BOARD.top - PILOT_SET.eye),
+	CR_BOARD_CELL: num(PILOT_BOARD.cell),
+	CR_BOARD_OURS: num(PILOT_BOARD.ours),
+	CR_BOARD_SEALED: num(PILOT_BOARD.sealed),
 }
 const PALETTE_GLSL = paletteConsts([
 	'pitch',
@@ -134,12 +181,19 @@ export function sizeCorridor(width, height) {
 	paintWindowEarth(height)
 }
 
-// world point and normal for the light; skinned and instanced meshes too
+// world point and normal for the light; skinned and instanced meshes too; a recording now and then slides a
+// band of itself aside for a beat (uGlitch: beats a second, odds of one, the band's half height, how far)
 const VERTEX = `
 #include <common>
 #include <skinning_pars_vertex>
 varying vec3 vCrWorld;
 varying vec3 vCrNormal;
+#if CR_KIND == 13
+uniform float uCrClock;
+uniform vec4 uGlitch;
+uniform vec2 uGlitchY;
+float crGlitchHash(float n){ return fract(sin(n*12.9898)*43758.5453); }
+#endif
 void main(){
   #include <beginnormal_vertex>
   #include <skinbase_vertex>
@@ -153,6 +207,11 @@ void main(){
   nrm = mat3(instanceMatrix)*nrm;
   #endif
   w = modelMatrix*w;
+  #if CR_KIND == 13
+  float beat = floor(uCrClock*uGlitch.x);
+  float band = mix(uGlitchY.x, uGlitchY.y, crGlitchHash(beat + 7.1));
+  if (crGlitchHash(beat) < uGlitch.y && abs(w.y - band) < uGlitch.z) w.x += (crGlitchHash(beat + 3.3) - 0.5)*2.0*uGlitch.w;
+  #endif
   vCrWorld = w.xyz;
   vCrNormal = normalize(mat3(modelMatrix)*nrm);
   gl_Position = projectionMatrix*viewMatrix*w;
@@ -171,10 +230,13 @@ export const KIND = {
 	doorWall: 8,
 	thing: 9,
 	vitals: 10,
-	screen: 11,
 	world: 12,
 	recording: 13,
 	spark: 14,
+	glass: 15,
+	pane: 16,
+	beam: 17,
+	shell: 18,
 }
 
 // own: uniforms of its own (uBase, uEmit, uGloss, uRim for a thing; uCenter, uHalf for what draws about
