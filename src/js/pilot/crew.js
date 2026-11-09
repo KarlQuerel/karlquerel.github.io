@@ -145,12 +145,15 @@ export async function addCrew(scene, onLoaded) {
 		})
 	)
 	for (const npc of crew) scene.add(npc.body)
-	return (dt, player) => {
-		for (const npc of crew) {
-			if (npc.spec.patrol) patrol(npc, dt)
-			else if (npc.spec.guard) guard(npc, dt)
-			else greet(npc, dt, player)
-			npc.rig.update(dt)
-		}
+	return {
+		bodies: crew.map(npc => npc.body),
+		update(dt, player) {
+			for (const npc of crew) {
+				if (npc.spec.patrol) patrol(npc, dt)
+				else if (npc.spec.guard) guard(npc, dt)
+				else greet(npc, dt, player)
+				npc.rig.update(dt)
+			}
+		},
 	}
 }
