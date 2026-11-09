@@ -1,0 +1,129 @@
+// The corridor pilot's light, the intro corridor's (shaders/intro/corridor.frag.glsl) carried over: the
+// upper lines of light (a segment each side between each pair of ribs, the three nearest the shaded point),
+// the door, the weld's spark, the nearest bay's light, a rim on what stands in the bays, then the haze. All
+// in the shader's frame (eye level y = 0, x mirrored from three's): crFrame() takes a world point there.
+// Colours as the shader used them, the palette's sRGB values unconverted; crToLinear() hands the result
+// back to three, whose pixel pass converts it again. Self-contained (no common.glsl), so a model's own
+// material can take it too. CR_* layout comes from PILOT_SET as defines, the palette as constants.
+
+uniform float uCrPlayerZ;   // the lines wake round the player
+uniform float uCrClock;     // seconds, for the stepped clocks
+uniform float uCrDoor;      // the door's glow, 0..1
+uniform float uCrLit;       // the lockers lit, 0..1
+varying vec3 vCrWorld;
+
+const vec3 CR_LINE = mix(RIME, STAR, 0.75);
+// the weld spark's hot white
+const vec3 CR_SPARK = vec3(0.78, 0.88, 1.0);
+
+vec3 crFrame(vec3 w){ return vec3(-w.x, w.y + CR_FLOOR, w.z); }
+vec3 crTurn(vec3 v){ return vec3(-v.x, v.y, v.z); }
+float crHash(float p){ p = fract(p*0.1031); p *= p + 33.33; return fract(p*(p + p)); }
+vec3 crToLinear(vec3 c){
+  c = max(c, 0.0);
+  return mix(c/12.92, pow((c + 0.055)/1.055, vec3(2.4)), step(0.04045, c));
+}
+vec3 crToSrgb(vec3 c){
+  c = max(c, 0.0);
+  return mix(c*12.92, 1.055*pow(c, vec3(1.0/2.4)) - 0.055, step(0.0031308, c));
+}
+
+// the lines burn brightest round the player and a few metres ahead, dim with distance, settle behind
+float crLineWake(float z){ return 0.3 + 0.7*smoothstep(7.0, 0.0, abs(z - (uCrPlayerZ + 2.5)) - 2.5); }
+// a segment between two ribs: now and then one buzzes
+float crLineOn(float k){
+  if (crHash(k*7.31 + 0.5) > 0.08) return 1.0;
+  return step(0.2, crHash(k*3.7 + floor(uCrClock*9.0)));
+}
+// the middle of each upper cut, on this side of the corridor
+vec3 crLineAt(float sd, float z){ return vec3(sd*(CR_W - 0.25*CR_CHAMFER), CR_CEIL - 0.75*CR_CHAMFER, z); }
+
+float crBayZ(float k){ return CR_BAY_FIRST + k*CR_BAY_EVERY; }
+float crBaySide(float k){ return mod(k, 2.0) > 0.5 ? 1.0 : -1.0; }
+float crBayIndex(float z){ return clamp(floor((z - CR_BAY_FIRST)/CR_BAY_EVERY + 0.5), 0.0, CR_BAYS - 1.0); }
+// each bay's own light: white suit-up, cool medical, warm mess, a dim comms room, the red window
+vec3 crBayTint(float k){
+  if (k < 0.5) return mix(RIME, SILVER, 0.55);
+  if (k < 1.5) return mix(RIME, SILVER, 0.4)*0.8;
+  if (k < 2.5) return mix(SILVER, GLOW, 0.65)*0.85;
+  if (k < 3.5) return mix(FROST, RIME, 0.6)*0.7;
+  return mix(BRICK, AMBER, 0.6)*0.75;
+}
+// the weld's spark, in bursts on its own clock
+float crWeld(){ return step(0.55, crHash(floor(uCrClock*24.0))); }
+
+// How a surface is lit, in the shader's frame: p and n its point and normal, base its colour, emit its
+// own light; gloss for highlights on hard shells; bath > 0 for what stands in the corridor and its bays
+// (bathed in the nearest bay's light from every side), rim for a backlit edge against that light.
+vec3 crLight(vec3 p, vec3 n, vec3 base, vec3 emit, float gloss, float bath, float rim){
+  vec3 ro = crFrame(cameraPosition);
+  vec3 rd = normalize(p - ro);
+  float t = length(p - ro);
+  float k = crBayIndex(p.z);
+  float bz = crBayZ(k), side = crBaySide(k);
+  bool inRoom = abs(p.x) > CR_W + 0.01;
+  // the spare suits in the lockers wait in the dark until the lockers come up, then lit from inside
+  vec3 suitLight = vec3(0.0);
+  bool inLocker = bath > 0.0 && p.z > CR_DOOR_Z - 1.0;
+  if (inLocker){
+    base *= mix(0.2, 1.0, uCrLit);
+    emit *= mix(0.25, 1.0, uCrLit);
+    suitLight = mix(RIME, SILVER, 0.6)*uCrLit*(0.35 + 0.65*max(n.y, 0.0))*0.6;
+  }
+
+  vec3 col = base*0.03*vec3(0.9, 1.0, 1.2);
+  float seg = floor(p.z/CR_RIB_EVERY);
+  for (int i = -1; i <= 1; i++){
+    float kk = seg + float(i);
+    float z0 = kk*CR_RIB_EVERY + 0.1, z1 = z0 + CR_RIB_EVERY - 0.2;
+    if (z1 < CR_BACK_Z || z0 > CR_DOOR_Z) continue;
+    float on = crLineOn(kk)*crLineWake(clamp(p.z, z0, z1));
+    for (int j = 0; j < 2; j++){
+      vec3 L = crLineAt(j == 0 ? -1.0 : 1.0, clamp(p.z, z0, z1)) - p;
+      float d2 = dot(L, L);
+      L *= inversesqrt(d2);
+      col += base*CR_LINE*on*(max(dot(n, L), 0.0) + 0.12)*1.5/(1.0 + 1.4*d2);
+      col += gloss*CR_LINE*on*pow(max(dot(reflect(rd, n), L), 0.0), 40.0)/(1.0 + 1.4*d2);
+    }
+  }
+  // the door ahead
+  vec3 Ld = CR_DOOR_POS - p;
+  float dd2 = dot(Ld, Ld);
+  Ld *= inversesqrt(dd2);
+  col += base*GLOW*uCrDoor*max(dot(n, Ld), 0.0)*2.6/(1.0 + 0.06*dd2);
+  col += gloss*GLOW*uCrDoor*pow(max(dot(reflect(rd, n), Ld), 0.0), 40.0)*0.8/(1.0 + 0.06*dd2);
+  if (n.y > 0.9) col += GLOW*uCrDoor*pow(max(dot(reflect(rd, n), Ld), 0.0), 14.0)*0.25/(1.0 + 0.03*dd2);
+  // the weld's spark: a hard little light that flickers the wall
+  vec3 Ls = CR_WELD - p;
+  float ds2 = dot(Ls, Ls);
+  Ls *= inversesqrt(ds2);
+  col += base*CR_SPARK*crWeld()*max(dot(n, Ls), 0.0)*12.0/(1.0 + 20.0*ds2);
+  // the bay's light: white rooms, and the red Earth's in the observation bay
+  vec3 Lb = vec3(side*(CR_W + CR_BAY_DEPTH - 0.05), -0.3, bz) - p;
+  float db2 = dot(Lb, Lb);
+  Lb *= inversesqrt(db2);
+  float vis = inRoom ? 1.0 : 0.4*smoothstep(CR_BAY_HALF + 1.2, CR_BAY_HALF, abs(p.z - bz));
+  vec3 bayCol = crBayTint(k);
+  col += base*bayCol*max(dot(n, Lb), 0.0)*3.0/(1.0 + 0.3*db2)*vis;
+  col += gloss*bayCol*pow(max(dot(reflect(rd, n), Lb), 0.0), 30.0)*1.2*vis;
+  if (bath > 0.0){
+    // what stands about is bathed in the bay's light from every side, not only from behind
+    col += base*bayCol*(0.35 + 0.25*max(dot(n, vec3(-side, 0.3, -0.4)), 0.0))*bath;
+    if (rim > 0.0){
+      float edge = pow(1.0 - max(dot(n, -rd), 0.0), 2.0);
+      vec3 from = inLocker ? vec3(0.0, 0.0, 1.0) : vec3(side, 0.0, 0.0);
+      float lit = inLocker ? uCrLit : 1.0;
+      vec3 rimCol = inLocker ? mix(RIME, SILVER, 0.6) : k > 3.5 ? mix(AMBER, GLOW, 0.3) : mix(bayCol, SILVER, 0.5);
+      col = mix(col, rimCol, edge*lit*rim*(0.4 + 0.6*max(dot(n, from), 0.0)));
+    }
+  }
+  col += emit + base*suitLight;
+
+  // the air: haze with distance, warmed where the door's light hangs in it
+  vec3 toDoor = normalize(CR_DOOR_POS - ro);
+  float dd = max(dot(rd, toDoor), 0.0);
+  float hz = 1.0 - exp(-t*0.065);
+  col = mix(col, IRON*0.9 + GLOW*0.16*uCrDoor*pow(dd, 6.0), hz*0.85);
+  col += GLOW*pow(dd, 90.0)*uCrDoor*0.35*smoothstep(2.0, 8.0, t);
+  return col;
+}
