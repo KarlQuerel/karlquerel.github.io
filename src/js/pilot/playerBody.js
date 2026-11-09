@@ -1,13 +1,14 @@
 // The player's own body: the crew's model worn by the camera without its head, so looking down shows
-// a whole body (chest, arms, legs, boots), its neck held just behind the eye. It walks, runs, steps back and
-// sideways as the keys move it, the clips blended by the way it goes, each at the body's speed over its
-// own so the boots never skate.
+// a whole body (chest, arms, legs, boots), its neck held just behind the eye; the crew's helmet stands in
+// for the head on the shadow layer alone, so the player's shadow has one the camera never sees. It walks,
+// runs, steps back and sideways as the keys move it, the clips blended by the way it goes, each at the
+// body's speed over its own so the boots never skate.
 
 import { AnimationMixer, Vector3 } from 'three'
-import { PILOT_BODY } from '../../constants/game/pilot.js'
+import { PILOT_BODY, PILOT_SHADOW } from '../../constants/game/pilot.js'
 import { WALK } from '../../constants/intro/walk.js'
 import { approach } from '../math.js'
-import { dropSkin, loadRigged } from './models.js'
+import { loadRigged, wearHelmet } from './models.js'
 
 // each gait's share of the step: the way the body goes off the way it faces, split ahead, back, left
 // and right (their squares sum to one), the side and ahead ones split again between walk and run
@@ -29,7 +30,8 @@ function shares(w, run) {
 
 export async function addPlayerBody(scene) {
 	const { body, clips } = await loadRigged(PILOT_BODY)
-	dropSkin(body, PILOT_BODY.drop)
+	for (const part of await wearHelmet(body, PILOT_BODY.helmet))
+		part.traverse(o => o.layers.set(PILOT_SHADOW.layer))
 	const mixer = new AnimationMixer(body)
 	const rest = mixer.clipAction(clips.Idle).play()
 	const gaits = Object.entries(PILOT_BODY.gaits).map(([key, { clip, speed }]) => ({
@@ -45,7 +47,7 @@ export async function addPlayerBody(scene) {
 	let run = 0
 	scene.add(body)
 	// w: the player's walk; the shader corridor's x runs the other way, as the camera's does
-	return (dt, w) => {
+	const update = (dt, w) => {
 		const x = -w.x + Math.sin(w.heading) * PILOT_BODY.back
 		const z = w.z - Math.cos(w.heading) * PILOT_BODY.back
 		body.position.set(x, 0, z)
@@ -67,4 +69,5 @@ export async function addPlayerBody(scene) {
 		body.position.x += x - at.x
 		body.position.z += z - at.z
 	}
+	return { body, update }
 }
