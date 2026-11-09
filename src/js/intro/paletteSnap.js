@@ -49,8 +49,7 @@ float snapIndex(vec3 col, vec2 frag){
   vec3 ab = (b - a)*PAL_EYE;
   float s = dot((col - a)*PAL_EYE, ab)/max(dot(ab, ab), 1e-6);
   float over = clamp((s - 0.5 + PAL_SEAM)/(2.0*PAL_SEAM), 0.0, 1.0);
-  float bayer4 = bayer2(0.5*frag)*0.25 + bayer2(frag) + 1.0/32.0;
-  return bayer4 < over ? ia.y : ia.x;
+  return bayer4(frag) + 1.0/32.0 < over ? ia.y : ia.x;
 }
 float nearestIndex(vec3 col){
   vec3 a, b;
