@@ -35,7 +35,7 @@ const vec3 SUNLIGHT = vec3(1.0, 0.62, 0.44);
 const float FOCAL = 1.92;
 
 // the yard: ships every SPACING along -z, docked at SHIP_X beside the truss at x = 0
-// SHIPS is the fleet, INTRO_BOARD.ships in data/gameIntro.js: keep the two in step
+// SHIPS is the Hermes fleet
 const float SPACING = 9.0;
 const float SHIP_X = 2.3;
 const float SHIPS = 10.0;
