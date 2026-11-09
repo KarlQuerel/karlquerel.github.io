@@ -118,6 +118,17 @@ When touching existing code, always:
 
 ---
 
+## The game (`/game`)
+
+- The design (story, choices, decisions) lives in Karl's Notion GDD, not in this repo. The words live in `src/data/gameIntro.js` and `src/data/gameActs.js`.
+- `/game` is dev-only until `GAME_SHIPPED` flips (`src/constants/game.js`); a build redirects to `/under-construction`. The smoke test and the prerender follow the flag on their own; when it ships, rename the `/under-construction` route and its tab title.
+- Desktop only: the route guard (`mayBoard`) keeps phones on the holding screen.
+- Keep the intro skippable from any shot and safe under reduced motion.
+- One cell size and one palette (`PALETTE`) for every scene, 2D and 3D alike. Quality comes from edges, not from more cells. A light source must land on the palette's lit end, or it snaps to tan and stops reading as light.
+- No backend: a run's progress lives in `localStorage`.
+
+---
+
 ## Git discipline
 
 - **Never create a new branch on this repo. Always make changes directly on the main branch (`master`).** This applies to everything — features, visual iterations, refactors, and risky changes alike. No feature branches, no worktree branches.
