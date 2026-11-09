@@ -1,149 +1,62 @@
-// The corridor as meshes: an octagonal hull with its ends capped (the back wall, the door wall), rib
-// rings, the deck's walkway, light strips, lamps, the lit door and the lockers short of it.
+// The corridor pilot's set: the intro corridor rebuilt in meshes, its shell and what stands in it, lit the
+// way the shader lit it. Its tick wakes the lines round the player, brings the door's glow up as they near
+// it and the lockers' light once they arrive (CORRIDOR's beats, as the shot has them), and runs what moves;
+// its box is where the player can walk: the corridor and the bays off it, round what stands in them.
 
-import {
-	BoxGeometry,
-	Color,
-	DoubleSide,
-	ExtrudeGeometry,
-	HemisphereLight,
-	InstancedMesh,
-	Mesh,
-	MeshBasicMaterial,
-	MeshStandardMaterial,
-	Object3D,
-	Path,
-	PlaneGeometry,
-	PointLight,
-	Shape,
-} from 'three'
-import { paletteHex } from '../../constants/palette.js'
-import { PILOT } from '../../constants/game/pilot.js'
+import { addProps } from './corridorProps.js'
+import { addShell, BAYS } from './corridorShell.js'
+import { sizeCorridor, takeCorridorLight, tickCorridor } from './corridorMaterial.js'
+import { CORRIDOR } from '../../constants/intro/corridor.js'
+import { PILOT_ROOM, PILOT_SET } from '../../constants/game/pilot.js'
+import { ramp } from '../math.js'
 
-const color = name => new Color(paletteHex(name))
-const metal = name =>
-	new MeshStandardMaterial({
-		color: color(name),
-		flatShading: true,
-		roughness: 0.85,
-		metalness: 0.2,
-	})
-const lit = name => new MeshBasicMaterial({ color: color(name) })
-
-// the hull's cross-section, `inset` in from it all round, corner to corner
-function octagon(path, inset) {
-	const { halfWidth, height, chamfer } = PILOT.hull
-	const w = halfWidth - inset
-	const c = chamfer
-	path.moveTo(-w + c, inset)
-	path.lineTo(w - c, inset)
-	path.lineTo(w, inset + c)
-	path.lineTo(w, height - inset - c)
-	path.lineTo(w - c, height - inset)
-	path.lineTo(-w + c, height - inset)
-	path.lineTo(-w, height - inset - c)
-	path.lineTo(-w, inset + c)
-	path.closePath()
-	return path
-}
-
-function hull() {
-	const { back, door } = PILOT.hull
-	const geo = new ExtrudeGeometry(octagon(new Shape(), 0), {
-		depth: door - back,
-		bevelEnabled: false,
-	})
-	const mesh = new Mesh(geo, metal(PILOT.hullColor))
-	mesh.material.side = DoubleSide
-	mesh.position.z = back
-	return mesh
-}
-
-function ribs() {
-	const { back, door } = PILOT.hull
-	const { every, inset, depth } = PILOT.ribs
-	const ring = octagon(new Shape(), 0)
-	ring.holes.push(octagon(new Path(), inset))
-	const geo = new ExtrudeGeometry(ring, { depth, bevelEnabled: false })
-	const count = Math.floor((door - back) / every)
-	const mesh = new InstancedMesh(geo, metal(PILOT.ribColor), count)
-	const at = new Object3D()
-	for (let i = 0; i < count; i++) {
-		at.position.z = back + every * (i + 0.5)
-		at.updateMatrix()
-		mesh.setMatrixAt(i, at.matrix)
-	}
-	return mesh
-}
-
-function deck() {
-	const { halfWidth, chamfer, back, door } = PILOT.hull
-	const mesh = new Mesh(
-		new PlaneGeometry(2 * (halfWidth - chamfer), door - back),
-		metal(PILOT.deckColor)
-	)
-	mesh.rotation.x = -Math.PI / 2
-	mesh.position.set(0, 0.01, (back + door) / 2)
-	return mesh
-}
-
-// one strip down each upper chamfer, lying along it
-function strips() {
-	const { halfWidth, height, chamfer, back, door } = PILOT.hull
-	return [-1, 1].map(side => {
-		const mesh = new Mesh(
-			new BoxGeometry(PILOT.strip.width, 0.02, door - back),
-			lit(PILOT.strip.color)
+// whether the player can stand at (x, z), three's frame: on the corridor's walk or in a bay's room, their
+// body clear of the walls and of every footprint
+function standable(blocks) {
+	const { body } = PILOT_ROOM
+	const { halfWidth, bays } = PILOT_SET
+	const reach = halfWidth + bays.depth - body
+	const inBay = (x, z) =>
+		BAYS.some(
+			b => Math.abs(z - b.z) <= bays.half - body && b.side * x >= 0 && b.side * x <= reach
 		)
-		mesh.position.set(side * (halfWidth - chamfer / 2), height - chamfer / 2, (back + door) / 2)
-		mesh.rotation.z = (side * Math.PI) / 4
-		return mesh
-	})
+	const clear = (x, z) =>
+		!blocks.some(
+			([x0, x1, z0, z1]) => x > x0 - body && x < x1 + body && z > z0 - body && z < z1 + body
+		)
+	return (x, z) => (Math.abs(x) <= CORRIDOR.walk.halfWidth || inBay(x, z)) && clear(x, z)
 }
 
-function lamps() {
-	const { height, back, door } = PILOT.hull
-	const { every, intensity, distance } = PILOT.lamps
-	const out = []
-	for (let z = back + every / 2; z < door; z += every) {
-		const lamp = new PointLight(color(PILOT.lamps.color), intensity, distance)
-		lamp.position.set(0, height - 0.3, z)
-		out.push(lamp)
+export async function addCorridor(scene) {
+	addShell(scene)
+	const props = await addProps(scene)
+	const open = standable(props.blocks)
+	// the walk's x is the shader corridor's, three's mirrored
+	const box = {
+		...CORRIDOR.walk,
+		halfWidth: PILOT_SET.halfWidth + PILOT_SET.bays.depth,
+		open: (x, z) => open(-x, z),
 	}
-	return out
+	let arrivedAt = 0
+	// walk: the shader corridor's, whose z is three's
+	const tick = (dt, clock, walk) => {
+		if (!arrivedAt && walk.z >= CORRIDOR.walk.arrive) arrivedAt = clock
+		const near = ramp(walk.z, CORRIDOR.glowFrom, CORRIDOR.walk.arrive)
+		tickCorridor({
+			z: walk.z,
+			clock,
+			door: CORRIDOR.glowRest + (1 - CORRIDOR.glowRest) * near,
+			lit: arrivedAt ? ramp(clock, arrivedAt, arrivedAt + CORRIDOR.lockersRise) : 0,
+		})
+		props.tick(dt, clock)
+	}
+	return { tick, box }
 }
 
-function door() {
-	const { width, height, x, intensity, distance } = PILOT.door
-	const panel = new Mesh(new PlaneGeometry(width, height), lit(PILOT.door.color))
-	panel.position.set(x, height / 2, PILOT.hull.door - 0.02)
-	panel.rotation.y = Math.PI
-	const glow = new PointLight(color(PILOT.door.color), intensity, distance)
-	glow.position.set(x, PILOT.eye, PILOT.hull.door - 1)
-	return [panel, glow]
-}
-
-function lockers() {
-	const { count, from, width, depth, height } = PILOT.lockers
-	const geo = new BoxGeometry(depth, height, width)
-	const mat = metal(PILOT.lockers.color)
-	return Array.from({ length: count }, (_, i) => {
-		const mesh = new Mesh(geo, mat)
-		mesh.position.set(-PILOT.hull.halfWidth + depth / 2, height / 2, from + i * (width + 0.04))
-		return mesh
+// every model's own material lit by the corridor, once everything is in the scene
+export const lightModels = scene =>
+	scene.traverse(o => {
+		if (o.isMesh) [o.material].flat().forEach(takeCorridorLight)
 	})
-}
 
-export function addCorridor(scene) {
-	const { sky, ground, intensity } = PILOT.ambient
-	scene.add(
-		hull(),
-		ribs(),
-		deck(),
-		...strips(),
-		...lamps(),
-		...door(),
-		...lockers(),
-		new HemisphereLight(color(sky), color(ground), intensity)
-	)
-}
+export { sizeCorridor }
