@@ -1,4 +1,4 @@
-// The intro's copy, shot by shot, from GAME_STORY.md section 4. Cards are one declarative line each.
+// The intro's copy, shot by shot. Cards are one declarative line each.
 
 export const INTRO_CARDS = {
 	year: 'YEAR 3812.',
@@ -24,12 +24,6 @@ export const INTRO_PUSH_HINT = 'E TO PUSH'
 // The visor's one button: the wake waits on it.
 export const INTRO_HUD = {
 	respond: 'RESPOND',
-}
-
-// The board of ten: one light per ship, yours lit, the rest going out over the crossing.
-export const INTRO_BOARD = {
-	ships: 10,
-	yours: 8,
 }
 
 export const INTRO_SKIP = 'SKIP >>'
