@@ -202,6 +202,7 @@ function addNeckSeal(body, head, spec) {
 	// skinned past its rest bounds, and too small to be worth a culling test
 	seal.frustumCulled = false
 	body.add(seal)
+	return seal
 }
 
 // one mip level down by vote: a texel stays lit, as bright as its brightest, only where at least `votes`
@@ -283,12 +284,13 @@ export async function loadProp({ url, glow }) {
 
 // spec: { url, bone, drop, fit, seat, ahead, tipBack, seal, glow? }: the helmet sized to the head whose skin it
 // replaces, `fit` times its width, the rim `seat` of its height under the chin, the middle `ahead` of
-// its depth forward of the head's; hung on its bone and tipped back `tipBack` rad, the `seal` under it
+// its depth forward of the head's; hung on its bone and tipped back `tipBack` rad, the `seal` under it;
+// the helmet and the seal, as added
 export async function wearHelmet(body, spec) {
 	const helmet = await loadProp(spec)
 	const head = skinBox(body, spec.drop)
 	dropSkin(body, spec.drop)
-	addNeckSeal(body, head, spec)
+	const seal = addNeckSeal(body, head, spec)
 	const size = head.getSize(new Vector3())
 	const mid = head.getCenter(new Vector3())
 	helmet.scale.setScalar(
@@ -298,4 +300,5 @@ export async function wearHelmet(body, spec) {
 	helmet.rotation.x = -spec.tipBack
 	helmet.updateMatrixWorld()
 	body.getObjectByName(spec.bone).attach(helmet)
+	return [helmet, seal]
 }
