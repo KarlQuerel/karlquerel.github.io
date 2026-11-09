@@ -1,25 +1,41 @@
 // The corridor's shell in meshes, the intro shader's octagon: deck, ceiling, the cut corners top and bottom,
 // the walls, a rib every other metre standing proud of all but the deck, the bays opening off it (the wall
 // and the lower cut give way across each opening, the deck runs on into the room), the sealed bulkhead
-// behind and the door wall ahead with its lockers and doorway sunk into it. Each surface is one mesh of its
-// kind, painted and lit by corridorSurface.glsl.
+// behind and the door wall ahead with its lockers and doorway sunk into it. In one bay's place the glass span:
+// both sides glazed between the ribs. Each surface is one mesh of its kind, painted and lit by
+// corridorSurface.glsl.
 
 import { BufferGeometry, Float32BufferAttribute, Mesh, Shape, ShapeGeometry, Vector3 } from 'three'
 import { surfaceMaterial } from './corridorMaterial.js'
 import { PILOT_SET } from '../../constants/game/pilot.js'
 
-const { halfWidth: W, height: H, chamfer: C, back, door, ribs, bays, lockers, doorway } = PILOT_SET
+const {
+	halfWidth: W,
+	height: H,
+	chamfer: C,
+	back,
+	door,
+	ribs,
+	bays,
+	lockers,
+	doorway,
+	span,
+	blister,
+} = PILOT_SET
 const v = (x, y, z) => new Vector3(x, y, z)
 
-// the bays: their middle along z and the side they open on (three's +x first)
+// the bays: their middle along z, the side they open on (three's +x first), how deep, and whether the
+// glass span stands in its place
 const BAYS = Array.from({ length: bays.count }, (_, k) => ({
 	z: bays.first + k * bays.every,
 	side: k % 2 ? -1 : 1,
+	depth: k === blister.bay ? blister.depth : bays.depth,
+	span: k === span.bay,
 }))
-const opening = (side, z) => BAYS.some(b => b.side === side && Math.abs(z - b.z) < bays.half)
-// the stretches of z along one side that are wall, not opening
-function wallSpans(side) {
-	const cuts = BAYS.filter(b => b.side === side).map(b => [b.z - bays.half, b.z + bays.half])
+const ROOMS = BAYS.filter(b => !b.span)
+const opening = (side, z) => ROOMS.some(b => b.side === side && Math.abs(z - b.z) < bays.half)
+// the stretches of z from the hatch to the door with the [a, b] cuts (in order along z) taken out
+function hullSpans(cuts) {
 	const spans = []
 	let from = back
 	for (const [a, b] of cuts) {
@@ -29,6 +45,15 @@ function wallSpans(side) {
 	spans.push([from, door])
 	return spans
 }
+const glazed = [span.from, span.to]
+// the stretches along one side that are wall, not opening or glass
+const wallSpans = side =>
+	hullSpans(
+		[
+			...ROOMS.filter(b => b.side === side).map(b => [b.z - bays.half, b.z + bays.half]),
+			glazed,
+		].sort((a, b) => a[0] - b[0])
+	)
 
 // flat pieces gathered by kind, each corner list wound to face n
 const pieces = {}
@@ -94,11 +119,12 @@ function hull() {
 	strip('deck', [-(W - C), 0], [W - C, 0], [0, 1], back, door)
 	strip('ceiling', [-(W - C), H], [W - C, H], [0, -1], back, door)
 	for (const s of [-1, 1]) {
-		strip('upperCut', ...upperCut(s), back, door)
+		for (const [z0, z1] of hullSpans([glazed])) strip('upperCut', ...upperCut(s), z0, z1)
 		for (const [z0, z1] of wallSpans(s)) {
 			strip('wall', ...wall(s), z0, z1)
 			strip('lowerCut', ...lowerCut(s), z0, z1)
 		}
+		for (const side of [upperCut, wall, lowerCut]) strip('glass', ...side(s), ...glazed)
 	}
 	// a rib on the odd metres, across the ceiling and upper cuts always, the walls and lower cuts but at an opening
 	const first = Math.ceil(back / ribs.every - 0.5) * ribs.every + ribs.every / 2
@@ -114,10 +140,10 @@ function hull() {
 }
 
 // a bay: the deck running on in, its lit back wall, its sides and ceiling, and the lower cut's ends
-function bay({ z, side: s }) {
+function bay({ z, side: s, depth }) {
 	const z0 = z - bays.half
 	const z1 = z + bays.half
-	const out = s * (W + bays.depth)
+	const out = s * (W + depth)
 	strip('deck', [s * (W - C), 0], [out, 0], [0, 1], z0, z1)
 	strip('bayBack', [out, H - C], [out, 0], [-s, 0], z0, z1)
 	strip('baySides', [s * W, H - C], [out, H - C], [0, -1], z0, z1)
@@ -211,7 +237,7 @@ function ends() {
 
 export function addShell(scene) {
 	hull()
-	BAYS.forEach(bay)
+	ROOMS.forEach(bay)
 	ends()
 	for (const [kind, { position, normal }] of Object.entries(pieces)) {
 		const geo = new BufferGeometry()
@@ -222,4 +248,9 @@ export function addShell(scene) {
 	}
 }
 
-export { BAYS }
+// bay k's frame (rx out from the opening, y up, z along from its middle) to three's
+export const bayPoint = (k, [rx, y, z]) => v(BAYS[k].side * (W + rx), y, BAYS[k].z + z)
+// facing the corridor from a bay on this side
+export const facingIn = side => (-side * Math.PI) / 2
+
+export { BAYS, ROOMS }
