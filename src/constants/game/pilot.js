@@ -25,6 +25,8 @@ export const PILOT = {
 	// the edge pass: how far behind a neighbour must sit (share of the cell's depth) to outline it,
 	// how far two faces must turn apart to glint, and the shade each takes
 	edges: { step: 0.08, turn: 0.35, ink: 0.42, glint: 1.5, far: 16 },
+	// past `from` m, all in by `to`, a cell takes its far neighbours' mean (gaussian, `sigma` cells) before the snap
+	distant: { from: 8, to: 20, sigma: 1.2 },
 }
 
 // The corridor as the intro's shader draws it (shaders/intro/corridor.frag.glsl), rebuilt in meshes. Metres
