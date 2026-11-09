@@ -1,5 +1,6 @@
 // The corridor pilot in three.js: the walk the shader corridor uses, a first-person camera on it and
-// the player's body under it, the corridor's meshes, the crew, their shadows, and the pixel pass over it all.
+// the player's body under it, the corridor's meshes, the crew, their shadows, the spacewalker outside the
+// glass on her own pass, and the pixel pass over it all.
 
 import { PerspectiveCamera, Scene, WebGLRenderer } from 'three'
 import { PILOT } from '../../constants/game/pilot.js'
@@ -9,12 +10,16 @@ import { addCorridor, lightModels, sizeCorridor } from './corridorSet.js'
 import { addCrew } from './crew.js'
 import { createPixelPost } from './pixelPost.js'
 import { addPlayerBody } from './playerBody.js'
+import { createSpaceLayer } from './spaceLayer.js'
+import { addSpacewalker } from './spacewalker.js'
 import { createSunShadow } from './sunShadow.js'
 
 export function createCorridorPilot() {
 	let renderer = null
 	let post = null
 	let shadow = null
+	let space = null
+	let walker = null
 	let set = null
 	let crew = null
 	let body = null
@@ -30,11 +35,13 @@ export function createCorridorPilot() {
 		renderer.setPixelRatio(1)
 		post = createPixelPost(renderer, camera)
 		shadow = createSunShadow(renderer)
+		space = createSpaceLayer(renderer, camera)
 		await step('context')
 		set = await addCorridor(scene)
 		crew = await addCrew(scene, part => step('models', part))
 		body = await addPlayerBody(scene)
 		for (const caster of [...crew.bodies, body.body]) shadow.cast(caster)
+		walker = await addSpacewalker(scene)
 		lightModels(scene)
 		// compile every program now, not on the first frame the player sees
 		renderer.compile(scene, camera)
@@ -45,6 +52,7 @@ export function createCorridorPilot() {
 		camera.aspect = width / height
 		camera.updateProjectionMatrix()
 		post.resize(width, height)
+		space.resize(width, height)
 		sizeCorridor(width, height)
 	}
 
@@ -73,13 +81,16 @@ export function createCorridorPilot() {
 		set.tick(dt, time, walk)
 		crew.update(dt, { x: -walk.x, z: walk.z })
 		body.update(dt, walk)
+		walker(dt, time, { x: -walk.x, z: walk.z })
 		shadow.render(scene)
+		space.render(scene)
 		post.render(scene)
 		return true
 	}
 
 	function release() {
 		shadow?.dispose()
+		space?.dispose()
 		post?.dispose()
 		renderer?.dispose()
 	}
