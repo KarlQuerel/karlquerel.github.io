@@ -1,7 +1,8 @@
 // The repair job at the open wall panel: the cavity with its cables and relay, the panel held up off the
-// wall, and the drone at work, an octagonal body on a lit thruster ring with one arm on the panel and one
-// welding, the sparks it throws falling, bouncing off the deck and going out in steps. Its tick bobs the
-// drone on a stepped clock and flies the sparks, flashing in time with the weld's light in the shader.
+// wall, and the drone (drone.js) at work facing it, one jointed arm's fingers on the panel and the other's
+// torch welding, the sparks it throws falling, bouncing off the deck and going out in steps. Its tick bobs
+// the drone on a stepped clock, runs its own clocks and flies the sparks, flashing in time with the weld's
+// light in the shader.
 
 import {
 	CylinderGeometry,
@@ -10,10 +11,10 @@ import {
 	Mesh,
 	Object3D,
 	SphereGeometry,
-	TorusGeometry,
 	Vector3,
 } from 'three'
 import { panelPoint, surfaceMaterial, thingMaterial } from './corridorMaterial.js'
+import { buildDrone } from './drone.js'
 import { box, rod } from './parts.js'
 import { randIn } from '../math.js'
 import { PILOT_REPAIR, PILOT_SET } from '../../constants/game/pilot.js'
@@ -23,7 +24,6 @@ const R = PILOT_REPAIR
 // out from the wall, in three's x
 const OUT = -Math.sign(wallPanel.at[0])
 const at = q => new Vector3(...panelPoint(q))
-const plus = (a, b) => a.map((v, i) => v + b[i])
 // the shader's hash, so the sparks fly when the weld's light flashes (crWeld in corridorLight.glsl)
 const fract = v => v - Math.floor(v)
 function crHash(p) {
@@ -34,48 +34,45 @@ function crHash(p) {
 const WELD_HZ = 24
 const welding = clock => crHash(Math.floor(clock * WELD_HZ)) > 0.55
 
-// an octagonal slab about its middle, `r` round and `h` tall, its flat sides square to the panel's frame
-function octagon(centre, r, h, material) {
-	const mesh = new Mesh(new CylinderGeometry(r, r, h, 8), material)
-	mesh.rotation.y = Math.PI / 8
+const Z = new Vector3(0, 0, 1)
+const ball = (centre, r) => {
+	const mesh = new Mesh(new SphereGeometry(r, 8, 6), thingMaterial('seam'))
 	mesh.position.copy(centre)
 	return mesh
 }
 
-// a jointed arm from shoulder to tip, its elbow lifted above the straight line between them
-function arm(from, to) {
+// a jointed arm from its shoulder to its tool, the elbow lifted above the straight line between them: the
+// torch on to the weld tip, or two fingers either side of the grip
+function arm(from, to, tool) {
+	const { r, lift, torch, fingers } = R.arms
 	const elbow = from.clone().lerp(to, 0.5)
-	elbow.y += R.arms.lift
-	const joint = new Mesh(new SphereGeometry(R.arms.r * 1.6, 8, 6), thingMaterial('seam'))
-	joint.position.copy(elbow)
-	return [
-		rod(from, elbow, R.arms.r, thingMaterial('seam'), 8),
-		rod(elbow, to, R.arms.r, thingMaterial('brushed'), 8),
-		joint,
-	]
-}
-
-function drone() {
-	const { drone: d, lid, band, lens, strip, ring } = R
-	const centre = d.at
+	elbow.y += lift
+	const along = to.clone().sub(elbow).normalize()
+	const wrist = to
+		.clone()
+		.addScaledVector(along, -(tool === 'torch' ? torch.length : 2 * fingers.half[2]))
 	const parts = [
-		octagon(at(centre), d.r, d.h, thingMaterial('white')),
-		octagon(
-			at(plus(centre, [0, d.h / 2 + lid.h / 2, 0])),
-			lid.r,
-			lid.h,
-			thingMaterial('white')
-		),
-		octagon(at(centre), d.r * 1.02, band.h, thingMaterial('seam')),
-		box(at(plus(centre, [d.r + strip.half[0], 0, 0])), strip.half, thingMaterial('light')),
+		ball(from, r * 1.6),
+		rod(from, elbow, r, thingMaterial('white'), 8),
+		ball(elbow, r * 1.4),
+		rod(elbow, wrist, r * 0.85, thingMaterial('brushed'), 8),
+		ball(wrist, r * 1.2),
 	]
-	const eye = new Mesh(new CylinderGeometry(lens.r, lens.r, lens.h, 10), thingMaterial('lamp'))
-	eye.rotation.z = Math.PI / 2
-	eye.position.copy(at(plus(centre, [-d.r, 0, 0])))
-	const thrust = new Mesh(new TorusGeometry(ring.r, ring.tube, 6, 8), thingMaterial('light'))
-	thrust.rotation.x = Math.PI / 2
-	thrust.position.copy(at(plus(centre, [0, -d.h / 2 - ring.below, 0])))
-	return [...parts, eye, thrust]
+	if (tool === 'torch') return [...parts, rod(wrist, to, torch.r, thingMaterial('seam'), 8)]
+	const apart = new Vector3().crossVectors(along, new Vector3(0, 1, 0)).normalize()
+	for (const side of [-1, 1]) {
+		const finger = box(
+			wrist
+				.clone()
+				.lerp(to, 0.5)
+				.addScaledVector(apart, (side * fingers.spread) / 2),
+			fingers.half,
+			thingMaterial('brushed')
+		)
+		finger.quaternion.setFromUnitVectors(Z, along)
+		parts.push(finger)
+	}
+	return parts
 }
 
 // the panel taken off, held beside the hole with its far edge swung out toward the corridor; and where the
@@ -164,17 +161,24 @@ export function addRepair(scene) {
 	const tip = new Mesh(new SphereGeometry(0.02, 10, 8), surfaceMaterial('spark'))
 	tip.position.copy(at(wallPanel.weld))
 	const held = heldPanel()
+	// the drone faces the wall, its eye (+z in its own frame) turned in from the corridor and a little back
 	const bot = new Group()
+	const worker = buildDrone(thingMaterial)
+	worker.drone.position.copy(at(d.at))
+	worker.drone.rotation.y = -OUT * (Math.PI / 2 + d.yaw)
+	worker.drone.updateMatrixWorld()
+	const shoulder = i => worker.drone.localToWorld(new Vector3(...R.arms.shoulders[i]))
 	bot.add(
-		...drone(),
+		worker.drone,
 		held.mesh,
-		...arm(at(plus(d.at, [-d.r * 0.7, -d.h * 0.3, -0.04])), at(wallPanel.weld)),
-		...arm(at(plus(d.at, [-d.r * 0.4, -d.h * 0.3, 0.07])), held.grip)
+		...arm(shoulder(0), at(wallPanel.weld), 'torch'),
+		...arm(shoulder(1), held.grip, 'fingers')
 	)
 	const spray = sparks()
 	scene.add(tip, bot, spray.mesh)
 	return (dt, clock) => {
 		bot.position.y = d.bob * Math.sin(Math.floor(clock * d.stepsPerS) * d.phase)
+		worker.tick(clock)
 		spray.tick(dt, clock)
 	}
 }
