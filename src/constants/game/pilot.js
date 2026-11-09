@@ -50,8 +50,24 @@ export const PILOT_SET = {
 	doorway: { x: [-0.95, -0.15], top: 2.1, deep: 0.12, glow: 1.1, ahead: 0.1 },
 	// the repair job's open wall panel: its centre, its half height and half length, and the weld tip in
 	// its own frame (out from the wall, up, along)
-	panel: { at: [1.6, 1.3, 13.5], half: [0.42, 0.3], weld: [0.07, 0.11, -0.11] },
+	panel: { at: [1.6, 1.3, 20], half: [0.42, 0.3], weld: [0.07, 0.11, -0.11] },
+	// the glass span in bay `bay`'s place: from rib `from` to rib `to` every face of the octagon but the
+	// deck and ceiling is glass between the ribs, framed `frame` m along each corner; its lines of light
+	// drop to the deck's edge, `lineInset` in from the lower cut, at `lineGain` of their light; walkable
+	// to `reach` off the middle
+	span: { bay: 2, from: 13, to: 19, frame: 0.035, lineInset: 0.08, lineGain: 0.7, reach: 1.2 },
+	// the observation blister in bay `bay`'s place: `depth` m deep, glass on its back, sides and ceiling
+	// in panes about `pitch` m framed `frame` m, and a strip of glass `floor` m wide along its outer edge
+	blister: { bay: 4, depth: 2.4, pitch: 0.75, frame: 0.035, floor: 0.55 },
+	// ports in the left-hand lower cut between the ribs, the Earth at your feet: from `along[0]` to
+	// `along[1]` m down the cut from the wall, `inset` m in from each rib
+	ports: { along: [0.08, 0.4], inset: 0.25 },
 }
+
+// The light from outside, through any glass: the Earth's (`earth` of its colour, from its middle on what
+// faces it, glowing `spill` m past the span's ends) and the sun's, along `sun` (three's frame, toward it:
+// out over the left hand, up, back), in hard patches where its rays come in between the ribs
+export const PILOT_OUTSIDE = { earth: 2.2, spill: 1.2, sun: [0.6, 0.35, -0.72], sunGain: 2.6 }
 
 // The Earth through the observation bay's glass: the holding screen's Earth of 3812 (js/intro/earthMap.js)
 // painted as a whole disc at the art grid's own scale, its `view` centre and `light` as the holding screen
@@ -87,92 +103,195 @@ export const PILOT_MATS = {
 	light: { base: ['pitch', 1], emit: ['rime', 'star', 0.75, 1.4], rim: 0 },
 	lamp: { base: ['pitch', 1], emit: ['rime', 'star', 0.5, 1.4], rim: 0 },
 	cavity: { base: ['pitch', 0.5], rim: 0 },
+	spark: { base: ['pitch', 1], emit: ['ember', 'glow', 0.6, 1.8], rim: 0 },
+	keys: { base: ['pitch', 1], emit: ['frost', 'rime', 0.5, 0.9], rim: 0 },
+	holoRing: { base: ['pitch', 1], emit: ['rime', 'star', 0.5, 1.4], rim: 0 },
+	earth: { base: ['pitch', 1], emit: ['brick', 'amber', 0.6, 1.3], rim: 0 },
+	vial: { base: ['pitch', 1], emit: ['rime', 'star', 0.6, 1.1], rim: 0 },
 }
 
 // Each bay's furniture in its own frame (rx out from the opening, y up from the deck, z along from the bay's
 // middle), by bay: boxes (`half` sizes), rods (`from` to `to`, radius `r`), discs (radius `r`, `h` tall),
-// rings (radius `r`, `w` wide), spheres; `mat` a PILOT_MATS key or a shader of its own (vitals, screen,
-// world). `suits`: empty suits hung by their necks at `neck`, facing the corridor; `helmets` set down;
-// `holo` a crew member's recording turning over the comms plate, `scale` of life size.
+// rings (radius `r`, `w` wide), spheres, octagons (the corridor's own shape, radius `r` at its top and
+// foot, `h` tall), prisms (a `profile` of [rx, y] corners run along the bay from z[0] to z[1]) and panes
+// (floating glass, `half` its width and height, turned `yaw` rad toward +z, a light bar under it); `mat`
+// a PILOT_MATS key or a shader of its own (world; a pane's `face`, vitals). `vault`: the drawer wall's
+// pulled drawer (PILOT_VAULT); `seedling` a plant in light turning over a plate, its leaves `spiral` rad
+// apart, leaning `lean` up, shrinking by `taper` toward the top; `cradle` the medical bed's canopy, arch
+// and scan (corridorRooms.js); `holo` a crew member's recording turning over
+// a projector plate, `scale` of life size, in a beam `height` m tall from `foot` to `top` wide, a band of
+// it now and then (`odds` of each of `perS` beats) slid `shift` aside, its plate's ring flickering as it
+// speaks; `route` dots of light arcing `lift` m high from
+// the Earth at `from` to the world at `to` (its radius `r` short of it), a ship stepping along them.
 export const PILOT_BAYS = [
-	// suit-up: the rail and three spare suits on it
+	// the seed vault: its back wall all drawers lit from inside (PILOT_VAULT), one pulled out with its vials,
+	// and a seedling turning in light over a projector plate
 	{
 		parts: [
-			{ rod: { from: [1.36, 2.02, -1.5], to: [1.36, 2.02, 1.5], r: 0.025 }, mat: 'fitting' },
+			{ disc: { at: [0.6, 0.02, 0.15], r: 0.22, h: 0.04 }, mat: 'fitting' },
+			{ ring: { at: [0.6, 0.045, 0.15], r: 0.2, w: 0.012 }, mat: 'lamp' },
 		],
-		suits: {
-			at: [
-				[1.36, -0.45],
-				[1.36, -0.93],
-				[1.36, -1.41],
-			],
-			neck: 1.58,
-			rail: 2.02,
+		vault: true,
+		seedling: {
+			at: [0.6, 0.05, 0.15],
+			height: 1.15,
+			stem: 0.022,
+			bend: 0.08,
+			leaves: 5,
+			leaf: [0.2, 0.018, 0.08],
+			spiral: 2.4,
+			lean: 0.45,
+			taper: 0.5,
+			seed: 0.085,
+			turn: 0.12,
+			stepsPerS: 3,
 		},
 	},
-	// medical: the bed, its monitor on a pole, a helmet left on the mattress
+	// medical: a scan cradle grown out of the back wall under its mattress, the glass canopy slid back over
+	// the head end, an arch of light stepping along it, the sleeper's scan lying in light over it, and the
+	// vitals on a floating pane
 	{
 		parts: [
-			{ box: { at: [1.15, 0.62, 0.6], half: [0.32, 0.07, 0.6] }, mat: 'mattress' },
-			{ box: { at: [1.15, 0.29, 0.6], half: [0.27, 0.26, 0.5] }, mat: 'fitting' },
-			{ rod: { from: [1.4, 0, 1.22], to: [1.4, 1.08, 1.22], r: 0.02 }, mat: 'fitting' },
 			{
-				box: { at: [1.4, 1.26, 1.22], half: [0.035, 0.16, 0.23] },
-				mat: 'fitting',
-				face: 'vitals',
+				prism: {
+					profile: [
+						[1.5, 0.64],
+						[0.6, 0.64],
+						[0.6, 0.58],
+						[0.85, 0.33],
+						[1.5, 0.33],
+					],
+					z: [-1.05, 1.05],
+				},
+				mat: 'white',
 			},
+			{ box: { at: [1.04, 0.665, 0], half: [0.4, 0.025, 1.0] }, mat: 'mattress' },
+			{ box: { at: [0.596, 0.605, 0], half: [0.006, 0.008, 1.02] }, mat: 'light' },
+			{ pane: { at: [1.3, 1.42, -0.55], half: [0.26, 0.16], yaw: 0, face: 'vitals' } },
 		],
-		helmets: [[1.02, 0.69, 1.0]],
+		cradle: {
+			// the canopy's axis (rx, y), radius, the stretch it covers and its end frames' thickness
+			canopy: { at: [1.04, 0.69], r: 0.46, z: [-1.0, -0.3], frame: 0.014 },
+			// the arch stepping to and fro along the bed in `steps` stops
+			arch: { r: 0.5, tube: 0.016, z: [-0.85, 0.85], steps: 12, stepsPerS: 3 },
+			// the scan: feet at `at`, lying head toward -z, `scale` of life size
+			scan: { at: [1.04, 0.95, 0.82], scale: 1 },
+		},
 	},
-	// mess: the table on its post, two benches, a cup
+	// the glass span (PILOT_SET.span) in the mess's place: nothing stands in it
+	{ parts: [] },
+	// ops: a desk grown out of the back wall under three floating glass panes, the mission table with the
+	// candidate world over it and the route there from the Earth, the projector plate and a crew
+	// member's recording turning over it
 	{
 		parts: [
-			{ box: { at: [0.85, 0.74, 0], half: [0.3, 0.025, 0.6] }, mat: 'furniture' },
-			{ rod: { from: [0.85, 0, 0], to: [0.85, 0.72, 0], r: 0.05 }, mat: 'fitting' },
-			{ box: { at: [0.38, 0.43, 0], half: [0.11, 0.025, 0.62] }, mat: 'furniture' },
-			{ box: { at: [1.3, 0.43, 0], half: [0.11, 0.025, 0.62] }, mat: 'furniture' },
-			{ rod: { from: [1.0, 0.765, 0.38], to: [1.0, 0.85, 0.38], r: 0.03 }, mat: 'brushed' },
-		],
-	},
-	// comms: the console and its screen, a stool, the candidate world above the console, the projector
-	// plate and a crew member's recording turning over it
-	{
-		parts: [
-			{ box: { at: [1.32, 0.38, -0.1], half: [0.18, 0.38, 0.9] }, mat: 'furniture' },
 			{
-				box: { at: [1.43, 1.12, -0.1], half: [0.04, 0.3, 0.85] },
-				mat: 'fitting',
-				face: 'screen',
+				prism: {
+					profile: [
+						[1.5, 0.81],
+						[1.0, 0.81],
+						[1.0, 0.76],
+						[1.25, 0.51],
+						[1.5, 0.51],
+					],
+					z: [-1.15, 1.15],
+				},
+				mat: 'furniture',
 			},
-			{ sphere: { at: [1.1, 1.4, -0.1], r: 0.2 }, mat: 'world' },
-			{ rod: { from: [0.8, 0, -0.3], to: [0.8, 0.46, -0.3], r: 0.03 }, mat: 'fitting' },
-			{ box: { at: [0.8, 0.48, -0.3], half: [0.14, 0.02, 0.14] }, mat: 'fitting' },
-			{ disc: { at: [0.6, 0.02, 0.65], r: 0.22, h: 0.04 }, mat: 'fitting' },
-			{ ring: { at: [0.6, 0.045, 0.65], r: 0.2, w: 0.01 }, mat: 'lamp' },
+			{ box: { at: [0.996, 0.785, 0], half: [0.006, 0.008, 1.12] }, mat: 'light' },
+			{ box: { at: [1.17, 0.814, 0.05], half: [0.07, 0.004, 0.34] }, mat: 'keys' },
+			{ pane: { at: [1.3, 1.28, -0.74], half: [0.3, 0.2], yaw: 0.4 } },
+			{ pane: { at: [1.34, 1.36, 0], half: [0.34, 0.23], yaw: 0 } },
+			{ pane: { at: [1.3, 1.28, 0.74], half: [0.3, 0.2], yaw: -0.4 } },
+			{ octagon: { at: [0.6, 0.35, -0.8], r: [0.07, 0.15], h: 0.7 }, mat: 'furniture' },
+			{ octagon: { at: [0.6, 0.72, -0.8], r: [0.34, 0.3], h: 0.05 }, mat: 'fitting' },
+			{ ring: { at: [0.6, 0.748, -0.8], r: 0.29, w: 0.012 }, mat: 'lamp' },
+			{ sphere: { at: [0.6, 1.2, -0.8], r: 0.24 }, mat: 'world' },
+			{ disc: { at: [0.62, 0.02, 0.72], r: 0.22, h: 0.04 }, mat: 'fitting' },
+			{ ring: { at: [0.62, 0.045, 0.72], r: 0.2, w: 0.012 }, mat: 'holoRing' },
 		],
-		holo: { at: [0.6, 0.05, 0.65], scale: 0.6, turn: 0.1, stepsPerS: 4 },
+		holo: {
+			at: [0.62, 0.05, 0.72],
+			scale: 0.6,
+			turn: 0.1,
+			stepsPerS: 4,
+			beam: { height: 1.12, foot: 0.19, top: 0.15 },
+			glitch: { perS: 12, odds: 0.07, band: 0.07, shift: 0.12 },
+			flickerPerS: 6,
+		},
+		route: {
+			from: [0.86, 0.98, -0.5],
+			to: [0.6, 1.2, -0.8],
+			r: 0.24,
+			lift: 0.22,
+			dots: 9,
+			dot: 0.011,
+			earth: 0.035,
+			ship: 0.016,
+			stepsPerS: 3,
+		},
 	},
-	// the window on the Earth: the guardrail along the glass
+	// the blister on the Earth (PILOT_SET.blister): the guardrail wall to wall, short of the floor's glass
 	{
 		parts: [
-			{ rod: { from: [1.38, 1.02, -1.4], to: [1.38, 1.02, 1.4], r: 0.028 }, mat: 'brushed' },
+			{ rod: { from: [1.8, 1.02, -1.5], to: [1.8, 1.02, 1.5], r: 0.028 }, mat: 'brushed' },
 		],
 	},
 ]
 
+// The seed vault's back wall: drawers `cell` m (along, up) with `seam` between, from `rows` y to y and `along`
+// either side of the bay's middle, `lit` of them glowing; the one pulled out (`col`, `row` from the corner
+// low on the hatch side) stands `out` m from the wall holding `vials` (along, across) vials `vial` (radius,
+// height)
+export const PILOT_VAULT = {
+	cell: [0.2, 0.13],
+	seam: 0.022,
+	rows: [0.3, 2.0],
+	along: 1.3,
+	lit: 0.6,
+	pulled: { col: 4, row: 5, out: 0.36, vials: [3, 2], vial: [0.016, 0.075] },
+}
+
+// The departures board on the right-hand wall by the start: the ten ships, two columns of five, each HERMES,
+// its number and its light (sealed steady, ours blinking, the rest dark), from `z` to `z`, its top `top` m
+// up, in glyph cells `cell` m square
+export const PILOT_BOARD = { z: [-0.6, 0.9], top: 2.06, cell: 0.018, ours: 8, sealed: 7 }
+
+// a floating pane's light bar: how thick, and how far under the glass
+export const PILOT_PANE = { bar: 0.012, gap: 0.03 }
+
 // The repair job in the panel's frame (x out from the wall, y up, z along): the cavity, four cable runs
-// sagging `sag`, the relay and its light, the panel itself leaning on the deck's chamfer (`lean` rad),
-// the drone hovering `bob` up and down on a stepped clock, its arm out to the weld tip
+// sagging `sag`, the relay and its light; the panel itself held up off the wall beside the hole, turned
+// `tilt` rad toward the corridor; the drone, an octagonal body (`r` round, `h` tall) under a lid, with a
+// dark band, its lens on the work and a status strip on its back, a thruster ring `below` it lighting the
+// wall, hovering `bob` up and down on a stepped clock; its two arms, each bent at an elbow `lift` above
+// the straight line, one to the weld tip, one to the panel's near edge; and the sparks the weld throws,
+// `perBurst` at each flash of it, out at `speed` and up to `up` m/s, falling, bouncing off the deck and
+// the lower cut at `bounce` and going out in `steps` over their `life`
 export const PILOT_REPAIR = {
 	cavity: { at: [0.005, 0, 0], half: [0.012, 0.42, 0.3] },
 	cables: { count: 4, x: 0.03, from: -0.3, every: 0.18, half: 0.28, sag: 0.03, r: 0.012 },
 	relay: { at: [0.03, 0.12, 0.12], half: [0.025, 0.05, 0.07] },
 	relayLight: { at: [0.055, 0.14, 0.14], half: [0.004, 0.006, 0.006] },
-	panel: { at: [0.16, -0.85, 0.9], half: [0.012, 0.42, 0.3], lean: 0.37 },
-	drone: { at: [0.45, 0.05, 0], half: [0.1, 0.06, 0.09], bob: 0.012, stepsPerS: 6, phase: 0.42 },
-	band: { at: [0, -0.045, 0], half: [0.102, 0.012, 0.092] },
-	status: { at: [-0.06, 0.065, -0.05], half: [0.012, 0.006, 0.012] },
-	arm: { from: [-0.1, -0.03, -0.02], r: 0.02 },
+	panel: { at: [0.36, -0.04, 0.78], half: [0.012, 0.4, 0.28], tilt: 0.5 },
+	drone: { at: [0.46, 0.17, 0.12], r: 0.15, h: 0.1, bob: 0.012, stepsPerS: 6, phase: 0.42 },
+	lid: { r: 0.105, h: 0.035 },
+	band: { h: 0.016 },
+	lens: { r: 0.032, h: 0.02 },
+	strip: { half: [0.004, 0.008, 0.05] },
+	ring: { r: 0.075, tube: 0.012, below: 0.06 },
+	arms: { r: 0.015, lift: 0.07 },
+	sparks: {
+		count: 40,
+		perBurst: 4,
+		speed: [0.3, 1.2],
+		up: 0.8,
+		life: [0.45, 1.1],
+		size: 0.016,
+		gravity: 9.8,
+		bounce: 0.35,
+		steps: 3,
+	},
 }
 
 // The three suits in the lockers, one per role, hung `scale` of life size at `neck`, `back` m into the
@@ -189,8 +308,9 @@ export const PILOT_LOCKER_SUITS = {
 // about, how fast its walk clip covers the deck (m/s at `height`, so the feet keep their grip), and what
 // it does.
 // `patrol` walks between two z marks at `x`, resting at each and turning about with its turnLeft or
-// turnRight clip; `greet` idles at a spot and plays `react` (if it has one) when the player comes within
-// `reach`; `guard` stands its post facing `heading`.
+// turnRight clip; `greet` idles at a spot facing the player, or its `watch` heading till they come near,
+// and plays `react` (if it has one) when they come within `reach`; `guard` stands its post facing
+// `heading`.
 // the crew's suit lights, driven so they land on the guards' brass yellow near and far
 const SUIT_LIGHTS = { color: 'star', intensity: 1.3 }
 // a suit light's emissive mips: how bright (of full) a texel must be to count as light, a fainter wash
@@ -306,23 +426,23 @@ export const PILOT_CREW = [
 			turnRight: 'TurnRight',
 		},
 		walkSpeed: 1.32,
-		patrol: { x: 0.75, from: 12, to: 27, speed: 1.32, restS: 3 },
+		patrol: { x: 0.75, from: 20, to: 30, speed: 1.32, restS: 3 },
 	},
 	{
 		...ASTRA,
 		helmet: HELMET,
 		clips: { rest: 'Idle', react: 'Talk' },
 		fidgets: ['Idle2'],
-		// at the comms console
-		greet: { x: -2.35, z: 22.1, reach: 3.5 },
+		// at the ops desk, between the mission table and the projector plate
+		greet: { x: -2.45, z: 23.1, reach: 3.5 },
 	},
 	{
 		...ELY,
 		helmet: HELMET,
 		clips: { rest: 'Idle', react: 'Talk' },
 		fidgets: ['Idle2'],
-		// by the mess table
-		greet: { x: 1.8, z: 16.1, reach: 3.5 },
+		// at the glass span's left-hand panes, watching the Earth till the player comes by
+		greet: { x: 1.0, z: 16.1, reach: 3.5, watch: Math.PI / 2 },
 	},
 ]
 
