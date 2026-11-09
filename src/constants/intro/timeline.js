@@ -29,11 +29,16 @@ export const INTRO_INSPECT = {
 	hint: 'SPACE RESUME · ←/→ FRAME · SHIFT 1S',
 }
 
-// Dev server only: the scene menu on /game, every shot grouped by where the story is.
+// Dev server only: the scene menu on /game, the three.js game first, then the shader shots in story order.
 export const SCENE_MENU = {
 	label: 'Scenes',
-	groups: { intro: 'Intro', acts: 'Acts', endings: 'Endings' },
-	holding: { to: '/under-construction', label: 'Holding screen' },
 	// the three.js pilot, opened in the intro's place
-	pilot: { group: 'Pilots', param: 'pilot', label: 'corridor (three.js)' },
+	pilot: { group: 'Three.js', param: 'pilot', label: 'corridor pilot' },
+	flat: '2D',
+	// the 3D shader shots, kept as references until three.js rebuilds them
+	rebuild: {
+		label: 'To rebuild in three.js',
+		keys: ['shipyard', 'corridor', 'cryo', 'wake', 'crash', 'wreck', 'descent', 'surface'],
+	},
+	holding: { to: '/under-construction', label: 'Holding screen' },
 }

@@ -3,13 +3,13 @@
 	<details class="scenes">
 		<summary class="scenes__toggle">{{ SCENE_MENU.label }}</summary>
 		<nav class="scenes__panel">
-			<section v-for="group in groups" :key="group.label">
-				<h2>{{ group.label }}</h2>
-				<a v-for="key in group.keys" :key="key" :href="`?shot=${key}`">{{ key }}</a>
-			</section>
 			<section>
 				<h2>{{ SCENE_MENU.pilot.group }}</h2>
 				<a :href="`?${SCENE_MENU.pilot.param}`">{{ SCENE_MENU.pilot.label }}</a>
+			</section>
+			<section v-for="group in groups" :key="group.label">
+				<h2>{{ group.label }}</h2>
+				<a v-for="key in group.keys" :key="key" :href="`?shot=${key}`">{{ key }}</a>
 			</section>
 			<RouterLink :to="SCENE_MENU.holding.to">{{ SCENE_MENU.holding.label }}</RouterLink>
 		</nav>
@@ -21,13 +21,12 @@
 	import { INTRO_SHOTS } from '@/js/intro/index.js'
 	import { SCENE_MENU } from '@/constants/intro/timeline'
 
-	const actAt = INTRO_SHOTS.findIndex(s => s.act)
-	const { intro, acts, endings } = SCENE_MENU.groups
-	const keys = pick => INTRO_SHOTS.filter(pick).map(s => s.key)
+	const { flat, rebuild } = SCENE_MENU
+	const keys = toRebuild =>
+		INTRO_SHOTS.map(s => s.key).filter(key => rebuild.keys.includes(key) === toRebuild)
 	const groups = [
-		{ label: intro, keys: keys((_, i) => i < actAt) },
-		{ label: acts, keys: keys((s, i) => i >= actAt && !s.end) },
-		{ label: endings, keys: keys(s => s.end) },
+		{ label: flat, keys: keys(false) },
+		{ label: rebuild.label, keys: keys(true) },
 	]
 </script>
 
