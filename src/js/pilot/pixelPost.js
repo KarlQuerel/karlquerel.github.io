@@ -15,7 +15,7 @@ import {
 } from 'three'
 import common from '../../shaders/intro/common.glsl?raw'
 import { paletteSnap } from '../intro/paletteSnap.js'
-import { PILOT } from '../../constants/game/pilot.js'
+import { PILOT, PILOT_EXACT_ALPHA } from '../../constants/game/pilot.js'
 
 const { step, turn, ink, glint, far } = PILOT.edges
 
@@ -38,7 +38,10 @@ vec3 toSrgb(vec3 c){
 
 void main(){
   vec2 frag = gl_FragCoord.xy;
-  vec3 col = palColor(snapIndex(toSrgb(texture2D(tColor, frag/uRes).rgb), frag));
+  vec4 cell = texture2D(tColor, frag/uRes);
+  // a cell drawn in the palette's colours already: as it is, no snap and no edges
+  if (cell.a < ${(PILOT_EXACT_ALPHA + 1) / 2}){ gl_FragColor = vec4(toSrgb(cell.rgb), 1.0); return; }
+  vec3 col = palColor(snapIndex(toSrgb(cell.rgb), frag));
   float z = depthAt(frag);
   float near = smoothstep(${far.toFixed(1)}, ${(far / 2).toFixed(1)}, z);
   float w = 1.0/z;
@@ -92,14 +95,11 @@ export function createPixelPost(renderer, camera) {
 		render(scene) {
 			renderer.setRenderTarget(color)
 			renderer.render(scene, camera)
-			// the normals in view space, for the creases; the fog off so they stay whole at range
-			const { fog } = scene
-			scene.fog = null
+			// the normals in view space, for the creases
 			scene.overrideMaterial = normalMaterial
 			renderer.setRenderTarget(normals)
 			renderer.render(scene, camera)
 			scene.overrideMaterial = null
-			scene.fog = fog
 			renderer.setRenderTarget(null)
 			renderer.render(quad, screen)
 		},
