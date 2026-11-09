@@ -3,11 +3,20 @@
 // helmets) is patched to take the same light (corridorLight.glsl), so everything is lit by the corridor's
 // lines, its door and its bays as the shader lit them. One set of uniforms drives them all.
 
-import { DataTexture, NearestFilter, RGBAFormat, ShaderMaterial, Vector2, Vector3 } from 'three'
+import {
+	DataTexture,
+	Matrix4,
+	NearestFilter,
+	RGBAFormat,
+	ShaderMaterial,
+	Vector2,
+	Vector3,
+} from 'three'
 import common from '../../shaders/intro/common.glsl?raw'
 import light from '../../shaders/pilot/corridorLight.glsl?raw'
 import surface from '../../shaders/pilot/corridorSurface.glsl?raw'
 import { paletteConsts } from '../intro/paletteSnap.js'
+import { STAR_CHUNK } from '../intro/sky.js'
 import { planetDisc } from '../planetShader.js'
 import EarthWorker from './earth.worker.js?worker'
 import { PALETTE } from '../../constants/palette.js'
@@ -19,18 +28,25 @@ import {
 	PILOT_OUTSIDE,
 	PILOT_REPAIR,
 	PILOT_SET,
+	PILOT_SHADOW,
+	PILOT_SUN,
 	PILOT_VAULT,
 	PILOT_WINDOW,
 } from '../../constants/game/pilot.js'
 
 const { panel, doorway, lockers, bays, ribs, span, blister, ports } = PILOT_SET
+const { underfoot } = PILOT_SHADOW
 
 // a GLSL float, and three's frame to the shader's (x mirrored, y from the eye)
 const num = v => (Number.isInteger(v) ? `${v}.0` : `${v}`)
 const vec2 = ([x, y]) => `vec2(${num(x)}, ${num(y)})`
 const vec3 = ([x, y, z]) => `vec3(${num(x)}, ${num(y)}, ${num(z)})`
 const frame = ([x, y, z]) => [-x, y - PILOT_SET.eye, z]
+const turn = ([x, y, z]) => [-x, y, z]
 const unit = v => v.map(c => c / Math.hypot(...v))
+// toward the sun, in the shader's frame; the view's height in rad
+const SUN = unit(turn(PILOT_OUTSIDE.sun))
+const FOV = (PILOT.fovDeg * Math.PI) / 180
 
 // a point in the repair panel's frame (out from its wall, up, along) in three's
 export const panelPoint = ([x, y, z]) => {
@@ -93,9 +109,19 @@ const DEFINES = {
 	CR_PORT_INSET: num(ports.inset),
 	CR_EARTH_SHINE: num(PILOT_OUTSIDE.earth),
 	CR_EARTH_SPILL: num(PILOT_OUTSIDE.spill),
-	// toward the sun, in the shader's frame (x mirrored)
-	CR_SUN: vec3(unit(PILOT_OUTSIDE.sun).map((c, i) => (i ? c : -c))),
+	CR_SUN: vec3(SUN),
 	CR_SUN_GAIN: num(PILOT_OUTSIDE.sunGain),
+	CR_SUN_RADIUS: num(PILOT_SUN.radius),
+	CR_SUN_AGE: num(PILOT_SUN.age),
+	CR_SUN_CORONA: num(PILOT_SUN.corona),
+	CR_SUN_GLARE: num(PILOT_SUN.glare),
+	CR_FOV: num(FOV),
+	CR_SHADOW_LIFT: num(PILOT_SHADOW.lift),
+	CR_SHADOW_BIAS: num(PILOT_SHADOW.bias),
+	// an array's length: a GLSL int
+	CR_FEET: `${underfoot.feet}`,
+	CR_FOOT_RADIUS: num(underfoot.radius),
+	CR_FOOT_DARK: num(underfoot.dark),
 	CR_VAULT_CELL: vec2(PILOT_VAULT.cell),
 	CR_VAULT_SEAM: num(PILOT_VAULT.seam),
 	CR_VAULT_Y0: num(PILOT_VAULT.rows[0]),
@@ -124,8 +150,13 @@ const PALETTE_GLSL = paletteConsts([
 	'silver',
 	'star',
 	'rust',
+	'ochre',
 	'brick',
+	'clay',
+	'flare',
 	'amber',
+	'dune',
+	'sand',
 	'ember',
 	'glow',
 ])
@@ -144,14 +175,28 @@ const shared = {
 	uRes: { value: new Vector2(1, 1) },
 	uEarth: { value: null },
 	uEarthDisc: { value: new Vector3() },
+	// the characters' depth seen from the sun and three's world to it; where each stands (x, z)
+	uSunShadow: { value: null },
+	uSunShadowMatrix: { value: new Matrix4() },
+	uCrFeet: { value: Array.from({ length: underfoot.feet }, () => new Vector2()) },
+}
+
+// the sun as the window's Earth sees it, in its painter's frame (x right, y down, z toward the viewer) laid
+// as earthView lays the disc on the sky
+function sunOnEarth() {
+	const [x, y, z] = turn(PILOT_WINDOW.aim)
+	const C = new Vector3(x, y, z).normalize()
+	const up = new Vector3(0, 1, 0).addScaledVector(C, -C.y).normalize()
+	const S = new Vector3(...SUN)
+	return [S.dot(new Vector3().crossVectors(up, C)), -S.dot(up), -S.dot(C)]
 }
 
 // The Earth through the glass, painted off the main thread for this art grid so that one of its cells is one
 // cell of the grid; until it lands, and between sizes, the glass shows the stars.
 let earthRes = 0
 function paintWindowEarth(rows) {
-	const { radius, view, light, gain } = PILOT_WINDOW
-	const cellsPerRad = rows / ((PILOT.fovDeg * Math.PI) / 180)
+	const { radius, view, gain } = PILOT_WINDOW
+	const cellsPerRad = rows / FOV
 	const res = 2 * Math.round((radius * cellsPerRad) / planetDisc(1).radius / 2)
 	if (res === earthRes) return
 	earthRes = res
@@ -167,7 +212,7 @@ function paintWindowEarth(rows) {
 		const { center, radius: cells } = planetDisc(res)
 		shared.uEarthDisc.value.set(center, cells, res)
 	}
-	worker.postMessage({ res, view, light, gain })
+	worker.postMessage({ res, view, light: sunOnEarth(), gain })
 }
 
 export function tickCorridor({ z, clock, door, lit }) {
@@ -175,6 +220,15 @@ export function tickCorridor({ z, clock, door, lit }) {
 	shared.uCrClock.value = clock
 	shared.uCrDoor.value = door
 	shared.uCrLit.value = lit
+}
+// the sun's shadow map and three's world to its depth
+export function shadeCorridor(map, matrix) {
+	shared.uSunShadow.value = map
+	shared.uSunShadowMatrix.value.copy(matrix)
+}
+// where the characters stand, three's frame; an empty place stands far off
+export function standCorridor(feet) {
+	shared.uCrFeet.value.forEach((v, i) => v.set(feet[i]?.x ?? 1e4, feet[i]?.z ?? 1e4))
 }
 export function sizeCorridor(width, height) {
 	shared.uRes.value.set(width, height)
@@ -255,7 +309,7 @@ export function surfaceMaterial(kind, own = {}) {
 			...own,
 		},
 		vertexShader: VERTEX,
-		fragmentShader: `${PALETTE_GLSL}\n${common}\n${light}\n${surface}`,
+		fragmentShader: `${PALETTE_GLSL}\n${common}\n${STAR_CHUNK}\n${light}\n${surface}`,
 	})
 }
 
