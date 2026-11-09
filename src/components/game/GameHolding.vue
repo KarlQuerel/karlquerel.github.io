@@ -1,6 +1,6 @@
 <template>
-	<!-- /under-construction, where /game lands until GAME_SHIPPED: the plated name held still over the
-	     Earth, the ship's status typed under it. -->
+	<!-- /under-construction, where /game lands until GAME_SHIPPED and the game's title screen after: the
+	     plated name held still over the Earth, the ship's status or the start prompt under it. -->
 	<div class="content holding" :style="parallaxStyle">
 		<HomeChip :class="{ 'holding__chip--wait': !shown }" />
 		<SoundChip :class="{ 'holding__chip--wait': !shown }" />
@@ -21,10 +21,18 @@
 				:cell-max="GAME_HOLDING.title.cellMax"
 				lit
 			/>
+			<p
+				v-if="start"
+				class="holding__status holding__prompt"
+				:class="{ 'holding__status--in': shown }"
+			>
+				{{ GAME_HOLDING.start }}
+			</p>
 			<TypedReadout
+				v-else
 				class="holding__status"
 				:class="{ 'holding__status--in': shown }"
-				:line="GAME_HOLDING.readout"
+				:line="open ? GAME_HOLDING.mobile : GAME_HOLDING.readout"
 				:typed="false"
 				pixel
 			/>
@@ -34,9 +42,12 @@
 
 <script setup>
 	import { ref, watch } from 'vue'
+	import { useRouter } from 'vue-router'
 	import { usePointerParallax } from '@/composables/usePointerParallax'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
+	import { useWindowListener } from '@/composables/useWindowListener'
 	import { GAME_HOLDING, GAME_WORDMARK } from '@/constants/game'
+	import { board, hasFinePointer } from '@/js/game/boarding'
 	import HomeChip from '../HomeChip.vue'
 	import HoldingEarth from './HoldingEarth.vue'
 	import PlatingWordmark from './PlatingWordmark.vue'
@@ -62,6 +73,18 @@
 	}
 	// no transition runs under reduced motion, so nothing would end one
 	watch(risen, on => on && prefersReducedMotion() && (shown.value = true))
+
+	// once the game is open (shipped, or the dev server) this is its title: a mouse is offered the start,
+	// a phone is told it cannot play, yet a key still boards a tablet with a keyboard taken for one
+	const open = import.meta.env.GAME_SHIPPED || import.meta.env.DEV
+	const start = open && hasFinePointer()
+	const router = useRouter()
+	if (open) {
+		useWindowListener('keydown', () => {
+			board()
+			router.push('/game')
+		})
+	}
 </script>
 
 <style scoped lang="scss">
@@ -105,10 +128,31 @@
 		transform: none;
 	}
 
+	// a title screen's prompt; blinks on visibility, the rise owns opacity
+	.holding__prompt {
+		margin: 1.5rem 0 0;
+		font-family: $font-pixel;
+		font-size: $type-title;
+		letter-spacing: 2 * $font-pixel-unit;
+		text-align: center;
+		color: $light-gray;
+		animation: holding-prompt 1.2s step-end infinite;
+	}
+
+	@keyframes holding-prompt {
+		50% {
+			visibility: hidden;
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.holding__status,
 		.holding__card {
 			transition: none;
+		}
+
+		.holding__prompt {
+			animation: none;
 		}
 	}
 
