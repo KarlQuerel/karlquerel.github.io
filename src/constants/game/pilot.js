@@ -87,6 +87,18 @@ export const PILOT_SHADOW = {
 // the corona out to `glare` of its radius
 export const PILOT_SUN = { radius: 0.5, age: 1, corona: 1, glare: 3 }
 
+// What hangs outside the hull (the spacewalker): drawn on three's `layer` by its own pass, from the player's
+// eye out to `near` and `far` m, for the glass to show where it covers it; lit by the sun at `sun` of the
+// corridor's sunlight, the Earth's rust from below at `earth`, a cold `ambient` from the void, the escort
+// drone's eye falling off as 1 / (1 + `lampFall` d²) and none of it within `lampClear` m (the drone round
+// it), and a `rim` on every edge turned to the sun
+export const PILOT_SPACE = {
+	layer: 2,
+	near: 0.5,
+	far: 200,
+	light: { sun: 1.1, earth: 0.3, ambient: 0.15, rim: 0.35, lampFall: 1.5, lampClear: 0.25 },
+}
+
 // The Earth through the observation bay's glass: the holding screen's Earth of 3812 (js/intro/earthMap.js)
 // painted as a whole disc at the art grid's own scale, its `view` centre as the holding screen takes it, lit
 // from the sun (PILOT_OUTSIDE.sun), its light spread by `gain` (lower than the holding screen's, so the day
@@ -125,6 +137,15 @@ export const PILOT_MATS = {
 	holoRing: { base: ['pitch', 1], emit: ['rime', 'star', 0.5, 1.4], rim: 0 },
 	earth: { base: ['pitch', 1], emit: ['brick', 'amber', 0.6, 1.3], rim: 0 },
 	vial: { base: ['pitch', 1], emit: ['rime', 'star', 0.6, 1.1], rim: 0 },
+	// the drones: their livery, halo, eye, iris and beacon
+	halo: { base: ['pitch', 1], emit: ['rime', 'star', 0.6, 1.4], rim: 0 },
+	livery: { base: ['clay', 'amber', 0.5, 1], gloss: 0.5 },
+	eye: { base: ['pitch', 1], emit: ['rime', 'star', 0.4, 1.3], rim: 0 },
+	pupil: { base: ['pitch', 1], emit: ['star', 1.6], rim: 0 },
+	iris: { base: ['pitch', 1] },
+	beacon: { base: ['pitch', 1], emit: ['ember', 'glow', 0.3, 1.6], rim: 0 },
+	// a thruster's puff of cold gas, lit white by the sun
+	puff: { base: ['pitch', 1], emit: ['rime', 'silver', 0.6, 1.1], rim: 0 },
 }
 
 // Each bay's furniture in its own frame (rx out from the opening, y up from the deck, z along from the bay's
@@ -277,12 +298,34 @@ export const PILOT_BOARD = { z: [-0.6, 0.9], top: 2.06, cell: 0.018, ours: 8, se
 // a floating pane's light bar: how thick, and how far under the glass
 export const PILOT_PANE = { bar: 0.012, gap: 0.03 }
 
+// A station drone in its own frame (metres; its eye along +z, up +y): a white `body` (an ellipsoid, radii
+// x, y, z) under an orange livery `cap` reaching `cap` rad down from its top, split at the waist by a dark
+// `band`; a glowing `halo` ring `r` round orbiting it, tipped `tilt` rad and precessing `step` rad
+// `stepsPerS` times a second; the `eye` on its nose, a lens `r` round in an `iris` and a `collar`, its
+// `pupil` pulsing between `pulse` sizes `pulsePerS` times a second; a glowing `vent` at its tail; two thruster
+// `pods` (capsules `r` round and `length` long at ±`x`, `y`, a glowing nozzle `nozzle` round aft); two
+// antenna `fins` (half sizes `half`) at ±`at`, splayed `splay` rad, a `beacon` blinking `blinkPerS` on the
+// left one's tip.
+export const PILOT_DRONE = {
+	body: [0.12, 0.1, 0.145],
+	cap: 0.75,
+	band: { tube: 0.011 },
+	halo: { r: 0.2, tube: 0.0075, tilt: 0.38, step: 0.35, stepsPerS: 3 },
+	eye: { r: 0.06, iris: 0.045, pupil: 0.022, pulse: [0.8, 1.15], pulsePerS: 3, depth: 0.012 },
+	collar: { tube: 0.011 },
+	vent: { r: 0.045, depth: 0.01 },
+	pods: { x: 0.155, y: -0.02, r: 0.028, length: 0.09, nozzle: 0.022 },
+	fins: { at: [0.05, 0.1, -0.07], half: [0.004, 0.04, 0.032], splay: 0.4 },
+	beacon: { r: 0.009, blinkPerS: 1.4 },
+}
+
 // The repair job in the panel's frame (x out from the wall, y up, z along): the cavity, four cable runs
 // sagging `sag`, the relay and its light; the panel itself held up off the wall beside the hole, turned
-// `tilt` rad toward the corridor; the drone, an octagonal body (`r` round, `h` tall) under a lid, with a
-// dark band, its lens on the work and a status strip on its back, a thruster ring `below` it lighting the
-// wall, hovering `bob` up and down on a stepped clock; its two arms, each bent at an elbow `lift` above
-// the straight line, one to the weld tip, one to the panel's near edge; and the sparks the weld throws,
+// `tilt` rad toward the corridor; the drone (PILOT_DRONE) facing the work, turned `yaw` rad toward the hatch
+// so the walk up to it meets its eye, hovering `bob` up and down on a
+// stepped clock; its two arms `r` round from their `shoulders` (in the drone's frame), each bent at an elbow
+// `lift` above the straight line, one ending in a `torch` at the weld tip, one in two `fingers` `spread`
+// apart on the panel's near edge; and the sparks the weld throws,
 // `perBurst` at each flash of it, out at `speed` and up to `up` m/s, falling, bouncing off the deck and
 // the lower cut at `bounce` and going out in `steps` over their `life`
 export const PILOT_REPAIR = {
@@ -291,13 +334,17 @@ export const PILOT_REPAIR = {
 	relay: { at: [0.03, 0.12, 0.12], half: [0.025, 0.05, 0.07] },
 	relayLight: { at: [0.055, 0.14, 0.14], half: [0.004, 0.006, 0.006] },
 	panel: { at: [0.36, -0.04, 0.78], half: [0.012, 0.4, 0.28], tilt: 0.5 },
-	drone: { at: [0.46, 0.17, 0.12], r: 0.15, h: 0.1, bob: 0.012, stepsPerS: 6, phase: 0.42 },
-	lid: { r: 0.105, h: 0.035 },
-	band: { h: 0.016 },
-	lens: { r: 0.032, h: 0.02 },
-	strip: { half: [0.004, 0.008, 0.05] },
-	ring: { r: 0.075, tube: 0.012, below: 0.06 },
-	arms: { r: 0.015, lift: 0.07 },
+	drone: { at: [0.46, 0.17, 0.12], yaw: 0.6, bob: 0.012, stepsPerS: 6, phase: 0.42 },
+	arms: {
+		r: 0.013,
+		lift: 0.07,
+		shoulders: [
+			[0.07, -0.085, 0.04],
+			[-0.07, -0.085, 0.04],
+		],
+		torch: { r: 0.012, length: 0.04 },
+		fingers: { half: [0.004, 0.004, 0.022], spread: 0.014 },
+	},
 	sparks: {
 		count: 40,
 		perBurst: 4,
@@ -462,6 +509,83 @@ export const PILOT_CREW = [
 		greet: { x: 1.0, z: 16.1, reach: 3.5, watch: Math.PI / 2 },
 	},
 ]
+
+// The spacewalker: Astra in her helmet on the space layer, making her round of the station's outside. Her
+// path loops through `path` (three's frame): out past the right-hand span, over the roof, above the blister's
+// glass roof and round its far side, back down the left past the span low against the Earth, and under the
+// deck by the floor ports. She tops out at `speed` m/s, easing in and out of each of her `stops` (a `path`
+// index), where she rests `restS` s looking in at the hull, or at the player once they are within `reach`,
+// playing her `react`. Each clip role (`rest`, `react`, and `travel` if given) is hers to swap. Weightless,
+// her clips run at `pace`, she bobs `bob` m over `periodS` s, leans `lean` rad into her travel and turns at
+// `turnRate` rad/s; her head points `upright` of the way from the world's up to straight out from the hull,
+// whose axis runs the corridor's length at height `axis`.
+// She flies on a thruster `pack` on her back (half sizes `half`, `back` m behind her `bone`, its
+// `nozzles` at its lower corners, in its own frame), which puffs cold gas against her acceleration once it
+// passes `kick` m/s²: a burst of `perBurst` puffs every `everyS` s, each flying `speed` m/s, swelling from
+// `size` to `grow` times that and going out in `steps` over `lifeS`; holding station, a puff every
+// `holdS` s. Her `escort`, a drone (PILOT_DRONE) `scale` times its size, keeps station `offset` m from her
+// (her left, up, ahead), closing on that spot over `followS` s, its eye on her chest (`chest` m up from
+// her feet) and lighting her `lamp`.
+export const PILOT_SPACEWALKER = {
+	...ASTRA,
+	helmet: HELMET,
+	clips: { rest: 'Idle', react: 'Talk' },
+	fidgets: ['Idle2'],
+	path: [
+		[-4.2, 1.3, 12.8],
+		[-3.3, 1.6, 15.8],
+		[-3.1, 2.4, 19.8],
+		[-1.9, 3.8, 22.2],
+		[0, 4.4, 24],
+		[2, 3.9, 25.9],
+		[2.7, 3.4, 27.6],
+		[2.8, 3.1, 29.2],
+		[4.8, 2, 31.4],
+		[5, 1, 28.4],
+		[3.7, 0.5, 25],
+		[3.1, 0.3, 17.6],
+		[2.9, 0.2, 12.8],
+		[1.9, -1.3, 10.2],
+		[0, -1.9, 9.4],
+		[-2.6, -1.3, 10],
+	],
+	stops: [
+		{ at: 1, restS: 10 },
+		{ at: 7, restS: 8 },
+		{ at: 11, restS: 10 },
+	],
+	speed: 0.6,
+	reach: 3.5,
+	pace: 0.6,
+	bob: 0.1,
+	periodS: 9,
+	lean: 0.35,
+	turnRate: 0.8,
+	upright: 0.35,
+	axis: 1.3,
+	pack: {
+		bone: 'mixamorig1Spine2',
+		back: 0.16,
+		half: [0.15, 0.2, 0.06],
+		nozzles: [
+			[0.11, -0.2, -0.03],
+			[-0.11, -0.2, -0.03],
+		],
+	},
+	puffs: {
+		count: 48,
+		kick: 0.02,
+		perBurst: 3,
+		everyS: 0.35,
+		holdS: 3.5,
+		speed: 0.9,
+		size: 0.035,
+		grow: 2.5,
+		steps: 3,
+		lifeS: 0.7,
+	},
+	escort: { scale: 1.4, offset: [0.75, 0.55, 0.35], followS: 0.9, chest: 1.2, lamp: 1.6 },
+}
 
 // The player's own body, worn by the camera and seen looking down: Ely on the crew's clips, its head swapped
 // for the crew's `helmet`, which only its shadow shows, its neck held `back` m behind the eye, so that
