@@ -4,8 +4,9 @@
 // common.glsl (hash, fbm, glyphs, stars) and corridorLight.glsl (the frame, the bays, crLight).
 // Kinds: 0 deck, 1 ceiling, 2 upper cut, 3 lower cut, 4 wall, 5 a bay's back wall, 6 a bay's sides and
 // ceiling, 7 the bulkhead behind, 8 the door wall, 9 a thing standing about (uBase, uEmit, uGloss, uRim),
-// 10 the vitals monitor, 11 a console screen, 12 the comms world hologram, 13 a crew recording, 14 the
-// weld tip. uCenter/uHalf place what draws about its own middle; uEarth is the Earth through the glass.
+// 10 the vitals monitor, 12 the mission table's world hologram, 13 a crew recording, 14 the weld tip, 15
+// the glass span's panes, 16 a floating glass pane, 17 a projector's beam, 18 a glass canopy. uCenter/uHalf place what draws about its own middle; uEarth is the
+// Earth through the glass.
 
 varying vec3 vCrNormal;
 uniform vec3 uBase;
@@ -88,7 +89,7 @@ float number2(float n, vec2 q){
 
 float ribAt(float z){ return step(abs(fract(z/CR_RIB_EVERY) - 0.5)*CR_RIB_EVERY, 0.07); }
 // how bright a bay's lit panel wall burns
-float bayPanel(float k){ return k < 0.5 ? 1.0 : k < 1.5 ? 0.95 : k < 2.5 ? 1.0 : 0.5; }
+float bayPanel(float k){ return k < 0.5 ? 0.45 : k < 1.5 ? 0.95 : k < 2.5 ? 1.0 : 0.22; }
 vec3 yaw(vec3 q, float a){ float c = cos(a), s = sin(a); return vec3(c*q.x + s*q.z, q.y, -s*q.x + c*q.z); }
 
 // three locker cells left of the door, the doorway right of centre
@@ -101,12 +102,12 @@ float lockerCell(vec3 p){
 float doorAt(vec3 p){ return (p.x > CR_DOOR_X0 && p.x < CR_DOOR_X1 && p.y < CR_FLOOR + CR_DOOR_TOP) ? 1.0 : 0.0; }
 
 // The Earth through the glass: the holding screen's Earth of 3812 painted as a disc (uEarth; its centre,
-// radius and side in cells in uEarthDisc), hung in the sky along CR_EARTH_AIM (out through this bay's glass,
-// up, along), each view ray read off the disc by its angle from the middle, so the globe holds still in the
-// sky as the walk goes by. Its own colour where its disc or air covers the ray (a = 1), the stars elsewhere.
-vec4 earthView(vec3 rd, float side){
+// radius and side in cells in uEarthDisc), hung in the sky off the left hand along CR_EARTH_AIM (out, up,
+// along), each view ray read off the disc by its angle from the middle, so the globe holds still in the sky
+// as the walk goes by. Its own colour where its disc or air covers the ray (a = 1), the stars elsewhere.
+vec4 earthView(vec3 rd){
   vec3 U = vec3(0.0, 1.0, 0.0);
-  vec3 C = normalize(vec3(side*CR_EARTH_AIM.x, CR_EARTH_AIM.y, CR_EARTH_AIM.z));
+  vec3 C = normalize(vec3(-CR_EARTH_AIM.x, CR_EARTH_AIM.y, CR_EARTH_AIM.z));
   vec3 Uc = normalize(U - C*dot(U, C));
   vec3 Rc = cross(Uc, C);
   vec3 v = rd - C*dot(rd, C);
@@ -118,6 +119,20 @@ vec4 earthView(vec3 rd, float side){
     if (e.a > 0.5) return vec4(e.rgb, 1.0);
   }
   return vec4(stars(rd)*0.8, 0.0);
+}
+// a pane onto space: the Earth's cells as painted (a = 1, written out untouched by the corridor's air and
+// palette), or the stars with a sheen that grows toward a grazing look, so glass seen edge-on still reads
+vec4 outside(vec3 rd, vec3 n){
+  vec4 sky = earthView(rd);
+  if (sky.a > 0.5) return sky;
+  float graze = pow(1.0 - abs(dot(n, rd)), 3.0);
+  return vec4(sky.rgb*0.95 + SILVER*0.04 + mix(FROST, RIME, 0.5)*0.45*graze, 0.0);
+}
+// the blister's frames over a face `size` m: panes about CR_BLISTER_PITCH, framed at their edges
+float blisterFrame(vec2 q, vec2 size){
+  vec2 count = max(floor(size/CR_BLISTER_PITCH + 0.5), 1.0);
+  vec2 g = abs(fract(q*count/size + 0.5) - 0.5)*size/count;
+  return step(min(g.x, g.y), CR_BLISTER_FRAME);
 }
 // a bay's lit panel wall, louvred, the light the crew stands against
 vec3 louvres(vec3 p, float k, float mixAt){
@@ -142,6 +157,11 @@ void main(){
   vec3 base = GUN;
   vec3 emit = vec3(0.0);
   float gloss = 0.0, bath = 0.0, rim = 0.0;
+  // a pane onto space here, drawn by outside() once the surface is done; out from a bay's opening; a bay
+  // wall's height
+  bool glass = false;
+  float rx = side*p.x - CR_W;
+  float wallTop = CR_CEIL - CR_LINTEL - CR_FLOOR;
 
 #if CR_KIND == 0
   // a flush plated deck: a walkway plate down the middle, panels either side, fine seams between
@@ -163,6 +183,18 @@ void main(){
   }
   base = mix(base, PITCH, max(word, step(0.01, chev)));
   emit += CR_LINE*(0.8*word + chev)*wake;
+  // in the glass span the lines of light run along the deck's edge, broken at every rib
+  if (crInSpan(p.z)){
+    float edgeLine = step(abs(abs(p.x) - (CR_W - CR_CHAMFER - CR_SPAN_LINE_INSET)), 0.5*CR_LINE_W)*(1.0 - rib);
+    emit += CR_LINE*(0.25 + 1.1*crLineOn(seg)*wake)*CR_SPAN_LINE_GAIN*edgeLine;
+    base = mix(base, PITCH, edgeLine);
+  }
+  // the blister's floor: a strip of glass along its outer edge
+  if (crIsBlister(k) && rx > CR_BLISTER_DEPTH - CR_BLISTER_FLOOR){
+    vec2 q = vec2(rx - (CR_BLISTER_DEPTH - CR_BLISTER_FLOOR), p.z - bz + CR_BAY_HALF);
+    glass = blisterFrame(q, vec2(CR_BLISTER_FLOOR, 2.0*CR_BAY_HALF)) < 0.5;
+    if (!glass) base = GRAPHITE*0.7*grime;
+  }
   // a line of the door's light across the deck at the threshold
   emit += GLOW*(0.5 + 0.5*uCrDoor)*step(abs(p.z - (CR_DOOR_Z - 0.55)), 0.025)*step(abs(p.x - CR_DOOR_POS.x), 0.48);
 #elif CR_KIND == 1
@@ -178,9 +210,12 @@ void main(){
   float line = step(abs(along - (upper ? 0.5 : 0.85)*CR_CHAMFER*1.4142), 0.5*CR_LINE_W)*(1.0 - rib);
   emit += CR_LINE*(0.25 + 1.1*crLineOn(seg)*wake)*line;
   base = mix(base, PITCH, line);
-  float jamb = step(abs(p.z - bz), CR_BAY_HALF + 0.06)*step(0.0, p.x*side)*step(along, 0.06)*float(upper);
+  float jamb = step(abs(p.z - bz), CR_BAY_HALF + 0.06)*step(0.0, p.x*side)*step(along, 0.06)*float(upper && !crIsSpan(k));
   emit += crBayTint(k)*1.3*jamb;
   base = mix(base, crBayTint(k)*0.4, jamb);
+  // the left-hand lower cut's ports between the ribs, the Earth at your feet
+  float ribGap = abs(fract(p.z/CR_RIB_EVERY) - 0.5)*CR_RIB_EVERY;
+  glass = !upper && p.x < 0.0 && along > CR_PORT_ALONG.x && along < CR_PORT_ALONG.y && ribGap > CR_PORT_INSET;
 #elif CR_KIND == 4
   vec2 panel = floor(vec2(p.z, (p.y + 0.3)*1.4));
   float seam = max(step(0.95, fract(p.z)), step(0.94, fract((p.y + 0.3)*1.4)));
@@ -199,8 +234,10 @@ void main(){
     paint = stencil(0.0, 6.0, vec2((along - z0)/0.06, (0.35 - p.y)/0.06));
     float z1 = left ? 10.6 : -14.68;
     paint = max(paint, stencil(left ? 1.0 : 2.0, 6.0, vec2((along - z1)/0.06, (0.35 - p.y)/0.06)));
-    if (side*p.x > 0.0){
-      float zl = left ? bz - 2.25 : -(bz - 1.585);
+    if (side*p.x > 0.0 && !crIsSpan(k)){
+      // between the two ribs short of the opening, clear of both
+      float mid = bz - 1.5*CR_RIB_EVERY, reach = 10.0*0.035;
+      float zl = left ? mid - reach : -(mid + reach);
       bayPaint = stencil(5.0 + k, 5.0, vec2((along - zl)/0.035, (0.5 - p.y)/0.035));
     }
     float fr = floor(p.z/CR_RIB_EVERY);
@@ -210,39 +247,62 @@ void main(){
       float fx = left ? (fz - 0.13)/0.024 : (0.31 - fz)/0.024;
       paint = max(paint, number2(fr + 10.0, vec2(fx, (-0.24 - p.y)/0.024)));
     }
+    // the departures board: the ten ships in two columns of five, HERMES, its number and its light, lit
+    // steady once sealed, ours blinking, the rest dark
+    if (!left && p.z > CR_BOARD_Z0 && p.z < CR_BOARD_Z1 && p.y < CR_BOARD_TOP && p.y > CR_BOARD_TOP - 36.0*CR_BOARD_CELL){
+      base = PITCH*1.3;
+      vec2 q = vec2(CR_BOARD_Z1 - p.z, CR_BOARD_TOP - p.y)/CR_BOARD_CELL - 1.0;
+      float col = floor(q.x/42.0), row = floor(q.y/7.0);
+      vec2 c = q - vec2(col*42.0, row*7.0);
+      float ship = col*5.0 + row + 1.0;
+      if (min(q.x, q.y) >= 0.0 && col < 2.0 && row < 5.0){
+        paint = max(paint, max(stencil(4.0, 6.0, c), number2(ship, c - vec2(26.0, 0.0))));
+        if (c.x >= 36.0 && c.x < 39.0 && c.y < 5.0){
+          bool ours = abs(ship - CR_BOARD_OURS) < 0.5;
+          float on = ours ? step(0.5, fract(uCrClock*1.2)) : step(ship, CR_BOARD_SEALED + 0.5)*0.8;
+          base = PITCH;
+          emit += (ours ? EMBER : mix(RIME, SILVER, 0.5))*on;
+        }
+      }
+    }
   }
   // the jamb: a line of the bay's light down each side of its opening
-  float jamb = step(0.0, p.x*side)*step(abs(abs(p.z - bz) - CR_BAY_HALF - 0.03), 0.03)*step(p.y, CR_CEIL - CR_LINTEL);
+  float jamb = step(0.0, p.x*side)*step(abs(abs(p.z - bz) - CR_BAY_HALF - 0.03), 0.03)*step(p.y, CR_CEIL - CR_LINTEL)*float(!crIsSpan(k));
   base = mix(base, PITCH, max(paint, bayPaint));
   emit += CR_LINE*0.9*paint*wake + crBayTint(k)*1.3*bayPaint;
   emit += crBayTint(k)*1.3*jamb;
   base = mix(base, crBayTint(k)*0.4, jamb);
 #elif CR_KIND == 5
-  if (k > 3.5){
-    // the observation window: the red Earth and the yard beyond mullions
-    bool pane = abs(p.z - bz) < 1.25 && p.y > CR_FLOOR + 0.5 && p.y < CR_CEIL - CR_LINTEL - 0.12;
-    float mull = step(abs(abs(p.z - bz) - 0.65), 0.035);
-    if (pane && mull < 0.5){
-      vec4 sky = earthView(rd, side);
-      // the Earth's cells as painted, untouched by the corridor's air and its palette
-      if (sky.a > 0.5){ gl_FragColor = vec4(crToLinear(sky.rgb), CR_EXACT); return; }
-      base = vec3(0.0);
-      emit = sky.rgb*0.95 + SILVER*0.04;
-    } else base = GRAPHITE*0.45*grime;
+  if (crIsBlister(k)){
+    // the blister's outer wall: glass, framed
+    glass = blisterFrame(vec2(p.z - bz + CR_BAY_HALF, p.y - CR_FLOOR), vec2(2.0*CR_BAY_HALF, wallTop)) < 0.5;
+    if (!glass) base = GRAPHITE*0.7*grime;
+  } else if (k < 0.5){
+    // the seed vault: a wall of drawers lit from inside, the odd one dark, the pulled one a black hole
+    vec2 q = vec2(p.z - bz + CR_VAULT_ALONG, p.y - CR_FLOOR - CR_VAULT_Y0)/CR_VAULT_CELL;
+    vec2 cell = floor(q);
+    vec2 f = fract(q)*CR_VAULT_CELL;
+    if (min(q.x, q.y) < 0.0 || q.x >= 2.0*CR_VAULT_ALONG/CR_VAULT_CELL.x || p.y > CR_FLOOR + CR_VAULT_Y1)
+      base = GRAPHITE*0.5*grime;
+    else if (min(f.x, f.y) < CR_VAULT_SEAM) base = PITCH;
+    else if (max(abs(cell.x - CR_VAULT_PULLED.x), abs(cell.y - CR_VAULT_PULLED.y)) < 0.5) base = vec3(0.0);
+    else {
+      // each front frosted glass lit from behind, its pull a line of light along its foot
+      float lit = step(hash12(cell + 3.1), CR_VAULT_LIT);
+      base = ZINC;
+      emit = mix(FROST, SILVER, 0.3 + 0.5*hash12(cell))*lit*0.6 + CR_LINE*0.7*lit*step(f.y, CR_VAULT_SEAM + 0.012);
+    }
   } else {
     base = ZINC;
     emit = louvres(p, k, 0.5);
   }
 #elif CR_KIND == 6
   bool wall = abs(n.z) > 0.5;
-  float rx = side*p.x - CR_W;
-  if (k > 3.5 && wall && p.z > bz && rx > 0.12 && rx < 1.38 && p.y > CR_FLOOR + 0.5 && p.y < CR_CEIL - CR_LINTEL - 0.12 && step(abs(rx - 0.75), 0.035) < 0.5){
-    vec4 sky = earthView(rd, side);
-    if (sky.a > 0.5){ gl_FragColor = vec4(crToLinear(sky.rgb), CR_EXACT); return; }
-    base = vec3(0.0);
-    emit = sky.rgb*0.95 + SILVER*0.04;
-  } else if (k > 3.5){
-    base = GRAPHITE*0.4*grime;
+  if (crIsBlister(k)){
+    // the blister's sides and ceiling: glass, framed
+    vec2 q = wall ? vec2(rx, p.y - CR_FLOOR) : vec2(rx, p.z - bz + CR_BAY_HALF);
+    glass = rx > 0.0 && blisterFrame(q, vec2(CR_BLISTER_DEPTH, wall ? wallTop : 2.0*CR_BAY_HALF)) < 0.5;
+    if (!glass) base = GRAPHITE*0.7*grime;
   } else {
     base = ZINC;
     emit = wall ? louvres(p, k, 0.4)*0.7 : mix(RIME, SILVER, 0.5)*0.7;
@@ -313,15 +373,8 @@ void main(){
   base = SOOT;
   emit = RIME*0.3 + mix(RIME, SILVER, 0.5)*trace*1.2 + EMBER*bars*0.8;
   bath = 1.0;
-#elif CR_KIND == 11
-  // a screen: lines of text scrolling up on a stepped clock, a cursor row lit amber
-  float row = floor(p.y*34.0 + floor(uCrClock*3.0));
-  float line = step(0.35, fract(p.y*34.0))*step(0.3, hash11(row*1.7))*step(fract(p.z*6.0 + hash11(row)*3.0), 0.3 + 0.6*hash11(row*3.1));
-  base = SOOT;
-  emit = FROST*0.25 + mix(RIME, SILVER, 0.5)*line*0.7 + EMBER*0.5*line*step(0.9, hash11(row*5.3));
-  bath = 1.0;
 #elif CR_KIND == 12
-  // the comms hologram: the candidate world, its land lit, turning in steps on its own clock, drawn on
+  // the mission table's hologram: the candidate world, its land lit, turning in steps on its own clock, drawn on
   // every other row of the grid so it stays two colours deep
   if (mod(floor(gl_FragCoord.y), 2.0) > 0.5) discard;
   vec3 N = normalize(p - crFrame(uCenter));
@@ -337,6 +390,44 @@ void main(){
   // the weld tip: a hot white spark in bursts on its own clock
   base = PITCH;
   emit = CR_SPARK*3.0*crWeld();
+#elif CR_KIND == 15
+  // the glass span's panes: the Earth off the left hand (the window bay's side) and the stars, framed
+  // along the ribs and along the octagon's corners, wall to cut
+  float ribGap = abs(fract(p.z/CR_RIB_EVERY) - 0.5)*CR_RIB_EVERY - 0.07;
+  float corner;
+  if (abs(n.y) < 0.1) corner = min(p.y - (CR_FLOOR + CR_CHAMFER), (CR_CEIL - CR_CHAMFER) - p.y);
+  else {
+    float a = n.y < 0.0 ? p.y - (CR_CEIL - CR_CHAMFER) : (CR_FLOOR + CR_CHAMFER) - p.y;
+    corner = min(a, CR_CHAMFER - a)*1.4142;
+  }
+  glass = min(ribGap, corner) > CR_SPAN_FRAME;
+  if (!glass) base = GRAPHITE*0.7*grime;
+#elif CR_KIND == 16
+  // a floating glass pane: a screen's text scrolling up in light on every other row, the room through it
+  if (mod(floor(gl_FragCoord.y), 2.0) > 0.5) discard;
+  float row = floor(p.y*34.0 + floor(uCrClock*3.0));
+  float line = step(0.35, fract(p.y*34.0))*step(0.3, hash11(row*1.7))*step(fract((p.z + p.x)*6.0 + hash11(row)*3.0), 0.3 + 0.6*hash11(row*3.1));
+  base = vec3(0.0);
+  emit = mix(FROST, RIME, 0.5)*0.55 + mix(RIME, SILVER, 0.5)*line*1.2 + EMBER*0.7*line*step(0.9, hash11(row*5.3));
+#elif CR_KIND == 17
+  // a projector's beam: light rising from its plate and fading, one cell in four so the room shows through,
+  // on the rows a recording leaves empty so the figure in it keeps its own
+  vec2 cell = floor(gl_FragCoord.xy);
+  if (mod(cell.y, 2.0) < 0.5 || mod(cell.x + floor(cell.y*0.5), 2.0) > 0.5) discard;
+  float rise = clamp((p.y - crFrame(uCenter).y)/uHalf.y, 0.0, 1.0);
+  base = vec3(0.0);
+  emit = mix(RIME, STAR, 0.4)*0.6*(1.0 - rise);
+#elif CR_KIND == 18
+  // a glass canopy: a faint sheen, brighter toward a grazing look, on the rows a recording leaves empty
+  if (mod(floor(gl_FragCoord.y), 2.0) < 0.5) discard;
+  base = vec3(0.0);
+  emit = mix(FROST, RIME, 0.5)*(0.3 + 0.7*pow(1.0 - abs(dot(n, rd)), 2.0));
 #endif
+  if (glass){
+    vec4 sky = outside(rd, n);
+    if (sky.a > 0.5){ gl_FragColor = vec4(crToLinear(sky.rgb), CR_EXACT); return; }
+    base = vec3(0.0);
+    emit = sky.rgb;
+  }
   gl_FragColor = vec4(crToLinear(crLight(p, n, base, emit, gloss, bath, rim)), 1.0);
 }
