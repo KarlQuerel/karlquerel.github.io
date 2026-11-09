@@ -66,18 +66,35 @@ export const PILOT_SET = {
 
 // The light from outside, through any glass: the Earth's (`earth` of its colour, from its middle on what
 // faces it, glowing `spill` m past the span's ends) and the sun's, along `sun` (three's frame, toward it:
-// out over the left hand, up, back), in hard patches where its rays come in between the ribs
-export const PILOT_OUTSIDE = { earth: 2.2, spill: 1.2, sun: [0.6, 0.35, -0.72], sunGain: 2.6 }
+// out over the left hand, high and ahead, well clear of the Earth), in hard patches where its rays come in
+// between the ribs
+export const PILOT_OUTSIDE = { earth: 2.2, spill: 1.2, sun: [0.4, 0.55, 0.73], sunGain: 2.6 }
+
+// The sun's shadows: the crew's and the player's depth seen from the sun, on three's `layer` (a mesh only
+// there casts and is never seen), `size` texels square; a point is looked up `lift` m off its surface and
+// `bias` (of the depth range) nearer the sun, so nothing shades itself where it faces the light. And under
+// lamps: the deck darkens `dark` at a character's feet, fading out `radius` m round, for up to `feet` of them
+export const PILOT_SHADOW = {
+	layer: 1,
+	size: 2048,
+	lift: 0.03,
+	bias: 0.002,
+	underfoot: { radius: 0.5, dark: 0.7, feet: 8 },
+}
+
+// The sun itself through the glass, along PILOT_OUTSIDE.sun: the intro's star (js/intro/sky.js) swollen
+// to `radius` rad, at the fields shot's `age`, its corona at `corona`; its glare drowns the stars and thins
+// the corona out to `glare` of its radius
+export const PILOT_SUN = { radius: 0.5, age: 1, corona: 1, glare: 3 }
 
 // The Earth through the observation bay's glass: the holding screen's Earth of 3812 (js/intro/earthMap.js)
-// painted as a whole disc at the art grid's own scale, its `view` centre and `light` as the holding screen
-// takes them, its light spread by `gain` (lower than the holding screen's, so the day side keeps its rust);
-// hung along `aim` (out through the glass, up, along the corridor), `radius` rad from middle to limb: close,
-// the planet filling the glass's foot, its limb cresting low with the stars above, day on one hand and the
-// fires of the night side on the other
+// painted as a whole disc at the art grid's own scale, its `view` centre as the holding screen takes it, lit
+// from the sun (PILOT_OUTSIDE.sun), its light spread by `gain` (lower than the holding screen's, so the day
+// side keeps its rust); hung along `aim` (out through the glass, up, along the corridor), `radius` rad from
+// middle to limb: close, the planet filling the glass's foot, its limb cresting low with the stars above,
+// day toward the sun and the fires of the night side on the other hand
 export const PILOT_WINDOW = {
 	view: { lat: -15, lon: 25, heading: 0 },
-	light: [0.9, -0.1, 0.3],
 	gain: 1.2,
 	aim: [0.7, -0.72, 0],
 	radius: 0.7,
@@ -446,16 +463,16 @@ export const PILOT_CREW = [
 	},
 ]
 
-// The player's own body, worn by the camera and seen looking down: Ely on the crew's clips, without
-// the skin the `drop` bones carry (the head), its neck held `back` m behind the eye, so that looking down
-// shows the boots under the eye, not the chest, and the legs never step out ahead; walking above
-// `walking` pace, easing into a run over `blendS` s, and no clip slowed below `slowest` m/s. `gaits`:
+// The player's own body, worn by the camera and seen looking down: Ely on the crew's clips, its head swapped
+// for the crew's `helmet`, which only its shadow shows, its neck held `back` m behind the eye, so that
+// looking down shows the boots under the eye, not the chest, and the legs never step out ahead; walking
+// above `walking` pace, easing into a run over `blendS` s, and no clip slowed below `slowest` m/s. `gaits`:
 // each clip and how fast its boots pass the deck (m/s at Ely's height), so each plays at the body's
 // speed over its own and the feet never skate.
 export const PILOT_BODY = {
 	...ELY,
 	clipsFrom: LOCOMOTION,
-	drop: /Head|Eye/,
+	helmet: HELMET,
 	back: 0.18,
 	walking: 0.15,
 	blendS: 0.2,
