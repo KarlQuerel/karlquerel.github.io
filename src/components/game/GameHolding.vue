@@ -1,83 +1,40 @@
 <template>
-	<!-- /under-construction, where /game lands until GAME_SHIPPED and the game's title screen after: the
-	     plated name held still over the Earth, the ship's status or the start prompt under it. -->
+	<!-- /under-construction, where /game lands until GAME_SHIPPED: the plated name held still over the
+	     Earth, the ship's status under it. Once the game is open a desktop goes on to /game, whose first
+	     shot is the title screen; a phone stays here to be told it cannot play. -->
 	<div class="content holding" :style="parallaxStyle">
 		<HomeChip :class="{ 'holding__chip--wait': !shown }" />
 		<SoundChip :class="{ 'holding__chip--wait': !shown }" />
 		<h1 class="sr-only">{{ GAME_WORDMARK.text }}</h1>
 		<!-- the entrance: the world rises, then the name rises and fades in, then the status -->
 		<HoldingEarth @risen="risen = true" />
-		<!-- the name and its line lean together with the cursor, the nearest layer -->
-		<div
-			class="holding__card"
-			:class="{ 'holding__card--in': risen }"
-			:style="cardStyle"
-			@transitionend.self="onTitleIn"
-		>
-			<!-- mounted on the rise: its glint repaints the canvas, which would cost the rise frames -->
-			<PlatingWordmark
-				v-if="risen"
-				:build="false"
-				:cell-max="GAME_HOLDING.title.cellMax"
-				lit
-			/>
-			<p
-				v-if="start"
-				class="holding__status holding__prompt"
-				:class="{ 'holding__status--in': shown }"
-			>
-				{{ GAME_HOLDING.start }}
-			</p>
-			<TypedReadout
-				v-else
-				class="holding__status"
-				:class="{ 'holding__status--in': shown }"
-				:line="open ? GAME_HOLDING.mobile : GAME_HOLDING.readout"
-				:typed="false"
-				pixel
-			/>
-		</div>
+		<TitleCard
+			:shown="risen"
+			:line="open ? GAME_HOLDING.mobile : GAME_HOLDING.readout"
+			@in="shown = true"
+		/>
 	</div>
 </template>
 
 <script setup>
-	import { ref, watch } from 'vue'
+	import { ref } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { usePointerParallax } from '@/composables/usePointerParallax'
-	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { useWindowListener } from '@/composables/useWindowListener'
 	import { GAME_HOLDING, GAME_WORDMARK } from '@/constants/game'
-	import { board, hasFinePointer } from '@/js/game/boarding'
+	import { board } from '@/js/game/boarding'
 	import HomeChip from '../HomeChip.vue'
 	import HoldingEarth from './HoldingEarth.vue'
-	import PlatingWordmark from './PlatingWordmark.vue'
 	import SoundChip from './SoundChip.vue'
-	import TypedReadout from './TypedReadout.vue'
+	import TitleCard from './TitleCard.vue'
 
 	const { parallaxStyle } = usePointerParallax()
-	const { title: T, status: S } = GAME_HOLDING.rise
-	const cardStyle = {
-		'--depth': GAME_HOLDING.title.depth,
-		'--title-ms': `${T.ms}ms`,
-		'--title-delay': `${T.delayMs}ms`,
-		'--title-from': `${T.from * 100}vh`,
-		'--status-ms': `${S.ms}ms`,
-		'--status-delay': `${S.delayMs}ms`,
-		'--status-from': `${S.from * 100}vh`,
-	}
 	const risen = ref(false)
-	// the name is in place: the status types, the way home shows
+	// the name is in place: the way home shows
 	const shown = ref(false)
-	const onTitleIn = event => {
-		if (event.propertyName === 'transform') shown.value = true
-	}
-	// no transition runs under reduced motion, so nothing would end one
-	watch(risen, on => on && prefersReducedMotion() && (shown.value = true))
 
-	// once the game is open (shipped, or the dev server) this is its title: a mouse is offered the start,
-	// a phone is told it cannot play, yet a key still boards a tablet with a keyboard taken for one
+	// once the game is open (shipped, or the dev server), a key still boards a tablet with a keyboard
 	const open = import.meta.env.GAME_SHIPPED || import.meta.env.DEV
-	const start = open && hasFinePointer()
 	const router = useRouter()
 	if (open) {
 		useWindowListener('keydown', () => {
@@ -88,72 +45,9 @@
 </script>
 
 <style scoped lang="scss">
-	@use '@/styles/mixins' as *;
-
 	// lifted off centre, so the limb has the foot of the frame to itself
 	.holding {
 		padding: 0 1rem 14vh;
-	}
-
-	.holding__card {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-		opacity: 0;
-		transform: translateY(var(--title-from));
-		transition:
-			opacity var(--title-ms) linear var(--title-delay),
-			transform var(--title-ms) $ease-settle var(--title-delay);
-		@include lean;
-	}
-
-	.holding__card--in {
-		opacity: 1;
-		transform: none;
-	}
-
-	// the status line rises after the name the same way
-	.holding__status {
-		opacity: 0;
-		transform: translateY(var(--status-from));
-		transition:
-			opacity var(--status-ms) linear var(--status-delay),
-			transform var(--status-ms) $ease-settle var(--status-delay);
-	}
-
-	.holding__status--in {
-		opacity: 1;
-		transform: none;
-	}
-
-	// a title screen's prompt; blinks on visibility, the rise owns opacity
-	.holding__prompt {
-		margin: 1.5rem 0 0;
-		font-family: $font-pixel;
-		font-size: $type-title;
-		letter-spacing: 2 * $font-pixel-unit;
-		text-align: center;
-		color: $light-gray;
-		animation: holding-prompt 1.2s step-end infinite;
-	}
-
-	@keyframes holding-prompt {
-		50% {
-			visibility: hidden;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.holding__status,
-		.holding__card {
-			transition: none;
-		}
-
-		.holding__prompt {
-			animation: none;
-		}
 	}
 
 	// the corner chips appear with the name, in two steps
