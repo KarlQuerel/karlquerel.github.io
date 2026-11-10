@@ -12,12 +12,7 @@ import { createTransition } from '../js/intro/transition.js'
 import { prefersReducedMotion } from './usePrefersReducedMotion.js'
 import { useArtCanvas } from './useArtCanvas.js'
 import { useWindowListener } from './useWindowListener.js'
-import {
-	INTRO_BOOT_WEIGHTS,
-	INTRO_INSPECT,
-	INTRO_LOOK_EASE,
-	INTRO_STILL_START,
-} from '../constants/intro/timeline.js'
+import { INTRO_BOOT_WEIGHTS, INTRO_INSPECT, INTRO_LOOK_EASE } from '../constants/intro/timeline.js'
 import {
 	INTRO_OVERLAY_AT,
 	INTRO_SKIP_DUR,
@@ -38,8 +33,9 @@ const at = key =>
 	)
 
 // On the dev server `?shot=key&t=seconds` opens the intro there, for tuning a shot in isolation.
-// A run with a checkpoint resumes at the act it reached, with the meters it had on reaching it.
-function opening(still) {
+// A run with a checkpoint resumes at the act it reached, with the meters it had on reaching it; any
+// other opens on the title screen (reduced motion leaves it for the wake, js/intro/menu.js).
+function opening() {
 	if (import.meta.env.DEV) {
 		const q = new URLSearchParams(window.location.search)
 		if (q.has('shot')) return { index: at(q.get('shot')), t: Number(q.get('t')) || 0 }
@@ -47,7 +43,7 @@ function opening(still) {
 	const save = loadSave()
 	if (save && INTRO_SHOTS.some(s => s.key === save.key && s.checkpoint))
 		return { index: at(save.key), t: 0, resume: save.game }
-	return { index: still ? at(INTRO_STILL_START) : 0, t: 0 }
+	return { index: 0, t: 0 }
 }
 
 export function useIntro(canvasRef) {
@@ -81,13 +77,16 @@ export function useIntro(canvasRef) {
 		responded: false,
 		// the right button held: the scanner
 		scan: false,
+		// a key pressed on the title screen
+		started: false,
 		game: createGame(),
 	}
 	const look = { tx: 0, ty: 0 }
 	let index = -1
 	let local = 0
-	// the shot's card has had its turn: once a choice comes up it goes, and it does not come back
-	let cardShown = false
+	// how many of the shot's cards (one, or a list in turn) have had their turn: once a choice comes up
+	// the card goes, and it does not come back
+	let cardsShown = 0
 	let gl = null
 	let quad = null
 	let passes = null
@@ -105,7 +104,7 @@ export function useIntro(canvasRef) {
 		else if (grid.width) shot.value?.resize?.(gl, grid)
 		local = t
 		card.value = ''
-		cardShown = false
+		cardsShown = 0
 		marks.value = {}
 		clock.value = 0
 		shot.value?.enter?.(io)
@@ -206,7 +205,7 @@ export function useIntro(canvasRef) {
 			await paint
 			await step('art', (i + 1) / painting.length)
 		}
-		const { index: i, t, resume } = opening(still)
+		const { index: i, t, resume } = opening()
 		go(i, t, resume)
 	}
 
@@ -221,13 +220,12 @@ export function useIntro(canvasRef) {
 			io.look[1] += (look.ty - io.look[1]) * INTRO_LOOK_EASE
 		}
 		local = Math.max(0, local + dt)
-		if (s.card && !cardShown && local >= s.card.at) {
-			card.value = s.card.text
-			cardShown = true
-		}
+		const cards = [s.card ?? []].flat()
+		while (cardsShown < cards.length && local >= cards[cardsShown].at)
+			card.value = cards[cardsShown++].text
 		// a choice takes the frame: the card has had its turn by then. A shot with a voice of its own
 		// (caption) keeps its line up beside the choice it phrases.
-		if (s.card && card.value && choice.value) card.value = ''
+		if (cards.length && card.value && choice.value) card.value = ''
 		const line = s.caption?.(local, io)
 		if (line !== undefined && line !== card.value) card.value = line
 		if (s.marks)
@@ -368,6 +366,8 @@ export function useIntro(canvasRef) {
 			'keydown',
 			e => {
 				const { toggle, back, forward, frameS, shiftS } = INTRO_INSPECT
+				// on the live title screen every key is the start
+				if (shot.value?.menu && !paused.value) return
 				if (toggle.includes(e.key)) paused.value = !paused.value
 				else if (paused.value && (e.key === back || e.key === forward))
 					stepBy += (e.shiftKey ? shiftS : frameS) * (e.key === back ? -1 : 1)
@@ -379,7 +379,14 @@ export function useIntro(canvasRef) {
 			{}
 		)
 
+	// the title screen's key: the game starts, the loop woken if it had parked
+	function begin() {
+		io.started = true
+		wake()
+	}
+
 	return {
+		begin,
 		supported,
 		booting,
 		bootProgress,
