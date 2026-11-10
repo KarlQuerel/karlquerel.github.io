@@ -148,6 +148,9 @@ export const PILOT_MATS = {
 	beacon: { base: ['pitch', 1], emit: ['ember', 'glow', 0.3, 1.6], rim: 0 },
 	// a thruster's puff of cold gas, lit white by the sun
 	puff: { base: ['pitch', 1], emit: ['rime', 'silver', 0.6, 1.1], rim: 0 },
+	// the crew's gear in their suits' colours: gunmetal plate and their amber lights
+	armour: { base: ['graphite', 1], gloss: 0.5 },
+	suitLight: { base: ['pitch', 1], emit: ['ember', 1], rim: 0 },
 }
 
 // Each bay's furniture in its own frame (rx out from the opening, y up from the deck, z along from the bay's
@@ -452,6 +455,17 @@ export const PILOT_PROP_MODELS = {
 		{ ...ASTRA, pose: 'Idle' },
 	],
 	recording: { ...ASTRA, helmet: HELMET, clip: 'Talk' },
+	// models built in Blender (scripts/blender/), each origin `at` on its wall at deck height, turned `turn`
+	// rad, its `hover` node bobbing `bob` m on a stepped clock: the EVA rack on the right wall facing the
+	// blister, between two ribs, its pack floating over its pad
+	placed: [
+		{
+			url: '/assets/game/models/EvaRack.glb',
+			at: [-1.6, 0, 30],
+			turn: 0,
+			hover: { bob: 0.012, stepsPerS: 3, phase: 0.35 },
+		},
+	],
 }
 
 export const PILOT_CREW = [
