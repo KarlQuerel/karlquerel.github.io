@@ -1,85 +1,55 @@
-// Shot 2, EARTH IS DYING: the planet as painted layers sliding past each other, the contact scene's
-// way. Positions are shares of the frame (x of its width, y of its height, from the top left) at the
-// close; sizes are shares of its short side; `depth` is how far a layer moves with the pan, 1 = the globe.
+// Shot 2, EARTH IS DYING, and shot 1's YEAR 3812 with it (its stars cut: the intro opens on the title
+// screen, which is this shot's own picture, constants/intro/menu.js): the planet as painted layers
+// sliding past each other, the contact scene's way. Positions are shares of the frame (x of its width,
+// y of its height, from the top left) at the close; sizes are shares of its short side; `depth` is how far
+// a layer moves with the pan, 1 = the globe.
+
+// At the opening every layer sits `TRAVEL` (frame heights, x right, y down) times its depth from its
+// closing place, before the arrival's offset: the pan only ever carries the scene left.
+const TRAVEL = [0.4, -0.01]
+// Where the camera rests for the title screen, the same way: the globe's crown low in the frame, the
+// Moon up to its left, the sun out to the right. The arrival from it is straight down onto the globe.
+const REST = [0.4, 0.58]
+
 export const EARTH = {
 	duration: 16,
 	// CSS px per canvas pixel, which is how far a layer can step: one, so the pan glides
 	cellPx: 1,
 	// CSS px per art pixel: the layers are painted this coarse and slid on the finer canvas
 	artPx: 2,
-	cardAt: 6.7,
-	// The arrival: the camera tilts down from the year shot's stars onto the Earth over `tilt` seconds,
-	// the scene sliding up `from` frame heights, every layer by its depth, so the Moon comes up first
-	// and slowly and the globe sweeps up last; the sun stays hidden until the globe has it covered,
-	// its glow coming up over the last `glow` seconds of the tilt.
-	arrive: { tilt: 6.5, from: 2.7, glow: 2.5 },
-	// The pan starts here, under the tilt's last second, so the camera never stops: at the opening
-	// every layer sits `travel` (frame heights, x right, y down) times its depth from its closing
-	// place. The globe moves most, so it sinks off the sun and the sun rises past its limb.
+	// the year types once the title has come apart, clears as the globe comes up, then the line
+	cardAt: { year: 2.2, clear: 5.2, dying: 6.7 },
+	// The arrival: the shot opens where the title screen rests (`rest`), and the camera tilts down onto
+	// the Earth over `tilt` seconds, setting off from rest, the scene sliding from `from` (frame heights)
+	// by each layer's depth, so the Moon rises slowly out of the frame and the globe comes up whole.
+	rest: REST,
+	arrive: { tilt: 6.5, from: [REST[0] - TRAVEL[0], REST[1] - TRAVEL[1]] },
+	// The pan starts here, under the tilt's last second, so the camera never stops, and carries every
+	// layer the rest of `travel` home: the globe, nearest, slides away left and the far sun hardly moves,
+	// so the frame turns over to it.
 	panAt: 5,
-	travel: [0.6, -0.42],
+	travel: TRAVEL,
 	// share of the closing speed kept at the end, so the shot hands over still drifting
 	drift: 0.07,
 	// how far the pointer slides the globe, in cells; nearer layers by their depth
 	lookCells: 6,
 	planet: {
-		at: [0.34, 1.0],
-		radius: 0.5,
+		at: [0.155, 0.56],
+		radius: 0.42,
 		depth: 1,
-		// the homepage planet's renderer, on its own world
-		seed: 3812,
-		spin: 2.1,
-		// the key light swung behind the globe toward the sun, so it reads as a thin crescent
-		lightYawDeg: 160,
-		// then turned to face the sun as it stands this share of the pan before the close: where it
-		// breaks the limb, not where it ends up
+		// The Earth of 3812 off its map (constants/intro/earthMap.js): `view` is the place its top limb
+		// crests on and the bearing down the frame from it, so Africa and Europe face the camera, north
+		// up. The sun lights it from its side of the frame and `front` toward the viewer (the light's z),
+		// as it stands this share of the pan before the close, so the dry face shows and the night side
+		// burning is a crescent away from it.
+		view: { lat: 85, lon: 195, heading: 0 },
+		front: 0.45,
 		lightAt: 0.7,
 	},
-	// city lights on the night side: where a second world's land would be is built up (above `built`,
-	// densest `spread` above it), thickest on the coast (thinning over `inland` of elevation), and a
-	// share `lit` of its cells on a lattice `fine` across burns
-	cities: { night: 0.02, built: 0.54, spread: 0.1, lit: 0.1, inland: 0.1, fine: 160 },
 	// the Moon (its map in constants/intro/moon.js), lit gibbous from the sun's side: `light` is x right,
 	// y down, z toward the viewer
-	moon: { at: [0.13, 0.22], radius: 0.07, depth: 0.4, seed: 77, light: [0.75, -0.2, 0.6] },
-	// the Sun, already past its prime: its age on star()'s scale, 0 white to 1 a red giant
-	star: { at: [0.74, 0.26], radius: 0.045, depth: 0.12, age: 0.3 },
-	// The surface's finer life. `coast`/`wisp` are how far fine octaves at `scale` push the ground and the
-	// cloud cover; clouds sit where a second world's elevation passes `cloud`, and `cloudEdge` is how far
-	// past it a deck takes to go solid. The light: `gain` spreads it over the ramp, `hillshade` tips it by the slope toward the sun (measured over `slopeCells`), a
-	// deck's shadow falls `shadowOffset` down-sun and drops `shadowDrop`, the sea glints by `glint`.
-	// `seam` is the half-width of the dither at each seam of the light, in ramp steps: 0.5 dithers all
-	// the way.
-	detail: {
-		seam: 0.4,
-		cloud: 0.6,
-		scale: 9,
-		octaves: 3,
-		coast: 0.2,
-		wisp: 0.35,
-		cloudEdge: 0.06,
-		gain: 1.15,
-		hillshade: 0.3,
-		slopeCells: 1.5,
-		shadowOffset: 0.03,
-		shadowDrop: 0.2,
-		glint: 0.5,
-		glintPower: 24,
-	},
-	// The air past the limb, in cells: `depth` toward the sun, `night` away from it, `wrap` how far the
-	// glow reaches round toward the night side; inner band out, each seam dithered over `seam` of a
-	// band; painted at `alpha`, so the shader can tell it from the ground. `twilight` is how deep past
-	// the terminator the red ground fades out, `limb` where the lit edge catches `limbLift` more.
-	air: {
-		depth: 9,
-		night: 1,
-		wrap: 0.35,
-		ramp: ['sand', 'haze', 'rust'],
-		seam: 0.3,
-		alpha: 200,
-		twilight: 0.12,
-		limb: 0.92,
-		limbLift: 0.18,
-	},
+	moon: { at: [0.06, 0.036], radius: 0.07, depth: 0.4, seed: 77, light: [0.75, -0.2, 0.6] },
+	// the Sun, swollen and reddening: its age on star()'s scale, 0 white to 1 a red giant
+	star: { at: [0.813, 0.42], radius: 0.065, depth: 0.12, age: 0.55 },
 	tidyPasses: 2,
 }
