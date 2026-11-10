@@ -27,8 +27,7 @@ void main(){
   // the heat comes up with the push, so the cut from the earth shot shows nothing new
   STAR_HEAT = uQ.z;
   col = star(col, cell, fly(sc0, 1.0), r0*G, uP.w, uP.z, 1.0);
-  float what;
   col = earthLayers(col, cell, fly(place(PLANET_AT, pan, PLANET_DEPTH), FLOW.z),
-    fly(place(MOON_AT, pan, MOON_DEPTH), FLOW.y), what);
+    fly(place(MOON_AT, pan, MOON_DEPTH), FLOW.y));
   gl_FragColor = vec4(col, 1.0);
 }
