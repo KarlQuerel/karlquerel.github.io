@@ -1,6 +1,7 @@
 // Shot 4: BURNING EVERYTHING. The dead farm as flat layers (js/intro/fieldsArt.js), slid sideways by
 // whole cells as the camera trucks: the farm on the horizon a little, the ground row by row by its own
-// depth, the harvester and the tree most. It opens on the giant sun (star() in layers.glsl) with the
+// depth, the harvester and the tree most, each rimmed by the sun behind it. It opens on the giant sun
+// (star() in star.glsl) with the
 // land below the frame; the land rises into place under it. Live: the dusk,
 // the sun, the smoke, the fire fronts, the windmill's blades, the fence, embers, ash.
 // uP.x = the truck in cells at depth 1, uP.y = the land's drop in cells, uP.z = seconds, uP.w = the
@@ -20,6 +21,17 @@ vec4 layer(float i, vec2 cell, float depth, float drop){
   vec2 size = vec2(uRes.x + 2.0*uH.x, 4.0*H);
   vec2 tex = vec2(cell.x + uH.x - floor(uP.x*depth + 0.5), y + i*H);
   return texture2D(uMask, (tex + 0.5)/size);
+}
+
+// Backlit by the giant: a layer's cell whose neighbour toward the sun is open sky catches its light,
+// hottest where it stands across the disc. Only a body: a line a cell or two thin (a branch, a strut)
+// has open sky behind it too, and stays a silhouette.
+vec3 rimmed(vec4 c, float i, vec2 cell, float depth, float drop){
+  vec2 to = SC - cell;
+  vec2 s = floor(to/max(max(abs(to.x), abs(to.y)), 1.0)*RIM + 0.5);
+  if (layer(i, cell + s, depth, drop).a > 0.5 || layer(i, cell - 2.0*s, depth, drop).a < 0.5)
+    return c.rgb;
+  return length(to) < SR ? GLOW : AMBER;
 }
 
 // the dusk's nine steps, and a position on them rounded with a narrow dithered seam
@@ -110,12 +122,13 @@ void main(){
   vec2 sky = cell + vec2(floor(sin(cell.y*0.9 + T*5.0)*1.4 + 0.5)*step(0.2, heat)*step(0.0, above), 0.0);
   float rise = clamp(1.0 - above/HZ, 0.0, 1.0);
   vec3 col = dusk(mix(DUSK.x, DUSK.y, pow(rise, 1.6)), sky);
-  col = star(col, sky, SC, SR, 1.0, uP.w, 1.0);
+  STAR_HEAT = SUN_BURN.y;
+  col = star(col, sky, SC, SR, SUN_BURN.x, uP.w, 1.0);
 
   // --- smoke off the fields, then the farm on the horizon in front of it
 __SMOKE__
   vec4 f = layer(1.0, cell, DEPTHS.y, LIFT);
-  if (f.a > 0.5) col = f.rgb;
+  if (f.a > 0.5) col = rimmed(f, 1.0, cell, DEPTHS.y, LIFT);
   vec2 hub = vec2(floor(WINDMILL.x*W + uP.x*DEPTHS.y + 0.5), HZ + floor(LIFT + 0.5) - floor(WINDMILL.y*H + 0.5));
   float bl = WINDMILL.z*H;
   for (int k = 0; k < 4; k++){
@@ -158,9 +171,9 @@ __FIRES__
 
   // --- the harvester, then the tree, nearest of all and rising fastest
   vec4 h = layer(2.0, cell, DEPTHS.z, LIFT);
-  if (h.a > 0.5) col = h.rgb;
+  if (h.a > 0.5) col = rimmed(h, 2.0, cell, DEPTHS.z, LIFT);
   vec4 tr = layer(3.0, cell, DEPTHS.w, LIFT*NEAR_RISE);
-  if (tr.a > 0.5) col = tr.rgb;
+  if (tr.a > 0.5) col = rimmed(tr, 3.0, cell, DEPTHS.w, LIFT*NEAR_RISE);
 
   // --- embers rising off the fields, ash drifting down: one cell each
   for (int i = 0; i < EMBERS; i++){
