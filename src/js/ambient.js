@@ -40,24 +40,28 @@ export function createAmbient({ sources, volume, fadeInMs, fadeOutMs }) {
 	let hush = 0
 
 	return {
-		// In over `fadeInMs`. Resolves false while the browser still holds sound back for a gesture.
+		// In over `fadeInMs`. Resolves false while the browser still holds sound back for a gesture, or
+		// once the page closed the engine before it woke.
 		play() {
 			wanted = true
 			clearTimeout(hush)
+			// a pause asked for while the engine was still waking wins
 			return ctx
 				.resume()
-				.then(() => fade(volume, fadeInMs))
+				.then(() => wanted && fade(volume, fadeInMs))
 				.then(() => ready)
 				.then(() => ctx.state === 'running')
+				.catch(() => false)
 		},
 		get playing() {
 			return wanted && ctx.state === 'running'
 		},
-		pause() {
+		// out over `ms`, fadeOutMs unless asked faster
+		pause(ms = fadeOutMs) {
 			wanted = false
-			fade(0, fadeOutMs)
+			fade(0, ms)
 			clearTimeout(hush)
-			hush = setTimeout(() => ctx.suspend(), fadeOutMs)
+			hush = setTimeout(() => ctx.suspend(), ms)
 		},
 		close() {
 			clearTimeout(hush)
