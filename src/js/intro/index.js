@@ -1,16 +1,17 @@
-// The storyboard in order, then act I's opener. Every shot is a module of
-// one shape:
-//   key, frag (+ chunks), duration in s (0 waits on ready(t, io)), card { at, text },
-//   marks { name: seconds } the overlays key off, params(t, io, gl, grid) -> { p, q, r, s, h, b, mask }
-//   (b: a vec4 array for the shot's own uB), choice(clock, marks, choices) -> { key, options },
-//   hint(clock, marks, choices) -> a line under the picture, cellPx (its own pixel size), pov (first
-//   person: cards read high, clear of the hands), walk (the player walks it: a click takes the mouse
-//   for looking), act (act I opens here: SKIP INTRO lands on it), shake (the frame shakes until the
-//   `black` mark), end (the game rests here, the run's checkpoint cleared), checkpoint (reaching it is
-//   saved: a refresh resumes here), caption(t, io) -> the voice's line, ready(t, io) -> true
-//   or the key of the shot to go to, enter(io), setup(gl), resize(gl, grid), release(gl).
+// The title screen, the storyboard in order, then act I's opener. Every shot is a module of one shape:
+//   key, frag (+ chunks), duration in s (0 waits on ready(t, io)), card { at, text } (or a list of
+//   them in turn, '' clearing), marks { name: seconds } the overlays key off, params(t, io, gl,
+//   grid) -> { p, q, r, s, h, b, mask } (b: a vec4 array for the shot's own uB), choice(clock,
+//   marks, choices) -> { key, options }, hint(clock, marks, choices) -> a line under the picture,
+//   cellPx (its own pixel size), pov (first person: cards read high, clear of the hands), walk (the
+//   player walks it: a click takes the mouse for looking), act (act I opens here: SKIP INTRO lands
+//   on it), shake (the frame shakes until the `black` mark), end (the game rests here, the run's
+//   checkpoint cleared), checkpoint (reaching it is saved: a refresh resumes here), caption(t, io)
+//   -> the voice's line, ready(t, io) -> true or the key of the shot to go to, enter(io),
+//   setup(gl), resize(gl, grid), release(gl).
+//   menu marks the title screen: the name and its prompt go over it, and a key sets io.started.
 //   The acts after the intro live in js/game/.
-import { year } from './year.js'
+import { menu } from './menu.js'
 import { earth } from './earth.js'
 import { sun } from './sun.js'
 import { fields } from './fields.js'
@@ -28,7 +29,7 @@ import { surface } from '../game/surface.js'
 import { ENDING_SHOTS } from '../game/endings.js'
 
 export const INTRO_SHOTS = [
-	year,
+	menu,
 	earth,
 	sun,
 	fields,
