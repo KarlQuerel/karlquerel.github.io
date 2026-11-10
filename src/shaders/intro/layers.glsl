@@ -44,4 +44,4 @@ vec3 skyView(vec2 cell, vec2 pan, float rise, float art, vec2 c, float zoom){
   if (sb.a > 0.0 && sb.a <= rise) col = sb.rgb;
   return col;
 }
-vec3 skyLayer(vec2 cell, vec2 pan, float rise, float art){ return skyView(cell, pan, rise, art, vec2(0.0), 1.0); }
+vec3 skyLayer(vec2 cell, vec2 pan, float art){ return skyView(cell, pan, 1.0, art, vec2(0.0), 1.0); }
