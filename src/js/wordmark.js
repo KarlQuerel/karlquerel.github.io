@@ -181,15 +181,17 @@ export function platesOf(layout, plating) {
 	return { rankAt, centres, count: plates.length }
 }
 
-// Paints the word mid-construction at (ox, oy): plates ranked under `landed` in their shaded steel,
-// the rest not yet there. `hot` plates glow, `glint` is the sweep's diagonal, `sparks` are [x, y, tone].
-// `beam`, when set, lights the cut around column `x`, every tone `ebb` steps further out as it dies.
+// Paints the word mid-construction at (ox, oy): plates ranked from `gone` up to `landed` in their
+// shaded steel, the rest not yet there or already off. `hot` plates glow, `glint` is the sweep's
+// diagonal, `sparks` are [x, y, tone]. `beam`, when set, lights the cut around column `x`, every tone
+// `ebb` steps further out as it dies.
 export function paintPlating(ctx, layout, plates, mark, weld, state, ox, oy) {
-	const { landed, hot, glint, sparks, beam } = state
+	const { landed, gone = 0, hot, glint, sparks, beam } = state
 	const tones = layout.roles.map((row, y) =>
 		row.map((role, x) => {
-			if (!role || role === 'outline' || plates.rankAt[y][x] >= landed) return null
-			if (hot.has(plates.rankAt[y][x]) && LIT.has(role)) return weld.hot
+			const rank = plates.rankAt[y][x]
+			if (!role || role === 'outline' || rank >= landed || rank < gone) return null
+			if (hot.has(rank) && LIT.has(role)) return weld.hot
 			if (LIT.has(role) && x + y >= glint && x + y < glint + mark.glint.width)
 				return mark.ramp.glint
 			return mark.ramp[role]
@@ -205,7 +207,7 @@ export function paintPlating(ctx, layout, plates, mark, weld, state, ox, oy) {
 				tones[y][x] = mark.ramp.outline
 		})
 	)
-	if (beam && landed >= plates.count) {
+	if (beam && landed >= plates.count && !gone) {
 		const { reach, tones: light } = mark.seam
 		for (const [x, y] of layout.seam) {
 			const step = Math.floor((Math.abs(x - beam.x) / reach) * light.length) + beam.ebb
