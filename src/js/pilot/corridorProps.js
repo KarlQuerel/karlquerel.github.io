@@ -137,6 +137,22 @@ async function helmet(at, facing) {
 	return prop
 }
 
+// a model built in Blender (scripts/blender/), each material swapped for the PILOT_MATS paint it is named
+// for; its `hover` node, if it has one, bobbing on a stepped clock like the repair drone
+async function placed({ url, at, turn, hover }) {
+	const prop = await loadProp({ url })
+	prop.traverse(mesh => {
+		if (mesh.isMesh) mesh.material = thingMaterial(mesh.material.name)
+	})
+	prop.position.set(...at)
+	prop.rotation.y = turn
+	const node = hover && prop.getObjectByName('hover')
+	const bob = (dt, clock) => {
+		node.position.y = hover.bob * Math.sin(Math.floor(clock * hover.stepsPerS) * hover.phase)
+	}
+	return { prop, tick: node && bob }
+}
+
 async function lockerSuits() {
 	const { scale, neck, back, shelf } = PILOT_LOCKER_SUITS
 	const { suits } = PILOT_PROP_MODELS
@@ -184,6 +200,11 @@ export async function addProps(scene) {
 		if (bay.holo) ticks.push(await addHolo(scene, k, bay.holo))
 		if (bay.route) ticks.push(addRoute(scene, k, bay.route))
 		if (bay.seedling) ticks.push(addSeedling(scene, k, bay.seedling))
+	}
+	for (const spec of PILOT_PROP_MODELS.placed) {
+		const { prop, tick } = await placed(spec)
+		stand([prop])
+		if (tick) ticks.push(tick)
 	}
 	scene.add(...(await lockerSuits()))
 	const tick = (dt, clock) => ticks.forEach(t => t(dt, clock))
