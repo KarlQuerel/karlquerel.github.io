@@ -66,7 +66,8 @@ vec3 star(vec3 col, vec2 cell, vec2 c, float r, float age, float phase, float co
   float far = 1.0 - smoothstep(STAR_FAR.x, STAR_FAR.y, r);
   if (d >= r){
     // the corona: tongues of flame off the limb, shaped on the star's own clock, and the glow dying
-    // out into the dark on the screen's dither; a few long faint rays through it, dithered only
+    // out into the dark on the screen's dither; a few long faint rays through it, dithered only, gone
+    // once the star is close
     vec2 dir = q/max(d, 1.0);
     float x = (d - r)/reach;
     float tongue = pow(clamp(fbm3(vec3(dir*2.5, phase*0.11))*1.9 - 0.45, 0.0, 1.0), 1.6);
@@ -74,7 +75,8 @@ vec3 star(vec3 col, vec2 cell, vec2 c, float r, float age, float phase, float co
     tongue = clamp(tongue, 0.0, 1.0);
     float flood = 1.0 + STAR_HEAT*STAR_HEAT_K.y;
     float g = exp(-x/(STAR_CORONA.x*(0.15 + 0.85*tongue)*flood))*min(1.0, (0.55 + 0.45*tongue)*(1.0 + 0.4*STAR_HEAT));
-    float ray = smoothstep(0.8, 0.95, noise3(vec3(dir*14.0 + 9.0, phase*0.03)));
+    float ray = smoothstep(0.8, 0.95, noise3(vec3(dir*14.0 + 9.0, phase*0.03)))
+      *(1.0 - smoothstep(STAR_RAY_FADE.x, STAR_RAY_FADE.y, r));
     g = max(g, 0.3*ray*exp(-x/(STAR_CORONA.y*flood)))*corona;
     // the near glow steps down the ramp from the limb's step, brighter in a tongue, to rust, then
     // dithers out
