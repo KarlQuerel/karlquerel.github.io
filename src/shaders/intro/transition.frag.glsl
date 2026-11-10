@@ -19,12 +19,13 @@ void main(){
     float k = floor(abs(p*2.0 - 1.0)*8.0)/8.0;
     col = nearestPalette((p < 0.5 ? at(uA, cell) : at(uB, cell))*k);
   } else if (kind < 2.5){
-    // burn: the dissolve front glows ember as it eats the old frame
-    float o = noise2(cell/14.0)*0.7 + bayer8(cell)*0.3;
-    float d = o - (p*1.3 - 0.15);
+    // burn: holes open in the old frame, sized to it, and spread; each edge glows white, then ember,
+    // with a char of rust behind, before the new frame shows through
+    float d = fbm2(cell/(uRes.y*0.11) + 7.0) - (p*1.25 - 0.12);
     col = d < 0.0 ? at(uB, cell) : at(uA, cell);
-    if (d >= 0.0 && d < 0.03) col = GLOW;
-    else if (d >= 0.0 && d < 0.09) col = EMBER;
+    if (d >= 0.0 && d < 0.018) col = GLOW;
+    else if (d >= 0.0 && d < 0.045) col = EMBER;
+    else if (d >= 0.0 && d < 0.08 && bayer4(cell) < 0.5) col = RUST;
   } else if (kind < 3.5){
     // mosaic: the old frame coarsens into blocks, swaps, and the new one resolves
     float m = 1.0 - abs(p*2.0 - 1.0);
