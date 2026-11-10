@@ -34,12 +34,15 @@ export const FIELDS = {
 		haze: 0.12,
 	},
 	// The sky: dusk from `top` to `low` on the ramp, and the giant sun over it: its centre, its radius as
-	// a share of the height, capped at `fitWidth` of the width so a portrait frame holds it.
+	// a share of the height, capped at `fitWidth` of the width so a portrait frame holds it; its `age`
+	// (star()'s scale) and the `heat` it burns at, so it blazes over the dusk instead of sitting in it.
+	// Whatever stands against it catches its light on the side that faces it, `rim` cells deep.
 	sky: {
 		depth: 0.04,
-		sun: { at: [0.5, 0.45], radius: 0.42, fitWidth: 0.5 },
+		sun: { at: [0.5, 0.45], radius: 0.42, fitWidth: 0.5, age: 0.65, heat: 0.7 },
 		top: 0.08,
-		low: 0.72,
+		low: 0.55,
+		rim: 1,
 	},
 	// Smoke off the burning fields, at the farm's depth: where each column stands (share of the
 	// width), its lean (cells across per cell up), width at its foot and growth (cells per cell up),
