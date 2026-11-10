@@ -28,10 +28,14 @@ const routes = [
 		meta: { title: 'Sport' },
 	},
 	{
-		// the game's holding screen until it ships, its title screen after
+		// the game's holding screen until it ships; once it is open, a desktop goes on to the game (its
+		// first shot is the title screen) and a phone stays to be told it cannot play
 		path: '/under-construction',
 		component: () => import('./components/game/GameHolding.vue'),
 		meta: { title: 'Under Construction' },
+		...(import.meta.env.GAME_SHIPPED || import.meta.env.DEV
+			? { beforeEnter: () => !mayBoard() || '/game' }
+			: {}),
 	},
 	{
 		// the game itself, dev server only until GAME_SHIPPED (a Vite define, so a build folds this
