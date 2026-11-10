@@ -6,19 +6,27 @@
 </template>
 
 <script setup>
-	import { onBeforeUnmount, onDeactivated, onMounted } from 'vue'
+	import { onBeforeUnmount, onDeactivated, onMounted, watch } from 'vue'
 	import { useSound } from '@/composables/useSound'
 	import { useWindowListener } from '@/composables/useWindowListener'
 	import { GAME_HOLDING } from '@/constants/game'
 	import { SOUND } from '@/constants/sound'
 	import { createAmbient } from '@/js/ambient'
 
+	const props = defineProps({
+		// the screen is being left: the music fades out over GAME_HOLDING.leave.fadeMs and stays out
+		hushed: { type: Boolean, default: false },
+	})
 	const canPlay = 'AudioContext' in window
 	const { soundOn, setSound } = useSound()
 	let ambient = null
 
-	const play = () => (ambient ??= createAmbient(GAME_HOLDING.ambient)).play()
+	const play = () => !props.hushed && (ambient ??= createAmbient(GAME_HOLDING.ambient)).play()
 	const pause = () => ambient?.pause()
+	watch(
+		() => props.hushed,
+		on => on && ambient?.pause(GAME_HOLDING.leave.fadeMs)
+	)
 
 	// On but held back by the browser, the chip starts the music rather than turning it off.
 	function toggle() {
