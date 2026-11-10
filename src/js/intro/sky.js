@@ -45,6 +45,7 @@ export const STAR_CHUNK = [
 	`const vec2 STAR_SPOT = ${glslVec([STAR.spots.penumbra, STAR.spots.umbra])};`,
 	`const vec2 STAR_FAR = ${glslVec(STAR.far)};`,
 	`const float STAR_REACH = ${glslNum(STAR.reach)};`,
+	`const vec2 STAR_RAY_FADE = ${glslVec(STAR.rayFade)};`,
 	`const vec3 STAR_CORONA = ${glslVec([STAR.flame, STAR.ray, STAR.spread])};`,
 	`const vec2 STAR_HEAT_K = ${glslVec([STAR.contrast, STAR.flood])};`,
 	`const float STAR_SEAM = ${glslNum(STAR.seam)};`,
