@@ -12,8 +12,8 @@ export const TRANSITION_KINDS = {
 }
 
 export const INTRO_TRANSITIONS = {
-	// no earth entry: the year shot rests on the earth shot's opening pan, the Earth still below the
-	// frame, and the cut does not show; no sun entry either: it is the earth shot's camera carrying on
+	// no earth entry: it opens the intro, on the title screen's picture; no sun entry either: it is the
+	// earth shot's camera carrying on
 	// the sun's surface burns through into the fields
 	fields: { kind: 'burn', dur: 1.4 },
 	chamber: { kind: 'black', dur: 1.6 },
