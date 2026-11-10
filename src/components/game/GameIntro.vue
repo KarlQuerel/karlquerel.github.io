@@ -4,6 +4,8 @@
 	<div class="intro" :class="{ 'intro--flat': !supported, 'intro--shake': shaking }">
 		<canvas ref="canvas" class="intro__canvas" aria-hidden="true" />
 		<BootCover :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
+		<!-- the title screen over the first shot, until its name has come apart -->
+		<IntroTitle v-if="titling" :up="titleUp" @start="begin" @done="titling = false" />
 		<!-- the incoming shot's overlays wait until its picture has mostly taken the frame -->
 		<template v-if="settled">
 			<IntroCard :text="card" :pov="!!shot?.pov" />
@@ -24,12 +26,18 @@
 			:class="{ 'intro__cut--on': marks.black, 'intro__cut--veil': shot?.end }"
 			aria-hidden="true"
 		/>
-		<!-- the intro and the titles skip; a scene the player walks is played -->
-		<button v-if="shot && !last && !shot.walk" class="intro__skip" type="button" @click="skip">
+		<!-- the intro and the titles skip, once the title screen is gone; a scene the player walks is
+		     played -->
+		<button
+			v-if="shot && !last && !shot.walk && !titling"
+			class="intro__skip"
+			type="button"
+			@click="skip"
+		>
 			{{ INTRO_SKIP }}
 		</button>
 		<button
-			v-if="inIntro"
+			v-if="inIntro && !titling"
 			class="intro__skip intro__skip--all"
 			type="button"
 			@click="skipIntro"
@@ -44,11 +52,13 @@
 </template>
 
 <script setup>
-	import { computed, ref } from 'vue'
+	import { computed, ref, watch } from 'vue'
 	import { useIntro } from '@/composables/useIntro'
+	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import BootCover from '@/components/BootCover.vue'
 	import IntroCard from './IntroCard.vue'
 	import IntroChoice from './IntroChoice.vue'
+	import IntroTitle from './IntroTitle.vue'
 	import PlatingWordmark from './PlatingWordmark.vue'
 	import TypedReadout from './TypedReadout.vue'
 	import { INTRO_CRASH, INTRO_INSPECT } from '@/constants/intro/timeline'
@@ -56,6 +66,7 @@
 
 	const canvas = ref(null)
 	const {
+		begin,
 		supported,
 		booting,
 		bootProgress,
@@ -79,6 +90,17 @@
 	const shaking = computed(() => !!shot.value?.shake && !marks.value.black)
 	const shakePx = `${INTRO_CRASH.shakePx}px`
 	const built = ref(false)
+	// The title screen is the first shot: its name rises once the camera rests (at once under reduced
+	// motion), and stays up after the start until it has come apart. A run that opens elsewhere (a
+	// checkpoint, a dev ?shot=) has none.
+	const still = prefersReducedMotion()
+	const titling = ref(true)
+	const titleUp = ref(false)
+	watch([shot, () => marks.value.up], ([s, up]) => {
+		if (!s || titleUp.value) return
+		if (!s.menu) titling.value = false
+		else if (up || still) titleUp.value = true
+	})
 </script>
 
 <style scoped lang="scss">
