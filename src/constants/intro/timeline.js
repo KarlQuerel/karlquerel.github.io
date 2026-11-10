@@ -11,7 +11,7 @@ export const INTRO_LOOK_EASE = 0.06
 export const INTRO_CARD = { charMs: 42, cursorMs: 500 }
 
 // Reduced motion opens on the wake: no animation before it means anything.
-export const INTRO_STILL_START = 'warning'
+export const INTRO_STILL_START = 'wake'
 
 // The crash: shake amplitude (px) and how long it runs before the cut to black.
 export const INTRO_CRASH = { duration: 3.2, blackAt: 2.3, shakePx: 6 }
