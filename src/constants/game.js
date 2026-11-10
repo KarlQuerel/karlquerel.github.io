@@ -273,7 +273,8 @@ export const GAME_HOLDING = {
 	// The line under the name, brought in once the name is up. It has one job: nobody should think there
 	// is a game to play yet.
 	readout: { lead: 'UNDER', accent: 'CONSTRUCTION', delayMs: 500, charMs: 55 },
-	// Once the game is open the screen is its title: the start prompt with a mouse, the mobile line without.
+	// Once the game is open: the title screen's start prompt (the intro's first shot, a mouse to hand),
+	// and the line a phone gets here instead.
 	start: 'PRESS ANY KEY TO START',
 	mobile: { lead: 'NOT PLAYABLE', accent: 'ON MOBILE', delayMs: 500, charMs: 55 },
 	// the name takes no more than cellMax CSS px per cell here (bigger than in the intro, where it is a
@@ -307,6 +308,16 @@ export const GAME_HOLDING = {
 		moon: 0.24,
 		title: { delayMs: 700, ms: 1800, from: 0.04 },
 		status: { delayMs: 750, ms: 1400, from: 0.03 },
+	},
+	// The title screen left for the game, a key pressed: the prompt flashes `blinks` times, `blinkMs`
+	// each, and is gone; from `strip.delayMs` the name comes apart `perStep` plates a step on its build's
+	// clock, in the order they landed, sparks and all; the music fades out over `fadeMs`. The picture
+	// under it is the intro's own, and its camera is already moving on.
+	leave: {
+		blinks: 4,
+		blinkMs: 120,
+		strip: { delayMs: 250, perStep: 3 },
+		fadeMs: 2000,
 	},
 	// The title screen's music (js/ambient.js): a 33 s loop of "Charon" from the IXION soundtrack, Opus
 	// where the browser decodes it (a seventh of the size) and lossless FLAC elsewhere; both keep the
