@@ -1,6 +1,6 @@
 <template>
 	<!-- The name discovered plate by plate, then held with its glint. Plays once. With `lit`, the cut
-	     lights up around the cursor. -->
+	     lights up around the cursor; given `strip`, it comes apart the way it was built. -->
 	<canvas
 		ref="el"
 		class="plating"
@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-	import { onBeforeUnmount, onMounted, ref } from 'vue'
+	import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 	import { usePixelCell } from '@/composables/usePixelCell'
 	import { prefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 	import { GAME_WORDMARK } from '@/constants/game'
@@ -30,12 +30,16 @@
 	const props = defineProps({
 		// false holds the name still, already built: only its glint runs
 		build: { type: Boolean, default: true },
-		// the most CSS px a cell may take on this page; unset, the plating's own cap
+		// the most CSS px a cell may take on this page, and the share of the frame's width the word may
+		// span; unset, the plating's own
 		cellMax: { type: Number, default: 0 },
+		span: { type: Number, default: 0 },
 		// the cut answers the cursor
 		lit: { type: Boolean, default: false },
+		// { delayMs, perStep }: the name comes apart, `perStep` plates a step from `delayMs` on
+		strip: { type: Object, default: null },
 	})
-	const emit = defineEmits(['built'])
+	const emit = defineEmits(['built', 'stripped'])
 	const P = GAME_WORDMARK.plating
 	const layout = layoutWordmark(GAME_WORDMARK)
 	const plates = platesOf(layout, P)
@@ -45,12 +49,13 @@
 	// one line always: the cell comes from the frame width, snapped to whole device pixels
 	const el = ref(null)
 	const { sizeStyle } = usePixelCell(cols, rows, {
-		span: P.span,
+		span: props.span || P.span,
 		cellMax: props.cellMax || P.cellMax,
 	})
 
-	// Two phases: `step` counts plates landed in the build, then the hold runs the glint for good.
-	const state = { landed: 0, hot: new Set(), glint: -1, sparks: [] }
+	// Three phases: `step` counts plates landed in the build, the hold runs the glint, and the strip takes
+	// the plates off again (`gone` of them) in the order they landed.
+	const state = { landed: 0, gone: 0, hot: new Set(), glint: -1, sparks: [] }
 	let phase = 'build'
 	let phaseAt = 0
 	let step = -1
@@ -96,8 +101,8 @@
 		return true
 	}
 
-	// each plate that lands throws sparks off its centre, one heading each
-	function land(rank, now) {
+	// each plate that lands or comes off throws sparks off its centre, one heading each
+	function spark(rank, now) {
 		const [x, y] = plates.centres[rank]
 		for (let i = 0; i < P.sparks; i++) {
 			const a = hash1(rank * 7 + i, P.seed) * Math.PI * 2
@@ -128,7 +133,7 @@
 		const next = Math.floor((now - phaseAt) / P.stepMs)
 		if (next === step) return moved
 		for (step = step + 1; step <= next && state.landed < plates.count; step++)
-			land(state.landed++, now)
+			spark(state.landed++, now)
 		step = next
 		state.hot = new Set([...Array(P.hotSteps)].map((_, i) => state.landed - 1 - i))
 		if (state.landed === plates.count) {
@@ -151,15 +156,55 @@
 		return true
 	}
 
-	const phases = { build: landing, hold }
+	// The plates due off next glow first, like the hot ones of the build; the strip is over once the last
+	// spark is out.
+	function stripping(now) {
+		const moved = drift(now)
+		const { delayMs, perStep } = props.strip
+		const next = Math.floor((now - phaseAt - delayMs) / P.stepMs)
+		if (next <= step) {
+			if (state.gone === plates.count && !flying.length) phase = 'stripped'
+			return moved
+		}
+		step = next
+		const to = Math.min(plates.count, (next + 1) * perStep)
+		while (state.gone < to) spark(state.gone++, now)
+		const due = Math.min(plates.count - state.gone, perStep * P.hotSteps)
+		state.hot = new Set([...Array(due)].map((_, i) => state.gone + i))
+		return true
+	}
+
+	const phases = { build: landing, hold, strip: stripping }
 	function tick(now) {
 		if (!phaseAt) phaseAt = now
 		const moved = phases[phase](now)
 		const ebbed = ebbing(now)
 		if (moved || ebbed || aimed) paint()
 		aimed = false
+		if (phase === 'stripped') {
+			frame = 0
+			emit('stripped')
+			return
+		}
 		frame = requestAnimationFrame(tick)
 	}
+
+	watch(
+		() => props.strip,
+		on => {
+			if (!on) return
+			phase = 'strip'
+			phaseAt = 0
+			step = -1
+			state.glint = -1
+			state.beam = null
+			if (frame) return
+			// no loop under reduced motion: gone at once
+			state.gone = plates.count
+			paint()
+			emit('stripped')
+		}
+	)
 
 	onMounted(() => {
 		el.value.width = cols
