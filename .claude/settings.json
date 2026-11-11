@@ -12,6 +12,27 @@
     ]
   },
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/repo-rules.py\" prompt"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/repo-rules.py\""
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit|MultiEdit",
@@ -19,7 +40,7 @@
           {
             "type": "command",
             "statusMessage": "Auto-cleaning edited file",
-            "command": "root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0; jq -r '.tool_input.file_path // empty' | { IFS= read -r f; { [ -n \"$f\" ] && [ -f \"$f\" ]; } || exit 0; case \"$f\" in *.vue|*.js) \"$root/node_modules/.bin/prettier\" --write \"$f\" >/dev/null 2>&1; \"$root/node_modules/.bin/eslint\" --fix \"$f\" >/dev/null 2>&1;; *.css|*.scss) \"$root/node_modules/.bin/prettier\" --write \"$f\" >/dev/null 2>&1;; esac; }"
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-edited.py\""
           }
         ]
       }
