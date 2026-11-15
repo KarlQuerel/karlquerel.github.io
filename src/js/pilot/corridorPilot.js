@@ -3,7 +3,7 @@
 // glass on her own pass, and the pixel pass over it all.
 
 import { PerspectiveCamera, Scene, WebGLRenderer } from 'three'
-import { PILOT } from '../../constants/game/pilot.js'
+import { PILOT, PILOT_BOOT } from '../../constants/game/pilot.js'
 import { breathe, createWalk, lookWalk, stepWalk } from '../intro/walk.js'
 import { clamp } from '../math.js'
 import { addCorridor, lightModels, sizeCorridor } from './corridorSet.js'
@@ -95,5 +95,5 @@ export function createCorridorPilot() {
 		renderer?.dispose()
 	}
 
-	return { build, resize, frame, release, walk }
+	return { boot: PILOT_BOOT, build, resize, frame, release, walk }
 }
