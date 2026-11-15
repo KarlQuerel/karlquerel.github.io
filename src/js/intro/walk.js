@@ -23,10 +23,10 @@ export const createWalk = ({ x, z }) => ({
 // standing, the head rises and falls with the breath
 export const breathe = t => WALK.breathe * Math.sin((2 * Math.PI * t) / WALK.breathS)
 
-// [dx, dy]: mouse travel in px since the last frame
-export function lookWalk(w, [dx, dy]) {
+// [dx, dy]: mouse travel in px since the last frame; tilt: how far the head tips up and down (rad)
+export function lookWalk(w, [dx, dy], tilt = { up: WALK.pitchUp, down: WALK.pitchDown }) {
 	w.heading += dx * WALK.lookRad
-	w.pitch = clamp(w.pitch - dy * WALK.lookRad, -WALK.pitchDown, WALK.pitchUp)
+	w.pitch = clamp(w.pitch - dy * WALK.lookRad, -tilt.down, tilt.up)
 }
 
 // box: { halfWidth, back, front, open? }, the deck's reach across x and along z, and whether a spot
