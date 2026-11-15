@@ -2,7 +2,8 @@
 	<!-- The game. Dev server only: a build redirects, and the async import below is what keeps
 	     every scene out of the bundle until GAME_SHIPPED. -->
 	<div class="content">
-		<component :is="GamePilot ?? GameIntro" v-if="GameIntro" />
+		<component :is="GamePilot" v-if="GamePilot" :scene="pilotScene" />
+		<component :is="GameIntro" v-else-if="GameIntro" />
 		<HomeChip />
 		<component :is="GameScenes" v-if="GameScenes" />
 	</div>
@@ -22,10 +23,13 @@
 	const GameScenes = import.meta.env.DEV
 		? defineAsyncComponent(() => import('./GameScenes.vue'))
 		: null
-	// dev only: `?pilot` opens the three.js corridor pilot in the intro's place
-	const GamePilot =
+	// dev only: a three.js scene in the intro's place, opened by its param (`?pilot`, `?sky`)
+	const pilotScene =
 		import.meta.env.DEV &&
-		new URLSearchParams(window.location.search).has(SCENE_MENU.pilot.param)
+		SCENE_MENU.three.scenes.find(s => new URLSearchParams(window.location.search).has(s.param))
+			?.param
+	const GamePilot =
+		import.meta.env.DEV && pilotScene
 			? defineAsyncComponent(() => import('./GamePilot.vue'))
 			: null
 </script>

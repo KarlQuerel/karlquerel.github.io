@@ -32,8 +32,14 @@ export const INTRO_INSPECT = {
 // Dev server only: the scene menu on /game, the three.js game first, then the shader shots in story order.
 export const SCENE_MENU = {
 	label: 'Scenes',
-	// the three.js pilot, opened in the intro's place
-	pilot: { group: 'Three.js', param: 'pilot', label: 'corridor pilot' },
+	// the three.js scenes, each opened in the intro's place by its param
+	three: {
+		label: 'Three.js',
+		scenes: [
+			{ param: 'pilot', label: 'corridor pilot' },
+			{ param: 'sky', label: 'skybox lab' },
+		],
+	},
 	flat: '2D',
 	// the 3D shader shots, kept as references until three.js rebuilds them
 	rebuild: {

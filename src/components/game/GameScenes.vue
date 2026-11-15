@@ -4,8 +4,14 @@
 		<summary class="scenes__toggle">{{ SCENE_MENU.label }}</summary>
 		<nav class="scenes__panel">
 			<section>
-				<h2>{{ SCENE_MENU.pilot.group }}</h2>
-				<a :href="`?${SCENE_MENU.pilot.param}`">{{ SCENE_MENU.pilot.label }}</a>
+				<h2>{{ SCENE_MENU.three.label }}</h2>
+				<a
+					v-for="{ param, label } in SCENE_MENU.three.scenes"
+					:key="param"
+					:href="`?${param}`"
+				>
+					{{ label }}
+				</a>
 			</section>
 			<section v-for="group in groups" :key="group.label">
 				<h2>{{ group.label }}</h2>
