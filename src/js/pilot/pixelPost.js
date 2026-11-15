@@ -20,14 +20,26 @@ import { PILOT, PILOT_EXACT_ALPHA } from '../../constants/game/pilot.js'
 const { step, turn, ink, glint, far } = PILOT.edges
 const { from, to, sigma } = PILOT.distant
 
-const frag = `
+// a baked sky behind a cell nothing was drawn in: the cell's view ray into the panorama, read as it is
+const skyAt = `
+uniform sampler2D tSky;
+uniform mat4 uProjInv;
+uniform mat4 uCamWorld;
+vec3 skyAt(vec2 frag){
+  vec4 v = uProjInv*vec4(frag/uRes*2.0 - 1.0, 1.0, 1.0);
+  vec3 rd = normalize((uCamWorld*vec4(v.xyz/v.w, 0.0)).xyz);
+  return toSrgb(texture2D(tSky, vec2(atan(rd.z, rd.x)/(2.0*PI) + 0.5, asin(clamp(rd.y, -1.0, 1.0))/PI + 0.5)).rgb);
+}`
+
+// the pass over `palette`, a list of PALETTE names; with `sky`, the baked sky drawn where nothing was
+const frag = (palette, sky) => `
 #include <packing>
 uniform sampler2D tColor;
 uniform sampler2D tDepth;
 uniform sampler2D tNormal;
 uniform float cameraNear;
 uniform float cameraFar;
-${paletteSnap(PILOT.palette, PILOT.seam)}
+${paletteSnap(palette, PILOT.seam)}
 
 float depthAt(vec2 frag){
   return -perspectiveDepthToViewZ(texture2D(tDepth, frag/uRes).x, cameraNear, cameraFar);
@@ -53,9 +65,11 @@ vec3 farMean(vec2 frag){
   }
   return sum/max(total, 1e-4);
 }
+${sky ? skyAt : ''}
 
 void main(){
   vec2 frag = gl_FragCoord.xy;
+  ${sky ? 'if (texture2D(tDepth, frag/uRes).x >= 1.0){ gl_FragColor = vec4(skyAt(frag), 1.0); return; }' : ''}
   vec4 cell = texture2D(tColor, frag/uRes);
   float z = depthAt(frag);
   float soft = distant(z);
@@ -83,7 +97,8 @@ void main(){
 const target = () =>
 	new WebGLRenderTarget(1, 1, { minFilter: NearestFilter, magFilter: NearestFilter })
 
-export function createPixelPost(renderer, camera) {
+// sky: a 2:1 equirect panorama already on the palette (scripts/sky/bake.mjs), nearest, unmipped
+export function createPixelPost(renderer, camera, { palette = PILOT.palette, sky } = {}) {
 	const color = target()
 	color.depthTexture = new DepthTexture(1, 1)
 	const normals = target()
@@ -97,9 +112,14 @@ export function createPixelPost(renderer, camera) {
 			uRes: { value: [1, 1] },
 			cameraNear: { value: camera.near },
 			cameraFar: { value: camera.far },
+			...(sky && {
+				uProjInv: { value: camera.projectionMatrixInverse },
+				uCamWorld: { value: camera.matrixWorld },
+				tSky: { value: sky },
+			}),
 		},
 		vertexShader: 'void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }',
-		fragmentShader: `${common}\n${frag}`,
+		fragmentShader: `${common}\n${frag(palette, sky)}`,
 		depthTest: false,
 		depthWrite: false,
 	})
@@ -115,11 +135,14 @@ export function createPixelPost(renderer, camera) {
 		render(scene) {
 			renderer.setRenderTarget(color)
 			renderer.render(scene, camera)
-			// the normals in view space, for the creases
+			// the normals in view space, for the creases; a sky behind has none
+			const backdrop = scene.background
 			scene.overrideMaterial = normalMaterial
+			scene.background = null
 			renderer.setRenderTarget(normals)
 			renderer.render(scene, camera)
 			scene.overrideMaterial = null
+			scene.background = backdrop
 			renderer.setRenderTarget(null)
 			renderer.render(quad, screen)
 		},
