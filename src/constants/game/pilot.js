@@ -374,8 +374,9 @@ export const PILOT_LOCKER_SUITS = {
 
 // The crew: a model, how tall it stands (times `scale`, which lengthens its stride too), which way its
 // front faces at rest (rad about y), its clips by role and the `fidgets` it plays now and then standing
-// about, how fast its walk clip covers the deck (m/s at `height`, so the feet keep their grip), and what
-// it does.
+// about, how fast its walk clip covers the deck (m/s at `height`, so the feet keep their grip), the
+// colour its role paints its suit's oxblood `panels` and its visor (left oxblood, the captain's), and
+// what it does.
 // `patrol` walks between two z marks at `x`, resting at each and turning about with its turnLeft or
 // turnRight clip; `greet` idles at a spot facing the player, or its `watch` heading till they come near,
 // and plays `react` (if it has one) when they come within `reach`; `guard` stands its post facing
@@ -386,6 +387,16 @@ const SUIT_LIGHTS = { color: 'star', intensity: 1.3 }
 // staying dark; and how many of the first levels keep any lit texel before the rest need two, so the
 // lights hold up close and fade out far off
 export const PILOT_GLOW = { floor: 0.35, keep: 1 }
+// A role's colour on a suit: the texels that count as its oxblood panels (red their strongest channel,
+// leaning no further to blue or to green than `lean`, shares of their spread; at least `sat` saturated
+// and `value` bright), each repainted as bright against the panels' `usual` as it was, `most` at most
+export const PILOT_PANELS = {
+	lean: [-0.6, 0.36],
+	sat: 0.3,
+	value: [0.12, 0.75],
+	usual: 0.35,
+	most: 1.6,
+}
 // The crew's clips, Mixamo mocap baked onto Ely's skeleton for any Mixamo rig to borrow (`clipsFrom`)
 const LOCOMOTION = '/assets/game/models/Locomotion.glb'
 // Mixamo's Astra, on her own clips (Idle, Idle2, Talk)
@@ -408,34 +419,38 @@ const ELY = {
 // centre and its face down +z, takes its place sized to that head: `fit` times its width, the rim `seat`
 // of its height under the chin, centred `ahead` of its depth forward (back, below 0); tipped back
 // `tipBack` rad against the idle's bowed head.
-// "Sci-Fi Helmet" by Udon-San, CC BY 4.0 (sketchfab.com/3d-models/sci-fi-helmet-785f5cfd848940b1a4a0b8ddeefc9ef1):
-// merged and rescaled, its visor's triangle removed.
+// The helmet of "sci-fi_male_character" by Ethanmr2, CC BY 4.0
+// (sketchfab.com/3d-models/sci-fi-male-character-9712cd4036c047fb81fe8168e32cd4f4): cut from the suit where
+// its skin rides the head bone, lined dark inside, and repainted in the suits' own paints: their plates'
+// slate on the shell, their panels' oxblood on the visor.
 const HELMET = {
-	url: '/assets/game/models/HelmetUdon.glb',
+	url: '/assets/game/models/HelmetEthan.glb',
 	bone: 'mixamorig1Head',
 	drop: /Head|Eye/,
 	fit: 1.15,
 	seat: 0.2,
-	ahead: -0.05,
-	tipBack: 0.12,
-	glow: { ...SUIT_LIGHTS, materials: /^helmet$/ },
+	ahead: -0.2,
+	tipBack: 0.2,
 	// the undersuit's fabric from the base of the neck (`from`) up `reach` of the head's height over the
 	// chin; `base` then `top` its half-width and half-depth as shares of the head's, widening as `flare`
-	// (an exponent: under 1, early) to fill the helmet's slanted back; `rings` by `sides`
+	// (an exponent: under 1, early); this helmet is tight at the jaw, so it stays as narrow as its base;
+	// `rings` by `sides`
 	seal: {
 		from: 'mixamorig1Neck',
 		color: 'steel',
 		reach: 0.25,
 		base: [0.36, 0.3],
-		top: [0.46, 0.5],
+		top: [0.36, 0.3],
 		flare: 0.5,
 		rings: 6,
 		sides: 20,
 	},
 }
 
-// Mixamo's Vanguard by T. Choonyung, its suit greyed to gunmetal (0.8 of its brightness) and its
-// utility belt cut away at conversion; the visor and the lamps on its brow, chest and back lit yellow
+// Mixamo's Vanguard by T. Choonyung, repainted in the crew's livery at conversion (its pale plates their
+// slate, an oxblood yoke across the shoulders), its neck guards lowered and its shoulder pads shrunk to
+// sit nearer the crew's build, its utility belt cut away and its own visor taken out; the crew's helmet
+// in its place, on this rig's bone names, and the lamps on its chest and back lit yellow
 const VANGUARD = {
 	url: '/assets/game/models/Vanguard.glb',
 	height: 1.86,
@@ -443,13 +458,14 @@ const VANGUARD = {
 	clipsFrom: LOCOMOTION,
 	clips: { rest: 'Guard' },
 	fidgets: ['NeckStretch', 'LookAbout'],
-	glow: { materials: /Visor|Lamp/, color: 'ember', intensity: 0.5 },
+	helmet: { ...HELMET, bone: 'mixamorigHead', seal: { ...HELMET.seal, from: 'mixamorigNeck' } },
+	glow: { materials: /Lamp/, color: 'ember', intensity: 0.5 },
 }
 
 // What the props borrow from the crew: the helmet set down (`width` across), the empty suits hung up (each
 // model posed by its `pose` clip), and the crew member recorded over the comms plate, playing `clip`
 export const PILOT_PROP_MODELS = {
-	helmet: { url: HELMET.url, glow: HELMET.glow, width: 0.32 },
+	helmet: { url: HELMET.url, width: 0.32 },
 	suits: [
 		{ ...ELY, pose: 'Idle' },
 		{ ...ASTRA, pose: 'Idle' },
@@ -480,8 +496,10 @@ export const PILOT_CREW = [
 	{ ...VANGUARD, scale: 0.98, guard: { x: -1.1, z: -3, heading: 0 } },
 	// the patrols walk at their walk's own pace, borrowed with their turns about: Mixamo's "Male Walk
 	// Forward" 01 and 02, whose boots stay planted on either rig (their own walks skid)
+	// the medic, in white
 	{
 		...ASTRA,
+		panels: 'cream',
 		helmet: HELMET,
 		clipsFrom: LOCOMOTION,
 		borrow: ['WalkForward01', 'TurnLeft', 'TurnRight'],
@@ -494,8 +512,10 @@ export const PILOT_CREW = [
 		walkSpeed: 1.14,
 		patrol: { x: -0.75, from: 6, to: 21, speed: 1.14, restS: 3 },
 	},
+	// an engineer, in yellow
 	{
 		...ELY,
+		panels: 'brass',
 		helmet: HELMET,
 		clipsFrom: LOCOMOTION,
 		borrow: ['WalkForward02', 'TurnLeft', 'TurnRight'],
@@ -508,16 +528,20 @@ export const PILOT_CREW = [
 		walkSpeed: 1.32,
 		patrol: { x: 0.75, from: 20, to: 30, speed: 1.32, restS: 3 },
 	},
+	// the scientist, in steel blue
 	{
 		...ASTRA,
+		panels: 'rime',
 		helmet: HELMET,
 		clips: { rest: 'Idle', react: 'Talk' },
 		fidgets: ['Idle2'],
 		// at the ops desk, between the mission table and the projector plate
 		greet: { x: -2.45, z: 23.1, reach: 3.5 },
 	},
+	// a second engineer
 	{
 		...ELY,
+		panels: 'brass',
 		helmet: HELMET,
 		clips: { rest: 'Idle', react: 'Talk' },
 		fidgets: ['Idle2'],
