@@ -42,6 +42,21 @@ export const PALETTE = {
 	frost: [66, 79, 102],
 	rime: [96, 112, 140],
 
+	// Sky. The open world's nebula (assets/game/sky/nebula.png), three ramps dark to light at matching
+	// steps: teal gas, its blue dust, and the dust turned violet and magenta. Its darkest cells are Night's.
+	veil: [16, 40, 48],
+	drift: [28, 76, 80],
+	aurora: [48, 118, 118],
+	ion: [112, 184, 176],
+	indigo: [30, 28, 84],
+	cobalt: [44, 58, 112],
+	lapis: [78, 96, 170],
+	nova: [130, 146, 222],
+	plum: [54, 26, 70],
+	orchid: [100, 42, 112],
+	fuchsia: [156, 66, 148],
+	rose: [222, 140, 196],
+
 	// Bare metal: the game's brushed steel, cold greys with a blue cast.
 	graphite: [58, 64, 78],
 	gun: [88, 96, 112],
