@@ -25,7 +25,8 @@ const turnToward = (from, to, rate) => {
 // anywhere in its cycle so no two crew move in step
 export async function clipRig(spec) {
 	const { body, clips } = await loadRigged(spec)
-	if (spec.helmet) await wearHelmet(body, spec.helmet)
+	// the helmet's visor takes the suit's role colour
+	if (spec.helmet) await wearHelmet(body, { ...spec.helmet, panels: spec.panels })
 	const mixer = new AnimationMixer(body)
 	const turns = new Map()
 	const actions = Object.fromEntries(
