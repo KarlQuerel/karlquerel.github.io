@@ -10,13 +10,14 @@ import {
 	MeshStandardMaterial,
 	Quaternion,
 	SkinnedMesh,
+	TextureSource,
 	Uint16BufferAttribute,
 	Vector3,
 } from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { clone } from 'three/addons/utils/SkeletonUtils.js'
-import { paletteHex } from '../../constants/palette.js'
-import { PILOT_GLOW } from '../../constants/game/pilot.js'
+import { PALETTE, paletteHex } from '../../constants/palette.js'
+import { PILOT_GLOW, PILOT_PANELS } from '../../constants/game/pilot.js'
 
 const loader = new GLTFLoader()
 const loading = new Map()
@@ -84,10 +85,11 @@ function borrowClips(scene, donor, only) {
 	})
 }
 
-// spec: { url, height, scale?, clipsFrom?, borrow?, glow? }: stood `scale` times its height, lit by
-// `glow`; the clips by name: its own, and those borrowed from the `clipsFrom` rig (only the `borrow`
-// names, if listed), a borrowed clip taking the place of its own of the same name
-export async function loadRigged({ url, height, scale = 1, clipsFrom, borrow, glow }) {
+// spec: { url, height, scale?, clipsFrom?, borrow?, glow?, panels? }: stood `scale` times its height, lit
+// by `glow`, its oxblood in the `panels` colour; the clips by name: its own, and those borrowed from the
+// `clipsFrom` rig (only the `borrow` names, if listed), a borrowed clip taking the place of its own of the
+// same name
+export async function loadRigged({ url, height, scale = 1, clipsFrom, borrow, glow, panels }) {
 	const gltf = await fetchOnce(url)
 	const body = clone(gltf.scene)
 	// a skinned box is measured on its bones, which need their world matrices first
@@ -95,6 +97,7 @@ export async function loadRigged({ url, height, scale = 1, clipsFrom, borrow, gl
 	const size = new Box3().setFromObject(body).getSize(new Vector3())
 	body.scale.setScalar((height * scale) / size.y)
 	if (glow) addGlow(body, glow)
+	if (panels) paintPanels(body, panels)
 	const borrowed = clipsFrom ? borrowClips(gltf.scene, await fetchOnce(clipsFrom), borrow) : []
 	const clips = Object.fromEntries(
 		[...gltf.animations, ...borrowed].map(clip => [clip.name, clip])
@@ -259,26 +262,74 @@ function keepLit(map) {
 	return keptLit.get(map)
 }
 
-// spec: { materials, color, intensity }: every material whose name `materials` matches lit from within
-function addGlow(body, { materials, color, intensity }) {
-	body.traverse(mesh => {
+// each of a model's materials swapped for what `change` makes of it
+function swapMaterials(root, change) {
+	root.traverse(mesh => {
 		if (!mesh.isMesh) return
-		mesh.material = [mesh.material].flat().map(material => {
-			if (!materials.test(material.name)) return material
-			const lit = material.clone()
-			lit.emissive.set(paletteHex(color))
-			lit.emissiveIntensity = intensity
-			if (lit.emissiveMap) lit.emissiveMap = keepLit(lit.emissiveMap)
-			return lit
-		})
-		if (mesh.material.length === 1) mesh.material = mesh.material[0]
+		const made = [mesh.material].flat().map(change)
+		mesh.material = made.length === 1 ? made[0] : made
 	})
 }
 
-// spec: { url, glow? }: an unrigged model, lit by `glow`
-export async function loadProp({ url, glow }) {
+// spec: { materials, color, intensity }: every material whose name `materials` matches lit from within
+function addGlow(body, { materials, color, intensity }) {
+	swapMaterials(body, material => {
+		if (!materials.test(material.name)) return material
+		const lit = material.clone()
+		lit.emissive.set(paletteHex(color))
+		lit.emissiveIntensity = intensity
+		if (lit.emissiveMap) lit.emissiveMap = keepLit(lit.emissiveMap)
+		return lit
+	})
+}
+
+// a base map with its oxblood panels in a palette colour, shading kept; built once per map and colour
+const repainted = new Map()
+function panelsIn(map, color) {
+	const key = `${map.uuid}:${color}`
+	if (!repainted.has(key)) {
+		const { lean, sat, value, usual, most } = PILOT_PANELS
+		const { width, height } = map.image
+		const canvas = new OffscreenCanvas(width, height)
+		const ctx = canvas.getContext('2d')
+		ctx.drawImage(map.image, 0, 0)
+		const pixels = ctx.getImageData(0, 0, width, height)
+		const { data } = pixels
+		for (let i = 0; i < data.length; i += 4) {
+			const [r, g, b] = [data[i], data[i + 1], data[i + 2]]
+			const bright = Math.max(r, g, b) / 255
+			const spread = r - Math.min(g, b)
+			if (r < Math.max(g, b) || spread < sat * r) continue
+			if (bright < value[0] || bright > value[1]) continue
+			if ((g - b) / spread < lean[0] || (g - b) / spread > lean[1]) continue
+			const k = Math.min(most, bright / usual)
+			PALETTE[color].forEach((c, j) => (data[i + j] = Math.min(255, c * k)))
+		}
+		ctx.putImageData(pixels, 0, 0)
+		const paint = map.clone()
+		// its own source: a clone shares the original's
+		paint.source = new TextureSource(canvas)
+		paint.needsUpdate = true
+		repainted.set(key, paint)
+	}
+	return repainted.get(key)
+}
+
+// a role's colour on every mapped material of a model
+function paintPanels(root, color) {
+	swapMaterials(root, material => {
+		if (!material.map) return material
+		const role = material.clone()
+		role.map = panelsIn(material.map, color)
+		return role
+	})
+}
+
+// spec: { url, glow?, panels? }: an unrigged model, lit by `glow`, its oxblood in the `panels` colour
+export async function loadProp({ url, glow, panels }) {
 	const prop = (await fetchOnce(url)).scene.clone()
 	if (glow) addGlow(prop, glow)
+	if (panels) paintPanels(prop, panels)
 	return prop
 }
 
