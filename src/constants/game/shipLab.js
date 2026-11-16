@@ -16,6 +16,9 @@ const VISOR = {
 	depthWrite: true,
 }
 
+// the pixel pass at a ship's scale: outlines at full ink within far / 2
+const EDGES = { ...PILOT.edges, far: 600 }
+
 export const SHIP_LAB = {
 	boot: { context: 0.1, models: 0.6, body: 0.2, frame: 0.1 },
 	// the ship first (the orbit's centre), then the ring: one frame for both, so loaded at one origin the
@@ -64,7 +67,7 @@ export const SHIP_LAB = {
 	// that tips far enough up to look through the glass. The `glass` materials (the canopy's, and the model's own
 	// cockpit glass, opaque from outside) let more through from inside, at `opacity`.
 	aboard: {
-		start: [0, -12.5],
+		start: [-1.3, -12.3],
 		body: PILOT_ROOM.body,
 		eye: PILOT.eye,
 		fovDeg: PILOT.fovDeg,
@@ -74,14 +77,19 @@ export const SHIP_LAB = {
 		// aboard, the hull draws only its outer faces, so no window shows the inside of a wing or an engine;
 		// except in this box (x, y, z), the model's own cockpit tub, seen from inside on purpose
 		hullInside: { x: [-3, 3], y: [2, 8.5], z: [27, 36] },
+		// creases glint softer aboard, and never on the hallway's near-white panels: there its fine detail sparkled
+		// white as the walk moved
+		edges: { ...EDGES, glint: 1.15, bright: 0.7 },
 	},
-	// the `role` rooms dressed with one bay of "Space Ship Hallway" by yeeyeeman, CC BY 4.0, modified
-	// (sketchfab.com/3d-models/space-ship-hallway-e97dce00ae5549a8a3795e06bc2cfc96; cut pillar to pillar, 2.6 m
-	// tall, by claude-ship/hallway/bay.py): local only (.git/info/exclude) until that credit is on the site.
-	// Repeated down each room: its walls (`relief` m deep, `band` m over the floor) squeezed to keep `clear` m
-	// between them, `inset` m in from the greybox, and cut away across each door and `jamb` m round it; its
-	// ceiling, over the band, opened under skylights; portholes on a hull window keep their glass, the rest are
-	// `screen` panels. Repainted by name: the cyan line ember, the floor bars unlit (lit, they read far future).
+	// the passages (`role`) and every room walked in dressed with one bay of "Space Ship Hallway" by yeeyeeman, CC BY
+	// 4.0, modified (sketchfab.com/3d-models/space-ship-hallway-e97dce00ae5549a8a3795e06bc2cfc96; cut pillar to
+	// pillar, 2.6 m tall, by claude-ship/hallway/bay.py): local only (.git/info/exclude) until that credit is on the
+	// site. Down a passage the whole bay repeats, its walls (`relief` m deep, `band` m over the floor) squeezed to keep
+	// `clear` m between them; round a room the bay's wall out to its cove (`cove` m from the bay's middle) lines every
+	// wall, the ceiling's middle (its light) runs in rows `rows` m apart, its deck plates tile the floor. All `inset`
+	// m in from the greybox, cut away across each door and `jamb` m round it, opened under skylights; portholes on a
+	// hull window keep their glass, the rest are `screen` panels. Repainted by name: the cyan line ember, the floor
+	// bars unlit (lit, they read far future).
 	hallway: {
 		model: '/assets/game/models/ship-hallway-bay.glb',
 		role: 'passage',
@@ -90,6 +98,8 @@ export const SHIP_LAB = {
 		inset: 0.01,
 		band: [0.05, 2.05],
 		jamb: 0.1,
+		cove: 0.35,
+		rows: 2.4,
 		screen: 'deep',
 		paint: {
 			hall_panel: { base: 'silver' },
@@ -103,7 +113,7 @@ export const SHIP_LAB = {
 			hall_strip: { glow: 'ember' },
 		},
 	},
-	// the pixel pass at a ship's scale: outlines at full ink within far / 2, cells softened from 250 m
-	edges: { ...PILOT.edges, far: 600 },
+	// the pixel pass at a ship's scale (EDGES), cells softened from 250 m
+	edges: EDGES,
 	distant: { ...PILOT.distant, from: 250, to: 600 },
 }
