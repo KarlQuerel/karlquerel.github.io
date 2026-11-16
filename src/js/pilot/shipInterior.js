@@ -1,4 +1,5 @@
-// HERMES-8's inside as a greybox (SHIP_LAYOUT): each room a box, its doors cut through the walls it shares, its
+// HERMES-8's inside as a greybox (SHIP_LAYOUT): each room a box, its doors cut through the walls it shares (a locked
+// one shut by a panel), its
 // windows, skylights and ports reaching out to glass under the skin, floors coloured by what the room is for. Built as
 // faces by kind, for the game's meshes and for the Blender cutaway that reads the same faces; and, for the walk,
 // where a body may stand and the floor under it.
@@ -21,7 +22,7 @@ import { ramp } from '../math.js'
 
 const { rooms, doors, wall, door, ribs, lines, colors, roles, glass } = SHIP_LAYOUT
 const ROOM = Object.fromEntries(rooms.map(room => [room.id, room]))
-const GLOWS = new Set(['light', 'floorLine'])
+const GLOWS = new Set(['light', 'floorLine', 'lock'])
 export const OTHER = { x: 'z', z: 'x' }
 
 const mix = ([a, b], t) => a + (b - a) * t
@@ -47,7 +48,7 @@ function seam(p, q) {
 	throw new Error(`rooms ${p.id} and ${q.id} share no wall`)
 }
 
-// each door: its wall, the opening along it, its rooms, and the floor and top of the opening
+// each door: its wall, the opening along it, its rooms, the floor and top of the opening, and whether it is shut
 export const OPENINGS = doors.map(d => {
 	const [a, b] = [ROOM[d.a], ROOM[d.b]]
 	const { axis, mid } = seam(a, b)
@@ -62,6 +63,7 @@ export const OPENINGS = doors.map(d => {
 		rooms: [a, b],
 		floor,
 		top,
+		locked: Boolean(d.locked),
 	}
 })
 
@@ -70,7 +72,7 @@ export const BOUNDS = {
 	z: [Math.min(...rooms.map(r => r.z[0])), Math.max(...rooms.map(r => r.z[1]))],
 }
 
-// where a body `r` m round may stand: well inside a room, or through a door
+// where a body `r` m round may stand: well inside a room, or through an open door
 export function standable(x, z, r) {
 	const p = { x, z }
 	return (
@@ -80,6 +82,7 @@ export function standable(x, z, r) {
 		) ||
 		OPENINGS.some(
 			o =>
+				!o.locked &&
 				Math.abs(p[o.axis] - o.mid) <= wall / 2 + r &&
 				p[OTHER[o.axis]] >= o.from + r &&
 				p[OTHER[o.axis]] <= o.to - r
@@ -243,10 +246,17 @@ export function interiorFaces({ dressed } = {}) {
 			box('rib', at((a0 + a1) / 2, f + h - ribs.depth / 2), size(a1 - a0, ribs.depth))
 		}
 	}
-	// each door's frame across the wall: its floor, its two jambs and, under two ceilings, its head
+	// each door's frame across the wall: its floor, its two jambs and, under two ceilings, its head; a locked one shut
+	// by a panel in the middle of the wall, a light down its seam
 	for (const o of OPENINGS) {
 		const [u0, u1] = [o.mid - wall / 2, o.mid + wall / 2]
+		// across the wall, along it, up: a point, or a box's size
 		const pt = (u, v, y) => (o.axis === 'x' ? [u, y, v] : [v, y, u])
+		if (o.locked) {
+			const middle = pt(o.mid, (o.from + o.to) / 2, (o.floor + o.top) / 2)
+			box('door', middle, pt(door.panel, o.to - o.from, o.top - o.floor))
+			box('lock', middle, pt(door.panel + 0.02, door.seam, o.top - o.floor))
+		}
 		quad(
 			'jamb',
 			pt(u0, o.from, o.floor),
