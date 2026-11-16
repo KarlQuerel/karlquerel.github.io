@@ -17,9 +17,6 @@ import common from '../../shaders/intro/common.glsl?raw'
 import { paletteSnap } from '../intro/paletteSnap.js'
 import { PILOT, PILOT_EXACT_ALPHA } from '../../constants/game/pilot.js'
 
-const { step, turn, ink, glint, far } = PILOT.edges
-const { from, to, sigma } = PILOT.distant
-
 // a baked sky behind a cell nothing was drawn in: the cell's view ray into the panorama, read as it is
 const skyAt = `
 uniform sampler2D tSky;
@@ -31,8 +28,9 @@ vec3 skyAt(vec2 frag){
   return toSrgb(texture2D(tSky, vec2(atan(rd.z, rd.x)/(2.0*PI) + 0.5, asin(clamp(rd.y, -1.0, 1.0))/PI + 0.5)).rgb);
 }`
 
-// the pass over `palette`, a list of PALETTE names; with `sky`, the baked sky drawn where nothing was
-const frag = (palette, sky) => `
+// the pass over `palette`, a list of PALETTE names, its `edges` and `distant` as PILOT's; with `sky`, the
+// baked sky drawn where nothing was
+const frag = (palette, sky, { step, turn, ink, glint, far }, { from, to, sigma }) => `
 #include <packing>
 uniform sampler2D tColor;
 uniform sampler2D tDepth;
@@ -97,8 +95,13 @@ void main(){
 const target = () =>
 	new WebGLRenderTarget(1, 1, { minFilter: NearestFilter, magFilter: NearestFilter })
 
-// sky: a 2:1 equirect panorama already on the palette (scripts/sky/bake.mjs), nearest, unmipped
-export function createPixelPost(renderer, camera, { palette = PILOT.palette, sky } = {}) {
+// sky: a 2:1 equirect panorama already on the palette (scripts/sky/bake.mjs), nearest, unmipped; edges
+// and distant in a scene's own metres
+export function createPixelPost(
+	renderer,
+	camera,
+	{ palette = PILOT.palette, sky, edges = PILOT.edges, distant = PILOT.distant } = {}
+) {
 	const color = target()
 	color.depthTexture = new DepthTexture(1, 1)
 	const normals = target()
@@ -119,7 +122,7 @@ export function createPixelPost(renderer, camera, { palette = PILOT.palette, sky
 			}),
 		},
 		vertexShader: 'void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }',
-		fragmentShader: `${common}\n${frag(palette, sky)}`,
+		fragmentShader: `${common}\n${frag(palette, sky, edges, distant)}`,
 		depthTest: false,
 		depthWrite: false,
 	})
@@ -133,6 +136,9 @@ export function createPixelPost(renderer, camera, { palette = PILOT.palette, sky
 			material.uniforms.uRes.value = [width, height]
 		},
 		render(scene) {
+			// a scene may move its camera's planes (the ship lab steps aboard the hull it orbits)
+			material.uniforms.cameraNear.value = camera.near
+			material.uniforms.cameraFar.value = camera.far
 			renderer.setRenderTarget(color)
 			renderer.render(scene, camera)
 			// the normals in view space, for the creases; a sky behind has none
