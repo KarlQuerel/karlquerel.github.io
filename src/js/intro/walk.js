@@ -31,7 +31,8 @@ export function lookWalk(w, [dx, dy], tilt = { up: WALK.pitchUp, down: WALK.pitc
 
 // box: { halfWidth, back, front, open? }, the deck's reach across x and along z, and whether a spot
 // inside it can be stood on (any, if no `open`)
-export function stepWalk(w, keys, dt, box) {
+export function stepWalk(w, keys, frameDt, box) {
+	const dt = Math.min(frameDt, WALK.stepS)
 	const ahead = held(keys, WALK_KEYS.forward) - held(keys, WALK_KEYS.back)
 	const side = held(keys, WALK_KEYS.strafeRight) - held(keys, WALK_KEYS.strafeLeft)
 	const turn = held(keys, WALK_KEYS.turnRight) - held(keys, WALK_KEYS.turnLeft)
