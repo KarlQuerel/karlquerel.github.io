@@ -28,9 +28,10 @@ vec3 skyAt(vec2 frag){
   return toSrgb(texture2D(tSky, vec2(atan(rd.z, rd.x)/(2.0*PI) + 0.5, asin(clamp(rd.y, -1.0, 1.0))/PI + 0.5)).rgb);
 }`
 
-// the pass over `palette`, a list of PALETTE names, its `edges` and `distant` as PILOT's; with `sky`, the
-// baked sky drawn where nothing was
-const frag = (palette, sky, { step, turn, ink, glint, far }, { from, to, sigma }) => `
+// the pass over `palette`, a list of PALETTE names, its `edges` and `distant` as PILOT's (a crease glints only on
+// a cell darker than `bright`, its luma 0..1: on a near-white face a glint's one-cell sparkle crawls as the view
+// moves); with `sky`, the baked sky drawn where nothing was
+const frag = (palette, sky, { step, turn, ink, glint, far, bright = 1 }, { from, to, sigma }) => `
 #include <packing>
 uniform sampler2D tColor;
 uniform sampler2D tDepth;
@@ -87,7 +88,8 @@ void main(){
     crease = max(crease, step(${turn.toFixed(3)}, 1.0 - dot(n, normalAt(frag + o))) * step(wa, w));
   }
   if (outline > 0.0) col = palColor(nearestIndex(col*mix(1.0, ${ink.toFixed(3)}, near)));
-  else if (crease > 0.0) col = palColor(nearestIndex(col*mix(1.0, ${glint.toFixed(3)}, near)));
+  else if (crease > 0.0 && dot(col, vec3(0.2126, 0.7152, 0.0722)) < ${bright.toFixed(3)})
+    col = palColor(nearestIndex(col*mix(1.0, ${glint.toFixed(3)}, near)));
   gl_FragColor = vec4(col, 1.0);
 }
 `
