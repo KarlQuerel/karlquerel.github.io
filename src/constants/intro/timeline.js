@@ -38,6 +38,7 @@ export const SCENE_MENU = {
 		scenes: [
 			{ param: 'pilot', label: 'corridor pilot' },
 			{ param: 'sky', label: 'skybox lab' },
+			{ param: 'ship', label: 'HERMES-8 ship' },
 		],
 	},
 	flat: '2D',
