@@ -325,11 +325,33 @@ function paintPanels(root, color) {
 	})
 }
 
-// spec: { url, glow?, panels? }: an unrigged model, lit by `glow`, its oxblood in the `panels` colour
-export async function loadProp({ url, glow, panels }) {
+// paint: { [material name]: { base, tint?, ...look } | { glow } }: each named material in a palette colour, lit
+// faintly from within in `tint`, its other settings in `look`; or glowing exactly the colour `glow` (a black base, so
+// no light pushes it past it)
+function repaint(root, paint) {
+	swapMaterials(root, material => {
+		const to = paint[material.name]
+		if (!to) return material
+		const { base, glow, tint, ...look } = to
+		const own = material.clone()
+		if (base) own.color.set(paletteHex(base))
+		else {
+			own.color.setScalar(0)
+			own.emissive.set(paletteHex(glow))
+			own.emissiveIntensity = 1
+		}
+		if (tint) own.emissive.set(paletteHex(tint))
+		return Object.assign(own, look)
+	})
+}
+
+// spec: { url, glow?, panels?, paint? }: an unrigged model, lit by `glow`, its oxblood in the `panels`
+// colour, its named materials repainted by `paint`
+export async function loadProp({ url, glow, panels, paint }) {
 	const prop = (await fetchOnce(url)).scene.clone()
 	if (glow) addGlow(prop, glow)
 	if (panels) paintPanels(prop, panels)
+	if (paint) repaint(prop, paint)
 	return prop
 }
 
