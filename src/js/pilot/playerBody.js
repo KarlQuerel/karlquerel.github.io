@@ -65,7 +65,8 @@ export async function addPlayerBody(scene) {
 		// the neck held `back` behind the eye however a clip leans or sways, so no collar or shoulder
 		// swings in front of the camera
 		body.updateMatrixWorld()
-		neck.getWorldPosition(at)
+		// in the frame the body stands in, which need not be the world's
+		body.parent.worldToLocal(neck.getWorldPosition(at))
 		body.position.x += x - at.x
 		body.position.z += z - at.z
 	}
