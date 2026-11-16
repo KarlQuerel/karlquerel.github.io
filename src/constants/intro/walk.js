@@ -19,6 +19,9 @@ export const WALK_KEYS = {
 export const WALK = {
 	// a brisk walk: faster and the legs could only keep up at a run
 	speed: 1.6,
+	// the longest frame one step may take: a stalled frame (a shader compiling) would otherwise carry the body
+	// through a wall in a single stride
+	stepS: 0.1,
 	// a run, with Shift held: this much faster than the walk
 	sprint: 1.75,
 	// a side step and a step back are shorter than a stride: their share of the walk's speed
