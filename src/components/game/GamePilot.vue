@@ -1,6 +1,6 @@
 <template>
 	<!-- Dev only: a three.js scene walked in first person on the art grid: the corridor rebuilt, to judge
-	     rigged characters in the game's pixel look, or the skybox lab. -->
+	     rigged characters in the game's pixel look, the skybox lab, or the ship lab. -->
 	<div class="pilot">
 		<canvas ref="canvas" class="pilot__canvas" aria-hidden="true" />
 		<BootCover :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
@@ -15,6 +15,7 @@
 	import BootCover from '@/components/BootCover.vue'
 	import { createCorridorPilot } from '@/js/pilot/corridorPilot'
 	import { createSkyLab } from '@/js/pilot/skyLab'
+	import { createShipLab } from '@/js/pilot/shipLab'
 	import { PILOT } from '@/constants/game/pilot'
 	import { WALK_KEYS } from '@/constants/intro/walk'
 	import { INTRO_WALK_HINT } from '@/data/gameIntro'
@@ -22,7 +23,7 @@
 	const props = defineProps({ scene: { type: String, required: true } })
 
 	// each scene by the param that opens it (SCENE_MENU.three)
-	const SCENES = { pilot: createCorridorPilot, sky: createSkyLab }
+	const SCENES = { pilot: createCorridorPilot, sky: createSkyLab, ship: createShipLab }
 	const WALKING = new Set(Object.values(WALK_KEYS).flat())
 	const canvas = ref(null)
 	const moved = ref(false)
