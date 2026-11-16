@@ -29,7 +29,8 @@ import { clamp } from '../math.js'
 import { loadProp } from './models.js'
 import { createPixelPost } from './pixelPost.js'
 import { addPlayerBody } from './playerBody.js'
-import { dressPassages } from './shipHallway.js'
+import { DRESSED, dressShip } from './shipHallway.js'
+import { onProp, placeProps } from './shipProps.js'
 import { BOUNDS, buildInterior, floorAt, standable } from './shipInterior.js'
 
 const { orbit, light, aboard } = SHIP_LAB
@@ -78,17 +79,19 @@ function keepInside(model, { x, y, z }) {
 	}
 }
 
-// where the walk may stand (its x mirrored, as in the corridor pilot): in a room or a doorway, `body` m clear
-const DECK = {
-	halfWidth: Math.max(...BOUNDS.x.map(Math.abs)),
-	back: BOUNDS.z[0],
-	front: BOUNDS.z[1],
-	open: (x, z) => standable(-x, z, aboard.body),
-}
-
 export function createShipLab() {
+	// where the walk may stand (its x mirrored, as in the corridor pilot): in a room or a doorway, `body` m clear
+	// of the walls and of every prop's footprint
+	let footprints = []
+	const deck = {
+		halfWidth: Math.max(...BOUNDS.x.map(Math.abs)),
+		back: BOUNDS.z[0],
+		front: BOUNDS.z[1],
+		open: (x, z) => standable(-x, z, aboard.body) && !onProp(footprints, -x, z, aboard.body),
+	}
 	let renderer = null
-	let post = null
+	// the pixel pass outside, and aboard with softer glints
+	let posts = null
 	let sky = null
 	let body = null
 	let inside = false
@@ -120,15 +123,18 @@ export function createShipLab() {
 		sky.colorSpace = SRGBColorSpace
 		sky.magFilter = sky.minFilter = NearestFilter
 		sky.generateMipmaps = false
-		post = createPixelPost(renderer, camera, {
-			palette: Object.keys(PALETTE),
-			sky,
-			edges: SHIP_LAB.edges,
-			distant: SHIP_LAB.distant,
-		})
+		const pass = edges =>
+			createPixelPost(renderer, camera, {
+				palette: Object.keys(PALETTE),
+				sky,
+				edges,
+				distant: SHIP_LAB.distant,
+			})
+		posts = { outside: pass(SHIP_LAB.edges), aboard: pass(aboard.edges) }
 		await step('context')
-		const [hall, ship, ...rest] = await Promise.all([
-			dressPassages(),
+		const [hall, dressing, ship, ...rest] = await Promise.all([
+			dressShip(),
+			placeProps(),
 			...SHIP_LAB.models.map(url => loadProp({ url, paint: SHIP_LAB.paint })),
 		])
 		scene.clear()
@@ -136,7 +142,8 @@ export function createShipLab() {
 		keepInside(ship, aboard.hullInside)
 		new Box3().setFromObject(ship).getCenter(middle)
 		size = new Box3().setFromObject(scene).getSize(new Vector3()).length()
-		scene.add(buildInterior({ dressed: SHIP_LAB.hallway.role }), hall, stand)
+		footprints = dressing.footprints
+		scene.add(buildInterior({ dressed: DRESSED }), hall, dressing.props, stand)
 		glass.clear()
 		scene.traverse(o => {
 			for (const material of [o.material ?? []].flat())
@@ -191,7 +198,7 @@ export function createShipLab() {
 		renderer.setSize(width, height, false)
 		camera.aspect = width / height
 		camera.updateProjectionMatrix()
-		post.resize(width, height)
+		for (const post of Object.values(posts)) post.resize(width, height)
 	}
 
 	function swing(dt, [dx, dy], keys) {
@@ -209,7 +216,7 @@ export function createShipLab() {
 
 	function stroll(dt, turn, keys) {
 		lookWalk(walk, turn, aboard.tilt)
-		if (dt > 0) stepWalk(walk, keys, dt, DECK)
+		if (dt > 0) stepWalk(walk, keys, dt, deck)
 		stand.position.y = floorAt(-walk.x, walk.z)
 		camera.position.set(-walk.x, stand.position.y + aboard.eye + breathe(time), walk.z)
 		camera.rotation.set(walk.pitch, Math.PI - walk.heading, 0)
@@ -225,6 +232,7 @@ export function createShipLab() {
 		if (inside) stroll(dt, input.turn, input.keys)
 		else swing(dt, input.turn, input.keys)
 		input.turn[0] = input.turn[1] = 0
+		const post = inside ? posts.aboard : posts.outside
 		post.render(scene)
 		return true
 	}
@@ -232,7 +240,7 @@ export function createShipLab() {
 	function release() {
 		scene.environment?.dispose()
 		sky?.dispose()
-		post?.dispose()
+		for (const post of Object.values(posts ?? {})) post.dispose()
 		renderer?.dispose()
 	}
 
