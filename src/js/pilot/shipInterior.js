@@ -98,7 +98,8 @@ export function floorAt(x, z) {
 	return room ? floorOf(room, z) : SHIP_LAYOUT.floor
 }
 
-// rooms of the role `dressed` get no light strips, ribs or floor lines: a model dresses them (shipHallway)
+// rooms in the set `dressed` (ids) get no light strips, ribs or floor lines: the hallway kit dresses them
+// (shipHallway)
 export function interiorFaces({ dressed } = {}) {
 	const faces = {}
 	// a flat four-cornered face of one kind, as two triangles
@@ -219,7 +220,7 @@ export function interiorFaces({ dressed } = {}) {
 			shaft(sky, level(floor + h), sky.top)
 			if (sky.glass !== false) quad('glass', ...corners(sky, sky.top))
 		}
-		if (room.role === dressed) continue
+		if (dressed?.has(room.id)) continue
 		// light strips under the ceiling along the long walls; down a passage's floor too, and ribs across it
 		const long = longAxis(room)
 		const across = OTHER[long]
