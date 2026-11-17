@@ -24,11 +24,12 @@
 
 	// each scene by the param that opens it (SCENE_MENU.three)
 	const SCENES = { pilot: createCorridorPilot, sky: createSkyLab, ship: createShipLab }
-	const WALKING = new Set(Object.values(WALK_KEYS).flat())
 	const canvas = ref(null)
 	const moved = ref(false)
 	const input = { keys: new Set(), turn: [0, 0] }
 	const pilot = SCENES[props.scene]()
+	// the walk's keys, and any the scene adds of its own
+	const WALKING = new Set([...Object.values(WALK_KEYS).flat(), ...(pilot.keys ?? [])])
 
 	const { booting, bootProgress, bootCeiling } = useArtCanvas(canvas, {
 		webgl2: true,
