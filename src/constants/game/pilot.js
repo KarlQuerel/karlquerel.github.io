@@ -652,6 +652,37 @@ export const PILOT_BODY = {
 	},
 }
 
+// The player's helmet from the inside: the crew's own, worn by the camera as the body wears it, its glass cut
+// away. At a wearer's own eyes the glass fills the whole view, so the eye sits `back` m further back in it and
+// `lower` m lower, where its rim (the notch over the brow, the cheeks, the chin guard) frames the view's edges
+// and leaves its middle clear. Its inside is unlit: `base` where it faces the eye, turning to `rim` edge-on
+// (`turn` an exponent: over 1, late); it is drawn alone on `layer` to find the rim on the art grid.
+// The readouts: the suit's light on the glass along the rim's lower left, an arc per `meter` of PLAY's (0 to 100)
+// `from` cells in from the rim, within `region` (shares of the view from its lower left corner); each filling
+// from its labelled end (`label` in the 3x5 `font`, rows from the top) in `segments`, `gap` of each left dark;
+// lit, dim where empty, `low` under a quarter, blinking at `blinkHz`.
+export const PILOT_VISOR = {
+	back: 0.12,
+	lower: 0.015,
+	layer: 3,
+	inside: { base: 'void', rim: 'iron', turn: 2 },
+	readouts: [
+		{ label: 'O2', meter: 'o2', from: 3 },
+		{ label: '⚡', meter: 'power', from: 9 },
+	],
+	region: [0.3, 0.35],
+	segments: 12,
+	gap: 0.18,
+	colors: { lit: 'ember', dim: 'rust', low: 'brick' },
+	low: 25,
+	blinkHz: 1.5,
+	font: {
+		O: ['111', '101', '101', '101', '111'],
+		2: ['111', '001', '111', '100', '111'],
+		'⚡': ['001', '010', '111', '010', '100'],
+	},
+}
+
 // A patrol speeds up and brakes at `accel` m/s², stopping right on its mark, and plays its walk above
 // `walking` m/s, its rest clip below.
 export const PILOT_PATROL = { accel: 1.6, walking: 0.2 }

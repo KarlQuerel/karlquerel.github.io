@@ -1,8 +1,8 @@
-// The game after the intro: its three meters (0 to 100), what each verb spends, and the truth about
+// The game after the intro: its meters (0 to 100), what each verb spends, and the truth about
 // the world, decided fresh each run. Seconds and world units.
 export const PLAY = {
-	// how the envoy wakes: full air, a torn hull, a transmitter at half power
-	start: { o2: 100, hull: 34, signal: 60 },
+	// how the envoy wakes: full air, a charged suit, a torn hull, a transmitter at half power
+	start: { o2: 100, power: 100, hull: 34, signal: 60 },
 	// the odds the world is green; if it is not, one of these tests gives it away
 	greenOdds: 0.6,
 	tests: ['air', 'water', 'ground'],

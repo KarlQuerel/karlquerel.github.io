@@ -1,9 +1,10 @@
 // The corridor pilot in three.js: the walk the shader corridor uses, a first-person camera on it and
-// the player's body under it, the corridor's meshes, the crew, their shadows, the spacewalker outside the
-// glass on her own pass, and the pixel pass over it all.
+// the player's body under it and their helmet round it, the corridor's meshes, the crew, their shadows, the
+// spacewalker outside the glass on her own pass, and the pixel pass over it all, the suit's readouts on top.
 
 import { PerspectiveCamera, Scene, WebGLRenderer } from 'three'
 import { PILOT, PILOT_BOOT } from '../../constants/game/pilot.js'
+import { PLAY } from '../../constants/game/play.js'
 import { breathe, createWalk, lookWalk, stepWalk } from '../intro/walk.js'
 import { clamp } from '../math.js'
 import { addCorridor, lightModels, sizeCorridor } from './corridorSet.js'
@@ -13,6 +14,7 @@ import { addPlayerBody } from './playerBody.js'
 import { createSpaceLayer } from './spaceLayer.js'
 import { addSpacewalker } from './spacewalker.js'
 import { createSunShadow } from './sunShadow.js'
+import { createVisor } from './visor.js'
 
 export function createCorridorPilot() {
 	let renderer = null
@@ -28,18 +30,22 @@ export function createCorridorPilot() {
 	const scene = new Scene()
 	const camera = new PerspectiveCamera(PILOT.fovDeg, 1, PILOT.near, PILOT.far)
 	camera.rotation.order = 'YXZ'
+	// in the scene, so the helmet it wears is drawn
+	scene.add(camera)
+	const visor = createVisor()
 	const walk = createWalk(PILOT.walk)
 
 	async function build(gl, step) {
 		renderer = new WebGLRenderer({ canvas: gl.canvas, context: gl, antialias: false })
 		renderer.setPixelRatio(1)
-		post = createPixelPost(renderer, camera)
+		post = createPixelPost(renderer, camera, { overlay: visor.overlay })
 		shadow = createSunShadow(renderer)
 		space = createSpaceLayer(renderer, camera)
 		await step('context')
 		set = await addCorridor(scene)
 		crew = await addCrew(scene, part => step('models', part))
 		body = await addPlayerBody(scene)
+		await visor.wear(camera, body)
 		for (const caster of [...crew.bodies, body.body]) shadow.cast(caster)
 		walker = await addSpacewalker(scene)
 		lightModels(scene)
@@ -52,6 +58,7 @@ export function createCorridorPilot() {
 		camera.aspect = width / height
 		camera.updateProjectionMatrix()
 		post.resize(width, height)
+		visor.layout(renderer, scene, camera, width, height)
 		space.resize(width, height)
 		sizeCorridor(width, height)
 	}
@@ -84,6 +91,8 @@ export function createCorridorPilot() {
 		walker(dt, time, { x: -walk.x, z: walk.z })
 		shadow.render(scene)
 		space.render(scene)
+		// the suit as it wakes, till the pilot spends it
+		visor.show(time, PLAY.start)
 		post.render(scene)
 		return true
 	}
@@ -92,6 +101,7 @@ export function createCorridorPilot() {
 		shadow?.dispose()
 		space?.dispose()
 		post?.dispose()
+		visor.dispose()
 		renderer?.dispose()
 	}
 
