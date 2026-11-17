@@ -20,6 +20,7 @@ import {
 	Vector3,
 	WebGLRenderer,
 } from 'three'
+import { SHIP_HERMES } from '../../constants/game/shipCrew.js'
 import { SHIP_LAB } from '../../constants/game/shipLab.js'
 import { SKY_LAB } from '../../constants/game/skyLab.js'
 import { WALK, WALK_KEYS } from '../../constants/intro/walk.js'
@@ -29,6 +30,7 @@ import { clamp } from '../math.js'
 import { loadProp } from './models.js'
 import { createPixelPost } from './pixelPost.js'
 import { addPlayerBody } from './playerBody.js'
+import { addShipCrew } from './shipCrew.js'
 import { DRESSED, dressShip } from './shipHallway.js'
 import { onProp, placeProps } from './shipProps.js'
 import { BOUNDS, buildInterior, floorAt, standable } from './shipInterior.js'
@@ -94,8 +96,11 @@ export function createShipLab() {
 	let posts = null
 	let sky = null
 	let body = null
+	// the crew at their posts, speaking when the player comes near
+	let crew = null
 	let inside = false
 	let using = false
+	let calling = false
 	let time = 0
 	// the orbit's centre, the ship's middle, and its scale, the diagonal of the box both models fill
 	const middle = new Vector3()
@@ -132,18 +137,20 @@ export function createShipLab() {
 			})
 		posts = { outside: pass(SHIP_LAB.edges), aboard: pass(aboard.edges) }
 		await step('context')
-		const [hall, dressing, ship, ...rest] = await Promise.all([
+		const [hall, dressing, cast, ship, ...rest] = await Promise.all([
 			dressShip(),
 			placeProps(),
+			addShipCrew(),
 			...SHIP_LAB.models.map(url => loadProp({ url, paint: SHIP_LAB.paint })),
 		])
+		crew = cast
 		scene.clear()
 		scene.add(ship, ...rest)
 		keepInside(ship, aboard.hullInside)
 		new Box3().setFromObject(ship).getCenter(middle)
 		size = new Box3().setFromObject(scene).getSize(new Vector3()).length()
-		footprints = dressing.footprints
-		scene.add(buildInterior({ dressed: DRESSED }), hall, dressing.props, stand)
+		footprints = [...dressing.footprints, ...cast.footprints]
+		scene.add(buildInterior({ dressed: DRESSED }), hall, dressing.props, cast.group, stand)
 		glass.clear()
 		scene.traverse(o => {
 			for (const material of [o.material ?? []].flat())
@@ -229,8 +236,14 @@ export function createShipLab() {
 		const use = pressed(input.keys, WALK_KEYS.use)
 		if (use && !using) board(!inside)
 		using = use
+		// H has Hermes say its next line, once a press
+		const call = pressed(input.keys, SHIP_HERMES.keys)
+		if (call && !calling) crew.hermes()
+		calling = call
 		if (inside) stroll(dt, input.turn, input.keys)
 		else swing(dt, input.turn, input.keys)
+		// the crew hear the player aboard only, where they stand in the ship's own frame
+		crew.update(dt, inside ? { x: -walk.x, z: walk.z } : null)
 		input.turn[0] = input.turn[1] = 0
 		const post = inside ? posts.aboard : posts.outside
 		post.render(scene)
@@ -238,11 +251,13 @@ export function createShipLab() {
 	}
 
 	function release() {
+		crew?.hush()
 		scene.environment?.dispose()
 		sky?.dispose()
 		for (const post of Object.values(posts ?? {})) post.dispose()
 		renderer?.dispose()
 	}
 
-	return { boot: SHIP_LAB.boot, build, resize, frame, release, walk }
+	// Hermes's key on top of the walk's, for the page to pass on
+	return { boot: SHIP_LAB.boot, build, resize, frame, release, walk, keys: SHIP_HERMES.keys }
 }
