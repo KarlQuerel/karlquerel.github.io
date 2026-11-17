@@ -87,7 +87,7 @@ function borrowClips(scene, donor, only) {
 
 // spec: { url, height, scale?, clipsFrom?, borrow?, glow?, panels? }: stood `scale` times its height, lit
 // by `glow`, its oxblood in the `panels` colour; the clips by name: its own, and those borrowed from the
-// `clipsFrom` rig (only the `borrow` names, if listed), a borrowed clip taking the place of its own of the
+// `clipsFrom` rig or rigs (only the `borrow` names, if listed), a borrowed clip taking the place of its own of the
 // same name
 export async function loadRigged({ url, height, scale = 1, clipsFrom, borrow, glow, panels }) {
 	const gltf = await fetchOnce(url)
@@ -98,7 +98,8 @@ export async function loadRigged({ url, height, scale = 1, clipsFrom, borrow, gl
 	body.scale.setScalar((height * scale) / size.y)
 	if (glow) addGlow(body, glow)
 	if (panels) paintPanels(body, panels)
-	const borrowed = clipsFrom ? borrowClips(gltf.scene, await fetchOnce(clipsFrom), borrow) : []
+	const donors = await Promise.all([clipsFrom ?? []].flat().map(fetchOnce))
+	const borrowed = donors.flatMap(donor => borrowClips(gltf.scene, donor, borrow))
 	const clips = Object.fromEntries(
 		[...gltf.animations, ...borrowed].map(clip => [clip.name, clip])
 	)
