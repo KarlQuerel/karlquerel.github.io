@@ -78,7 +78,7 @@ export async function clipRig(spec) {
 }
 
 // face a heading (0 = down +z), the model's own front and any turn under way allowed for
-function face(npc, heading, dt) {
+export function face(npc, heading, dt) {
 	npc.heading = turnToward(npc.heading, heading, PILOT_TURN_RATE * dt)
 	npc.body.rotation.y = npc.heading + npc.spec.facing + npc.rig.yaw()
 }
