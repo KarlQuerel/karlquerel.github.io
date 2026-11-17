@@ -461,6 +461,14 @@ const VANGUARD = {
 	helmet: { ...HELMET, bone: 'mixamorigHead', seal: { ...HELMET.seal, from: 'mixamorigNeck' } },
 	glow: { materials: /Lamp/, color: 'ember', intensity: 0.5 },
 }
+// the bodies and the helmet, for crews outside the corridor (the ship lab's)
+export const PILOT_RIGS = {
+	astra: ASTRA,
+	ely: ELY,
+	vanguard: VANGUARD,
+	helmet: HELMET,
+	locomotion: LOCOMOTION,
+}
 
 // What the props borrow from the crew: the helmet set down (`width` across), the empty suits hung up (each
 // model posed by its `pose` clip), and the crew member recorded over the comms plate, playing `clip`
