@@ -240,11 +240,7 @@ function halve({ width, height, data }, floor, votes) {
 const keptLit = new Map()
 function keepLit(map) {
 	if (!keptLit.has(map)) {
-		const { width, height } = map.image
-		const canvas = new OffscreenCanvas(width, height)
-		const ctx = canvas.getContext('2d')
-		ctx.drawImage(map.image, 0, 0)
-		const full = ctx.getImageData(0, 0, width, height)
+		const { pixels: full } = texels(map)
 		const floor = PILOT_GLOW.floor * 255
 		const { data } = full
 		for (let i = 0; i < data.length; i += 4)
@@ -283,25 +279,37 @@ function addGlow(body, { materials, color, intensity }) {
 	})
 }
 
+// a map's texels, drawn on a canvas of its own
+export function texels(map) {
+	const { width, height } = map.image
+	const canvas = new OffscreenCanvas(width, height)
+	const ctx = canvas.getContext('2d')
+	ctx.drawImage(map.image, 0, 0)
+	return { canvas, ctx, pixels: ctx.getImageData(0, 0, width, height) }
+}
+
+// whether a texel is one of the oxblood panels (a helmet's visor among them)
+export function isPanel(r, g, b) {
+	const { lean, sat, value } = PILOT_PANELS
+	const bright = Math.max(r, g, b) / 255
+	const spread = r - Math.min(g, b)
+	if (r < Math.max(g, b) || spread < sat * r) return false
+	if (bright < value[0] || bright > value[1]) return false
+	return (g - b) / spread >= lean[0] && (g - b) / spread <= lean[1]
+}
+
 // a base map with its oxblood panels in a palette colour, shading kept; built once per map and colour
 const repainted = new Map()
 function panelsIn(map, color) {
 	const key = `${map.uuid}:${color}`
 	if (!repainted.has(key)) {
-		const { lean, sat, value, usual, most } = PILOT_PANELS
-		const { width, height } = map.image
-		const canvas = new OffscreenCanvas(width, height)
-		const ctx = canvas.getContext('2d')
-		ctx.drawImage(map.image, 0, 0)
-		const pixels = ctx.getImageData(0, 0, width, height)
+		const { usual, most } = PILOT_PANELS
+		const { canvas, ctx, pixels } = texels(map)
 		const { data } = pixels
 		for (let i = 0; i < data.length; i += 4) {
 			const [r, g, b] = [data[i], data[i + 1], data[i + 2]]
+			if (!isPanel(r, g, b)) continue
 			const bright = Math.max(r, g, b) / 255
-			const spread = r - Math.min(g, b)
-			if (r < Math.max(g, b) || spread < sat * r) continue
-			if (bright < value[0] || bright > value[1]) continue
-			if ((g - b) / spread < lean[0] || (g - b) / spread > lean[1]) continue
 			const k = Math.min(most, bright / usual)
 			PALETTE[color].forEach((c, j) => (data[i + j] = Math.min(255, c * k)))
 		}
