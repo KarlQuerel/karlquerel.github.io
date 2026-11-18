@@ -1,6 +1,7 @@
 // The ship lab (dev only): HERMES-8 and its drive ring alone under the game's sky, lit by a sun. Outside, the
 // mouse swings the camera round them, W/S move it in and out, A/D and the side arrows swing it round. E steps
-// aboard at the stern, to walk a greybox of the inside to the cockpit in first person; E again steps back out.
+// aboard at the stern, to walk a greybox of the inside to the cockpit in first person, the suit's gauge on the
+// helmet's glass (visor.js); E again steps back out.
 
 import {
 	Box3,
@@ -34,6 +35,7 @@ import { addShipCrew } from './shipCrew.js'
 import { DRESSED, dressShip } from './shipHallway.js'
 import { onProp, placeProps } from './shipProps.js'
 import { BOUNDS, buildInterior, floorAt, standable } from './shipInterior.js'
+import { createVisor, drainedMeters } from './visor.js'
 
 const { orbit, light, aboard } = SHIP_LAB
 const RIGHT = [...WALK_KEYS.strafeRight, ...WALK_KEYS.turnRight]
@@ -114,6 +116,8 @@ export function createShipLab() {
 	// a stand that rides the floor under it
 	const walk = createWalk({ x: -aboard.start[0], z: aboard.start[1] })
 	const stand = new Group()
+	// the suit's gauge, aboard only
+	const visor = createVisor()
 	// the glass's materials, each with how it looks from outside
 	const glass = new Map()
 	// aboard the hull draws only its outer faces, so no window shows the inside of a wing or an engine
@@ -128,14 +132,15 @@ export function createShipLab() {
 		sky.colorSpace = SRGBColorSpace
 		sky.magFilter = sky.minFilter = NearestFilter
 		sky.generateMipmaps = false
-		const pass = edges =>
+		const pass = (edges, overlay) =>
 			createPixelPost(renderer, camera, {
 				palette: Object.keys(PALETTE),
 				sky,
 				edges,
 				distant: SHIP_LAB.distant,
+				overlay,
 			})
-		posts = { outside: pass(SHIP_LAB.edges), aboard: pass(aboard.edges) }
+		posts = { outside: pass(SHIP_LAB.edges), aboard: pass(aboard.edges, visor.overlay) }
 		await step('context')
 		const [hall, dressing, cast, ship, ...rest] = await Promise.all([
 			dressShip(),
@@ -240,8 +245,10 @@ export function createShipLab() {
 		const call = pressed(input.keys, SHIP_HERMES.keys)
 		if (call && !calling) crew.hermes()
 		calling = call
-		if (inside) stroll(dt, input.turn, input.keys)
-		else swing(dt, input.turn, input.keys)
+		if (inside) {
+			stroll(dt, input.turn, input.keys)
+			visor.show(time, drainedMeters(time))
+		} else swing(dt, input.turn, input.keys)
 		// the crew hear the player aboard only, where they stand in the ship's own frame
 		crew.update(dt, inside ? { x: -walk.x, z: walk.z } : null)
 		input.turn[0] = input.turn[1] = 0
@@ -255,6 +262,7 @@ export function createShipLab() {
 		scene.environment?.dispose()
 		sky?.dispose()
 		for (const post of Object.values(posts ?? {})) post.dispose()
+		visor.dispose()
 		renderer?.dispose()
 	}
 
