@@ -1,4 +1,4 @@
-// The corridor pilot's surfaces, the intro corridor's (shaders/intro/corridor.frag.glsl) carried over onto
+// The corridor pilot's surfaces, carried over from the old 2D intro corridor's shader onto
 // meshes: each mesh knows which surface it is (CR_KIND), so where the shader asked which wall a ray hit,
 // this draws that wall's paint, words and light at the fragment's point in the shader's frame. Follows
 // common.glsl (hash, fbm, glyphs, stars), the Sun (star.glsl) and corridorLight.glsl (the frame, the bays,
