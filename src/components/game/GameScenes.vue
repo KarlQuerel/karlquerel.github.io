@@ -1,45 +1,28 @@
 <template>
-	<!-- Dev server only: jump to any shot. A plain link reloads, so the shot boots as `?shot=` opens it. -->
+	<!-- Dev server only: jump to the title screen or any scene. A plain link reloads, so the scene boots fresh. -->
 	<details class="scenes">
 		<summary class="scenes__toggle">{{ SCENE_MENU.label }}</summary>
 		<nav class="scenes__panel">
-			<section>
-				<h2>{{ SCENE_MENU.three.label }}</h2>
-				<a
-					v-for="{ param, label } in SCENE_MENU.three.scenes"
-					:key="param"
-					:href="`?${param}`"
-				>
-					{{ label }}
-				</a>
-			</section>
-			<section v-for="group in groups" :key="group.label">
-				<h2>{{ group.label }}</h2>
-				<a v-for="key in group.keys" :key="key" :href="`?shot=${key}`">{{ key }}</a>
-			</section>
+			<a :href="route.path">{{ SCENE_MENU.title }}</a>
+			<a v-for="{ param, label } in GAME_SCENES" :key="param" :href="`?${param}`">
+				{{ label }}
+			</a>
 			<RouterLink :to="SCENE_MENU.holding.to">{{ SCENE_MENU.holding.label }}</RouterLink>
 		</nav>
 	</details>
 </template>
 
 <script setup>
-	import { RouterLink } from 'vue-router'
-	import { INTRO_SHOTS } from '@/js/intro/index.js'
-	import { SCENE_MENU } from '@/constants/intro/timeline'
+	import { RouterLink, useRoute } from 'vue-router'
+	import { GAME_SCENES, SCENE_MENU } from '@/constants/game/scenes'
 
-	const { flat, rebuild } = SCENE_MENU
-	const keys = toRebuild =>
-		INTRO_SHOTS.map(s => s.key).filter(key => rebuild.keys.includes(key) === toRebuild)
-	const groups = [
-		{ label: flat, keys: keys(false) },
-		{ label: rebuild.label, keys: keys(true) },
-	]
+	const route = useRoute()
 </script>
 
 <style scoped lang="scss">
 	@use '@/styles/mixins' as *;
 
-	// under the way home, clear of the skip chips on the right
+	// under the way home
 	.scenes__toggle {
 		@include pinned-chip;
 
@@ -65,13 +48,6 @@
 		font-family: $font-terminal;
 		font-size: $type-prose-md;
 		@include void-panel;
-
-		h2 {
-			margin: 0.4rem 0 0.2rem;
-			font-family: $font-pixel;
-			font-size: $type-prose-sm;
-			color: $yellow;
-		}
 
 		a {
 			display: block;
