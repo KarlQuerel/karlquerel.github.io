@@ -1,4 +1,4 @@
-// The corridor pilot's light, the intro corridor's (shaders/intro/corridor.frag.glsl) carried over: the
+// The corridor pilot's light, carried over from the old 2D intro corridor's shader: the
 // upper lines of light (a segment each side between each pair of ribs, the three nearest the shaded point),
 // the door, the weld's spark, the drone's eye, the nearest bay's light, the Earth and the sun through the
 // glass span (the crew and the player shadowing the sun's), a rim on what stands in the bays, the dark
