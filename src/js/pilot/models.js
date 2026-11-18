@@ -31,7 +31,7 @@ function fetchOnce(url) {
 const mixamoBone = name => name.replace(/^mixamorig\d*/, '')
 
 // a rig's bones by Mixamo name; by name, not isBone, since a clips-only file has no skin to make them bones
-function mixamoBones(scene) {
+export function mixamoBones(scene) {
 	const bones = {}
 	scene.traverse(o => {
 		if (/^mixamorig/.test(o.name)) bones[mixamoBone(o.name)] ??= o
@@ -136,19 +136,42 @@ function skinBox(body, drop) {
 	return box
 }
 
-// the skin less every triangle with a corner riding mostly on a bone `drop` matches
+// the skin less every triangle with a corner riding mostly on a bone `drop` matches; those kept for showSkin
 export function dropSkin(body, drop) {
 	body.traverse(mesh => {
 		if (!mesh.isSkinnedMesh) return
 		const rides = ridesOn(mesh, drop)
 		const index = mesh.geometry.index.array
-		const kept = []
-		for (let t = 0; t < index.length; t += 3)
-			if (!rides(index[t]) && !rides(index[t + 1]) && !rides(index[t + 2]))
-				kept.push(index[t], index[t + 1], index[t + 2])
+		const parts = [[], []]
+		for (let t = 0; t < index.length; t += 3) {
+			const gone = rides(index[t]) || rides(index[t + 1]) || rides(index[t + 2])
+			parts[Number(gone)].push(index[t], index[t + 1], index[t + 2])
+		}
+		mesh.userData.dropped = parts[1]
 		mesh.geometry = mesh.geometry.clone()
-		mesh.geometry.setIndex(kept)
+		mesh.geometry.setIndex(parts[0])
 	})
+}
+
+// the skin dropSkin cut away shown again (a head with its helmet off) or hidden: a mesh of its own on the same
+// skeleton, made the first time, in the skin's own colours (the role's paint takes skin for a panel)
+export function showSkin(body, shown) {
+	const meshes = []
+	body.traverse(mesh => {
+		if (mesh.userData.dropped) meshes.push(mesh)
+	})
+	for (const mesh of meshes) {
+		if (!mesh.userData.bare) {
+			const geometry = mesh.geometry.clone()
+			geometry.setIndex(mesh.userData.dropped)
+			const bare = new SkinnedMesh(geometry, unpainted.get(mesh.material) ?? mesh.material)
+			bare.bind(mesh.skeleton, mesh.bindMatrix)
+			bare.frustumCulled = false
+			mesh.parent.add(bare)
+			mesh.userData.bare = bare
+		}
+		mesh.userData.bare.visible = shown
+	}
 }
 
 // A fabric seal from the base of the neck up into the helmet, skinned neck to head so it bends with the
@@ -324,12 +347,16 @@ function panelsIn(map, color) {
 	return repainted.get(key)
 }
 
+// each repainted material's original, for a bare head's skin to keep its own colours
+const unpainted = new WeakMap()
+
 // a role's colour on every mapped material of a model
 function paintPanels(root, color) {
 	swapMaterials(root, material => {
 		if (!material.map) return material
 		const role = material.clone()
 		role.map = panelsIn(material.map, color)
+		unpainted.set(role, material)
 		return role
 	})
 }
