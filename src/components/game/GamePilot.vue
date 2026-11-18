@@ -1,6 +1,6 @@
 <template>
-	<!-- Dev only: a three.js scene walked in first person on the art grid: the corridor rebuilt, to judge
-	     rigged characters in the game's pixel look, the skybox lab, or the ship lab. -->
+	<!-- A three.js scene walked in first person on the art grid: HERMES-8 on departure day, or the corridor
+	     rebuilt, to judge rigged characters in the game's pixel look. -->
 	<div class="pilot">
 		<canvas ref="canvas" class="pilot__canvas" aria-hidden="true" />
 		<BootCover :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
@@ -14,7 +14,6 @@
 	import { useWindowListener } from '@/composables/useWindowListener'
 	import BootCover from '@/components/BootCover.vue'
 	import { createCorridorPilot } from '@/js/pilot/corridorPilot'
-	import { createSkyLab } from '@/js/pilot/skyLab'
 	import { createShipLab } from '@/js/pilot/shipLab'
 	import { PILOT } from '@/constants/game/pilot'
 	import { WALK_KEYS } from '@/constants/intro/walk'
@@ -22,8 +21,8 @@
 
 	const props = defineProps({ scene: { type: String, required: true } })
 
-	// each scene by the param that opens it (SCENE_MENU.three)
-	const SCENES = { pilot: createCorridorPilot, sky: createSkyLab, ship: createShipLab }
+	// each scene by the param that opens it (GAME_SCENES)
+	const SCENES = { pilot: createCorridorPilot, ship: createShipLab }
 	const canvas = ref(null)
 	const moved = ref(false)
 	const input = { keys: new Set(), turn: [0, 0] }
