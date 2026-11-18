@@ -29,7 +29,7 @@ export const PILOT = {
 	distant: { from: 8, to: 20, sigma: 1.2 },
 }
 
-// The corridor as the intro's shader draws it (shaders/intro/corridor.frag.glsl), rebuilt in meshes. Metres
+// The corridor as the old 2D intro's shader drew it, rebuilt in meshes. Metres
 // in three's frame: the deck at y = 0, x mirrored from the shader's so each side stays on the same hand.
 // The octagon's half-width, height and corner cut; `eye` the shader's eye level over the deck, its y = 0,
 // the frame the surface shaders work in; ribs every `every` m on the odd metres, `inset` proud and `depth`
