@@ -10,9 +10,7 @@ uniform float uTime;   // seconds into this shot
 uniform vec2  uLook;   // pointer deflection, -1..1, +y down the screen
 uniform vec2  uPtr;    // pointer over the grid, 0..1, y up
 uniform vec4  uP, uQ, uR, uS;  // the shot's own parameters, set by its module
-uniform vec4  uH;      // hands: x = state (0 grip, 1 reach, 2 hold), y = item, z = on, w = lift
-uniform vec4  uGame;      // the game: x O2, y HULL, z SIGNAL (0 to 100), w the wrist readout raised 0..1
-uniform vec4  uSuit;      // the suit: x the visor fogged 0..1 (breath after a run), y z w spare
+uniform vec4  uH;      // the painted layers' sizes (earthLayers.glsl)
 uniform sampler2D uMask;
 // the shared star tile (js/intro/sky.js), on its own unit
 uniform sampler2D uSky;
