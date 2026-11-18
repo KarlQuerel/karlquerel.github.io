@@ -32,8 +32,8 @@ function put(d, i, name) {
 	d[i + 3] = 255
 }
 
-// The light on the globe: from where the sun stands on this grid with `lightAt` of the earth shot's pan
-// still to go, and `front` of it toward the viewer.
+// The light on the globe: from where the sun stands on this grid with `lightAt` of `travel` still to go, and
+// `front` of it toward the viewer.
 function globeLight(grid) {
 	const { planet, star, travel } = EARTH
 	const along = (i, side) =>
