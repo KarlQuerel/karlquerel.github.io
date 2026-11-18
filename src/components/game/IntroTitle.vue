@@ -1,7 +1,6 @@
 <template>
-	<!-- The title screen over the intro's first shot: the plated name and the start prompt, lifted off
-	     centre like the holding screen's, and the music. Once `up`, a key starts the game: the name comes
-	     apart and the music fades while the shot's camera moves on. -->
+	<!-- The title screen's overlay: the plated name and the start prompt, lifted off centre like the holding
+	     screen's, and the music. Once `up`, a key starts the game: the name comes apart and the music fades. -->
 	<div class="intro-title" :style="parallaxStyle">
 		<TitleCard
 			:shown="up"
@@ -28,8 +27,8 @@
 		// the camera rests: the name rises, and a key may start the game
 		up: { type: Boolean, default: false },
 	})
-	// `start`: a key pressed; `done`: the name has come apart
-	const emit = defineEmits(['start', 'done'])
+	// the name has come apart after a key
+	const emit = defineEmits(['done'])
 
 	const { parallaxStyle } = usePointerParallax()
 	const named = ref(false)
@@ -37,7 +36,6 @@
 	useWindowListener('keydown', () => {
 		if (!props.up || started.value) return
 		started.value = true
-		emit('start')
 	})
 </script>
 
