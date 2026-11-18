@@ -1,15 +1,16 @@
+// The Earth from orbit, the title screen's picture (menu.js): the globe, the Moon and the Sun as painted layers
+// sliding past each other by their depth, on the flat-layer program.
+
 import raw from '../../shaders/intro/earth.frag.glsl?raw'
 import layersChunk from '../../shaders/intro/earthLayers.glsl?raw'
-import { INTRO_CARDS } from '../../data/gameIntro.js'
 import { EARTH } from '../../constants/intro/earth.js'
 import { PLANET } from '../../constants/planet.js'
-import { artScale, earthEase, skyPan } from './layerCamera.js'
-import { clamp01, smootherstep } from '../math.js'
+import { artScale } from './layerCamera.js'
 import { paintArt } from './artWorker.js'
 import { LAYERS_CHUNK, glslNum, glslVec, sky } from './sky.js'
 import { pixelTexture } from '../gl.js'
 
-// the layout, baked: none of it moves except by the pan (the sun shot flies on from it)
+// the layout, baked: none of it moves except by the pan
 const { planet, moon, star } = EARTH
 const layout = [
 	`const vec2 PLANET_AT = ${glslVec(planet.at)};`,
@@ -22,24 +23,16 @@ const layout = [
 	`const float SUN_DEPTH = ${glslNum(star.depth)};`,
 	`const float SUN_AGE = ${glslNum(star.age)};`,
 ].join('\n')
-// what a shot drawing the globe and the Moon puts before its fragment: the layout, then their reader
-export const EARTH_CHUNKS = [LAYERS_CHUNK, layout, layersChunk]
 
 let atlas = null
 let painted = ''
 let sizes = [0, 0]
 
+// the picture's program and art: setup and release with the canvas, resize repainting on a new grid
 export const earth = {
-	key: 'earth',
 	frag: raw,
-	chunks: EARTH_CHUNKS,
+	chunks: [LAYERS_CHUNK, layout, layersChunk],
 	cellPx: EARTH.cellPx,
-	duration: EARTH.duration,
-	card: [
-		{ at: EARTH.cardAt.year, text: INTRO_CARDS.year },
-		{ at: EARTH.cardAt.clear, text: '' },
-		{ at: EARTH.cardAt.dying, text: INTRO_CARDS.dying },
-	],
 	setup(gl) {
 		atlas = pixelTexture(gl)
 		painted = ''
@@ -73,24 +66,10 @@ export const earth = {
 		atlas = null
 		painted = ''
 	},
-	// uP = the pan in canvas pixels (x right, y down), the star's clock; uH = the planet and Moon sides in
-	// art pixels, canvas pixels per art pixel
-	params: (t, io, _gl, grid) => ({ p: [...earthPan(t, io, grid), t, 0], ...earthLayers(grid) }),
 }
 
-// The pan at the earth shot's second t: the tilt down from the title's Moon onto the Earth, then the
-// sweep; past its end it keeps drifting, which the sun shot carries on.
-export function earthPan(t, io, grid) {
-	const { arrive, panAt, duration, travel } = EARTH
-	const u = 1 - smootherstep(clamp01(t / arrive.tilt))
-	const k = 1 - earthEase(Math.max(0, t - panAt) / (duration - panAt))
-	return skyPan(grid, io, [
-		travel[0] * k + arrive.from[0] * u,
-		travel[1] * k + arrive.from[1] * u,
-	])
-}
-
-// the painted layers' uniforms (earthLayers.glsl), for any shot that shows them
+// the painted layers' uniforms (earthLayers.glsl): the planet and Moon sides in art pixels, canvas pixels per
+// art pixel
 export const earthLayers = grid => ({
 	h: [...sizes, artScale(grid), 0],
 	mask: atlas,
