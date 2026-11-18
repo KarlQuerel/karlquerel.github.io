@@ -69,6 +69,8 @@ export const PALETTE = {
 	ember: [255, 189, 46],
 	// ember turned down: a suit light dimmed, which would otherwise fall to amber, an orange
 	brass: [176, 136, 40],
+	// the suit gauge's air: a cyan as bright as ember, past where the sky's teal ramp stops
+	ice: [70, 226, 232],
 	glow: [255, 231, 196],
 	star: [255, 255, 255],
 }
