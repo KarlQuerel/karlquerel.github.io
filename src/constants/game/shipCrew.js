@@ -6,10 +6,14 @@
 // The voices are ElevenLabs eleven_v4 helmet takes of draft lines (claude-voice/emotions.py), Elena's a stand-in
 // until her older voice is cast: local only (.git/info/exclude) until the lines are final.
 
+import { HELMET_MOVES, HELMET_OFF } from './helmetOff.js'
 import { PILOT_RIGS } from './pilot.js'
 
 const { astra, ely, vanguard, helmet, locomotion } = PILOT_RIGS
 const QUARTER = Math.PI / 2
+// the helmet routine's clips (HELMET_OFF), borrowed by those with a face under the helmet: not the captain, whose
+// suit has only a hood under it
+const HELMET_OFF_CLIPS = Object.fromEntries(HELMET_OFF.clips.map(name => [name, name]))
 const voice = (who, count = 3) =>
 	Array.from({ length: count }, (_, i) => `/assets/game/voices/${who}-${i + 1}.mp3`)
 
@@ -39,7 +43,8 @@ export const SHIP_CREW = [
 		...astra,
 		panels: 'cream',
 		helmet,
-		clips: { rest: 'Idle', talk: 'Talk' },
+		clipsFrom: HELMET_MOVES,
+		clips: { rest: 'Idle', talk: 'Talk', ...HELMET_OFF_CLIPS },
 		fidgets: ['Idle2'],
 		room: 'med',
 		at: [0.4, -1.6],
@@ -51,7 +56,8 @@ export const SHIP_CREW = [
 		...ely,
 		panels: 'brass',
 		helmet,
-		clips: { rest: 'Idle', talk: 'Talk' },
+		clipsFrom: HELMET_MOVES,
+		clips: { rest: 'Idle', talk: 'Talk', ...HELMET_OFF_CLIPS },
 		fidgets: ['Idle2'],
 		room: 'dock',
 		at: [0.8, -1.2],
@@ -63,7 +69,8 @@ export const SHIP_CREW = [
 		...astra,
 		panels: 'rime',
 		helmet,
-		clips: { rest: 'Idle', talk: 'Talk' },
+		clipsFrom: HELMET_MOVES,
+		clips: { rest: 'Idle', talk: 'Talk', ...HELMET_OFF_CLIPS },
 		fidgets: ['Idle2'],
 		room: 'mess',
 		at: [1.2, 1.6],
