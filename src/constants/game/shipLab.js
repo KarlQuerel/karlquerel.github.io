@@ -21,6 +21,9 @@ const EDGES = { ...PILOT.edges, far: 600 }
 
 export const SHIP_LAB = {
 	boot: { context: 0.1, models: 0.6, body: 0.2, frame: 0.1 },
+	// the sky: a 2:1 equirect panorama baked onto PALETTE (scripts/sky/bake.mjs; credit in
+	// public/assets/CREDITS.txt)
+	sky: '/assets/game/sky/nebula.png',
 	// the ship first (the orbit's centre), then the ring: one frame for both, so loaded at one origin the
 	// ring sits round the stern. The ship is "Spaceship PAK DA (K) TU-1600 Zvezda" by Ilya Shevchuk, CC BY
 	// 4.0, modified (sketchfab.com/3d-models/spaceship-pak-da-k-tu-1600-zvezda-30e58a90fe874f21afdfaa5c4022b311):
