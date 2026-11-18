@@ -25,8 +25,10 @@ const turnToward = (from, to, rate) => {
 // anywhere in its cycle so no two crew move in step
 export async function clipRig(spec) {
 	const { body, clips } = await loadRigged(spec)
-	// the helmet's visor takes the suit's role colour
-	if (spec.helmet) await wearHelmet(body, { ...spec.helmet, panels: spec.panels })
+	// the helmet's visor takes the suit's role colour; its parts kept, to be taken off
+	const worn = spec.helmet
+		? await wearHelmet(body, { ...spec.helmet, panels: spec.panels })
+		: null
 	const mixer = new AnimationMixer(body)
 	const turns = new Map()
 	const actions = Object.fromEntries(
@@ -56,6 +58,8 @@ export async function clipRig(spec) {
 	const busy = () => playing?.loop === LoopOnce && playing.isRunning()
 	return {
 		body,
+		// [helmet, seal], if it wears one
+		worn,
 		busy,
 		can: role => role in actions,
 		play: (role, once = false) => start(actions[role], once),
