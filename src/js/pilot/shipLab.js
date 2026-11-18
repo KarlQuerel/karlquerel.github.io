@@ -21,6 +21,7 @@ import {
 	Vector3,
 	WebGLRenderer,
 } from 'three'
+import { HELMET_OFF } from '../../constants/game/helmetOff.js'
 import { SHIP_HERMES } from '../../constants/game/shipCrew.js'
 import { SHIP_LAB } from '../../constants/game/shipLab.js'
 import { SKY_LAB } from '../../constants/game/skyLab.js'
@@ -250,7 +251,7 @@ export function createShipLab() {
 			visor.show(time, drainedMeters(time))
 		} else swing(dt, input.turn, input.keys)
 		// the crew hear the player aboard only, where they stand in the ship's own frame
-		crew.update(dt, inside ? { x: -walk.x, z: walk.z } : null)
+		crew.update(dt, inside ? { x: -walk.x, z: walk.z } : null, input.keys)
 		input.turn[0] = input.turn[1] = 0
 		const post = inside ? posts.aboard : posts.outside
 		post.render(scene)
@@ -266,6 +267,7 @@ export function createShipLab() {
 		renderer?.dispose()
 	}
 
-	// Hermes's key on top of the walk's, for the page to pass on
-	return { boot: SHIP_LAB.boot, build, resize, frame, release, walk, keys: SHIP_HERMES.keys }
+	// Hermes's key and the helmet's on top of the walk's, for the page to pass on
+	const keys = [...SHIP_HERMES.keys, ...HELMET_OFF.keys]
+	return { boot: SHIP_LAB.boot, build, resize, frame, release, walk, keys }
 }
