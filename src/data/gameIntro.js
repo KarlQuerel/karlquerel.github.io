@@ -1,35 +1,4 @@
-// The intro's copy, shot by shot. Cards are one declarative line each.
+// The game's words on screen: the intro's lines will live here once it is rebuilt in three.js.
 
-export const INTRO_CARDS = {
-	year: 'YEAR 3812.',
-	dying: 'EARTH IS DYING.',
-	sun: 'THE SUN HAS BEEN GROWING RELENTLESSLY.',
-	burning: 'BURNING EVERYTHING.',
-	vote: 'THE EARTH CONFEDERATION CHOSE TO LAUNCH THE HERMES PROJECT.',
-	chosen: 'YOU WERE CHOSEN.',
-	warning: 'WARNING. WARNING. CRITICAL ERROR.',
-}
-
-// The role pick at the door: one starting item each, held in the right hand from then on.
-export const INTRO_ROLES = [
-	{ key: 'engineer', label: 'ENGINEER', item: 'WRENCH' },
-	{ key: 'medic', label: 'MEDIC', item: 'MED-KIT' },
-	{ key: 'pilot', label: 'PILOT', item: 'CUTTER' },
-]
-
-// Under a walked scene until the player first moves, then whenever the view rests on what can be pushed.
+// Under a walked scene until the player first moves.
 export const INTRO_WALK_HINT = 'WASD TO MOVE, CLICK TO LOOK AROUND'
-export const INTRO_PUSH_HINT = 'E TO PUSH'
-
-// The visor's one button: the wake waits on it.
-export const INTRO_HUD = {
-	respond: 'RESPOND',
-}
-
-export const INTRO_SKIP = 'SKIP >>'
-// straight to act I, past every shot of the intro
-export const INTRO_SKIP_INTRO = 'SKIP INTRO >>|'
-
-// The title drop after the crash, and the act it opens on.
-export const INTRO_ACT = { lead: 'ACT I', accent: 'THE WRECK', delayMs: 600, charMs: 55 }
-export const INTRO_ACT_WORLD = { lead: 'ACT II', accent: 'THE WORLD', delayMs: 600, charMs: 55 }
