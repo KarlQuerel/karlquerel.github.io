@@ -24,7 +24,6 @@ import {
 import { HELMET_OFF } from '../../constants/game/helmetOff.js'
 import { SHIP_HERMES } from '../../constants/game/shipCrew.js'
 import { SHIP_LAB } from '../../constants/game/shipLab.js'
-import { SKY_LAB } from '../../constants/game/skyLab.js'
 import { WALK, WALK_KEYS } from '../../constants/intro/walk.js'
 import { PALETTE, paletteHex } from '../../constants/palette.js'
 import { breathe, createWalk, lookWalk, stepWalk } from '../intro/walk.js'
@@ -128,7 +127,7 @@ export function createShipLab() {
 		renderer = new WebGLRenderer({ canvas: gl.canvas, context: gl, antialias: false })
 		renderer.setPixelRatio(1)
 		// already on the palette: one texel to a cell, read as it is
-		sky = await new TextureLoader().loadAsync(SKY_LAB.sky)
+		sky = await new TextureLoader().loadAsync(SHIP_LAB.sky)
 		sky.mapping = EquirectangularReflectionMapping
 		sky.colorSpace = SRGBColorSpace
 		sky.magFilter = sky.minFilter = NearestFilter
