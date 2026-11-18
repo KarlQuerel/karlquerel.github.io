@@ -1,38 +1,21 @@
-// Shot 2, EARTH IS DYING, and shot 1's YEAR 3812 with it (its stars cut: the intro opens on the title
-// screen, which is this shot's own picture, constants/intro/menu.js): the planet as painted layers
-// sliding past each other, the contact scene's way. Positions are shares of the frame (x of its width,
-// y of its height, from the top left) at the close; sizes are shares of its short side; `depth` is how far
-// a layer moves with the pan, 1 = the globe.
-
-// At the opening every layer sits `TRAVEL` (frame heights, x right, y down) times its depth from its
-// closing place, before the arrival's offset: the pan only ever carries the scene left.
-const TRAVEL = [0.4, -0.01]
-// Where the camera rests for the title screen, the same way: the globe's crown low in the frame, the
-// Moon up to its left, the sun out to the right. The arrival from it is straight down onto the globe.
-const REST = [0.4, 0.58]
+// The Earth from orbit, the title screen's picture (js/intro/earth.js): the planet as painted layers sliding past
+// each other, the contact scene's way. Positions are shares of the frame (x of its width, y of its height, from
+// the top left) where the camera rests; sizes are shares of its short side; `depth` is how far a layer moves with
+// the pan, 1 = the globe.
 
 export const EARTH = {
-	duration: 16,
 	// CSS px per canvas pixel, which is how far a layer can step: one, so the pan glides
 	cellPx: 1,
 	// CSS px per art pixel: the layers are painted this coarse and slid on the finer canvas
 	artPx: 2,
-	// the year types once the title has come apart, clears as the globe comes up, then the line
-	cardAt: { year: 2.2, clear: 5.2, dying: 6.7 },
-	// The arrival: the shot opens where the title screen rests (`rest`), and the camera tilts down onto
-	// the Earth over `tilt` seconds, setting off from rest, the scene sliding from `from` (frame heights)
-	// by each layer's depth, so the Moon rises slowly out of the frame and the globe comes up whole.
-	rest: REST,
-	arrive: { tilt: 6.5, from: [REST[0] - TRAVEL[0], REST[1] - TRAVEL[1]] },
-	// The pan starts here, under the tilt's last second, so the camera never stops, and carries every
-	// layer the rest of `travel` home: the globe, nearest, slides away left and the far sun hardly moves,
-	// so the frame turns over to it.
-	panAt: 5,
-	travel: TRAVEL,
-	// share of the closing speed kept at the end, so the shot hands over still drifting
-	drift: 0.07,
+	// where the camera rests, in frame heights (x right, y down): the globe's crown low in the frame, the Moon
+	// up to its left, the sun out to the right
+	rest: [0.4, 0.58],
 	// how far the pointer slides the globe, in cells; nearer layers by their depth
 	lookCells: 6,
+	// the light on the globe stands as the sun did with `planet.lightAt` of this pan (frame heights, x right, y
+	// down) still to go, so the dry face shows: the old opening sweep's, kept for the light alone
+	travel: [0.4, -0.01],
 	planet: {
 		at: [0.155, 0.56],
 		radius: 0.42,
@@ -40,8 +23,8 @@ export const EARTH = {
 		// The Earth of 3812 off its map (constants/intro/earthMap.js): `view` is the place its top limb
 		// crests on and the bearing down the frame from it, so Africa and Europe face the camera, north
 		// up. The sun lights it from its side of the frame and `front` toward the viewer (the light's z),
-		// as it stands this share of the pan before the close, so the dry face shows and the night side
-		// burning is a crescent away from it.
+		// as it stands `lightAt` of `travel` away, so the dry face shows and the night side burning is a
+		// crescent away from it.
 		view: { lat: 85, lon: 195, heading: 0 },
 		front: 0.45,
 		lightAt: 0.7,
