@@ -1,6 +1,6 @@
 // The pilot's pixel pass: the scene drawn on the art grid, every cell snapped to the shot's palette, then
-// outlined where it stands in front of what lies beside it and glinted along a crease, as the shader
-// shots' edge pass does (shaders/intro/edges.frag.glsl); an overlay then draws over the finished cells.
+// outlined where it stands in front of what lies beside it and glinted along a crease; an overlay then draws over
+// the finished cells.
 
 import {
 	DepthTexture,
