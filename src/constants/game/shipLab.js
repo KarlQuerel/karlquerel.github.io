@@ -84,36 +84,36 @@ export const SHIP_LAB = {
 		// white as the walk moved
 		edges: { ...EDGES, glint: 1.15, bright: 0.7 },
 	},
-	// the passages (`role`) and every room walked in dressed with one bay of "Space Ship Hallway" by yeeyeeman, CC BY
-	// 4.0, modified (sketchfab.com/3d-models/space-ship-hallway-e97dce00ae5549a8a3795e06bc2cfc96; cut pillar to
-	// pillar, 2.6 m tall, by claude-ship/hallway/bay.py): local only (.git/info/exclude) until that credit is on the
-	// site. Down a passage the whole bay repeats, its walls (`relief` m deep, `band` m over the floor) squeezed to keep
-	// `clear` m between them; round a room the bay's wall out to its cove (`cove` m from the bay's middle) lines every
-	// wall, the ceiling's middle (its light) runs in rows `rows` m apart, its deck plates tile the floor. All `inset`
-	// m in from the greybox, cut away across each door and `jamb` m round it, opened under skylights; portholes on a
-	// hull window keep their glass, the rest are `screen` panels. Repainted by name: the cyan line ember, the floor
-	// bars unlit (lit, they read far future).
+	// the passages (`role`) and every room walked in dressed with one bay of "Sci Fi Hallway FREE" by Seesha, CC BY
+	// 4.0, modified (sketchfab.com/3d-models/sci-fi-hallway-free-44fd25310d2240908027390a078368e1; one wall module,
+	// decals off, slimmed to 40k triangles, walls flattened to 0.7 m deep, ceiling squashed to 2.6 m, by
+	// claude-ship/seesha/bay.py): local only (.git/info/exclude) until that credit is on the site. Down a passage the
+	// whole bay repeats, its walls (`relief` m deep, `band` m over the floor) squeezed to keep `clear` m between them;
+	// round a room the bay's wall out to its cove (`cove` m from the bay's middle, the floor strip's edge) lines every
+	// wall, the ceiling's light box (`lamp` m either side of its middle) hangs in rows `rows` m apart, its deck plates
+	// tile the floor. All `inset` m in from the greybox, cut away across each door and `jamb` m round it, opened under
+	// skylights; its glass is `screen` panels unless on a hull window. Repainted by name, its teal and light strips
+	// warmed to the ship's amber and ember, the ceiling's light box lit; all matte, or the sun glints off its panels.
 	hallway: {
 		model: '/assets/game/models/ship-hallway-bay.glb',
 		role: 'passage',
-		relief: 0.4,
+		relief: 0.7,
 		clear: 1,
 		inset: 0.01,
-		band: [0.05, 2.05],
+		band: [0.05, 2.1],
 		jamb: 0.1,
-		cove: 0.35,
+		cove: 0.665,
+		lamp: 0.5,
 		rows: 2.4,
 		screen: 'deep',
 		paint: {
 			hall_panel: { base: 'silver' },
-			hall_frame: { base: 'iron' },
-			hall_trim: { base: 'gun' },
-			hall_floor: { base: 'soot' },
-			hall_plate: { base: 'graphite' },
+			hall_trim: { base: 'brushed' },
+			hall_rubber: { base: 'iron' },
+			hall_accent: { base: 'amber' },
+			hall_light: { glow: 'ember' },
+			hall_lamp: { glow: 'glow' },
 			hall_glass: { base: 'pitch' },
-			hall_light: { glow: 'glow' },
-			hall_footlight: { base: 'gun' },
-			hall_strip: { glow: 'ember' },
 		},
 	},
 	// the pixel pass at a ship's scale (EDGES), cells softened from 250 m
