@@ -14,7 +14,7 @@ import { paletteHex } from '../../constants/palette.js'
 import { loadProp } from './models.js'
 import { floorOf, heightOf, longAxis, OPENINGS, OTHER } from './shipInterior.js'
 
-const { model, role, relief, clear, inset, band, jamb, cove, rows, screen, paint } =
+const { model, role, relief, clear, inset, band, jamb, cove, lamp, rows, screen, paint } =
 	SHIP_LAB.hallway
 
 const walkedInto = room => SHIP_LAYOUT.doors.some(d => !d.locked && [d.a, d.b].includes(room.id))
@@ -192,15 +192,18 @@ function dressRoom(room, bay, emit) {
 				const gaps = doors.map(([a, b]) => [(a - t0) / kz, (b - t0) / kz])
 				for (const { material, tris } of parts)
 					for (const { tri, mid: c } of tris) {
-						if (c[0] > -cove || c[1] < band[0]) continue
+						if (c[1] < band[0]) continue
 						if (c[1] > band[1] && underSky(room, map([...c, 0, 1, 0]).p)) continue
+						// cut clean at the cove, where the ceiling's rows take over
+						const kept = cut(tri, -cove, -1, 0)
+						if (kept.length < 3) continue
 						const wall = c[0] < relief - half && c[1] < band[1]
-						const pieces = wall ? gaps.reduce(outside, [tri]) : [tri]
+						const pieces = wall ? gaps.reduce(outside, [kept]) : [kept]
 						emit(material === glass ? panel : material, pieces, map, flip)
 					}
 			}
 		}
-	// the ceiling's middle, its light, in rows along the room between the coves
+	// the ceiling's light box, `lamp` m either side of its middle, in rows along the room between the coves
 	const long = longAxis(room)
 	const across = OTHER[long]
 	const flip = long === 'x'
@@ -216,13 +219,12 @@ function dressRoom(room, bay, emit) {
 				return toRoom(room, across, ky, [r + p[0], p[1], t0 + p[2] * kz], n)
 			}
 			for (const { material, tris } of parts)
-				for (const { tri, mid: c } of tris)
-					if (
-						Math.abs(c[0]) < cove &&
-						c[1] > band[1] &&
-						!underSky(room, map([...c, 0, 1, 0]).p)
-					)
-						emit(material, [tri], map, flip)
+				for (const { tri, mid: c } of tris) {
+					// over the deck in the bay's middle there is only its ceiling, hanging lower than a door
+					if (c[1] <= band[0] || underSky(room, map([...c, 0, 1, 0]).p)) continue
+					const kept = cut(cut(tri, -lamp, 1, 0), lamp, -1, 0)
+					if (kept.length > 2) emit(material, [kept], map, flip)
+				}
 		}
 	}
 	// the deck: the bay's floor between its foot bars, tiled plate for plate, cut to the room
