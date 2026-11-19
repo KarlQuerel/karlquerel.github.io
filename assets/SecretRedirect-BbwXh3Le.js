@@ -1,0 +1,1 @@
+import{D as e,E as t,V as n,W as r,_ as i}from"./vendor-COGH5DFP.js";var a=`https://shattereddisk.github.io/rickroll/rickroll.mp4`,o=`Redirecting...`,s={__name:`SecretRedirect`,setup(s){return t(()=>{window.location.href=a}),(t,a)=>(e(),i(`div`,null,r(n(o)),1))}};export{s as default};
