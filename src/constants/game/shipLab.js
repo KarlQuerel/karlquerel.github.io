@@ -65,12 +65,12 @@ export const SHIP_LAB = {
 	fovDeg: 35,
 	near: 1,
 	far: 4000,
-	// E steps aboard in the cryo bay, at `start` [x, z], facing the nose: the walk through the greybox of the
+	// E steps aboard in the cryo bay, at `start` [x, z] facing `heading` (rad, 0 the nose): the walk through the
 	// inside (SHIP_LAYOUT), kept `body` m from its walls, with the corridor's eye, lens and near plane and a head
 	// that tips far enough up to look through the glass. The `glass` materials (the canopy's, and the model's own
 	// cockpit glass, opaque from outside) let more through from inside, at `opacity`.
 	aboard: {
-		start: [-1.3, -12.3],
+		start: { at: [0, -7.3], heading: Math.PI },
 		body: PILOT_ROOM.body,
 		eye: PILOT.eye,
 		fovDeg: PILOT.fovDeg,

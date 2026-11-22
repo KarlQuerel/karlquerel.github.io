@@ -32,6 +32,7 @@ import { loadProp } from './models.js'
 import { createPixelPost } from './pixelPost.js'
 import { addPlayerBody } from './playerBody.js'
 import { addShipCrew } from './shipCrew.js'
+import { buildCryo } from './shipCryo.js'
 import { DRESSED, dressShip } from './shipHallway.js'
 import { onProp, placeProps } from './shipProps.js'
 import { BOUNDS, buildInterior, floorAt, standable } from './shipInterior.js'
@@ -100,6 +101,8 @@ export function createShipLab() {
 	let body = null
 	// the crew at their posts, speaking when the player comes near
 	let crew = null
+	// the cryo bay, built for itself: its pods breathe
+	let cryo = null
 	let inside = false
 	let using = false
 	let calling = false
@@ -114,7 +117,11 @@ export function createShipLab() {
 	const view = { yaw: orbit.yaw, pitch: orbit.pitch, distance: orbit.frame }
 	// aboard: the walk in the ship's own frame (its x mirrored, as in the corridor pilot), the player's body on
 	// a stand that rides the floor under it
-	const walk = createWalk({ x: -aboard.start[0], z: aboard.start[1] })
+	const walk = createWalk({
+		x: -aboard.start.at[0],
+		z: aboard.start.at[1],
+		heading: aboard.start.heading,
+	})
 	const stand = new Group()
 	// the suit's gauge, aboard only
 	const visor = createVisor()
@@ -142,20 +149,29 @@ export function createShipLab() {
 			})
 		posts = { outside: pass(SHIP_LAB.edges), aboard: pass(aboard.edges, visor.overlay) }
 		await step('context')
-		const [hall, dressing, cast, ship, ...rest] = await Promise.all([
+		const [hall, dressing, cast, bay, ship, ...rest] = await Promise.all([
 			dressShip(),
 			placeProps(),
 			addShipCrew(),
+			buildCryo(),
 			...SHIP_LAB.models.map(url => loadProp({ url, paint: SHIP_LAB.paint })),
 		])
 		crew = cast
+		cryo = bay
 		scene.clear()
 		scene.add(ship, ...rest)
 		keepInside(ship, aboard.hullInside)
 		new Box3().setFromObject(ship).getCenter(middle)
 		size = new Box3().setFromObject(scene).getSize(new Vector3()).length()
-		footprints = [...dressing.footprints, ...cast.footprints]
-		scene.add(buildInterior({ dressed: DRESSED }), hall, dressing.props, cast.group, stand)
+		footprints = [...dressing.footprints, ...cast.footprints, ...cryo.footprints]
+		scene.add(
+			buildInterior({ dressed: DRESSED }),
+			hall,
+			dressing.props,
+			cast.group,
+			cryo.group,
+			stand
+		)
 		glass.clear()
 		scene.traverse(o => {
 			for (const material of [o.material ?? []].flat())
@@ -251,6 +267,7 @@ export function createShipLab() {
 		} else swing(dt, input.turn, input.keys)
 		// the crew hear the player aboard only, where they stand in the ship's own frame
 		crew.update(dt, inside ? { x: -walk.x, z: walk.z } : null, input.keys)
+		cryo.tick(time)
 		input.turn[0] = input.turn[1] = 0
 		const post = inside ? posts.aboard : posts.outside
 		post.render(scene)
