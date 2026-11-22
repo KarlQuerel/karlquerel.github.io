@@ -12,6 +12,7 @@
 // - `skylights`: the ceiling opened over `x`, `z`, a shaft up to the skin, `top` its height (y) at each corner (x0 z0,
 //   x1 z0, x1 z1, x0 z1), glazed there unless `glass` is false (the canopy has its own)
 // - `ports`: the floor glazed over `x`, `z`, a well down through the belly, `bottom` its height at each corner
+// A room `built` for itself (the cryo bay, shipCryo) draws its own floor, walls and ceiling: no greybox, no hallway kit.
 // The depths and heights are measured on the hull (claude-ship/layout/measure.py).
 
 export const SHIP_LAYOUT = {
@@ -52,7 +53,7 @@ export const SHIP_LAYOUT = {
 		{ id: 'dock', name: 'Dock & suits', role: 'systems', x: [-9.4, -3.2], z: [-22, -14.2] },
 		// mid-ship: cryo and med in the core, the lab beside them (locked: the biologist's), a hall down each flank to
 		// five cabins against the skin: cabin 4 the player's, the crew's locked
-		{ id: 'cryo', name: 'Cryo bay', role: 'cryo', x: [-3, 3], z: [-14, -6.2] },
+		{ id: 'cryo', name: 'Cryo bay', role: 'cryo', x: [-3, 3], z: [-14, -6.2], built: true },
 		{ id: 'med', name: 'Med bay', role: 'science', x: [3.2, 6.6], z: [-14, -6.2] },
 		{ id: 'lab', name: 'Lab', role: 'science', x: [-6.6, -3.2], z: [-14, -6.2] },
 		{ id: 'hallP', name: 'Flank hall', role: 'passage', x: [6.8, 8.4], z: [-14, -3.2] },
