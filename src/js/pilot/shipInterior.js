@@ -67,6 +67,13 @@ export const OPENINGS = doors.map(d => {
 	}
 })
 
+// the doors through a room's wall `axis` = room[axis][side]: each one's span along the wall, its head over the
+// floor, and whether it is locked
+export const doorsIn = (room, axis, side) =>
+	OPENINGS.filter(
+		o => o.axis === axis && o.rooms.includes(room) && o.mid < room[axis][side] === (side === 0)
+	).map(o => ({ from: o.from, to: o.to, sill: 0, head: o.top - o.floor, locked: o.locked }))
+
 export const BOUNDS = {
 	x: [Math.min(...rooms.map(r => r.x[0])), Math.max(...rooms.map(r => r.x[1]))],
 	z: [Math.min(...rooms.map(r => r.z[0])), Math.max(...rooms.map(r => r.z[1]))],
@@ -163,6 +170,8 @@ export function interiorFaces({ dressed } = {}) {
 	const level = y => [y, y, y, y]
 
 	for (const room of rooms) {
+		// a room built for itself draws its own floor, walls and ceiling; the doors' frames stay
+		if (room.built) continue
 		const h = heightOf(room)
 		const floor = floorOf(room, room.z[0])
 		const skylights = room.skylights ?? []
@@ -181,9 +190,7 @@ export function interiorFaces({ dressed } = {}) {
 				const along = room[OTHER[axis]]
 				const windows = (room.windows ?? []).filter(w => w.wall === `${axis}${side}`)
 				const cuts = [
-					...OPENINGS.filter(
-						o => o.axis === axis && o.rooms.includes(room) && o.mid < c === (side === 0)
-					).map(o => ({ from: o.from, to: o.to, sill: 0, head: o.top - o.floor })),
+					...doorsIn(room, axis, side),
 					...windows.map(w => ({
 						from: w.at - w.width / 2,
 						to: w.at + w.width / 2,
