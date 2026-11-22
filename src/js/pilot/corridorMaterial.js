@@ -20,7 +20,7 @@ import { paletteConsts } from '../intro/paletteSnap.js'
 import { STAR_CHUNK } from '../intro/sky.js'
 import { planetDisc } from '../planetShader.js'
 import EarthWorker from './earth.worker.js?worker'
-import { PALETTE } from '../../constants/palette.js'
+import { paletteMix } from '../../constants/palette.js'
 import {
 	PILOT,
 	PILOT_EXACT_ALPHA,
@@ -330,11 +330,7 @@ export function surfaceMaterial(kind, own = {}) {
 }
 
 // a PILOT_MATS colour, [name, k] or [a, b, t, k], as the shader's sRGB values
-function paint(spec) {
-	const [a, b, t, k] = spec.length === 2 ? [spec[0], spec[0], 0, spec[1]] : spec
-	const [ca, cb] = [PALETTE[a], PALETTE[b]]
-	return new Vector3(...ca.map((v, i) => ((v + (cb[i] - v) * t) * k) / 255))
-}
+const paint = spec => new Vector3(...paletteMix(spec))
 // what stands in the bays (`thing`), or hangs outside the hull lit by the sun alone (`spaceThing`), in a
 // PILOT_MATS paint, one material a paint and kind
 const things = new Map()
