@@ -12,14 +12,14 @@ import { SHIP_LAB } from '../../constants/game/shipLab.js'
 import { SHIP_LAYOUT } from '../../constants/game/shipLayout.js'
 import { paletteHex } from '../../constants/palette.js'
 import { loadProp } from './models.js'
-import { floorOf, heightOf, longAxis, OPENINGS, OTHER } from './shipInterior.js'
+import { doorsIn, floorOf, heightOf, longAxis, OTHER } from './shipInterior.js'
 
 const { model, role, relief, clear, inset, band, jamb, cove, lamp, rows, screen, paint } =
 	SHIP_LAB.hallway
 
 const walkedInto = room => SHIP_LAYOUT.doors.some(d => !d.locked && [d.a, d.b].includes(room.id))
 const PASSAGES = SHIP_LAYOUT.rooms.filter(r => r.role === role)
-const ROOMS = SHIP_LAYOUT.rooms.filter(r => r.role !== role && !r.open && walkedInto(r))
+const ROOMS = SHIP_LAYOUT.rooms.filter(r => r.role !== role && !r.open && !r.built && walkedInto(r))
 // the rooms the kit dresses, which the greybox leaves bare of its own trim
 export const DRESSED = new Set([...PASSAGES, ...ROOMS].map(r => r.id))
 
@@ -103,11 +103,8 @@ function baysAlong(length, bay) {
 }
 
 // the doors in a room's wall across `axis` on `side`, as spans along the wall widened by the jamb
-const doorsIn = (room, axis, side) =>
-	OPENINGS.filter(
-		o =>
-			o.axis === axis && o.rooms.includes(room) && o.mid < middle(room[axis]) === (side === 0)
-	).map(o => [o.from - jamb, o.to + jamb])
+const doorSpans = (room, axis, side) =>
+	doorsIn(room, axis, side).map(o => [o.from - jamb, o.to + jamb])
 
 // a point and normal in a room's frame, `w` across `axis` and `t` along the other, `y` up the bay: in the world
 const toRoom = (room, axis, ky, [w, y, t], [nw, ny, nt]) => {
@@ -135,7 +132,7 @@ function dressPassage(room, bay, emit) {
 			: (u * (edge - deep)) / (half - relief)
 	const acrossRate = u => (wallZone(u) ? deep / relief : (edge - deep) / (half - relief))
 	const windowsOn = side => room.windows?.filter(w => w.wall === `x${side}`) ?? []
-	const doors = [0, 1].map(side => doorsIn(room, 'x', side))
+	const doors = [0, 1].map(side => doorSpans(room, 'x', side))
 	for (let i = 0; i < count; i++) {
 		const z0 = room.z[0] + i * step
 		const map = corner => {
@@ -179,7 +176,7 @@ function dressRoom(room, bay, emit) {
 			const along = OTHER[axis]
 			const s = side ? -1 : 1
 			const { count, step, kz } = baysAlong(room[along][1] - room[along][0], bay)
-			const doors = doorsIn(room, axis, side)
+			const doors = doorSpans(room, axis, side)
 			// across the wall to `axis`, along it to the other: mirrored, the triangles turn over
 			const flip = (axis === 'x' ? s : -s) < 0
 			for (let i = 0; i < count; i++) {
