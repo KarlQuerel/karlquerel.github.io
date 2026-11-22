@@ -22,7 +22,7 @@ import { addHolo, addRoute, addSeedling } from './corridorHolo.js'
 import { cradle, vaultDrawer } from './corridorRooms.js'
 import { BAYS, bayPoint, facingIn, lockerSpans } from './corridorShell.js'
 import { surfaceMaterial, thingMaterial } from './corridorMaterial.js'
-import { dropSkin, loadProp, loadRigged } from './models.js'
+import { dropSkin, loadProp, loadRigged, loadWide } from './models.js'
 import { box, rod } from './parts.js'
 import {
 	PILOT_BAYS,
@@ -129,9 +129,7 @@ async function hungSuit(model, neck, facing, scale = 1) {
 
 // a helmet set down, its rim's middle at `at`, facing as given
 async function helmet(at, facing) {
-	const { width } = PILOT_PROP_MODELS.helmet
-	const prop = await loadProp(PILOT_PROP_MODELS.helmet)
-	prop.scale.setScalar(width / new Box3().setFromObject(prop).getSize(new Vector3()).x)
+	const prop = await loadWide(PILOT_PROP_MODELS.helmet)
 	prop.position.copy(at)
 	prop.rotation.y = facing
 	return prop
