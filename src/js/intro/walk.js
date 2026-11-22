@@ -5,10 +5,10 @@ import { approach, clamp } from '../math.js'
 
 const held = (keys, codes) => (codes.some(code => keys.has(code)) ? 1 : 0)
 
-export const createWalk = ({ x, z }) => ({
+export const createWalk = ({ x, z, heading = 0 }) => ({
 	x,
 	z,
-	heading: 0,
+	heading,
 	pitch: 0,
 	ahead: 0,
 	side: 0,
