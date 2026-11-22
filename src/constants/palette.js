@@ -84,6 +84,12 @@ export const paletteRgb = (name, alpha) =>
 export const paletteHex = name =>
 	`#${PALETTE[name].map(c => c.toString(16).padStart(2, '0')).join('')}`
 
+// A mix of two palette entries as 0..1 sRGB, scaled by k: [a, k], or [a, b, t] with an optional k.
+export function paletteMix(spec) {
+	const [a, b, t, k = 1] = spec.length === 2 ? [spec[0], spec[0], 0, spec[1]] : spec
+	return PALETTE[a].map((v, i) => ((v + (PALETTE[b][i] - v) * t) * k) / 255)
+}
+
 // The palette as Sass variables, served to the stylesheets as `@use 'palette:'`.
 export const paletteScss = () =>
 	Object.entries(PALETTE)
