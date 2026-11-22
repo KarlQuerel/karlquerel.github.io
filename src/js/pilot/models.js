@@ -391,6 +391,13 @@ export async function loadProp({ url, glow, panels, paint }) {
 	return prop
 }
 
+// a prop scaled to `width` m across
+export async function loadWide({ url, width }) {
+	const prop = await loadProp({ url })
+	prop.scale.setScalar(width / new Box3().setFromObject(prop).getSize(new Vector3()).x)
+	return prop
+}
+
 // spec: { url, bone, drop, fit, seat, ahead, tipBack, seal, glow? }: the helmet sized to the head whose skin it
 // replaces, `fit` times its width, the rim `seat` of its height under the chin, the middle `ahead` of
 // its depth forward of the head's; hung on its bone and tipped back `tipBack` rad, the `seal` under it;
