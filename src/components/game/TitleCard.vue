@@ -5,6 +5,7 @@
 	     name comes apart. -->
 	<div
 		class="title-card"
+		data-lean
 		:class="{ 'title-card--in': shown }"
 		:style="cardStyle"
 		@transitionend.self="onIn"
@@ -101,7 +102,6 @@
 		transition:
 			opacity var(--title-ms) linear var(--title-delay),
 			transform var(--title-ms) $ease-settle var(--title-delay);
-		@include lean;
 	}
 
 	.title-card--in {
