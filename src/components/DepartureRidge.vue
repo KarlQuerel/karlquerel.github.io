@@ -5,12 +5,13 @@
 		<!-- the heavens open out round the corridor as the flight goes into it -->
 		<div class="ridge__heavens" :style="heavensStyle">
 			<!-- the sky: the sun's glow and the galaxy, on the ground's grid -->
-			<canvas ref="skyEl" class="ridge__sky" :style="skyStyle" />
+			<canvas ref="skyEl" class="ridge__sky" data-lean :style="skyStyle" />
 			<!-- the bright stars, behind the crests so the world can still stand in front of them -->
 			<span
 				v-for="(glint, i) in RIDGE.sky.glints"
 				:key="i"
 				class="ridge__glint"
+				data-lean
 				:style="glintStyle(glint)"
 			/>
 			<!-- meteors: a streak jumping cell by cell down and right, rare -->
@@ -23,12 +24,13 @@
 			/>
 		</div>
 		<!-- the destination's ember, hung over the notch by the cut: it rides the ground, not the sky -->
-		<span class="ridge__glint" :style="starStyle" />
+		<span class="ridge__glint" data-lean :style="starStyle" />
 		<canvas
 			v-for="(band, i) in RIDGE.bands"
 			:key="i"
 			:ref="el => (bandEls[i] = el)"
 			class="ridge__band"
+			data-lean
 			:style="bandStyle(band, i)"
 		/>
 	</div>
@@ -79,8 +81,11 @@
 
 	// Every canvas is sized to exactly the cells it was cut on, so a cell stays whole device pixels.
 	const sizes = ref({ sky: null, bands: [] })
+	// hidden until cut: unsized, it lays out at 300x150 and its jump counts as a layout shift
 	const sized = cut =>
-		cut ? { width: `${cut.cols * cut.cell}px`, height: `${cut.rows * cut.cell}px` } : {}
+		cut
+			? { width: `${cut.cols * cut.cell}px`, height: `${cut.rows * cut.cell}px` }
+			: { visibility: 'hidden' }
 	const skyStyle = computed(() => ({ '--depth': RIDGE.sky.depth, ...sized(sizes.value.sky) }))
 	const glintVars = (glint, depth) => ({
 		'--depth': depth,
@@ -201,7 +206,6 @@
 		opacity: var(--fade, 1);
 		top: calc(var(--depth, 0) * -1px);
 		left: calc(var(--depth, 0) * -1px);
-		@include lean;
 		image-rendering: pixelated;
 	}
 
@@ -212,7 +216,6 @@
 		width: calc(var(--cell, 6) * 1px);
 		height: calc(var(--cell, 6) * 1px);
 		background: var(--core);
-		@include lean;
 
 		&::before,
 		&::after {
@@ -297,7 +300,6 @@
 		left: calc(var(--depth, 0) * -1px);
 		display: block;
 		transform-origin: bottom center;
-		@include lean;
 		// hard-edged silhouette, like the rest of the sprite work
 		image-rendering: pixelated;
 	}
