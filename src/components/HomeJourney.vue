@@ -1,5 +1,5 @@
 <template>
-	<section id="top" ref="trackRef" class="journey" :style="[trackStyle, parallaxStyle]">
+	<section id="top" ref="trackRef" class="journey" :style="trackStyle">
 		<PlanetStage :cam="cam" :spin="spin" :light-yaw="lightYaw" :haze="haze" />
 		<!-- the journey's line: takes the camera sampler, not the camera, to aim its dive where the planet will be -->
 		<JourneyRoute ref="routeRef" :cam-at="camAt" />
@@ -54,7 +54,7 @@
 
 		<section id="work" ref="workRef" class="journey__station journey__station--work">
 			<!-- the heading sits in the scene: the planet's limb crosses it -->
-			<header class="journey__station-head" :style="stationStyle">
+			<header class="journey__station-head" data-lean :style="stationStyle">
 				<p class="journey__kicker">{{ kicker(1) }}</p>
 				<PageTitle
 					tag="h2"
@@ -62,11 +62,11 @@
 					:accent="ABOUT_HEADINGS.work.accent"
 				/>
 			</header>
-			<div class="journey__station-body" :style="stationStyle"><AboutWork /></div>
+			<div class="journey__station-body" data-lean :style="stationStyle"><AboutWork /></div>
 		</section>
 
 		<section id="life" ref="lifeRef" class="journey__station journey__station--life">
-			<header class="journey__station-head" :style="stationStyle">
+			<header class="journey__station-head" data-lean :style="stationStyle">
 				<p class="journey__kicker">{{ kicker(2) }}</p>
 				<PageTitle
 					tag="h2"
@@ -74,7 +74,7 @@
 					:accent="ABOUT_HEADINGS.life.accent"
 				/>
 			</header>
-			<div class="journey__station-body" :style="stationStyle"><AboutLife /></div>
+			<div class="journey__station-body" data-lean :style="stationStyle"><AboutLife /></div>
 		</section>
 
 		<!-- Arrival: entry over the horizon carries the contact portals. -->
@@ -134,7 +134,7 @@
 	const arrivalRef = ref(null)
 	const routeRef = ref(null)
 
-	const { parallaxStyle, pointer } = usePointerParallax()
+	const { pointer } = usePointerParallax(trackRef)
 	const { progress, sync } = useScrollSections(trackRef)
 	// the scene flies on a glide behind the scroll; the page's own text and rail stay on the raw one
 	const { value: glided, snap } = useGlide(progress)
@@ -474,7 +474,6 @@
 	.journey__station-head {
 		position: relative;
 		z-index: 1;
-		@include lean;
 		max-width: min(64rem, 92vw);
 		margin: 0 auto 2.5rem;
 		padding: 1.75rem 1.5rem 2rem;
@@ -485,7 +484,6 @@
 	.journey__station-body {
 		position: relative;
 		z-index: 1;
-		@include lean;
 	}
 
 	// WORK's timeline is the one body the route runs THROUGH rather than past, so it stands over the
