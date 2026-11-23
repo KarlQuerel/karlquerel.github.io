@@ -1,6 +1,6 @@
 # HERMES: Game Design Document
 
-Updated 2026-11-18 · ✅ decided · 🟡 leaning or prototyped · ❓ open · 💭 proposed, no pick yet
+Updated 2026-11-23 · ✅ decided · 🟡 leaning or prototyped · ❓ open · 💭 proposed, no pick yet
 
 The one home of the game's design. Karl's Notion page is only the inbox: ideas land there, and each session folds
 them in here when asked. When something changes, move it and add one line on why.
@@ -13,16 +13,34 @@ them in here when asked. When something changes, move it and add one line on why
 and nuclear winter have wiped out much of humanity, and Earth is no longer habitable. The survivors made peace and
 launched the Hermes Project: ten ships to scout distant planets for a habitable world.
 
-You are one of the five aboard HERMES-8. You fall asleep in Earth orbit with the whole crew and wake to a deserted,
-barely working ship.
+You are one of the five aboard HERMES-8. You fall asleep in Earth orbit with the whole crew and wake in orbit of an
+alien world, aboard a barely working ship.
 
 A space survival game with heavy choices, first person, pixel art, in the browser, highly immersive.
 
-## The spine ❓
+## The spine 🟡
 
-Open since GREEN was dropped (2026-11-13: no message goes back to Earth). The old spine, "survive long enough to
-send the word", no longer holds. What the player is ultimately trying to do needs deciding before the acts can be
-built.
+- ✅ HERMES-8 sets out for Yavis 667, a viable world, on a trip planned to take 19 years (2026-11-23)
+- ✅ The crew sleep 163 years and 7 months instead of 19 (2026-11-23; replaces 471, then ~1,486: a shorter sleep keeps
+  Earth's messages personal and the low-power wake believable)
+- ✅ The pods wake the crew because the power is running out: the last-resort wake, while there is still enough to
+  revive them. The power left is the game's first clock
+- ✅ The crew learn it from Earth's messages, each worse than the last
+- ✅ What kills Earth: the slow drought. No new war: water runs out city by city, and fewer and fewer places
+  broadcast. Then a single automated message, and Hermes says it is the last one received, 22 years ago (2026-11-23)
+- ✅ Timeline, in years after departure: arrival due at 19; last human voice received at 117; last automated message
+  received at 141; wake at 163 years 7 months. Yavis 667 lies 23.6 light years from Earth, so each message is
+  23.6 years old when it arrives
+- 💭 Hermes kept logging Earth's broadcasts while the crew slept, so 141 years of messages wait in the ship's memory
+- ✅ Why the ship did not wake the crew at year 19 (2026-11-23): at 18 years 9 months, three months before arrival, a
+  grain of interstellar dust cut the one cable between Hermes and the pods. The ship arrived and entered orbit on
+  autopilot, but the wake command never reached the pods. Each pod has a hardwired failsafe, no computer, that wakes
+  its sleeper when its power runs too low. Hermes: "I could see you. I could not reach you."
+- ✅ The crew do not wake together (2026-11-23). ❓ Whether the others woke before you, are still asleep, or both.
+  💭 Each failsafe runs on its own pod's battery, so the wakes are staggered by years
+- ❓ What the player is ultimately after, once they know
+
+GREEN was dropped on 2026-11-13: no message goes back to Earth, they only come in.
 
 ## Pillars 🟡
 
@@ -41,6 +59,7 @@ built.
 - 🟡 More than one planet: the ship carries you on to another world later in the game
 - ❓ The fleet: if, when and how we learn what happened to the other ships
 - ❓ The candidate world: what it is like (the 2D prototype had a lake, fronds and a ridge)
+- ✅ Its name: Yavis 667 (2026-11-23)
 
 ## Characters
 
@@ -52,7 +71,7 @@ Five aboard HERMES-8, one team, each in their own role suit.
 | ✅ Elena | Medic | Female, lost her son Sam in the war. Not killed right away (2026-11-17): when she dies is open |
 | ✅ Ekko | Engineer | Male |
 | ✅ Noor | Scientist | Young, just graduated |
-| ✅ You | | Will have a voice (decide later). Name ❓ ("Four" was floated) |
+| ✅ You | Pilot, lander and ship (2026-11-23) | Will have a voice (decide later). Name ❓ ("Four" was floated) |
 
 - 💭 Noor's thesis flagged the world they were sent to
 - ❓ Whether the crew ever take their helmets off (a take-off routine exists on G in the ship lab; it looked weird
@@ -65,8 +84,8 @@ Five aboard HERMES-8, one team, each in their own role suit.
    it as one continuous picture. Its scenes are ❓ (Karl decides later)
 3. ✅ Departure day, aboard HERMES-8 in Earth orbit: you wake in your bed in your own cabin (cabin 4), meet the crew,
    see Earth from the ship, prepare for the journey, enter your cryo pod. The safe tutorial
-4. ✅ The wake: the ship is deserted and barely working, things have turned bad, the crew are not there. "Go from
-   there"
+4. ✅ The wake: you went under in Earth orbit and wake in orbit of the alien world (2026-11-23). The ship is barely
+   working, things have turned bad. ❓ Whether the crew are there: reopened 2026-11-23, with or without them is open
 5. ❓ The acts after the wake
 
 Around the wake:
@@ -143,6 +162,7 @@ Built and played in the old 2D engine; kept here so nothing is lost. Look back a
 - ✅ Space sky: the baked darker nebula
 - ✅ Intro skippable, safe under reduced motion
 - Tone: loneliness, not splatter
+- ✅ No rounded numbers for dates or durations: they read like real records (2026-11-23)
 - Far away, glow and clean two-tone masses read; facets don't
 
 ## Production notes
