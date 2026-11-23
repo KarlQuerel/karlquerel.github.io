@@ -153,3 +153,22 @@ textarea,
 [contenteditable] {
 	cursor: text;
 }
+
+// The cursor's lean, set on each leaning layer by usePointerParallax. Non-inherited, so a frame of
+// lean restyles the layers alone, not every node under them.
+@property --mx {
+	syntax: '<number>';
+	inherits: false;
+	initial-value: 0;
+}
+
+@property --my {
+	syntax: '<number>';
+	inherits: false;
+	initial-value: 0;
+}
+
+// A layer that leans with the cursor: --mx/--my scaled by its own --depth.
+[data-lean] {
+	translate: calc(var(--mx) * var(--depth, 0) * 1px) calc(var(--my) * var(--depth, 0) * 1px);
+}
