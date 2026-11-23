@@ -29,7 +29,7 @@
 			:style="ridgeStyle(band, i)"
 		/>
 		<!-- someone is home: the habitat's chimney, over the near band it stands on -->
-		<div v-if="smoke" class="entry__smoke" :style="smoke">
+		<div v-if="smoke" class="entry__smoke" data-lean :style="smoke">
 			<span
 				v-for="i in ENTRY.smoke.puffs"
 				:key="i"
@@ -315,7 +315,6 @@
 	.entry__cloud,
 	.entry__ridge,
 	.entry__smoke {
-		@include lean;
 	}
 
 	.entry__stars {
