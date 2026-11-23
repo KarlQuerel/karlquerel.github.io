@@ -1,7 +1,7 @@
 <template>
 	<!-- The title screen's overlay: the plated name and the start prompt, lifted off centre like the holding
 	     screen's, and the music. Once `up`, a key starts the game: the name comes apart and the music fades. -->
-	<div class="intro-title" :style="parallaxStyle">
+	<div ref="titleRef" class="intro-title">
 		<TitleCard
 			:shown="up"
 			:prompt="GAME_HOLDING.start"
@@ -30,7 +30,8 @@
 	// the name has come apart after a key
 	const emit = defineEmits(['done'])
 
-	const { parallaxStyle } = usePointerParallax()
+	const titleRef = ref(null)
+	usePointerParallax(titleRef)
 	const named = ref(false)
 	const started = ref(false)
 	useWindowListener('keydown', () => {
