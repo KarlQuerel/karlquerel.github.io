@@ -3,10 +3,11 @@
 	     night side, both under one sun. Painted once per frame size off the main thread; each leans at
 	     its own depth and rises into place once first painted. -->
 	<div class="orbit" :class="{ 'orbit--up': up }" :style="riseStyle" aria-hidden="true">
-		<canvas ref="moonEl" class="orbit__layer" :style="moonStyle" />
+		<canvas ref="moonEl" class="orbit__layer" data-lean :style="moonStyle" />
 		<canvas
 			ref="earthEl"
 			class="orbit__layer"
+			data-lean
 			:style="earthStyle"
 			@transitionend.self="onRisen"
 		/>
@@ -179,7 +180,6 @@
 			opacity var(--cover-ms) linear,
 			filter calc(var(--rise-ms) * 0.6) linear;
 		will-change: transform, translate;
-		@include lean;
 	}
 
 	.orbit--up .orbit__layer {
