@@ -16,8 +16,8 @@
 		</div>
 		<h1 class="sr-only">{{ name }} — {{ role }}</h1>
 		<!-- the blurred passes on their own sprite under the ink, so going bare is a hide, not a repaint mid-flight -->
-		<canvas v-show="!bare" ref="glowEl" class="title__plate" aria-hidden="true" />
-		<canvas ref="canvasEl" class="title__plate" aria-hidden="true" />
+		<canvas v-show="!bare" ref="glowEl" class="title__plate" data-lean aria-hidden="true" />
+		<canvas ref="canvasEl" class="title__plate" data-lean aria-hidden="true" />
 	</div>
 </template>
 
@@ -393,7 +393,6 @@
 		position: absolute;
 		top: 0;
 		left: 0;
-		@include lean;
 		image-rendering: pixelated;
 	}
 
