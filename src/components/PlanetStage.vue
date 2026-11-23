@@ -3,7 +3,7 @@
 	<div class="stage" :style="stageStyle" aria-hidden="true">
 		<!-- the faintest colour depth behind everything — space isn't pure black -->
 		<div class="stage__nebula" />
-		<div class="stage__planet" :style="planetStyle">
+		<div class="stage__planet" data-lean :style="planetStyle">
 			<!-- in frame from the first pixel: at rest the camera has it sat in the Q's
 			     porthole, which is the hole the departure then flies through -->
 			<PixelPlanet
@@ -15,7 +15,7 @@
 			/>
 		</div>
 		<!-- The world as a point of light while it is too small to be a disc, on the camera's axis. -->
-		<span class="stage__spark" :style="sparkStyle" />
+		<span class="stage__spark" data-lean :style="sparkStyle" />
 		<!-- atmosphere on entry: haze rising from the horizon, in the planet's tint -->
 		<div class="stage__haze" :style="hazeStyle" />
 	</div>
@@ -109,7 +109,6 @@
 	.stage__planet {
 		position: absolute;
 		inset: 0;
-		@include lean;
 		will-change: transform;
 	}
 
@@ -123,7 +122,6 @@
 		height: var(--spark);
 		margin: calc(var(--spark) / -2) 0 0 calc(var(--spark) / -2);
 		background: var(--spark-shade);
-		@include lean;
 	}
 
 	// Densest at the horizon over an opaque base, so altitude reads as darker air, never as holes.
