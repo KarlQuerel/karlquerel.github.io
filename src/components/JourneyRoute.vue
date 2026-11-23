@@ -3,7 +3,14 @@
 	<!-- The line only ever runs downward, so the flown stretch is everything above the tip: a clip at
 	     that height reveals it, and the drawing itself never repaints as you scroll. Inside a turn the
 	     clip also stops at the tip's x, or a LIFE crossing's flat run would show all at once. -->
-	<div v-if="geo" class="route route--flown" :style="[frameStyle, flownStyle]" aria-hidden="true">
+	<!-- leans at the station bodies' own depth: any other depth shears the line off the emblems -->
+	<div
+		v-if="geo"
+		class="route route--flown"
+		data-lean
+		:style="[frameStyle, flownStyle]"
+		aria-hidden="true"
+	>
 		<svg v-bind="frame" class="route__art">
 			<path class="route__casing" :d="geo.d" />
 			<path class="route__ink" :d="geo.d" />
@@ -25,6 +32,7 @@
 	<svg
 		v-if="geo && tip"
 		class="route route--cursor"
+		data-lean
 		:style="[frameStyle, cursorStyle]"
 		:viewBox="TIP_BOX"
 		aria-hidden="true"
@@ -306,8 +314,6 @@
 		z-index: 0;
 		pointer-events: none;
 		shape-rendering: crispEdges;
-		// The lean at the station bodies' own depth: any other depth shears the line off the emblems.
-		@include lean;
 	}
 
 	// Only the cursor is lifted, clear of the bodies and the flight but under the rail and chrome.
