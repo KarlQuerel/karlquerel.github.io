@@ -10,6 +10,9 @@ export const FINE_POINTER_QUERY = '(hover: hover) and (pointer: fine)'
 // How much of the remaining lean the cursor closes per frame — a camera has mass. Lower is heavier.
 export const POINTER_EASE = 0.09
 
+// The layers that lean with the cursor (usePointerParallax, _layout.scss).
+export const LEAN_LAYER = '[data-lean]'
+
 // A wheel notch is a jump; the camera glides to it instead of snapping. Seconds, then scroll fraction.
 export const SCROLL_GLIDE_S = 0.19
 export const SCROLL_REST = 0.00004
