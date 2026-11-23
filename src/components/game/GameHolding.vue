@@ -2,7 +2,7 @@
 	<!-- /under-construction, where /game lands until GAME_SHIPPED: the plated name held still over the
 	     Earth, the ship's status under it. Once the game is open a desktop goes on to /game, whose first
 	     shot is the title screen; a phone stays here to be told it cannot play. -->
-	<div class="content holding" :style="parallaxStyle">
+	<div ref="holdingRef" class="content holding">
 		<HomeChip :class="{ 'holding__chip--wait': !shown }" />
 		<SoundChip :class="{ 'holding__chip--wait': !shown }" />
 		<h1 class="sr-only">{{ GAME_WORDMARK.text }}</h1>
@@ -28,7 +28,8 @@
 	import SoundChip from './SoundChip.vue'
 	import TitleCard from './TitleCard.vue'
 
-	const { parallaxStyle } = usePointerParallax()
+	const holdingRef = ref(null)
+	usePointerParallax(holdingRef)
 	const risen = ref(false)
 	// the name is in place: the way home shows
 	const shown = ref(false)
