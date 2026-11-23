@@ -21,6 +21,7 @@
 		v-for="tier in ENTRY.flock.tiers"
 		:key="tier.over"
 		class="entry__flight"
+		data-lean
 		:style="flightStyle(tier)"
 	>
 		<template v-for="fl in flocks" :key="fl.id">
@@ -304,7 +305,6 @@
 		inset: 0;
 		z-index: var(--layer);
 		pointer-events: none;
-		@include lean;
 	}
 
 	.entry__bird {
