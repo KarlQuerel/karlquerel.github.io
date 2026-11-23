@@ -7,6 +7,7 @@
 				<p
 					v-for="(line, i) in ABOUT_ME"
 					:key="i"
+					v-letter-trail
 					class="life-card__line"
 					:class="{ 'life-card__lede': i === 0 }"
 				>
@@ -22,7 +23,11 @@
 				</h3>
 				<template v-for="(line, i) in DOG_LINES" :key="i">
 					<DogDeck v-if="deckAt[i]" class="life-card__deck" :dog="deckAt[i]" />
-					<p class="life-card__line" :class="{ 'life-card__lede': i === 0 }">
+					<p
+						v-letter-trail
+						class="life-card__line"
+						:class="{ 'life-card__lede': i === 0 }"
+					>
 						{{ line }}
 					</p>
 				</template>
@@ -40,7 +45,11 @@
 						class="life-card__media"
 						:media="section.media"
 					/>
-					<p class="life-card__line" :class="{ 'life-card__lede': i === 0 }">
+					<p
+						v-letter-trail
+						class="life-card__line"
+						:class="{ 'life-card__lede': i === 0 }"
+					>
 						{{ line }}
 					</p>
 				</template>
@@ -52,6 +61,7 @@
 <script setup>
 	import { ABOUT_ME, DOG_LINES, DOGS, LIFE_SECTIONS, LIFE_TITLES } from '@/data/aboutLife'
 	import { reveal as vReveal } from '@/directives/reveal'
+	import { letterTrail as vLetterTrail } from '@/directives/letterTrail'
 	import DogDeck from './DogDeck.vue'
 	import PlayOnceArt from './PlayOnceArt.vue'
 
@@ -60,12 +70,53 @@
 </script>
 
 <style scoped lang="scss">
+	@use 'sass:color';
+	@use 'sass:list';
+	@use 'sass:math';
 	@use '@/styles/mixins' as *;
 
 	// the one gap between cards, fixed so the rhythm is even; the route's crossing needs ~192px to
 	// turn, or ~152px on a phone, where it turns on a tighter chamfer (ROUTE.crossChamferNarrowPx)
 	$life-gap: 14rem;
 	$life-gap-mobile: 11rem;
+
+	$life-ink: rgba($white, 0.88);
+	// LETTER_TRAIL in constants/letterTrail.js
+	$trail-highlight: letter-trail;
+	$trail-steps: 4;
+
+	// each section's accent and its glow strength, from the shared palette so LIFE stays in the site's system
+	$life-accents: (
+		dogs: (
+			$light-red,
+			0.55,
+		),
+		sports: (
+			$phosphor-green,
+			0.55,
+		),
+		music: (
+			$purple,
+			0.6,
+		),
+		games: (
+			$light-blue,
+			0.55,
+		),
+	);
+
+	// one ::highlight() colour per trail step, from the ink up to the full accent
+	@mixin letter-trail($accent) {
+		@for $step from 1 through $trail-steps {
+			.life-card__line::highlight(#{$trail-highlight}-#{$step}) {
+				color: color.mix(
+					$accent,
+					$life-ink,
+					math.percentage(math.div($step, $trail-steps))
+				);
+			}
+		}
+	}
 
 	.life {
 		display: flex;
@@ -128,7 +179,7 @@
 		white-space: pre-line;
 		// the global `p { text-align: center }` would otherwise centre it
 		text-align: inherit;
-		color: rgba(255, 255, 255, 0.88);
+		color: $life-ink;
 		// A black keyline in px (this face is crisp only on its 11px grid), for where the lit limb crosses.
 		@include pixel-keyline($unit: 1px);
 	}
@@ -171,29 +222,21 @@
 		clear: right;
 	}
 
-	// per-section accents from the shared palette so LIFE stays in the site's system
-	[data-section='dogs'] .life-card__dot,
-	[data-section='dogs'] .life-card__lede::before {
-		background: $light-red;
-		box-shadow: 0 0 8px 1px rgba($light-red, 0.55);
-	}
+	// About me has no accent of its own, so its trail takes the site's
+	@include letter-trail($yellow);
 
-	[data-section='sports'] .life-card__dot,
-	[data-section='sports'] .life-card__lede::before {
-		background: $phosphor-green;
-		box-shadow: 0 0 8px 1px rgba($phosphor-green, 0.55);
-	}
+	@each $section, $accent in $life-accents {
+		$color: list.nth($accent, 1);
 
-	[data-section='music'] .life-card__dot,
-	[data-section='music'] .life-card__lede::before {
-		background: $purple;
-		box-shadow: 0 0 8px 1px rgba($purple, 0.6);
-	}
+		[data-section='#{$section}'] .life-card__dot,
+		[data-section='#{$section}'] .life-card__lede::before {
+			background: $color;
+			box-shadow: 0 0 8px 1px rgba($color, list.nth($accent, 2));
+		}
 
-	[data-section='games'] .life-card__dot,
-	[data-section='games'] .life-card__lede::before {
-		background: $light-blue;
-		box-shadow: 0 0 8px 1px rgba($light-blue, 0.55);
+		[data-section='#{$section}'] {
+			@include letter-trail($color);
+		}
 	}
 
 	// every card fades in on the same stepped beat, in place: a slide hopping against the scroll reads as stutter
