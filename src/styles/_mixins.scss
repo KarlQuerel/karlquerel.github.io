@@ -150,8 +150,3 @@
 		}
 	}
 }
-
-// A layer that leans with the cursor: --mx/--my from the container, scaled by its own --depth.
-@mixin lean {
-	translate: calc(var(--mx, 0) * var(--depth, 0) * 1px) calc(var(--my, 0) * var(--depth, 0) * 1px);
-}
