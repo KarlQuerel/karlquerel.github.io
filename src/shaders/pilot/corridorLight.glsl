@@ -181,9 +181,9 @@ vec3 crLight(vec3 p, vec3 n, vec3 base, vec3 emit, float gloss, float bath, floa
   // the air: haze with distance, warmed where the door's light hangs in it
   vec3 toDoor = normalize(CR_DOOR_POS - ro);
   float dd = max(dot(rd, toDoor), 0.0);
-  float hz = 1.0 - exp(-t*0.065);
-  col = mix(col, IRON*0.9 + GLOW*0.16*uCrDoor*pow(dd, 6.0), hz*0.85);
-  col += GLOW*pow(dd, 90.0)*uCrDoor*0.35*smoothstep(2.0, 8.0, t);
+  float hz = 1.0 - exp(-t*CR_AIR_DENSITY);
+  col = mix(col, IRON*0.9 + GLOW*CR_AIR_WARM*uCrDoor*pow(dd, CR_AIR_SPREAD), hz*CR_AIR_AMOUNT);
+  col += GLOW*pow(dd, CR_AIR_FOCUS)*uCrDoor*CR_AIR_HALO*smoothstep(CR_AIR_CLEAR.x, CR_AIR_CLEAR.y, t);
   return col;
 }
 
