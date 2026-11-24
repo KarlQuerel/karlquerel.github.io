@@ -23,6 +23,7 @@ import EarthWorker from './earth.worker.js?worker'
 import { paletteMix } from '../../constants/palette.js'
 import {
 	PILOT,
+	PILOT_AIR,
 	PILOT_EXACT_ALPHA,
 	PILOT_MATS,
 	PILOT_BOARD,
@@ -108,6 +109,13 @@ const DEFINES = {
 	CR_EARTH_SPILL: num(PILOT_OUTSIDE.spill),
 	CR_SUN: vec3(SUN),
 	CR_SUN_GAIN: num(PILOT_OUTSIDE.sunGain),
+	CR_AIR_DENSITY: num(PILOT_AIR.density),
+	CR_AIR_AMOUNT: num(PILOT_AIR.amount),
+	CR_AIR_WARM: num(PILOT_AIR.warm),
+	CR_AIR_SPREAD: num(PILOT_AIR.spread),
+	CR_AIR_HALO: num(PILOT_AIR.halo),
+	CR_AIR_FOCUS: num(PILOT_AIR.focus),
+	CR_AIR_CLEAR: vec2(PILOT_AIR.clear),
 	CR_SUN_RADIUS: num(PILOT_SUN.radius),
 	CR_SUN_AGE: num(PILOT_SUN.age),
 	CR_SUN_CORONA: num(PILOT_SUN.corona),
