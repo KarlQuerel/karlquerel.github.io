@@ -155,6 +155,7 @@ Built and played in the old 2D engine; kept here so nothing is lost. Look back a
 - ✅ Browser, desktop only: phones land on the holding screen
 - ✅ Whole game in three.js; the 2D title screen is the only 2D piece left
 - ✅ 3D through a pixel pass: one cell size and one palette for every scene; quality from edges, not from more cells
+- ✅ No distance blur and only a light haze: what's far away must stay readable (2026-11-24)
 - ✅ A light must land on the palette's lit end, or it reads as tan
 - ✅ Modern sci-fi, minimal premium product design: no greebles, chrome reads cartoonish
 - ✅ One crew helmet for everyone, in the suits' slate and oxblood; each role's colour on the suit panels and the
