@@ -28,16 +28,10 @@ vec3 skyAt(vec2 frag){
   return toSrgb(texture2D(tSky, vec2(atan(rd.z, rd.x)/(2.0*PI) + 0.5, asin(clamp(rd.y, -1.0, 1.0))/PI + 0.5)).rgb);
 }`
 
-// the pass over `palette`, a list of PALETTE names, its `edges` and `distant` as PILOT's (a crease glints only on
-// a cell darker than `bright`, its luma 0..1: on a near-white face a glint's one-cell sparkle crawls as the view
-// moves); with `sky`, the baked sky drawn where nothing was; with `overlay`, GLSL defining overlay(col, frag)
-const frag = (
-	palette,
-	sky,
-	{ step, turn, ink, glint, far, bright = 1 },
-	{ from, to, sigma },
-	overlay
-) => `
+// the pass over `palette`, a list of PALETTE names, its `edges` as PILOT's (a crease glints only on a cell darker
+// than `bright`, its luma 0..1: on a near-white face a glint's one-cell sparkle crawls as the view moves); with
+// `sky`, the baked sky drawn where nothing was; with `overlay`, GLSL defining overlay(col, frag)
+const frag = (palette, sky, { step, turn, ink, glint, far, bright = 1 }, overlay) => `
 #include <packing>
 uniform sampler2D tColor;
 uniform sampler2D tDepth;
@@ -54,34 +48,16 @@ vec3 toSrgb(vec3 c){
   return mix(c*12.92, 1.055*pow(c, vec3(1.0/2.4)) - 0.055, step(0.0031308, c));
 }
 
-float distant(float z){ return smoothstep(${from.toFixed(1)}, ${to.toFixed(1)}, z); }
-
-// what lies in front stays out of the mean, so a near silhouette keeps its edge over a soft far end
-vec3 farMean(vec2 frag){
-  vec3 sum = vec3(0.0);
-  float total = 0.0;
-  for (int y = -2; y <= 2; y++){
-    for (int x = -2; x <= 2; x++){
-      vec2 q = frag + vec2(x, y);
-      float k = exp(-float(x*x + y*y)/${(2 * sigma * sigma).toFixed(3)})*distant(depthAt(q));
-      sum += texture2D(tColor, q/uRes).rgb*k;
-      total += k;
-    }
-  }
-  return sum/max(total, 1e-4);
-}
 ${sky ? skyAt : ''}
 ${overlay ?? ''}
 
 vec3 shade(vec2 frag){
   ${sky ? 'if (texture2D(tDepth, frag/uRes).x >= 1.0) return skyAt(frag);' : ''}
   vec4 cell = texture2D(tColor, frag/uRes);
-  float z = depthAt(frag);
-  float soft = distant(z);
   // a cell drawn in the palette's colours already: as it is, no snap and no edges
-  if (cell.a < ${(PILOT_EXACT_ALPHA + 1) / 2} && soft <= 0.0) return toSrgb(cell.rgb);
-  vec3 lin = soft > 0.0 ? mix(cell.rgb, farMean(frag), soft) : cell.rgb;
-  vec3 col = palColor(snapIndex(toSrgb(lin), frag));
+  if (cell.a < ${(PILOT_EXACT_ALPHA + 1) / 2}) return toSrgb(cell.rgb);
+  float z = depthAt(frag);
+  vec3 col = palColor(snapIndex(toSrgb(cell.rgb), frag));
   float near = smoothstep(${far.toFixed(1)}, ${(far / 2).toFixed(1)}, z);
   float w = 1.0/z;
   vec3 n = normalAt(frag);
@@ -109,11 +85,11 @@ const target = () =>
 	new WebGLRenderTarget(1, 1, { minFilter: NearestFilter, magFilter: NearestFilter })
 
 // sky: a 2:1 equirect panorama already on the palette (scripts/sky/bake.mjs), nearest, unmipped; edges
-// and distant in a scene's own metres; overlay: { glsl, uniforms }, drawn over the finished cells
+// in a scene's own metres; overlay: { glsl, uniforms }, drawn over the finished cells
 export function createPixelPost(
 	renderer,
 	camera,
-	{ palette = PILOT.palette, sky, edges = PILOT.edges, distant = PILOT.distant, overlay } = {}
+	{ palette = PILOT.palette, sky, edges = PILOT.edges, overlay } = {}
 ) {
 	const color = target()
 	color.depthTexture = new DepthTexture(1, 1)
@@ -136,7 +112,7 @@ export function createPixelPost(
 			...overlay?.uniforms,
 		},
 		vertexShader: 'void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }',
-		fragmentShader: `${common}\n${frag(palette, sky, edges, distant, overlay?.glsl)}`,
+		fragmentShader: `${common}\n${frag(palette, sky, edges, overlay?.glsl)}`,
 		depthTest: false,
 		depthWrite: false,
 	})
