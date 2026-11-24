@@ -144,7 +144,6 @@ export function createShipLab() {
 				palette: Object.keys(PALETTE),
 				sky,
 				edges,
-				distant: SHIP_LAB.distant,
 				overlay,
 			})
 		posts = { outside: pass(SHIP_LAB.edges), aboard: pass(aboard.edges, visor.overlay) }
@@ -196,7 +195,7 @@ export function createShipLab() {
 		scene.environment = pmrem.fromEquirectangular(sky).texture
 		scene.environmentIntensity = light.sky
 		pmrem.dispose()
-		// distant cells blend into the sky they stand on
+		// the sky behind the glass: the pass draws it only where nothing stands
 		scene.background = sky
 		await step('models')
 		body ??= await addPlayerBody(stand)
