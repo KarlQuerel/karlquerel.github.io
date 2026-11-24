@@ -25,8 +25,6 @@ export const PILOT = {
 	// the edge pass: how far behind a neighbour must sit (share of the cell's depth) to outline it,
 	// how far two faces must turn apart to glint, and the shade each takes
 	edges: { step: 0.08, turn: 0.35, ink: 0.42, glint: 1.5, far: 16 },
-	// past `from` m, all in by `to`, a cell takes its far neighbours' mean (gaussian, `sigma` cells) before the snap
-	distant: { from: 8, to: 20, sigma: 1.2 },
 }
 
 // The corridor as the old 2D intro's shader drew it, rebuilt in meshes. Metres
@@ -71,6 +69,19 @@ export const PILOT_SET = {
 // out over the left hand, high and ahead, well clear of the Earth), in hard patches where its rays come in
 // between the ribs
 export const PILOT_OUTSIDE = { earth: 2.2, spill: 1.2, sun: [0.4, 0.55, 0.73], sunGain: 2.6 }
+
+// The corridor's air: a haze to iron thickening `density` a metre, at most `amount` (the far door kept
+// readable); toward the door warmed `warm` of glow (falling off as cos^`spread`), and a halo `halo` bright
+// round the door itself (cos^`focus`), faded in over `clear` m
+export const PILOT_AIR = {
+	density: 0.03,
+	amount: 0.45,
+	warm: 0.16,
+	spread: 6,
+	halo: 0.35,
+	focus: 90,
+	clear: [2, 8],
+}
 
 // The sun's shadows: the crew's and the player's depth seen from the sun, on three's `layer` (a mesh only
 // there casts and is never seen), `size` texels square; a point is looked up `lift` m off its surface and
