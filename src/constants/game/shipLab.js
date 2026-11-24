@@ -116,7 +116,6 @@ export const SHIP_LAB = {
 			hall_glass: { base: 'pitch' },
 		},
 	},
-	// the pixel pass at a ship's scale (EDGES), cells softened from 250 m
+	// the pixel pass at a ship's scale (EDGES)
 	edges: EDGES,
-	distant: { ...PILOT.distant, from: 250, to: 600 },
 }
