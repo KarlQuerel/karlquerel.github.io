@@ -179,7 +179,9 @@ Built and played in the old 2D engine; kept here so nothing is lost. Look back a
 - ✅ Modern sci-fi, minimal premium product design: no greebles, chrome reads cartoonish
 - ✅ One crew helmet for everyone, in the suits' slate and oxblood; each role's colour on the suit panels and the
   visor (medic cream, scientist rime, engineer brass, captain oxblood)
-- ✅ Space sky: the baked darker nebula
+- ✅ The baked darker nebula is the alien world's sky, not Earth's (2026-11-25). ❓ Earth orbit's sky (the intro and
+  departure day; the ship lab and the intro use the nebula for now). 💭 The real Milky Way, so the sky itself tells
+  the player how far they went when the nebula replaces it at the wake
 - ✅ Intro skippable, safe under reduced motion
 - Tone: loneliness, not splatter
 - ✅ No rounded numbers for dates or durations: they read like real records (2026-11-23)
