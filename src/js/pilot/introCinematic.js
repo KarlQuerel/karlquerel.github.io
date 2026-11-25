@@ -1,9 +1,8 @@
-// The intro cinematic (constants/game/intro.js): the camera down one shot on the Earth, beat by beat; the page
-// types the cards. A rough cut: the title's globe and Moon on cards facing the camera, flashes on the night side,
-// launches off the limb, the fleet as blocks.
+// The intro cinematic (constants/game/intro.js), cut shot by shot; the page types the cards and covers a slate. The
+// orbit's shots are built: the title's globe and Moon on cards facing the camera, flashes on the night side, the
+// fleet as blocks. The ground's shots are still slates.
 
 import {
-	CylinderGeometry,
 	DataTexture,
 	DirectionalLight,
 	EquirectangularReflectionMapping,
@@ -35,16 +34,19 @@ import { clamp01, riseFall, smootherstep } from '../math.js'
 import { box } from './parts.js'
 import { createPixelPost } from './pixelPost.js'
 
-const { earth, moon, beats, flashes, trails, fleet, light } = INTRO
+const { earth, moon, shots, flashes, fleet, light } = INTRO
 const DEG = Math.PI / 180
 const even = v => 2 * Math.ceil(v / 2)
 const vec = ([x, y, z]) => new Vector3(x, y, z)
+const key = ({ at, look }) => ({ at: vec(at), look: vec(look) })
 
-// when each beat starts, the last entry the cut's end
-const starts = beats.reduce((at, { holdS }) => [...at, at.at(-1) + holdS], [0])
+// when each shot starts, the last entry the cut's end; an orbit shot's camera keys
+const starts = shots.reduce((at, { holdS }) => [...at, at.at(-1) + holdS], [0])
 const length = starts.at(-1)
-const keys = [INTRO.start, ...beats].map(({ at, look }) => ({ at: vec(at), look: vec(look) }))
-const beatAt = t => Math.max(0, starts.findLastIndex(s => s <= t) - (t >= length ? 1 : 0))
+const moves = shots.map(({ from, to }) => from && { from: key(from), to: key(to) })
+const shotAt = t => Math.max(0, starts.findLastIndex(s => s <= t) - (t >= length ? 1 : 0))
+// a card holds until its last shot ends
+const cardEnd = card => starts[shots.findLastIndex(s => s.card === card) + 1]
 
 // the globe's light in the world, the painter's y turned up
 const [lx, ly, lz] = earth.light
@@ -90,12 +92,13 @@ function discCard(data, res, side) {
 	return new Mesh(new PlaneGeometry(side, side), new MeshBasicMaterial({ map, alphaTest: 0.5 }))
 }
 
-// the flashes on the globe's card, each on its night side with its moment
+// the flashes on the globe's card in the shot that has them, each on its night side with its moment
 function addFlashes(card) {
+	const shot = shots.findIndex(s => s.flashes)
 	const material = new MeshBasicMaterial({ color: paletteHex(flashes.color) })
 	const geometry = new SphereGeometry(1, 8, 6)
-	const from = starts[flashes.beat] + flashes.leadS
-	const span = beats[flashes.beat].holdS - flashes.leadS - flashes.tailS
+	const from = starts[shot] + flashes.leadS
+	const span = shots[shot].holdS - flashes.leadS - flashes.tailS
 	const out = []
 	while (out.length < flashes.count) {
 		const x = (Math.random() * 2 - 1) * flashes.spread
@@ -110,22 +113,6 @@ function addFlashes(card) {
 		out.push({ mesh, at: from + (span * (out.length + 0.5)) / flashes.count })
 	}
 	return out
-}
-
-// the launches off the globe's limb, between the fleet's first and last bearings, climbing to its orbit
-function addTrails(card) {
-	const material = new MeshBasicMaterial({ color: paletteHex(trails.color) })
-	const geometry = new CylinderGeometry(trails.radius, trails.radius, 1, 6).translate(0, 0.5, 0)
-	const spanDeg = (fleet.count - 1) * fleet.stepDeg
-	return Array.from({ length: trails.count }, (_, k) => {
-		const bearing = (fleet.firstDeg + (spanDeg * (k + 0.5)) / trails.count) * DEG
-		const mesh = new Mesh(geometry, material)
-		mesh.position.set(Math.cos(bearing) * earth.radius, Math.sin(bearing) * earth.radius, 0)
-		mesh.rotation.z = bearing - Math.PI / 2
-		mesh.visible = false
-		card.add(mesh)
-		return { mesh, at: starts[trails.beat] + trails.leadS + k * trails.everyS }
-	})
 }
 
 // the fleet on its arc in front of the globe, each block along its orbit, ours with its lamp
@@ -164,8 +151,7 @@ export function createIntroCinematic() {
 	let post = null
 	let sky = null
 	let cards = []
-	let shots = []
-	let launches = []
+	let strikes = []
 	let ships = null
 
 	async function build(gl, step) {
@@ -193,8 +179,7 @@ export function createIntroCinematic() {
 		)
 		lunar.position.set(...moon.at)
 		cards = [globe, lunar]
-		shots = still ? [] : addFlashes(globe)
-		launches = addTrails(globe)
+		strikes = still ? [] : addFlashes(globe)
 		ships = buildFleet()
 		const sun = new DirectionalLight(paletteHex(light.sun.color), light.sun.intensity)
 		sun.position.copy(SUN)
@@ -220,40 +205,37 @@ export function createIntroCinematic() {
 		post.resize(width, height)
 	}
 
-	// the camera from the last beat's key to this one's over the beat; reduced motion cuts to it
-	function place(t, beat) {
-		const [a, b] = [keys[beat], keys[beat + 1]]
-		const u = still ? 1 : smootherstep(clamp01((t - starts[beat]) / beats[beat].holdS))
-		camera.position.lerpVectors(a.at, b.at, u)
-		camera.lookAt(look.lerpVectors(a.look, b.look, u))
+	// the camera from the shot's first key to its last over the shot; reduced motion holds the last
+	function place(t, shot) {
+		const { from, to } = moves[shot]
+		const u = still ? 1 : smootherstep(clamp01((t - starts[shot]) / shots[shot].holdS))
+		camera.position.lerpVectors(from.at, to.at, u)
+		camera.lookAt(look.lerpVectors(from.look, to.look, u))
 		for (const card of cards) card.quaternion.copy(camera.quaternion)
 	}
 
 	function frame(dt) {
 		const t = (clock.time += dt)
-		const beat = beatAt(t)
-		place(t, beat)
-		for (const { mesh, at } of shots) {
+		const shot = shotAt(t)
+		// a slate is the page's to cover
+		if (!moves[shot]) return true
+		place(t, shot)
+		for (const { mesh, at } of strikes) {
 			const k = riseFall(t - at, 0, flashes.peakS, flashes.goneS)
 			mesh.visible = k > 0
 			mesh.scale.setScalar(flashes.radius * k)
 		}
-		// each launch in its own beat only: the fleet's shots turn the globe's card away from the orbit
-		const climb = fleet.orbit - earth.radius
-		for (const { mesh, at } of launches) {
-			const u = still ? Number(t >= at) : clamp01((t - at) / trails.climbS)
-			mesh.visible = u > 0 && beat === trails.beat
-			mesh.scale.y = climb * u
-		}
-		ships.visible = beat >= fleet.beat
+		ships.visible = Boolean(shots[shot].fleet)
 		post.render(scene)
 		return true
 	}
 
-	// the beat on screen, the seconds left in it, and how far past the cut's end the clock has run
+	// the shot on screen, its card and the seconds that card has left, its slate if it is one, and how far past
+	// the cut's end the clock has run
 	function cue() {
-		const beat = beatAt(clock.time)
-		return { beat, left: starts[beat + 1] - clock.time, past: clock.time - length }
+		const shot = shotAt(clock.time)
+		const { card, slate } = shots[shot]
+		return { card, slate, cardLeft: cardEnd(card) - clock.time, past: clock.time - length }
 	}
 
 	function release() {
