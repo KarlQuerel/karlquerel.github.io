@@ -52,3 +52,10 @@ licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
 Modified: the panorama taken out of the model, colour-graded and reduced
 to the site's palette by scripts/sky/bake.mjs. Not covered by the CC0
 dedication above.
+
+Files: game/sky/milkyway.png
+
+"Deep Star Maps 2020" (starmap_2020_4k.exr), NASA/Goddard Space Flight
+Center Scientific Visualization Studio, https://svs.gsfc.nasa.gov/4851
+Public domain (NASA SVS). Modified: brightened and reduced to the site's
+palette by scripts/sky/bake.mjs (its `earth` grade).
