@@ -20,6 +20,7 @@ export const INTRO_SLATES = {
 	waterLine: 'Ash falling on a line at a water truck, under one floodlight',
 	window: 'A gloved hand wipes a frosted window: grey, nothing moves',
 	launchPad: 'A salt-flat launch pad at night, a crowd at the fence. Liftoff',
+	hermes8: 'HERMES-8 alone in orbit over the Earth, its lights on',
 }
 
 export const INTRO_SKIP_HINT = 'ANY KEY TO SKIP'
