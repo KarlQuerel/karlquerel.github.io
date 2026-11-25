@@ -4,20 +4,21 @@
 	<div class="intro" :style="introStyle" @pointerdown="leave">
 		<canvas ref="canvas" class="intro__canvas" aria-hidden="true" />
 		<BootCover :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
-		<div v-if="!booting && slate" class="intro__slate">
+		<!-- each layer keyed by name: left to Vue, they all took the number 0, and card 0 took the slate's element -->
+		<div v-if="!booting && slate && !hushed" key="slate" class="intro__slate">
 			<p class="intro__slate-line">{{ INTRO_SLATES[slate] }}</p>
 		</div>
-		<!-- a string key: the slate's v-if carries the number 0 as its own, which card 0 would match -->
+		<div v-if="whiteout" key="white" class="intro__white" />
 		<div
-			v-if="!booting && !over"
+			v-if="!booting && !over && !hushed"
 			:key="`card${card}`"
 			class="intro__card"
 			:class="{ 'intro__card--out': fading }"
 		>
 			<TypedReadout :line="{ ...INTRO_CARDS[card], ...INTRO.type }" start />
 		</div>
-		<p v-if="!booting" class="intro__skip">{{ INTRO_SKIP_HINT }}</p>
-		<div v-if="over" class="intro__black" />
+		<p v-if="!booting" key="skip" class="intro__skip">{{ INTRO_SKIP_HINT }}</p>
+		<div v-if="over || hushed" key="black" class="intro__black" />
 	</div>
 </template>
 
@@ -34,12 +35,16 @@
 	import { INTRO_END } from '@/constants/game/scenes'
 	import { INTRO_CARDS, INTRO_SKIP_HINT, INTRO_SLATES } from '@/data/gameIntro'
 
-	const introStyle = { '--fade-s': `${INTRO.fadeS}s` }
+	const { cuts } = INTRO
+	const introStyle = { '--fade-s': `${INTRO.fadeS}s`, '--flash-s': `${cuts.flash.s}s` }
 	const canvas = ref(null)
 	const card = ref(0)
 	const slate = ref(null)
 	const fading = ref(false)
 	const over = ref(false)
+	// a shot coming in out of white, or held black with its card waiting
+	const whiteout = ref(false)
+	const hushed = ref(false)
 	const intro = createIntroCinematic()
 
 	const router = useRouter()
@@ -63,6 +68,8 @@
 			card.value = cue.card
 			slate.value = cue.slate ?? null
 			fading.value = cue.cardLeft < INTRO.fadeS
+			whiteout.value = cue.cut === 'flash' && cue.into < cuts.flash.s
+			hushed.value = cue.cut === 'black' && cue.into < cuts.black.s
 			over.value = cue.past > 0
 			if (cue.past > INTRO.blackS) leave()
 			return drew
@@ -75,6 +82,7 @@
 </script>
 
 <style scoped lang="scss">
+	@use 'palette:' as palette;
 	@use '@/styles/flyby' as *;
 
 	.intro {
@@ -131,10 +139,28 @@
 	}
 
 	.intro__slate,
+	.intro__white,
 	.intro__black {
 		position: fixed;
 		inset: 0;
 		background: $black;
+	}
+
+	// the bomb's light carried over the cut, going out in steps; reduced motion makes it a plain cut
+	.intro__white {
+		background: palette.$star;
+		pointer-events: none;
+		animation: whiteout var(--flash-s) steps(4, end) forwards;
+
+		@media (prefers-reduced-motion: reduce) {
+			display: none;
+		}
+	}
+
+	@keyframes whiteout {
+		to {
+			opacity: 0;
+		}
 	}
 
 	// a shot still to build, named mid-frame in the terminal's voice, clear of the card below
