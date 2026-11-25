@@ -7,6 +7,7 @@
 			<a v-for="{ param, label } in GAME_SCENES" :key="param" :href="`?${param}`">
 				{{ label }}
 			</a>
+			<a :href="`?${BOOT_PREVIEW.param}`">{{ BOOT_PREVIEW.label }}</a>
 			<RouterLink :to="SCENE_MENU.holding.to">{{ SCENE_MENU.holding.label }}</RouterLink>
 		</nav>
 	</details>
@@ -14,6 +15,7 @@
 
 <script setup>
 	import { RouterLink, useRoute } from 'vue-router'
+	import { BOOT_PREVIEW } from '@/constants/game/bootPreview'
 	import { GAME_SCENES, SCENE_MENU } from '@/constants/game/scenes'
 
 	const route = useRoute()
