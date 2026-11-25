@@ -7,11 +7,14 @@
 		aria-label="Loading"
 		@transitionend="finish"
 	>
-		<div class="boot__stage">
-			<div class="boot__glow" :style="glowStyle" aria-hidden="true" />
-			<BootMark :fill="display" :full="full" />
-		</div>
-		<p class="boot__pct" aria-hidden="true">{{ pct }}%</p>
+		<!-- the site's K by default; a host can draw its own face on the same clock (GameBoot) -->
+		<slot :fill="display">
+			<div class="boot__stage">
+				<div class="boot__glow" :style="glowStyle" aria-hidden="true" />
+				<BootMark :fill="display" :full="full" />
+			</div>
+			<p class="boot__pct" aria-hidden="true">{{ pct }}%</p>
+		</slot>
 	</div>
 </template>
 
