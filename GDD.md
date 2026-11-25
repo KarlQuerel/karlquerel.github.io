@@ -82,19 +82,25 @@ Five aboard HERMES-8, one team, each in their own role suit.
 
 1. ✅ Title screen: HERMES-8 over the Earth from orbit (kept from the 2D intro, 2026-11-18)
 2. ✅ Intro cinematic, in three.js and the game's pixel look: the water war and why Earth can't keep us. The title's
-   Earth and Moon carry into it as one continuous picture. 🟡 One shot on the Earth, a text card per beat (2026-11-25):
+   Earth and Moon carry into it as one continuous picture. ✅ Orbit and ground intercut, a cut every few seconds,
+   something close to the lens in every shot (2026-11-25; replaces one long shot on the Earth, which felt empty).
+   🟡 The shots, a text card each, a card held across its shots:
 
-   | Card | Picture |
-   |---|---|
-   | 2137. | From the title frame, the camera pushes past HERMES-8 toward the Earth |
-   | The water war went nuclear. | Single-cell flashes bloom on the night side |
-   | Famine and nuclear winter followed. | The seas pull back from the coasts, smoke spreads, city lights go out |
-   | Earth can no longer keep us. | Hold on the dead Earth, in silence |
-   | The survivors made peace, and spent what was left on leaving. | A few launch trails climb to orbit |
-   | The Hermes Project: ten ships, ten worlds that might keep us. | Pull back: ten ships strung along an orbit |
-   | ❓ Last card ("You fly HERMES-8." is a stand-in) | Back on the title frame, cut to black, Hermes wakes you in cabin 4 |
+   | Card | Where | Shot |
+   |---|---|---|
+   | 2137. | Orbit | The title frame; the camera drifts through dead satellites and war debris, close past the lens |
+   | The water war went nuclear. | Ground | A dry reservoir at dusk: cracked bed, a stranded boat, the two sides' searchlights on the dam; the horizon flashes white, dust rolls in |
+   | | Orbit | Flashes bloom on the night side |
+   | Famine and nuclear winter followed. | Ground | Ash falls like snow on a line at a water truck, silhouettes under one floodlight |
+   | | Orbit | The seas pull back, smoke spreads, city lights go out |
+   | Earth can no longer keep us. | Inside | A frosted shelter window; a gloved hand wipes it: grey, nothing moves (rhymes with the pod's frost at the wake) |
+   | The survivors made peace, and spent what was left on leaving. | Ground | A salt-flat launch pad at night, a crowd behind a fence; liftoff, the camera tilts up with the column of light |
+   | The Hermes Project: ten ships, ten worlds that might keep us. | Orbit | The shipyard: ten ships in scaffolds, numbers on the hulls, tugs and weld sparks; a dolly down the line as HERMES-7 pulls out |
+   | ❓ Last card ("You fly HERMES-8." is a stand-in) | Orbit | Stop on 8, the five suits at the airlock window, cut to black, Hermes: "Good morning." |
 
-   🟡 Earth's radio scraps under the cards, no narrator: the same broadcasts become the clock after the wake
+   - 🟡 The war through light (flashes, searchlights, ash), never gore; people as silhouettes against one light
+   - 🟡 About a minute, still skippable
+   - 🟡 Earth's radio scraps under the cards, no narrator: the same broadcasts become the clock after the wake
 3. ✅ Departure day, aboard HERMES-8 in Earth orbit: you wake in your bed in your own cabin (cabin 4), meet the crew,
    see Earth from the ship, prepare for the journey, enter your cryo pod. The safe tutorial
 4. ✅ The wake: you went under in Earth orbit and wake in orbit of the alien world (2026-11-23). The ship is barely
@@ -191,8 +197,10 @@ Built and played in the old 2D engine; kept here so nothing is lost. Look back a
 ## Backlog (not design)
 
 - [ ] Decide the spine
-- [ ] Intro cinematic in three.js, four sessions: animatic; the Earth on the GPU and dying; the ships (on the
-      home computer, which has the ship GLBs); the hand-offs and the radio
+- [ ] Intro cinematic in three.js, about eight sessions, each shot replacing its slate in the animatic
+      (`/game?intro`, done 2026-11-25): the frost window; the shipyard and the ships (on the home computer, which has
+      the ship GLBs); the Earth on the GPU and dying; the launch pad; the dam; the water-truck line; the hand-offs
+      and the radio
 - [ ] The wake and Act I in three.js
 - [ ] Put the Zvezda credit on the site
 - [ ] Hermes's final voice, Elena's voice
