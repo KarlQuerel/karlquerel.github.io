@@ -24,3 +24,36 @@ export const INTRO_SLATES = {
 }
 
 export const INTRO_SKIP_HINT = 'ANY KEY TO SKIP'
+
+// The game's loader (GameBoot): HERMES-8 running its checks, each [system, reading] filled in as its share of
+// the boot lands, by the screen that is loading; then the sync bar.
+export const GAME_BOOT = {
+	head: 'HERMES-8 // SHIP SYSTEMS',
+	sync: 'SYNC',
+	checks: {
+		title: [
+			['CORE', 'ONLINE'],
+			['MEMORY', '4.71 PB'],
+			['CRYO BAY', '5 PODS'],
+			['HULL', '97.3%'],
+		],
+		intro: [
+			['EARTH ARCHIVE', 'OPEN'],
+			['RECORDS', '41,862'],
+			['WAR FOOTAGE', '3,419 H'],
+			['SIGNAL', 'CLEAN'],
+		],
+		ship: [
+			['DECK 2', 'PRESSURISED'],
+			['CREW', '5 OF 5'],
+			['CABIN 4', 'OCCUPIED'],
+			['DEPARTURE', 'T-06:41:09'],
+		],
+		pilot: [
+			['STATION', 'DOCKED'],
+			['CORRIDOR', 'LIT'],
+			['CREW', 'ON DUTY'],
+			['AIR', '20.9% O2'],
+		],
+	},
+}
