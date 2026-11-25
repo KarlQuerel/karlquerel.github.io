@@ -1,18 +1,16 @@
 // The intro cinematic (constants/game/intro.js), cut shot by shot; the page types the cards and covers a slate. The
-// orbit's shots are built: the title's globe and Moon on cards facing the camera, flashes on the night side, the
-// fleet as blocks. The ground's shots are still slates.
+// orbit's shots are built: the title's globe and Moon on cards facing the camera, flashes on the night side, one
+// launch climbing off the limb. The rest are still slates.
 
 import {
+	CylinderGeometry,
 	DataTexture,
-	DirectionalLight,
 	EquirectangularReflectionMapping,
 	Group,
-	HemisphereLight,
 	LinearFilter,
 	LinearMipmapLinearFilter,
 	Mesh,
 	MeshBasicMaterial,
-	MeshStandardMaterial,
 	NearestFilter,
 	PerspectiveCamera,
 	PlaneGeometry,
@@ -31,10 +29,9 @@ import { PALETTE, paletteHex } from '../../constants/palette.js'
 import { PLANET } from '../../constants/planet.js'
 import HoldingWorker from '../holding.worker.js?worker'
 import { clamp01, riseFall, smootherstep } from '../math.js'
-import { box } from './parts.js'
 import { createPixelPost } from './pixelPost.js'
 
-const { earth, moon, shots, flashes, fleet, light } = INTRO
+const { earth, moon, shots, flashes, launch } = INTRO
 const DEG = Math.PI / 180
 const even = v => 2 * Math.ceil(v / 2)
 const vec = ([x, y, z]) => new Vector3(x, y, z)
@@ -115,30 +112,26 @@ function addFlashes(card) {
 	return out
 }
 
-// the fleet on its arc in front of the globe, each block along its orbit, ours with its lamp
-function buildFleet() {
-	const group = new Group()
-	const hull = new MeshStandardMaterial({
-		color: paletteHex(fleet.hull.color),
-		roughness: fleet.hull.roughness,
-	})
-	const lamp = new Mesh(
-		new SphereGeometry(fleet.lamp.radius, 8, 6),
-		new MeshBasicMaterial({ color: paletteHex(fleet.lamp.color) })
+// the launch's light on the globe's card, in the shot that has it, its trail standing on the limb at its bearing
+function addLaunch(card) {
+	const shot = shots.findIndex(s => s.launch)
+	const bearing = launch.bearingDeg * DEG
+	const material = new MeshBasicMaterial({ color: paletteHex(launch.color) })
+	const mesh = new Mesh(new SphereGeometry(1, 8, 6), material)
+	mesh.scale.setScalar(launch.radius)
+	const trail = new Mesh(
+		new CylinderGeometry(launch.trail, launch.trail, 1, 6).translate(0, 0.5, 0),
+		material
 	)
-	lamp.position.x = fleet.half[0]
-	for (let i = 0; i < fleet.count; i++) {
-		const bearing = (fleet.firstDeg + i * fleet.stepDeg) * DEG
-		const at = new Vector3(Math.cos(bearing), Math.sin(bearing), 0)
-			.multiplyScalar(fleet.orbit)
-			.setZ(fleet.z)
-		const ship = box(at, fleet.half, hull)
-		ship.rotation.z = bearing + Math.PI / 2
-		if (i === fleet.ours) ship.add(lamp)
-		group.add(ship)
-	}
-	group.visible = false
-	return group
+	trail.position
+		.set(Math.cos(bearing), Math.sin(bearing), 0)
+		.multiplyScalar(earth.radius * launch.from)
+	trail.rotation.z = bearing - Math.PI / 2
+	const light = new Group()
+	light.add(mesh, trail)
+	light.visible = false
+	card.add(light)
+	return { light, mesh, trail, bearing, shot, at: starts[shot] + launch.leadS }
 }
 
 export function createIntroCinematic() {
@@ -152,7 +145,7 @@ export function createIntroCinematic() {
 	let sky = null
 	let cards = []
 	let strikes = []
-	let ships = null
+	let climb = null
 
 	async function build(gl, step) {
 		renderer = new WebGLRenderer({ canvas: gl.canvas, context: gl, antialias: false })
@@ -180,18 +173,9 @@ export function createIntroCinematic() {
 		lunar.position.set(...moon.at)
 		cards = [globe, lunar]
 		strikes = still ? [] : addFlashes(globe)
-		ships = buildFleet()
-		const sun = new DirectionalLight(paletteHex(light.sun.color), light.sun.intensity)
-		sun.position.copy(SUN)
-		const { sky: above, ground, intensity } = light.fill
+		climb = addLaunch(globe)
 		scene.clear()
-		scene.add(
-			globe,
-			lunar,
-			ships,
-			sun,
-			new HemisphereLight(paletteHex(above), paletteHex(ground), intensity)
-		)
+		scene.add(globe, lunar)
 		// the sky behind: the pass draws it only where nothing stands
 		scene.background = sky
 		await step('art')
@@ -225,7 +209,13 @@ export function createIntroCinematic() {
 			mesh.visible = k > 0
 			mesh.scale.setScalar(flashes.radius * k)
 		}
-		ships.visible = Boolean(shots[shot].fleet)
+		// the launch speeds up as it climbs; reduced motion shows it where it ends
+		const u = still ? 1 : clamp01((t - climb.at) / launch.climbS) ** 2
+		const climbed = earth.radius * (launch.to - launch.from) * u
+		const r = earth.radius * launch.from + climbed
+		climb.light.visible = shot === climb.shot && t >= climb.at
+		climb.mesh.position.set(Math.cos(climb.bearing) * r, Math.sin(climb.bearing) * r, 0)
+		climb.trail.scale.y = Math.max(climbed, launch.trail)
 		post.render(scene)
 		return true
 	}
