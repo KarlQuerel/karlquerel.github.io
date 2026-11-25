@@ -1,16 +1,20 @@
 <template>
-	<!-- The intro cinematic: one three.js shot on the Earth with a typed card a beat over it, then black and the
-	     ship. Any key or a click skips it. -->
+	<!-- The intro cinematic: three.js shots cut together, a typed card held over each run of them, then black and
+	     the ship. A shot still to build is a slate on black. Any key or a click skips it. -->
 	<div class="intro" :style="introStyle" @pointerdown="leave">
 		<canvas ref="canvas" class="intro__canvas" aria-hidden="true" />
 		<BootCover :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
+		<div v-if="!booting && slate" class="intro__slate">
+			<p class="intro__slate-line">{{ INTRO_SLATES[slate] }}</p>
+		</div>
+		<!-- a string key: the slate's v-if carries the number 0 as its own, which card 0 would match -->
 		<div
 			v-if="!booting && !over"
-			:key="beat"
+			:key="`card${card}`"
 			class="intro__card"
 			:class="{ 'intro__card--out': fading }"
 		>
-			<TypedReadout :line="{ ...INTRO_CARDS[beat], ...INTRO.type }" start />
+			<TypedReadout :line="{ ...INTRO_CARDS[card], ...INTRO.type }" start />
 		</div>
 		<p v-if="!booting" class="intro__skip">{{ INTRO_SKIP_HINT }}</p>
 		<div v-if="over" class="intro__black" />
@@ -28,11 +32,12 @@
 	import { INTRO } from '@/constants/game/intro'
 	import { PILOT } from '@/constants/game/pilot'
 	import { INTRO_END } from '@/constants/game/scenes'
-	import { INTRO_CARDS, INTRO_SKIP_HINT } from '@/data/gameIntro'
+	import { INTRO_CARDS, INTRO_SKIP_HINT, INTRO_SLATES } from '@/data/gameIntro'
 
 	const introStyle = { '--fade-s': `${INTRO.fadeS}s` }
 	const canvas = ref(null)
-	const beat = ref(0)
+	const card = ref(0)
+	const slate = ref(null)
 	const fading = ref(false)
 	const over = ref(false)
 	const intro = createIntroCinematic()
@@ -55,8 +60,9 @@
 		frame(dt) {
 			const drew = intro.frame(dt)
 			const cue = intro.cue()
-			beat.value = cue.beat
-			fading.value = cue.left < INTRO.fadeS
+			card.value = cue.card
+			slate.value = cue.slate ?? null
+			fading.value = cue.cardLeft < INTRO.fadeS
 			over.value = cue.past > 0
 			if (cue.past > INTRO.blackS) leave()
 			return drew
@@ -124,9 +130,28 @@
 		@include flyby-shadow;
 	}
 
+	.intro__slate,
 	.intro__black {
 		position: fixed;
 		inset: 0;
 		background: $black;
+	}
+
+	// a shot still to build, named mid-frame in the terminal's voice, clear of the card below
+	.intro__slate {
+		display: grid;
+		place-items: center;
+		pointer-events: none;
+	}
+
+	.intro__slate-line {
+		max-width: min(70vw, 40rem);
+		margin: 0;
+		font-family: $font-terminal;
+		font-size: $type-prose-sm;
+		letter-spacing: 0.08em;
+		text-align: center;
+		text-transform: uppercase;
+		color: $light-gray;
 	}
 </style>
