@@ -100,6 +100,9 @@ Five aboard HERMES-8, one team, each in their own role suit.
 
    - 🟡 The war through light (flashes, searchlights, ash), never gore; people as silhouettes against one light
    - 🟡 About a minute, still skippable
+   - 🟡 Hard cuts, a transition only where the picture carries it (2026-11-25): out of white from the dam's flash
+     (built), a dither dissolve into the ash, the grey globe matched to the round frosted window, a black beat
+     after "keep us." (built), the launch's light followed up into orbit. No iris or slide wipes
    - 🟡 Earth's radio scraps under the cards, no narrator: the same broadcasts become the clock after the wake
 3. ✅ Departure day, aboard HERMES-8 in Earth orbit: you wake in your bed in your own cabin (cabin 4), meet the crew,
    see Earth from the ship, prepare for the journey, enter your cryo pod. The safe tutorial
@@ -179,9 +182,9 @@ Built and played in the old 2D engine; kept here so nothing is lost. Look back a
 - ✅ Modern sci-fi, minimal premium product design: no greebles, chrome reads cartoonish
 - ✅ One crew helmet for everyone, in the suits' slate and oxblood; each role's colour on the suit panels and the
   visor (medic cream, scientist rime, engineer brass, captain oxblood)
-- ✅ The baked darker nebula is the alien world's sky, not Earth's (2026-11-25). ❓ Earth orbit's sky (the intro and
-  departure day; the ship lab and the intro use the nebula for now). 💭 The real Milky Way, so the sky itself tells
-  the player how far they went when the nebula replaces it at the wake
+- ✅ The baked darker nebula is the alien world's sky, not Earth's (2026-11-25). 🟡 Earth orbit's sky is the real
+  Milky Way (NASA's star map, baked 2026-11-25), so the sky itself tells the player how far they went when the
+  nebula replaces it at the wake. The intro has it; the ship lab (departure day) still has the nebula
 - ✅ Intro skippable, safe under reduced motion
 - Tone: loneliness, not splatter
 - ✅ No rounded numbers for dates or durations: they read like real records (2026-11-23)
