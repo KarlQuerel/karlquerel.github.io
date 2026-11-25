@@ -10,13 +10,15 @@ import { join } from 'node:path'
 import { PALETTE } from '../../src/constants/palette.js'
 
 const SIZE = [2048, 1024]
-// Each sky's grade: its light scaled by `exposure` (linear), the cyan's saturation by `cyan`, the hues moved
-// along `hues` ([from, to] degrees), and the brightest, palest cores warmed by `gold` toward ember's glow.
+// Each sky's grade: its light scaled by `exposure` (linear), every colour's saturation by `saturation` and the
+// cyan's again by `cyan`, the hues moved along `hues` ([from, to] degrees), and the brightest, palest cores
+// warmed by `gold` toward ember's glow.
 const GRADES = {
 	// the alien world's nebula: green into the cyan, the blue dust toward violet, violet toward magenta, warm
 	// stars kept
 	nebula: {
 		exposure: 1.3,
+		saturation: 1,
 		cyan: 0.6,
 		gold: 0.75,
 		hues: [
@@ -30,9 +32,11 @@ const GRADES = {
 			[360, 360],
 		],
 	},
-	// Earth's own sky (NASA's star map): only lifted, its stars and the Milky Way left their colours
+	// Earth's own sky (NASA's star map) as orbit shows it: mostly black, the Milky Way a pale hint, the stars
+	// near white
 	earth: {
-		exposure: 4,
+		exposure: 1,
+		saturation: 0.25,
 		cyan: 1,
 		gold: 0,
 		hues: [
@@ -97,6 +101,7 @@ function grade(pixels) {
 			Math.min(1, toSrgb(toLinear[pixels[o + i]] * GRADE.exposure))
 		)
 		let [h, s, v] = hsv(lit)
+		s *= GRADE.saturation
 		// the cyan family, fading out 35 degrees either side
 		s *= 1 + (GRADE.cyan - 1) * Math.max(0, 1 - Math.abs(h - 185) / 35)
 		h = along(GRADE.hues, h)
