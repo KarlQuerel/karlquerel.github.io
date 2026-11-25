@@ -2,7 +2,7 @@
 	<!-- The game's loader on the site's boot clock (BootCover), the site keeping its K: HERMES-8 running the checks
 	     of the screen that is loading, each line up once its share of the boot starts and read once it lands, the
 	     sync bar under them. -->
-	<BootCover :progress="progress" :ceiling="ceiling" :done="done">
+	<BootCover :progress="progress" :ceiling="ceiling" :done="done" @gone="emit('gone')">
 		<template #default="{ fill }">
 			<div class="checks" :style="checksStyle" aria-hidden="true">
 				<div class="checks__head">{{ GAME_BOOT.head }}</div>
@@ -48,6 +48,9 @@
 		// whose checks run: a key of GAME_BOOT.checks
 		screen: { type: String, required: true },
 	})
+
+	// the cover has faded out and drawn its last
+	const emit = defineEmits(['gone'])
 
 	const rows = computed(() => GAME_BOOT.checks[props.screen])
 	const checksStyle = { '--blink-s': `${GAME_BOOT_LOOK.blinkS}s` }
