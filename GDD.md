@@ -95,8 +95,11 @@ Five aboard HERMES-8, one team, each in their own role suit.
    | | Orbit | The seas pull back, smoke spreads, city lights go out |
    | Earth can no longer keep us. | Inside | A frosted shelter window; a gloved hand wipes it: grey, nothing moves (rhymes with the pod's frost at the wake) |
    | The survivors made peace, and spent what was left on leaving. | Ground | A salt-flat launch pad at night, a crowd behind a fence; liftoff, the camera tilts up with the column of light |
-   | The Hermes Project: ten ships, ten worlds that might keep us. | Orbit | The shipyard: ten ships in scaffolds, numbers on the hulls, tugs and weld sparks; a dolly down the line as HERMES-7 pulls out |
-   | ❓ Last card ("You fly HERMES-8." is a stand-in) | Orbit | Stop on 8, the five suits at the airlock window, cut to black, Hermes: "Good morning." |
+   | The Hermes Project: ten ships, ten worlds that might keep us. | Orbit | The light followed up from the pad climbs off the limb into orbit |
+   | ❓ Last card ("You fly HERMES-8." is a stand-in) | Orbit | HERMES-8 alone over the Earth, its lights on, the five suits at the airlock window; cut to black, Hermes: "Good morning." |
+
+   - ✅ No fleet of ten in orbit, no shipyard line: it read wrong. The ten live in the card's words only, the picture
+     ends on HERMES-8 alone (2026-11-25)
 
    - 🟡 The war through light (flashes, searchlights, ash), never gore; people as silhouettes against one light
    - 🟡 About a minute, still skippable
@@ -183,8 +186,9 @@ Built and played in the old 2D engine; kept here so nothing is lost. Look back a
 - ✅ One crew helmet for everyone, in the suits' slate and oxblood; each role's colour on the suit panels and the
   visor (medic cream, scientist rime, engineer brass, captain oxblood)
 - ✅ The baked darker nebula is the alien world's sky, not Earth's (2026-11-25). 🟡 Earth orbit's sky is the real
-  Milky Way (NASA's star map, baked 2026-11-25), so the sky itself tells the player how far they went when the
-  nebula replaces it at the wake. The intro has it; the ship lab (departure day) still has the nebula
+  Milky Way (NASA's star map, baked 2026-11-25), dark as orbit photos show it: mostly black, the Milky Way a faint
+  band, pale stars. The sky itself tells the player how far they went when the nebula replaces it at the wake.
+  The intro has it; the ship lab (departure day) still has the nebula
 - ✅ Intro skippable, safe under reduced motion
 - Tone: loneliness, not splatter
 - ✅ No rounded numbers for dates or durations: they read like real records (2026-11-23)
@@ -193,7 +197,7 @@ Built and played in the old 2D engine; kept here so nothing is lost. Look back a
 ## Production notes
 
 - Credits that must ship with the game: the Zvezda ship (Ilya Shevchuk, CC BY 4.0, modified), the crew helmet
-  (Ethanmr2, CC BY 4.0), the nebula (in public/assets/CREDITS.txt), the Chakra Petch font (OFL). The ship and its
+  (Ethanmr2, CC BY 4.0), the nebula and NASA's star map (in public/assets/CREDITS.txt), the Chakra Petch font (OFL). The ship and its
   credit are local only until the credit is on the site
 - Characters and motions from Mixamo (fine in a game; raw files never redistributed)
 - Voices from the ElevenLabs free plan are personal use: a paid plan is needed if the game is ever sold
@@ -203,9 +207,9 @@ Built and played in the old 2D engine; kept here so nothing is lost. Look back a
 
 - [ ] Decide the spine
 - [ ] Intro cinematic in three.js, about eight sessions, each shot replacing its slate in the animatic
-      (`/game?intro`, done 2026-11-25): the frost window; the shipyard and the ships (on the home computer, which has
-      the ship GLBs); the Earth on the GPU and dying; the launch pad; the dam; the water-truck line; the hand-offs
-      and the radio
+      (`/game?intro`, done 2026-11-25): the frost window; HERMES-8 alone in orbit (on the home computer, which has
+      the ship GLBs); the Earth in 3D and dying; the launch pad; the dam; the water-truck line; the hand-offs and
+      the radio
 - [ ] The wake and Act I in three.js
 - [ ] Put the Zvezda credit on the site
 - [ ] Hermes's final voice, Elena's voice
