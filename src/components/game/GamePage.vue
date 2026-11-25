@@ -2,7 +2,8 @@
 	<!-- The game: the title screen, or a three.js scene by its param. Dev server only: a build redirects, and the
 	     async imports below are what keep every scene out of the bundle until GAME_SHIPPED. -->
 	<div class="content">
-		<component :is="GameIntro" v-if="scene === INTRO_SCENE" />
+		<component :is="GameBootPreview" v-if="previewing" />
+		<component :is="GameIntro" v-else-if="scene === INTRO_SCENE" />
 		<component :is="GamePilot" v-else-if="scene" :key="scene" :scene="scene" />
 		<component :is="GameTitle" v-else-if="GameTitle" />
 		<HomeChip />
@@ -14,6 +15,7 @@
 	import { computed, defineAsyncComponent } from 'vue'
 	import { useRoute } from 'vue-router'
 	import HomeChip from '../HomeChip.vue'
+	import { BOOT_PREVIEW } from '@/constants/game/bootPreview'
 	import { GAME_SCENES, INTRO_SCENE } from '@/constants/game/scenes'
 
 	// folds to false in a production build, so the imports (and everything under them) are dropped
@@ -25,8 +27,12 @@
 	const GameScenes = import.meta.env.DEV
 		? defineAsyncComponent(() => import('./GameScenes.vue'))
 		: null
+	const GameBootPreview = import.meta.env.DEV
+		? defineAsyncComponent(() => import('./GameBootPreview.vue'))
+		: null
 
 	const route = useRoute()
+	const previewing = computed(() => GameBootPreview && BOOT_PREVIEW.param in route.query)
 	const scene = computed(
 		() => GamePilot && GAME_SCENES.find(({ param }) => param in route.query)?.param
 	)
