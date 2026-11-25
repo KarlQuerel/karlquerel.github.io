@@ -1,7 +1,7 @@
-// Bake the open world's sky: a 2:1 equirectangular panorama (or the first image in a .glb, as Sketchfab
-// ships a skybox) graded and reduced to PALETTE, one texel to about an art cell at 1440p, no dither, so the
-// pixel pass can draw it per cell as it is. Needs ImageMagick (convert).
-// usage: node scripts/sky/bake.mjs <panorama.png|skybox.glb> [out.png]
+// Bake a sky: a 2:1 equirectangular panorama (or the first image in a .glb, as Sketchfab ships a skybox)
+// graded and reduced to PALETTE, one texel to about an art cell at 1440p, no dither, so the pixel pass can
+// draw it per cell as it is. Needs ImageMagick (convert), with OpenEXR for an .exr.
+// usage: node scripts/sky/bake.mjs <panorama.png|.exr|skybox.glb> [out.png] [nebula|earth]
 
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -10,28 +10,45 @@ import { join } from 'node:path'
 import { PALETTE } from '../../src/constants/palette.js'
 
 const SIZE = [2048, 1024]
-// the nebula's grade: its light scaled by `exposure` (linear), the cyan's saturation by `cyan`, the hues
-// moved along `hues` ([from, to] degrees: green into the cyan, the blue dust toward violet, violet toward
-// magenta, warm stars kept), and the brightest, palest cores warmed by `gold` toward ember's glow
-const GRADE = {
-	exposure: 1.3,
-	cyan: 0.6,
-	gold: 0.75,
-	hues: [
-		[0, 0],
-		[60, 55],
-		[120, 168],
-		[200, 186],
-		[212, 228],
-		[240, 278],
-		[300, 322],
-		[360, 360],
-	],
+// Each sky's grade: its light scaled by `exposure` (linear), the cyan's saturation by `cyan`, the hues moved
+// along `hues` ([from, to] degrees), and the brightest, palest cores warmed by `gold` toward ember's glow.
+const GRADES = {
+	// the alien world's nebula: green into the cyan, the blue dust toward violet, violet toward magenta, warm
+	// stars kept
+	nebula: {
+		exposure: 1.3,
+		cyan: 0.6,
+		gold: 0.75,
+		hues: [
+			[0, 0],
+			[60, 55],
+			[120, 168],
+			[200, 186],
+			[212, 228],
+			[240, 278],
+			[300, 322],
+			[360, 360],
+		],
+	},
+	// Earth's own sky (NASA's star map): only lifted, its stars and the Milky Way left their colours
+	earth: {
+		exposure: 4,
+		cyan: 1,
+		gold: 0,
+		hues: [
+			[0, 0],
+			[360, 360],
+		],
+	},
 }
 const GOLD = PALETTE.ember.map((c, i) => (c + PALETTE.glow[i]) / 2 / 255)
 
-const [src, out = 'public/assets/game/sky/nebula.png'] = process.argv.slice(2)
-if (!src) throw new Error('usage: node scripts/sky/bake.mjs <panorama.png|skybox.glb> [out.png]')
+const [src, out = 'public/assets/game/sky/nebula.png', name = 'nebula'] = process.argv.slice(2)
+const GRADE = GRADES[name]
+if (!src || !GRADE)
+	throw new Error(
+		'usage: node scripts/sky/bake.mjs <panorama|skybox.glb> [out.png] [nebula|earth]'
+	)
 
 // a .glb's first image: its JSON chunk names the buffer view, the binary chunk holds the bytes
 function glbImage(file) {
@@ -100,7 +117,12 @@ try {
 	execFileSync('convert', ['-size', '1x1', ...swatches, '+append', palette])
 	const size = SIZE.join('x')
 	const raw = { maxBuffer: SIZE[0] * SIZE[1] * 4 }
-	const pixels = execFileSync('convert', [source, '-resize', `${size}!`, 'rgb:-'], raw)
+	// an .exr is linear light in half floats: brought to 8-bit sRGB like any other source for the grade
+	const pixels = execFileSync(
+		'convert',
+		[source, '-colorspace', 'sRGB', '-resize', `${size}!`, '-depth', '8', 'rgb:-'],
+		raw
+	)
 	execFileSync(
 		'convert',
 		['-size', size, '-depth', '8', 'rgb:-', '-dither', 'None', '-remap', palette, out],
