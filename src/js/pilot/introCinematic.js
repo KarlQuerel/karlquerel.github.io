@@ -230,12 +230,20 @@ export function createIntroCinematic() {
 		return true
 	}
 
-	// the shot on screen, its card and the seconds that card has left, its slate if it is one, and how far past
-	// the cut's end the clock has run
+	// the shot on screen: its card and the seconds that card has left, its slate if it is one, how it came in and
+	// how long ago, and how far past the cut's end the clock has run
 	function cue() {
-		const shot = shotAt(clock.time)
-		const { card, slate } = shots[shot]
-		return { card, slate, cardLeft: cardEnd(card) - clock.time, past: clock.time - length }
+		const t = clock.time
+		const shot = shotAt(t)
+		const { card, slate, cut } = shots[shot]
+		return {
+			card,
+			slate,
+			cut,
+			into: t - starts[shot],
+			cardLeft: cardEnd(card) - t,
+			past: t - length,
+		}
 	}
 
 	function release() {
