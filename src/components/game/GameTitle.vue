@@ -3,7 +3,7 @@
 	     name, then the game goes aboard HERMES-8. -->
 	<div class="title" :class="{ 'title--flat': !supported }">
 		<canvas ref="canvas" class="title__canvas" aria-hidden="true" />
-		<BootCover :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
+		<GameBoot :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" screen="title" />
 		<IntroTitle :up="up" @done="aboard" />
 	</div>
 </template>
@@ -12,7 +12,7 @@
 	import { ref } from 'vue'
 	import { useRouter } from 'vue-router'
 	import { useTitleScreen } from '@/composables/useTitleScreen'
-	import BootCover from '@/components/BootCover.vue'
+	import GameBoot from './GameBoot.vue'
 	import IntroTitle from './IntroTitle.vue'
 	import { GAME_START } from '@/constants/game/scenes'
 
