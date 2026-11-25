@@ -3,7 +3,7 @@
 	     the ship. A shot still to build is a slate on black. Any key or a click skips it. -->
 	<div class="intro" :style="introStyle" @pointerdown="leave">
 		<canvas ref="canvas" class="intro__canvas" aria-hidden="true" />
-		<BootCover :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
+		<GameBoot :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" screen="intro" />
 		<!-- each layer keyed by name: left to Vue, they all took the number 0, and card 0 took the slate's element -->
 		<div v-if="!booting && slate && !hushed" key="slate" class="intro__slate">
 			<p class="intro__slate-line">{{ INTRO_SLATES[slate] }}</p>
@@ -27,7 +27,7 @@
 	import { useRouter } from 'vue-router'
 	import { useArtCanvas } from '@/composables/useArtCanvas'
 	import { useWindowListener } from '@/composables/useWindowListener'
-	import BootCover from '@/components/BootCover.vue'
+	import GameBoot from './GameBoot.vue'
 	import TypedReadout from './TypedReadout.vue'
 	import { createIntroCinematic } from '@/js/pilot/introCinematic'
 	import { INTRO } from '@/constants/game/intro'
