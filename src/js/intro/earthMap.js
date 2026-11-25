@@ -26,6 +26,8 @@ const RAMP_NAMES = ['sea', 'shore', 'salt', 'ground', 'highland', 'dune', 'smoke
 // what burns: the side a front has crossed, and the front itself
 const BURNED = 1
 const FRONT = 2
+// a lit city's tone by its class, brightest first
+const CITY_TONES = ['glow', 'ember', 'amber']
 
 // a unit vector for a place: x out of the Greenwich meridian, y north, z out of 90°E
 const toVec = (lat, lon) => [
@@ -265,7 +267,7 @@ function paintCities(d, cells, M, win, { lx, ly, lz }, radius, center, basis, ha
 			const f = c.fine
 			const hit = hash3(Math.floor(p[0] * f), Math.floor(p[1] * f), Math.floor(p[2] * f))
 			if (hit > odds) continue
-			put(d, j * 4, hit < odds * 0.12 ? 'glow' : hit < odds * 0.45 ? 'ember' : 'amber')
+			put(d, j * 4, CITY_TONES[hit < odds * 0.12 ? 0 : hit < odds * 0.45 ? 1 : 2])
 		}
 	}
 }
@@ -295,6 +297,106 @@ function paintAir(d, i, x, y, dx, dy, d2, radius, { lx, ly }, A) {
 	// the last band thins out over its whole width
 	if (band === A.bands.length - 1 && into > ditherThreshold(x, y)) return
 	put(d, i, A.bands[Math.min(band, A.bands.length - 1)][0])
+}
+
+// The globe as a world map for a sphere that turns and lights itself (the intro's, js/pilot/introEarth.js):
+// the fields its shader finishes, so the seas, the smoke and the cities can still move. Each texel, row 0 at
+// the north pole and column 0 at 180°W: R what the land is (GROUND, HIGHLAND, DUNE), 0 where the sea was;
+// G the land's burn, or the sea's frayed distance to the old coast in `seaPerDeg` steps; B the night's
+// lights, a fire's class in bits 0-1, a city's in bits 2-3, its turn to go dark in bits 4-7; A the smoke
+// field before its cover, over `smokeSpan`. Classes count from 1, as N.fire and the city tones run.
+export const EARTH_SURFACE = {
+	seaPerDeg: 8,
+	smokeSpan: 1.5,
+	cityTones: CITY_TONES,
+	rampNames: RAMP_NAMES,
+	SEA,
+	SHORE,
+	SALT,
+	GROUND,
+	HIGHLAND,
+	DUNE,
+	SMOKE,
+	BURNED,
+	FRONT,
+}
+
+export function paintEarthSurface(cols, rows, M = EARTH_MAP) {
+	const d = new Uint8Array(cols * rows * 4)
+	const { fbm } = createPlanetShader({ res: 2, seed: M.seed })
+	const { hash3 } = planetWorld(M.seed + 1)
+	const built = createPlanetShader({ res: 2, seed: M.seed + 2 })
+	const { coast: C, drying: D, fires: F } = M
+	const c = M.night.cities
+	const f = c.fine
+	const S = EARTH_SURFACE
+	const at = j => {
+		const lat = 90 - ((Math.floor(j / cols) + 0.5) * 180) / rows
+		const lon = -180 + (((j % cols) + 0.5) * 360) / cols
+		return { lat, lon, p: toVec(lat, lon) }
+	}
+	const seaByte = ({ lat, lon, p }) => {
+		const s = D.frayScale
+		const sea = seaAt(lat, lon) + D.fray * (fbm(p[0] * s + 13, p[1] * s, p[2] * s, 2) - 0.47)
+		return Math.round(clamp(sea * S.seaPerDeg, 0, 255))
+	}
+	const burnAt = ({ lat, lon, p }) => {
+		const burning = regions(F.regions, lat, lon)
+		if (burning <= 0) return 0
+		const n = fbm(p[0] * F.scale + 11, p[1] * F.scale, p[2] * F.scale, 2) - 0.5
+		return Math.abs(n) < F.width * (0.5 + burning) ? FRONT : n < 0 ? BURNED : 0
+	}
+
+	// what each texel is, tidied so a coast keeps no lone texel
+	const cells = new Uint32Array(cols * rows)
+	for (let j = 0; j < cells.length; j++) {
+		const { lat, lon, p } = at(j)
+		const land =
+			landAt(lat, lon) +
+			C.push * (fbm(p[0] * C.scale + 7, p[1] * C.scale, p[2] * C.scale, C.octaves) - 0.47)
+		cells[j] = land > 0.5 ? groundAt(M, fbm, lat, lon, p) : SEA
+		d[j * 4 + 3] = Math.round(
+			clamp01((smokeAt(M, fbm, p, liftAt(M, lat, lon)) + M.smoke.cover) / S.smokeSpan) * 255
+		)
+	}
+	tidySprite({ data: cells }, cols, rows, M.tidyPasses)
+
+	for (let j = 0; j < cells.length; j++) {
+		const i = j * 4
+		const what = cells[j]
+		const place = at(j)
+		if (what === SEA) {
+			d[i + 1] = seaByte(place)
+			continue
+		}
+		const { lat, lon, p } = place
+		const burn = burnAt(place)
+		d[i] = what
+		d[i + 1] = burn
+		const lattice = [Math.floor(p[0] * f), Math.floor(p[1] * f), Math.floor(p[2] * f)]
+		const roll = hash3(...lattice)
+		let lights = 0
+		if (burn === FRONT && roll < F.lit)
+			lights = roll < F.lit * 0.3 ? 1 : roll < F.lit * 0.7 ? 2 : 3
+		const b = built.elevation(p[0], p[1], p[2])
+		if (b >= c.built) {
+			const coastal = 1 - clamp01((landAt(lat, lon) - 0.5) / 0.5)
+			const dense = clamp01((b - c.built) / c.spread)
+			const belt =
+				0.3 +
+				0.7 *
+					ramp(Math.abs(lat), c.lats[0] - 12, c.lats[0]) *
+					ramp(Math.abs(lat), c.lats[1] + 10, c.lats[1])
+			const odds = c.lit * (0.25 + 0.75 * coastal) * (0.3 + 0.7 * dense) * belt
+			if (roll <= odds) {
+				const city = roll < odds * 0.12 ? 1 : roll < odds * 0.45 ? 2 : 3
+				const turn = Math.floor(hash3(lattice[0] + 7, lattice[1] + 3, lattice[2]) * 16)
+				lights |= (city << 2) | (Math.min(15, turn) << 4)
+			}
+		}
+		d[i + 2] = lights
+	}
+	return d
 }
 
 // The globe under the view `view` and the light `light` (x right, y down, z toward the viewer, any
