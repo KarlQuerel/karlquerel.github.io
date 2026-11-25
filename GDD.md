@@ -106,6 +106,10 @@ Five aboard HERMES-8, one team, each in their own role suit.
    - 🟡 Hard cuts, a transition only where the picture carries it (2026-11-25): out of white from the dam's flash
      (built), a dither dissolve into the ash, the grey globe matched to the round frosted window, a black beat
      after "keep us." (built), the launch's light followed up into orbit. No iris or slide wipes
+   - 🟡 The Earth in 3D (built 2026-11-25): the title's painted world on a turning sphere lit by a real sun, a
+     smoke shell drifting over it, the dusty air at the limb; across the orbit shots the seas drain, the smoke
+     spreads and the cities go dark. The camera travels (a sweep in, a slide over the night side, a low pass
+     over the terminator) and war debris tumbles past the lens at the opening
    - 🟡 Earth's radio scraps under the cards, no narrator: the same broadcasts become the clock after the wake
 3. ✅ Departure day, aboard HERMES-8 in Earth orbit: you wake in your bed in your own cabin (cabin 4), meet the crew,
    see Earth from the ship, prepare for the journey, enter your cryo pod. The safe tutorial
@@ -207,9 +211,8 @@ Built and played in the old 2D engine; kept here so nothing is lost. Look back a
 
 - [ ] Decide the spine
 - [ ] Intro cinematic in three.js, about eight sessions, each shot replacing its slate in the animatic
-      (`/game?intro`, done 2026-11-25): the frost window; HERMES-8 alone in orbit (on the home computer, which has
-      the ship GLBs); the Earth in 3D and dying; the launch pad; the dam; the water-truck line; the hand-offs and
-      the radio
+      (`/game?intro`, done 2026-11-25, its Earth in 3D too): the frost window; HERMES-8 alone in orbit (on the home
+      computer, which has the ship GLBs); the launch pad; the dam; the water-truck line; the hand-offs and the radio
 - [ ] The wake and Act I in three.js
 - [ ] Put the Zvezda credit on the site
 - [ ] Hermes's final voice, Elena's voice
