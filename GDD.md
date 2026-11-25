@@ -194,6 +194,8 @@ Built and played in the old 2D engine; kept here so nothing is lost. Look back a
   band, pale stars. The sky itself tells the player how far they went when the nebula replaces it at the wake.
   The intro has it; the ship lab (departure day) still has the nebula
 - ✅ Intro skippable, safe under reduced motion
+- 🟡 The game's loader is Hermes running its ship checks, each screen its own (`GAME_BOOT`), a sync bar under
+  them; the K stays the website's (2026-11-25). 💭 Act changes: frosted glass wiped clear to go on
 - Tone: loneliness, not splatter
 - ✅ No rounded numbers for dates or durations: they read like real records (2026-11-23)
 - Far away, glow and clean two-tone masses read; facets don't
