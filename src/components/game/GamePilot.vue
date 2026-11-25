@@ -3,7 +3,12 @@
 	     rebuilt, to judge rigged characters in the game's pixel look. -->
 	<div class="pilot">
 		<canvas ref="canvas" class="pilot__canvas" aria-hidden="true" />
-		<BootCover :progress="bootProgress" :ceiling="bootCeiling" :done="!booting" />
+		<GameBoot
+			:progress="bootProgress"
+			:ceiling="bootCeiling"
+			:done="!booting"
+			:screen="scene"
+		/>
 		<p v-if="!moved" class="pilot__hint">{{ INTRO_WALK_HINT }}</p>
 	</div>
 </template>
@@ -12,7 +17,7 @@
 	import { ref } from 'vue'
 	import { useArtCanvas } from '@/composables/useArtCanvas'
 	import { useWindowListener } from '@/composables/useWindowListener'
-	import BootCover from '@/components/BootCover.vue'
+	import GameBoot from './GameBoot.vue'
 	import { createCorridorPilot } from '@/js/pilot/corridorPilot'
 	import { createShipLab } from '@/js/pilot/shipLab'
 	import { PILOT } from '@/constants/game/pilot'
