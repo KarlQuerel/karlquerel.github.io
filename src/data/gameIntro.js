@@ -16,7 +16,6 @@ export const INTRO_CARDS = [
 
 // The intro's shots still to build, named on black where they will go.
 export const INTRO_SLATES = {
-	dam: 'A dry reservoir at dusk. Searchlights on the dam, a white flash on the horizon',
 	waterLine: 'Ash falling on a line at a water truck, under one floodlight',
 	window: 'A gloved hand wipes a frosted window: grey, nothing moves',
 	launchPad: 'A salt-flat launch pad at night, a crowd at the fence. Liftoff',

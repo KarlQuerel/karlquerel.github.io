@@ -1,7 +1,7 @@
 // The intro cinematic (/game?intro), its words in data/gameIntro.js: orbit and ground intercut (GDD.md), a card
 // held across its shots. The orbit's shots on the Earth in 3D (js/pilot/introEarth.js) and the title's Moon on a
-// card facing the camera; every other shot a slate until it is built. World units: the Earth's radius is 10
-// about the origin, the camera out on +z, y up.
+// card facing the camera; a ground shot built is a set of its own (the dam: introDam.js), the rest still slates.
+// World units: the Earth's radius is 10 about the origin, the camera out on +z, y up.
 
 import { EARTH } from '../intro/earth.js'
 import { EARTH_MAP } from '../intro/earthMap.js'
@@ -54,8 +54,8 @@ export const INTRO = {
 	cuts: { flash: { s: 0.6 }, black: { s: 0.9 } },
 	// The cut: how long each shot holds and the card it carries (INTRO_CARDS), any other a hard cut. An orbit
 	// shot moves the camera `from` one key `to` another and the planet from one `world` state to the other over
-	// the shot (reduced motion holds the last), `flashes` and `launch` naming what it shows; any other shot is a
-	// `slate` (INTRO_SLATES) until it is built.
+	// the shot (reduced motion holds the last), `flashes` and `launch` naming what it shows; a ground shot is a
+	// `set` of its own (js/pilot/introCinematic.js SETS); any other shot is a `slate` (INTRO_SLATES) until built.
 	shots: [
 		{
 			holdS: 5,
@@ -64,7 +64,7 @@ export const INTRO = {
 			to: { at: [-7, 3, 42], look: [0, 5, 0] },
 			world: [NOW, NOW],
 		},
-		{ holdS: 4.5, card: 1, slate: 'dam' },
+		{ holdS: 4.5, card: 1, set: 'dam' },
 		{
 			holdS: 4,
 			card: 1,

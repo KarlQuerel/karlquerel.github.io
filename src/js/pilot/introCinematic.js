@@ -1,7 +1,8 @@
 // The intro cinematic (constants/game/intro.js), cut shot by shot; the page types the cards and covers a slate. The
 // orbit's shots are built: the Earth in 3D (introEarth.js) dying from shot to shot, war debris tumbling past the
 // opening, flashes on its night side, one launch climbing off the limb, the title's Moon on a card facing the
-// camera. The rest are still slates.
+// camera. A ground shot is a set of its own (SETS), seen through the same camera and pixel pass. The rest are
+// still slates.
 
 import {
 	BoxGeometry,
@@ -29,11 +30,12 @@ import {
 } from 'three'
 import { prefersReducedMotion } from '../../composables/usePrefersReducedMotion.js'
 import { INTRO } from '../../constants/game/intro.js'
-import { PILOT } from '../../constants/game/pilot.js'
+import { PILOT, PILOT_BEAM } from '../../constants/game/pilot.js'
 import { EARTH_MAP } from '../../constants/intro/earthMap.js'
 import { PALETTE, paletteHex } from '../../constants/palette.js'
 import { clamp01, randIn, riseFall, smootherstep } from '../math.js'
 import IntroArtWorker from './introArt.worker.js?worker'
+import { createDamSet } from './introDam.js'
 import { createIntroEarth, earthTurn } from './introEarth.js'
 import { createPixelPost } from './pixelPost.js'
 
@@ -43,6 +45,17 @@ const even = v => 2 * Math.ceil(v / 2)
 const vec = ([x, y, z]) => new Vector3(x, y, z)
 const key = ({ at, look }) => ({ at: vec(at), look: vec(look) })
 const mix = (a, b, u) => a + (b - a) * u
+
+// the ground shots' sets by the name a shot gives as its `set`
+const SETS = { dam: createDamSet }
+// the orbit's lens; a set brings its own
+const ORBIT_LENS = { fovDeg: INTRO.fovDeg, near: INTRO.near, far: INTRO.far }
+
+function lens(camera, { fovDeg, near, far }) {
+	if (camera.fov === fovDeg && camera.near === near && camera.far === far) return
+	Object.assign(camera, { fov: fovDeg, near, far })
+	camera.updateProjectionMatrix()
+}
 
 // when each shot starts, the last entry the cut's end; an orbit shot's camera keys
 const starts = shots.reduce((at, { holdS }) => [...at, at.at(-1) + holdS], [0])
@@ -186,6 +199,7 @@ export function createIntroCinematic() {
 	let strikes = []
 	let climb = null
 	let wreckage = null
+	let sets = {}
 
 	async function build(gl, step) {
 		renderer = new WebGLRenderer({ canvas: gl.canvas, context: gl, antialias: false })
@@ -214,8 +228,11 @@ export function createIntroCinematic() {
 		scene.add(planet.group, lunar, climb.light, wreckage.group)
 		// the sky behind: the pass draws it only where nothing stands
 		scene.background = sky
+		sets = Object.fromEntries(shots.filter(s => s.set).map(({ set }) => [set, SETS[set]()]))
+		camera.layers.enable(PILOT_BEAM.layer)
 		await step('art')
 		renderer.compile(scene, camera)
+		for (const set of Object.values(sets)) renderer.compile(set.scene, camera)
 	}
 
 	function resize({ width, height }) {
@@ -242,8 +259,16 @@ export function createIntroCinematic() {
 	function frame(dt) {
 		const t = (clock.time += dt)
 		const shot = shotAt(t)
+		const set = sets[shots[shot].set]
+		if (set) {
+			lens(camera, set.lens)
+			set.frame(t - starts[shot], shots[shot].holdS, camera, still)
+			post.render(set.scene)
+			return true
+		}
 		// a slate is the page's to cover
 		if (!moves[shot]) return true
+		lens(camera, ORBIT_LENS)
 		place(t, shot)
 		planet.update(t, world, camera, grid)
 		for (const { mesh, at } of strikes) {
@@ -281,6 +306,7 @@ export function createIntroCinematic() {
 	}
 
 	function release() {
+		for (const set of Object.values(sets)) set.dispose()
 		planet?.dispose()
 		wreckage?.group.traverse(o => {
 			o.geometry?.dispose()

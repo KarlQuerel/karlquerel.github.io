@@ -89,7 +89,7 @@ Five aboard HERMES-8, one team, each in their own role suit.
    | Card | Where | Shot |
    |---|---|---|
    | 2137. | Orbit | The title frame; the camera drifts through dead satellites and war debris, close past the lens |
-   | The water war went nuclear. | Ground | A dry reservoir at dusk: cracked bed, a stranded boat, the two sides' searchlights on the dam; the horizon flashes white, dust rolls in |
+   | The water war went nuclear. | Ground | ✅ (built 2026-11-26, its own three.js set) A dry reservoir at dusk: cracked bed, a stranded boat, drowned trees, the old water line pale on the canyon walls, the two sides' searchlights on the dam; a fireball rises past the dam, dust rolls up behind it, the sky goes white into the cut |
    | | Orbit | Flashes bloom on the night side |
    | Famine and nuclear winter followed. | Ground | Ash falls like snow on a line at a water truck, silhouettes under one floodlight |
    | | Orbit | The seas pull back, smoke spreads, city lights go out |
@@ -213,8 +213,9 @@ Built and played in the old 2D engine; kept here so nothing is lost. Look back a
 
 - [ ] Decide the spine
 - [ ] Intro cinematic in three.js, about eight sessions, each shot replacing its slate in the animatic
-      (`/game?intro`, done 2026-11-25, its Earth in 3D too): the frost window; HERMES-8 alone in orbit (on the home
-      computer, which has the ship GLBs); the launch pad; the dam; the water-truck line; the hand-offs and the radio
+      (`/game?intro`, done 2026-11-25, its Earth in 3D too; the dam done 2026-11-26): the frost window; HERMES-8
+      alone in orbit (the ship GLBs are pushed since 2026-11-26); the launch pad; the water-truck line; the
+      hand-offs and the radio
 - [ ] The wake and Act I in three.js
 - [ ] Put the Zvezda credit on the site
 - [ ] Hermes's final voice, Elena's voice
