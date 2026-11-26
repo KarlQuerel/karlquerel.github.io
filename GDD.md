@@ -1,6 +1,6 @@
 # HERMES: Game Design Document
 
-Updated 2026-11-25 · ✅ decided · 🟡 leaning or prototyped · ❓ open · 💭 proposed, no pick yet
+Updated 2026-11-26 · ✅ decided · 🟡 leaning or prototyped · ❓ open · 💭 proposed, no pick yet
 
 The one home of the game's design. Karl's Notion page is only the inbox: ideas land there, and each session folds
 them in here when asked. When something changes, move it and add one line on why.
@@ -33,10 +33,16 @@ A space survival game with heavy choices, first person, pixel art, in the browse
   23.6 years old when it arrives
 - ❓ The departure month: June 2137 or later, or the wake lands in 2300, a round year (2026-11-25)
 - 💭 Hermes kept logging Earth's broadcasts while the crew slept, so 141 years of messages wait in the ship's memory
-- ✅ Why the ship did not wake the crew at year 19 (2026-11-23): at 18 years 9 months, three months before arrival, a
-  grain of interstellar dust cut the one cable between Hermes and the pods. The ship arrived and entered orbit on
-  autopilot, but the wake command never reached the pods. Each pod has a hardwired failsafe, no computer, that wakes
-  its sleeper when its power runs too low. Hermes: "I could see you. I could not reach you."
+- ✅ Why the ship did not wake the crew at year 19 (2026-11-26; replaces a grain of dust cutting the one cable to the
+  pods, hard to believe and nothing to uncover): on arrival a flare from Yavis's red dwarf burned out the wake
+  circuits and wiped part of Hermes's memory, the crew roster with it. Hermes ran HERMES-8 as an unmanned probe for
+  144 years, logging Earth's broadcasts with no one to tell. Each pod has a hardwired failsafe, no computer, that wakes
+  its sleeper when its power runs too low. At the wake Hermes does not know you ("Unknown person in the cryo bay.
+  Identify yourself.")
+- 🟡 Restoring Hermes's memory, block by block, is the progression: each block brings back logs, voices, doors
+- 🟡 Flares come back as a hazard after the wake
+- ✅ Noor died in her pod during the flare (2026-11-26): the youngest dies before seeing the world. ❓ How: asleep, the pod's air cut, or woken early by the flare into a ship whose Hermes did not know her,
+  living as long as her suit's air (her recordings a thread, the danger the player wakes into)
 - ✅ The crew do not wake together (2026-11-23). ❓ Whether the others woke before you, are still asleep, or both.
   💭 Each failsafe runs on its own pod's battery, so the wakes are staggered by years
 - ❓ What the player is ultimately after, once they know
@@ -61,6 +67,7 @@ GREEN was dropped on 2026-11-13: no message goes back to Earth, they only come i
 - ❓ The fleet: if, when and how we learn what happened to the other ships
 - ❓ The candidate world: what it is like (the 2D prototype had a lake, fronds and a ridge)
 - ✅ Its name: Yavis 667 (2026-11-23)
+- ✅ Livable, and the crew land on it (2026-11-26)
 
 ## Characters
 
@@ -71,7 +78,7 @@ Five aboard HERMES-8, one team, each in their own role suit.
 | ✅ Henrik | Captain, also security | Male, ex-soldier. Deep, aged voice |
 | ✅ Elena | Medic | Female, lost her son Sam in the war. Not killed right away (2026-11-17): when she dies is open |
 | ✅ Ekko | Engineer | Male |
-| ✅ Noor | Scientist | Young, just graduated |
+| ✅ Noor | Scientist | Young, just graduated. Dead before the wake: her pod failed in the flare (2026-11-26) |
 | ✅ You | Pilot, lander and ship (2026-11-23) | Will have a voice (decide later). Name ❓ ("Four" was floated) |
 
 - 💭 Noor's thesis flagged the world they were sent to
