@@ -95,6 +95,10 @@ export const PILOT_SHADOW = {
 	underfoot: { radius: 0.5, dark: 0.7, feet: 8 },
 }
 
+// Light hanging in the air (a searchlight's beam): drawn on three's `layer` as well as the colour, and kept out of
+// the pixel pass's normals, so it neither glints nor hides the creases of what stands behind it
+export const PILOT_BEAM = { layer: 3 }
+
 // The sun itself through the glass, along PILOT_OUTSIDE.sun: the intro's star (js/intro/sky.js) swollen
 // to `radius` rad, at the fields shot's `age`, its corona at `corona`; its glare drowns the stars and thins
 // the corona out to `glare` of its radius

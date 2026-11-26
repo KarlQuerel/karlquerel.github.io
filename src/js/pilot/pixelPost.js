@@ -15,7 +15,7 @@ import {
 } from 'three'
 import common from '../../shaders/intro/common.glsl?raw'
 import { paletteSnap } from '../intro/paletteSnap.js'
-import { PILOT, PILOT_EXACT_ALPHA } from '../../constants/game/pilot.js'
+import { PILOT, PILOT_BEAM, PILOT_EXACT_ALPHA } from '../../constants/game/pilot.js'
 
 // a baked sky behind a cell nothing was drawn in: the cell's view ray into the panorama, read as it is
 const skyAt = `
@@ -131,12 +131,15 @@ export function createPixelPost(
 			material.uniforms.cameraFar.value = camera.far
 			renderer.setRenderTarget(color)
 			renderer.render(scene, camera)
-			// the normals in view space, for the creases; a sky behind has none
+			// the normals in view space, for the creases; a sky behind has none, nor the light in the air
 			const backdrop = scene.background
+			const beams = camera.layers.isEnabled(PILOT_BEAM.layer)
 			scene.overrideMaterial = normalMaterial
 			scene.background = null
+			camera.layers.disable(PILOT_BEAM.layer)
 			renderer.setRenderTarget(normals)
 			renderer.render(scene, camera)
+			if (beams) camera.layers.enable(PILOT_BEAM.layer)
 			scene.overrideMaterial = null
 			scene.background = backdrop
 			renderer.setRenderTarget(null)
