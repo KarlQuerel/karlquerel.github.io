@@ -1,5 +1,5 @@
 // The props that dress HERMES-8's rooms (dev only, the ship lab). Each model is readied by
-// claude-ship/props/prep.py: metres, standing on y 0, centred, its front toward +z, textures capped at 1024.
+// claude-ship/props/prep.py (metres, standing on y 0, centred, its front toward +z), then npm run models:shrink.
 // Downloads from Sketchfab, each CC BY 4.0 and modified: credits in public/assets/CREDITS.txt.
 
 export const SHIP_PROP_MODELS = {

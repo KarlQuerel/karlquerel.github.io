@@ -14,12 +14,14 @@ import {
 	Uint16BufferAttribute,
 	Vector3,
 } from 'three'
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { clone } from 'three/addons/utils/SkeletonUtils.js'
 import { PALETTE, paletteHex } from '../../constants/palette.js'
 import { PILOT_GLOW, PILOT_PANELS } from '../../constants/game/pilot.js'
 
-const loader = new GLTFLoader()
+// every model is meshopt-compressed (scripts/models/shrink.mjs)
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
 const loading = new Map()
 
 function fetchOnce(url) {

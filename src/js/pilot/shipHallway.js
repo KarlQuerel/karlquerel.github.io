@@ -7,7 +7,7 @@
 // window keep their glass, the others turn to panels. Every corner keeps the model's own normal, stretched as its
 // position is, so its curves stay smooth and the pixel pass glints only on its real edges.
 
-import { Box3, BufferGeometry, Float32BufferAttribute, Group, Mesh, Vector3 } from 'three'
+import { Box3, BufferGeometry, Float32BufferAttribute, Group, Matrix3, Mesh, Vector3 } from 'three'
 import { SHIP_LAB } from '../../constants/game/shipLab.js'
 import { SHIP_LAYOUT } from '../../constants/game/shipLayout.js'
 import { paletteHex } from '../../constants/palette.js'
@@ -60,20 +60,18 @@ async function loadBay() {
 	bay.updateMatrixWorld(true)
 	const size = new Box3().setFromObject(bay).getSize(new Vector3())
 	const parts = []
+	const p = new Vector3()
+	const n = new Vector3()
 	bay.traverse(o => {
 		if (!o.isMesh) return
-		const { position, normal } = o.geometry
-			.toNonIndexed()
-			.applyMatrix4(o.matrixWorld).attributes
+		// read out, never transformed in place: the shrunk model's quantized positions can't hold the world's
+		const { position, normal } = o.geometry.toNonIndexed().attributes
+		const turn = new Matrix3().getNormalMatrix(o.matrixWorld)
 		const tris = []
 		for (let t = 0; t < position.count; t += 3) {
 			const tri = [t, t + 1, t + 2].map(i => [
-				position.getX(i),
-				position.getY(i),
-				position.getZ(i),
-				normal.getX(i),
-				normal.getY(i),
-				normal.getZ(i),
+				...p.fromBufferAttribute(position, i).applyMatrix4(o.matrixWorld).toArray(),
+				...n.fromBufferAttribute(normal, i).applyMatrix3(turn).normalize().toArray(),
 			])
 			tris.push({ tri, mid: [0, 1, 2].map(k => (tri[0][k] + tri[1][k] + tri[2][k]) / 3) })
 		}

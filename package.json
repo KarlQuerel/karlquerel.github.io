@@ -14,6 +14,7 @@
     "lint:fix": "eslint . --cache --fix",
     "lint:check": "eslint . --cache --max-warnings 0",
     "clean": "npm run format",
+    "models:shrink": "node scripts/models/shrink.mjs",
     "prepare": "simple-git-hooks"
   },
   "author": "Karl Querel",

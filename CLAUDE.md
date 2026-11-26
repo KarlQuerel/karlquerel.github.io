@@ -128,6 +128,7 @@ When touching existing code, always:
 - One cell size and one palette (`PALETTE`) for every scene, 2D and 3D alike. Quality comes from edges, not from more cells. A light source must land on the palette's lit end, or it snaps to tan and stops reading as light.
 - No backend: a run's progress lives in `localStorage`.
 - Props modelled in Blender: one script per prop in `scripts/blender/` (shapes from `kit.py`) exports its GLB to `public/assets/game/models/`. Name every material for a `PILOT_MATS` key, because the game repaints each one by that name. Bake no lighting or textures. List the model in `PILOT_PROP_MODELS.placed`.
+- Every model in `public/assets/game/models/` (Blender export or download) goes through `npm run models:shrink` before it is committed: meshopt-compressed, textures capped, still meshes simplified, every name kept. The test suite fails on one that skipped it. A shrunk model's positions are quantized: read its vertices out (`fromBufferAttribute`), never transform its geometry in place.
 
 ---
 
