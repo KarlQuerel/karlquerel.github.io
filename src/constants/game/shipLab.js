@@ -27,7 +27,7 @@ export const SHIP_LAB = {
 	// the ship first (the orbit's centre), then the ring: one frame for both, so loaded at one origin the
 	// ring sits round the stern. The ship is "Spaceship PAK DA (K) TU-1600 Zvezda" by Ilya Shevchuk, CC BY
 	// 4.0, modified (sketchfab.com/3d-models/spaceship-pak-da-k-tu-1600-zvezda-30e58a90fe874f21afdfaa5c4022b311):
-	// local only (.git/info/exclude) until that credit is on the site
+	// credit in public/assets/CREDITS.txt; the ring is ours
 	models: ['/assets/game/models/hermes8-ship.glb', '/assets/game/models/hermes8-ring.glb'],
 	// the models' plain materials, made to be repainted by name: each the palette colour nearest its own, the glass
 	// a visor
@@ -87,7 +87,7 @@ export const SHIP_LAB = {
 	// the passages (`role`) and every room walked in dressed with one bay of "Sci Fi Hallway FREE" by Seesha, CC BY
 	// 4.0, modified (sketchfab.com/3d-models/sci-fi-hallway-free-44fd25310d2240908027390a078368e1; one wall module,
 	// decals off, slimmed to 40k triangles, walls flattened to 0.7 m deep, ceiling squashed to 2.6 m, by
-	// claude-ship/seesha/bay.py): local only (.git/info/exclude) until that credit is on the site. Down a passage the
+	// claude-ship/seesha/bay.py; credit in public/assets/CREDITS.txt). Down a passage the
 	// whole bay repeats, its walls (`relief` m deep, `band` m over the floor) squeezed to keep `clear` m between them;
 	// round a room the bay's wall out to its cove (`cove` m from the bay's middle, the floor strip's edge) lines every
 	// wall, the ceiling's light box (`lamp` m either side of its middle) hangs in rows `rows` m apart, its deck plates
